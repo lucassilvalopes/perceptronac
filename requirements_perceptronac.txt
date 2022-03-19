@@ -1,0 +1,7 @@
+torch==1.7.1
+numpy==1.19.5
+Pillow==8.2.0
+netpbmfile==2021.6.6
+pandas==1.1.5
+matplotlib==3.3.4
+tqdm==4.60.0
