@@ -9,14 +9,15 @@
 
 
 import torch
-from causal_context import causal_context
-from context_training import context_training
-from context_coding import context_coding
-from perfect_AC import perfect_AC
-from utils import read_im2bw
-from utils import load_model
-from utils import causal_context_many_imgs
-from utils import save_N_min_valid_loss_model
+from perceptronac.coding2d import causal_context
+from perceptronac.context_training import context_training
+from perceptronac.context_coding import context_coding
+from perceptronac.perfect_AC import perfect_AC
+from perceptronac.utils import read_im2bw
+from perceptronac.utils import load_model
+from perceptronac.utils import causal_context_many_imgs
+from perceptronac.utils import causal_context_many_pcs
+from perceptronac.utils import save_N_min_valid_loss_model
 import numpy as np
 from tqdm import tqdm
 
@@ -135,7 +136,7 @@ def cabac_rates(Xt,yt,Xc,yc):
     return rate_cabac_t,rate_cabac_c
 
 
-def train_loop(configs,imgtraining,imgcoding,N):
+def train_loop(configs,datatraining,datacoding,N):
     
     OptimizerClass=configs["OptimizerClass"]
     epochs=configs["epochs"]
@@ -145,8 +146,14 @@ def train_loop(configs,imgtraining,imgcoding,N):
     device=configs["device"]
     phases=configs["phases"]
     
-    yt,Xt = causal_context_many_imgs(imgtraining, N)
-    yc,Xc = causal_context_many_imgs(imgcoding, N)
+    if configs["data_type"] == "image":
+        yt,Xt = causal_context_many_imgs(datatraining, N)
+        yc,Xc = causal_context_many_imgs(datacoding, N)
+    elif configs["data_type"] == "pointcloud":
+        yt,Xt = causal_context_many_pcs(datatraining, N, configs["percentage_of_uncles"])
+        yc,Xc = causal_context_many_pcs(datacoding, N, configs["percentage_of_uncles"])
+    else:
+        raise ValueError(f'data type {configs["data_type"]} not supported')
     
     rate_static_t,rate_static_c = staticAC_rates(yt,yc)
     if N == 0:

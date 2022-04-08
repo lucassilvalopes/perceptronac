@@ -6,7 +6,8 @@ import numbers
 import pandas as pd
 import os
 import matplotlib.pyplot as plt
-from causal_context import causal_context
+from perceptronac.coding2d import causal_context
+import perceptronac.coding3d as c3d
 
 
 def load_model(configs,N):
@@ -30,6 +31,21 @@ def causal_context_many_imgs(imgs,N):
         partial_y,partial_X = causal_context(img, N)
         y.append(partial_y)
         X.append(partial_X)
+    y = np.vstack(y)
+    X = np.vstack(X)
+    return y,X
+
+
+def causal_context_many_pcs(pcs,N,percentage_of_uncles):
+    y = []
+    X = []
+
+    M = int(percentage_of_uncles * N)
+    print(f"using {N-M} siblings and {M} uncles.")
+    for pc in pcs:
+        _,partial_X,partial_y,_,_ = c3d.pc_causal_context(pc, N-M, M)
+        y.append(np.expand_dims(partial_y.astype(int),1) )
+        X.append(partial_X.astype(int))
     y = np.vstack(y)
     X = np.vstack(X)
     return y,X
