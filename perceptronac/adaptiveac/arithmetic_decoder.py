@@ -4,12 +4,12 @@ from "The Data Compression Book".
 """
 
 
-from exceptions import CorruptedFile, EndOfBinaryFile
+from perceptronac.adaptiveac.exceptions import CorruptedFile, EndOfBinaryFile
 
 
 class ArithmeticDecoder:
 
-    def __init__(self,inputFile, outputFile,nSymbols):
+    def __init__(self,inputFile, outputFile,nSymbols,symbolSize=8):
         self.inputFile = inputFile
         self.outputFile = outputFile
         self.nSymbols = nSymbols
@@ -17,6 +17,7 @@ class ArithmeticDecoder:
         self.low = 0
         self.underflowBits = 0
         self.code = None
+        self.symbolSize=symbolSize
 
     def __del__(self):
         self.inputFile.close()
@@ -32,7 +33,7 @@ class ArithmeticDecoder:
                 return 1
             else:
                 self.update(c, totals)
-                self.outputFile.outputBits(c, 8)
+                self.outputFile.outputBits(c, self.symbolSize)
                 return 0
         except EndOfBinaryFile:
             raise CorruptedFile
@@ -59,12 +60,22 @@ class ArithmeticDecoder:
         range = ( self.high-self.low ) + 1
         self.high = self.low + (( range * highCount ) // scale - 1 )
         self.low = self.low + (( range * lowCount ) // scale )
-
+        # print(f"symbol {c} low {self.low} high {self.high} lowCount {lowCount} highCount {highCount} scale {scale} range {range}.")
         while True:
             # If the MSBs are equal, just shift left by 1 bit 
             # (you do not need to keep track of the underflow digits)
             if ( ( self.high & 0x8000 ) == ( self.low & 0x8000 ) ):
-                pass
+                # print(f"symbol {c} case 1 start low {self.low} high {self.high}")
+                self.low = self.low << 1
+                self.high = self.high << 1
+                self.high = self.high | 1
+                self.code = self.code << 1
+                self.code = self.code + self.inputFile.inputBit()
+
+                self.high = self.high & 0xffff
+                self.low = self.low & 0xffff
+                self.code = self.code & 0xffff
+                # print(f"symbol {c} case 1 end low {self.low} high {self.high}")
             # This "if" condition is the same as before. The only
             # difference is that you also remove the next-MSB from "code". 
             # And you do that by toggling the next-MSB from "code"
@@ -73,19 +84,32 @@ class ArithmeticDecoder:
             # because it is between low and high which are 01... and 10...
             # When you toggle it, it becomes 00... or 11 respectively.
             elif ( ( self.low & 0x4000 ) and not ( self.high & 0x4000 ) ):
+                # print(f"symbol {c} case 2 start low {self.low} high {self.high}")
                 self.code = self.code ^ 0x4000
                 self.low = self.low & 0x3fff
                 self.high = self.high | 0x4000
+
+                self.low = self.low << 1
+                self.high = self.high << 1
+                self.high = self.high | 1
+                self.code = self.code << 1
+                self.code = self.code + self.inputFile.inputBit()
+
+                self.high = self.high & 0xffff
+                self.low = self.low & 0xffff
+                self.code = self.code & 0xffff
+                # print(f"symbol {c} case 2 end low {self.low} high {self.high}")
             else: 
+                # print(f"symbol {c} case 3 end low {self.low} high {self.high}")
                 return
 
-            self.low = self.low << 1
-            self.high = self.high << 1
-            self.high = self.high | 1
-            self.code = self.code << 1
-            self.code = self.code + self.inputFile.inputBit()
+            # self.low = self.low << 1
+            # self.high = self.high << 1
+            # self.high = self.high | 1
+            # self.code = self.code << 1
+            # self.code = self.code + self.inputFile.inputBit()
 
-            self.high = self.high & 0xffff
-            self.low = self.low & 0xffff
-            self.code = self.code & 0xffff
+            # self.high = self.high & 0xffff
+            # self.low = self.low & 0xffff
+            # self.code = self.code & 0xffff
 

@@ -6,7 +6,7 @@ https://stackoverflow.com/questions/5131647/
 https://codippa.com/how-to-check-file-size-in-python-3-ways-to-find-out-size-of-file-in-python/
 """
 
-from exceptions import EndOfBinaryFile, WriteError
+from perceptronac.adaptiveac.exceptions import EndOfBinaryFile, WriteError
 
 class BitFile:
 

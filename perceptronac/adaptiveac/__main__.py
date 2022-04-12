@@ -1,9 +1,9 @@
 
 import sys
-from bitfile import BitFile
-from arithmetic_encoder import ArithmeticEncoder
-from arithmetic_decoder import ArithmeticDecoder
-from utils import compressionRatio, static_model, printCounts, printEntropy, \
+from perceptronac.adaptiveac.bitfile import BitFile
+from perceptronac.adaptiveac.arithmetic_encoder import ArithmeticEncoder
+from perceptronac.adaptiveac.arithmetic_decoder import ArithmeticDecoder
+from perceptronac.adaptiveac.utils import compressionRatio, static_model, printCounts, printEntropy, \
     printIntervals, avgLength
 
 def main():

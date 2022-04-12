@@ -1,6 +1,6 @@
 
-from exceptions import EndOfBinaryFile
-from exceptions import CorruptedFile
+from perceptronac.adaptiveac.exceptions import EndOfBinaryFile
+from perceptronac.adaptiveac.exceptions import CorruptedFile
 import math
 
 # part of the ascii table for displaying purposes (see asciitable.com) 
