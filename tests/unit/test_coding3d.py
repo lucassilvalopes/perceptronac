@@ -9,14 +9,11 @@ import unittest
 class TestPcCausalContext(unittest.TestCase):
     
     def setUp(self):
-        # _, self.V, _ = c3d.read_PC(
-        # "/home/lucas/Desktop/computer_vision/mpeg-pcc-tmc13-v14.0/mpeg-pcc-tmc13-master/longdress/longdress_vox10_1300.ply"
-        # )
         self.V = np.unique(np.random.randint(0,2**8-1,size = (5500,3)),axis=0)
         self.N = 14
         self.M = 0
         self.V_nni,self.contexts,self.occupancy,self.this_nbhd,self.prev_nbhd=\
-            c3d.pc_causal_context(self.V, self.N, self.M)
+            c3d.pc_causal_context(self.V, self.N, self.M,ordering=1)
         
     def test_pc_causal_context_causality(self):
         assert np.all(self.this_nbhd[:,0] <=0)
@@ -62,9 +59,6 @@ class TestPcCausalContext(unittest.TestCase):
         
         setA = set(map(str,self.V.astype(int)))
         setB = set(map(str,this_not_neighs.astype(int)))
-        # print(setA)
-        # print(setB)
-        # print(setA.intersection(setB))
         self.assertEqual( len(setA.union(setB)), len(setA) + len(setB) )
         
 
@@ -79,7 +73,7 @@ class TestPcCausalContextDensePc(unittest.TestCase):
         self.N = 122
         self.M = 6
         self.V_nni,self.contexts,self.occupancy,self.this_nbhd,self.prev_nbhd=\
-            c3d.pc_causal_context(self.V, self.N, self.M)
+            c3d.pc_causal_context(self.V, self.N, self.M,ordering=1)
         
     def test_pc_causal_context_at_center_of_dense_pc(self):
         assert np.all(self.contexts[self.V_nni.tolist().index([5,5,5])])
@@ -104,7 +98,7 @@ class TestPcCausalContextFirstQuadrant(unittest.TestCase):
         self.N = 122
         self.M = 6
         self.V_nni,self.contexts,self.occupancy,self.this_nbhd,self.prev_nbhd=\
-            c3d.pc_causal_context(self.V, self.N, self.M)
+            c3d.pc_causal_context(self.V, self.N, self.M,ordering=1)
         
     def test_first_quadrant_occupancy(self):
         siblings = np.array([[5,5,5]]) + self.this_nbhd[self.contexts[self.V_nni.tolist().index([5,5,5])][:self.N]]

@@ -34,12 +34,11 @@ def read_PC(path):
     return pc, V, C
 
 
-def parents_children_neighbors(V, nbhd, ordering, radius):
+def parents_children(V, ordering):
     """
     V : input V sorted according to input ordering
     V_d : parents
-    V_nni : parents' children
-    idx : children's neighbors (indices from V)
+    V_nni : parents' children sorted according to input ordering
     """
     if ordering == 1:
         V = V[np.lexsort((V[:, 2], V[:, 1], V[:, 0]))]
@@ -58,58 +57,26 @@ def parents_children_neighbors(V, nbhd, ordering, radius):
     elif ordering == 3:
         V_nni = V_nni[np.lexsort((V_nni[:, 1], V_nni[:, 0], V_nni[:, 2]))]  
 
-    # nbrs = NearestNeighbors(radius=radius, algorithm='kd_tree', metric='euclidean', n_jobs=-1).fit(V)
-    # _, idx = nbrs.radius_neighbors(V_nni, sort_results=True, return_distance=True)
-    return V,V_nni #,idx
+    return V,V_nni
 
 
-def parents_children_causal_neighbors(V,V_nni,nbhd,radius):#,idx,nbhd,radius):
+def get_neighbors(query_V,V,nbhd):
     """
-    causal_neighs : children's causal neighbors occupancy
-    occupancy : children's occupancy
-    nbhd : input nbhd sorted by ascending distance
-    val_idx : children's causal neighbors (indices from V)
+    neighs : neighbors occupancy
     """
-
-    occupancy = ismember_xyz(V_nni, V)    
-    # orig_idx = np.cumsum(occupancy) - 1
-
-    # val_idx = []
-    # for i in range(V_nni.shape[0]):
-    #     val_idx.append( idx[i][idx[i] < orig_idx[i]] )
-
-    # nbhd_hash = mc.morton_code(nbhd + radius)
-    # causal_neighs = np.zeros((V_nni.shape[0], nbhd.shape[0]), dtype=bool)
-    # for i in range(V_nni.shape[0]):
-    #     # diff = (V[val_idx[i], :] - V_nni[i, :]) + radius
-    #     # diff_hash = mc.morton_code(diff)
-    #     # causal_neighs[i, :] = np.isin(nbhd_hash, diff_hash)
-        
-    #     causal_neighs[i, :] = ismember_xyz(nbhd + V_nni[i:i+1, :],V)
 
     temp = []
     for i in range(nbhd.shape[0]):
-        temp.append(ismember_xyz((V_nni + nbhd[i:i+1,:]) ,V))
-    causal_neighs = np.vstack(temp).T.reshape(-1)
+        temp.append(ismember_xyz((query_V + nbhd[i:i+1,:]) ,V))
+    neighs = np.vstack(temp).T.reshape(-1)
 
-    # causal_neighs = ismember_xyz(
-    # ( np.expand_dims(V_nni,2) + np.expand_dims(nbhd.T,0) ).transpose([0,2,1]).reshape(-1,3),
+    # # Faster but uses too much memory
+    # neighs = ismember_xyz(
+    # ( np.expand_dims(query_V,2) + np.expand_dims(nbhd.T,0) ).transpose([0,2,1]).reshape(-1,3),
     # V)
 
-    causal_neighs = causal_neighs.reshape(V_nni.shape[0], nbhd.shape[0])
+    neighs = neighs.reshape(query_V.shape[0], nbhd.shape[0])
 
-    return causal_neighs, occupancy#, val_idx
-
-
-def get_neighbors(V_d,nbhd,radius):
-    nbrs = NearestNeighbors(radius=radius, algorithm='kd_tree', metric='euclidean', n_jobs=-1).fit(V_d)
-    _, idx = nbrs.radius_neighbors(V_d, sort_results=True, return_distance=True)
-    nbhd_hash = mc.morton_code(nbhd + radius)
-    neighs = np.zeros((V_d.shape[0], nbhd.shape[0]), dtype=bool)
-    for i in range(V_d.shape[0]):
-        diff = (V_d[idx[i], :] - V_d[i, :]) + radius
-        diff_hash = mc.morton_code(diff)
-        neighs[i, :] = np.isin(nbhd_hash, diff_hash)
     return neighs
 
 
@@ -232,13 +199,11 @@ def pc_causal_context(V, N, M, ordering = 1, squeeze_nbhd: bool = False):
     this_nbhd = raster_causal_nbhd(this_nbhd, ordering)
     this_nbhd = this_nbhd[np.argsort(np.linalg.norm(this_nbhd,axis=1), kind='mergesort'),:]
 
-    # V,V_nni,idx = parents_children_neighbors(V,this_nbhd,ordering,current_level_r)
-    V,V_nni = parents_children_neighbors(V,this_nbhd,ordering,current_level_r)
+    V,V_nni = parents_children(V,ordering)
 
-    # causal_neighs,occupancy,_ = \
-    #     parents_children_causal_neighbors(V,V_nni,idx,this_nbhd,current_level_r)
-    causal_neighs,occupancy = \
-        parents_children_causal_neighbors(V,V_nni,this_nbhd,current_level_r)
+    occupancy = ismember_xyz(V_nni, V)
+
+    causal_neighs = get_neighbors(V_nni,V,this_nbhd)
 
     causal_neighs = causal_neighs[:,:N]
     this_nbhd = this_nbhd[:N,:]
@@ -255,7 +220,7 @@ def pc_causal_context(V, N, M, ordering = 1, squeeze_nbhd: bool = False):
 
     V_d, child_idx = np.unique(np.floor(V_nni / 2), axis=0, return_inverse=True)
     # child_idx holds, in the order of V_nni, indices from V_d 
-    phi = get_neighbors(V_d,prev_nbhd,previous_level_r)
+    phi = get_neighbors(V_d,V_d,prev_nbhd)
     phi = phi[child_idx, :]
     
     phi = phi[:,:M]
