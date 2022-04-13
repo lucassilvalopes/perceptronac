@@ -11,6 +11,7 @@ from tqdm import tqdm
 from perceptronac.adaptiveac.utils import defineIntervals
 import pandas as pd
 from perceptronac.adaptiveac.exceptions import EndOfBinaryFile
+from perceptronac.coding3d import upsample_geometry
 
 class MockBitFile:
     def __init__(self,y):
@@ -32,6 +33,9 @@ class MockBitFile:
     def reset(self):
         self.i = 0
 
+def lexsort(V):
+    return V[np.lexsort((V[:, 2], V[:, 1], V[:, 0]))]
+
 if __name__ == "__main__":
 
     # 1) Carregar arquitetura e pesos.
@@ -46,57 +50,42 @@ if __name__ == "__main__":
     #
     # OBS : é preciso comprimir todos os níveis
 
+    ############################ INPUTS ############################
+
     pc = c3d.read_PC("/home/lucas/Desktop/computer_vision/mpeg-pcc-tmc13-v14.0/"+\
         "mpeg-pcc-tmc13-master/longdress/longdress_vox10_1051.ply")[1]
     last_level = 10
 
-    # pc = c3d.read_PC("/home/lucas/Desktop/computer_vision/perceptronac/"+\
-    #     "tests/test_data/vox1_test.ply")[1]
-    # last_level = 1
+    # # pc = c3d.read_PC("/home/lucas/Desktop/computer_vision/perceptronac/"+\
+    # #     "tests/test_data/vox1_test.ply")[1]
+    # # last_level = 1
 
-    weights = "/home/lucas/Desktop/computer_vision/3DCNN/perceptron_ac_pytorch/"+\
-    "results/exp_1649253745/exp_1649253745_047_model.pt"
+    # weights = "/home/lucas/Desktop/computer_vision/3DCNN/perceptron_ac_pytorch/"+\
+    # "results/exp_1649253745/exp_1649253745_047_model.pt"
 
-    N = 47
+    # N = 47
 
-    
+    ############################# DATA #############################
 
-    model = MLP_N_64N_32N_1(N)
-    model.load_state_dict(torch.load(weights))
-    model.train(False)
+    # pcs = [pc]
+    # for i in range(last_level-1,0,-1):
+    #     pc = np.unique(np.floor(pc / 2),axis=0)
+    #     pcs.append(pc)
+    # pcs = pcs[::-1]
 
-    pcs = [pc]
-    for i in range(last_level-1,0,-1):
-        pc = np.unique(np.floor(pc / 2),axis=0)
-        pcs.append(pc)
-    pcs = pcs[::-1]
+    # y,X = causal_context_many_pcs(pcs,N,0)
 
-    y,X = causal_context_many_pcs(pcs,N,0)
+    # dset = CausalContextDataset(X,y)
 
-    dset = CausalContextDataset(X,y)
+    # dataloader = torch.utils.data.DataLoader(dset,batch_size=1,shuffle=False)
 
-    dataloader = torch.utils.data.DataLoader(dset,batch_size=1,shuffle=False)
+    ############################# MODEL #############################
 
-    print("writing encoder_in")
-    encoderInputFile = BitFile("encoder_in", "wb")
-    for data in tqdm(dataloader):
-        X_b,y_b = data
-        encoderInputFile.outputBit(int(y_b.item()))
-    encoderInputFile = BitFile("encoder_in", "rb")
+    # model = MLP_N_64N_32N_1(N)
+    # model.load_state_dict(torch.load(weights))
+    # model.train(False)
 
-    # encoderInputFile = MockBitFile(y.reshape(-1).astype(int).tolist())
-    encoderOutputFile = BitFile("encoder_out", "wb")
-
-    # for v in tqdm(y):
-    #     assert v == encoderInputFile.inputBits(1)
-    # try:
-    #     encoderInputFile.inputBits(1)
-    #     raise AssertionError
-    # except EndOfBinaryFile:
-    #     pass
-    # encoderInputFile.reset()
-
-    enc = ArithmeticEncoder(encoderInputFile, encoderOutputFile, 3, 1)
+    ################ WRITING PROBABILITIES AND DATA ##################
 
     # print("writing data_to_encode.csv")
     # p = []
@@ -115,55 +104,97 @@ if __name__ == "__main__":
     # df = pd.DataFrame(data = np.vstack([p,v]).T,columns=['probability_of_1','bitstream'])
     # df.to_csv("data_to_encode.csv",index=False)
 
-    df = pd.read_csv("/home/lucas/Desktop/computer_vision/perceptronac/tests/test_data/data_to_encode.csv")
-    # df = pd.read_csv("data_to_encode.csv")
+    ################# READING PROBABILITIES AND DATA ##################
 
-    probability_of_1 = df['probability_of_1'].values.tolist()
-    bitstream = df['bitstream'].values.tolist()
+    # df = pd.read_csv("/home/lucas/Desktop/computer_vision/perceptronac/tests/test_data/data_to_encode.csv")
+    # # df = pd.read_csv("data_to_encode.csv")
 
-    assert len(probability_of_1) == len(y)
+    # probability_of_1 = df['probability_of_1'].values.tolist()
+    # bitstream = df['bitstream'].values.tolist()
 
-    print("writing encoder_out")
-    for p,v1,v2 in tqdm(list(zip(probability_of_1,bitstream,y.reshape(-1).tolist())) ):
-        assert v1 == v2
-        counts = [
-            max(1,int(16000*(1-p))),
-            max(1,int(16000*p)),
-            1
-        ]
-        _,totals =defineIntervals(counts)
-        done = enc.do_one_step(totals)
-        assert done == 0
+    ################### WRITING ENCODER INPUT FILE ####################
+
+    # print("writing encoder_in")
+    # encoderInputFile = BitFile("encoder_in", "wb")
+    # for data in tqdm(dataloader):
+    #     X_b,y_b = data
+    #     encoderInputFile.outputBit(int(y_b.item()))
     
-    _,totals =defineIntervals(counts)
-    done = enc.do_one_step(totals)
-    assert done == 1
+    ########### ENCODER INPUT FILE TO ENCODER OUTPUT FILE ##############
+
+    # encoderInputFile = BitFile("encoder_in", "rb")
+    # # encoderInputFile = MockBitFile(y.reshape(-1).astype(int).tolist())
+    # encoderOutputFile = BitFile("encoder_out", "wb")
+
+    # enc = ArithmeticEncoder(encoderInputFile, encoderOutputFile, 3, 1)
+
+    # print("writing encoder_out")
+    # for p in tqdm(probability_of_1):
+    #     counts = [
+    #         max(1,int(16000*(1-p))),
+    #         max(1,int(16000*p)),
+    #         1
+    #     ]
+    #     _,totals =defineIntervals(counts)
+    #     done = enc.do_one_step(totals)
+    #     assert done == 0
+    
+    # _,totals =defineIntervals(counts)
+    # done = enc.do_one_step(totals)
+    # assert done == 1
+
+    ########### DECODER INPUT FILE TO DECODER OUTPUT FILE ##############
+
+    # del enc
+    # del encoderInputFile
+    # del encoderOutputFile
+
+    # decoderInputFile = BitFile("encoder_out", "rb")
+    # decoderOutputFile = BitFile("decoder_out", "wb")
+    # dec = ArithmeticDecoder(decoderInputFile, decoderOutputFile, 3, 1)
+
+    # print("writing decoder_out")
+    # for p in tqdm(probability_of_1):
+    #     counts = [
+    #         max(1,int(16000*(1-p))),
+    #         max(1,int(16000*p)),
+    #         1
+    #     ]
+    #     _,totals =defineIntervals(counts)
+    #     dec.do_one_step(totals)
+
+    # _,totals =defineIntervals(counts)
+    # done = dec.do_one_step(totals)
+    # assert done == 1
+
+    ################## FINAL POINT CLOUD RECONSTRUCTION ################
+
+    decoderOutputFile = BitFile("decoder_out", "rb")
+    decoderOutputFile.reset()
 
 
-    del enc
-    del encoderInputFile
-    del encoderOutputFile
+    for level in range(1,last_level+1):
+        if level == 1:
+            V_d = c3d.xyz_displacements([0,1])
+        else:
+            V_d = upsample_geometry(V_d, 2)
+        V_d = lexsort(V_d)
+        is_to_delete = []
+        for i in range(len(V_d)):
+            bit = decoderOutputFile.inputBits(1)
+            if bit == 0:
+                is_to_delete.append(i)
+        V_d = np.delete(V_d,is_to_delete,axis=0)
+        print(f"level {level} len : {len(V_d)}")
 
-    decoderInputFile = BitFile("encoder_out", "rb")
-    decoderOutputFile = BitFile("decoder_out", "wb")
-    dec = ArithmeticDecoder(decoderInputFile, decoderOutputFile, 3, 1)
+    pc = c3d.read_PC("/home/lucas/Desktop/computer_vision/mpeg-pcc-tmc13-v14.0/"+\
+        "mpeg-pcc-tmc13-master/longdress/longdress_vox10_1051.ply")[1]
+    assert np.allclose(lexsort(pc),lexsort(V_d))
 
-    print("writing decoder_out")
-    for p in tqdm(probability_of_1):
-        counts = [
-            max(1,int(16000*(1-p))),
-            max(1,int(16000*p)),
-            1
-        ]
-        _,totals =defineIntervals(counts)
-        dec.do_one_step(totals)
 
-    _,totals =defineIntervals(counts)
-    done = dec.do_one_step(totals)
-    assert done == 1
 
-    # # level 1
-    # ptsL1 = c3d.xyz_displacements([0,1])
-    # ptsL1 = ptsL1[np.lexsort((ptsL1[:, 2], ptsL1[:, 1], ptsL1[:, 0]))]
+    
+
+
 
 
