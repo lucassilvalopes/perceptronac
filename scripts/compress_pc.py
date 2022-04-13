@@ -77,21 +77,28 @@ if __name__ == "__main__":
 
     dataloader = torch.utils.data.DataLoader(dset,batch_size=1,shuffle=False)
 
-    encoderInputFile = MockBitFile(y.reshape(-1).astype(int).tolist())
+    print("writing encoder_in")
+    encoderInputFile = BitFile("encoder_in", "wb")
+    for data in tqdm(dataloader):
+        X_b,y_b = data
+        encoderInputFile.outputBit(int(y_b.item()))
+    encoderInputFile = BitFile("encoder_in", "rb")
+
+    # encoderInputFile = MockBitFile(y.reshape(-1).astype(int).tolist())
     encoderOutputFile = BitFile("encoder_out", "wb")
 
-    for v in tqdm(y):
-        assert v == encoderInputFile.inputBits(1)
-    try:
-        encoderInputFile.inputBits(1)
-        raise AssertionError
-    except EndOfBinaryFile:
-        pass
-    encoderInputFile.reset()
+    # for v in tqdm(y):
+    #     assert v == encoderInputFile.inputBits(1)
+    # try:
+    #     encoderInputFile.inputBits(1)
+    #     raise AssertionError
+    # except EndOfBinaryFile:
+    #     pass
+    # encoderInputFile.reset()
 
     enc = ArithmeticEncoder(encoderInputFile, encoderOutputFile, 3, 1)
 
-    # print("writing encoder_out")
+    # print("writing data_to_encode.csv")
     # p = []
     # v = []
     # for data in tqdm(dataloader):
@@ -101,17 +108,6 @@ if __name__ == "__main__":
     #     outputs = model(X_b)
     #     p.append(outputs.item())
     #     v.append(y_b.item())
-    # #     counts = [
-    # #         int(16000*(1-outputs.item())),
-    # #         int(16000*outputs.item()),
-    # #         1
-    # #     ]
-    # #     _,totals =defineIntervals(counts)
-    # #     enc.do_one_step(totals)
-    
-    # # _,totals =defineIntervals(counts)
-    # # done = enc.do_one_step(totals)
-    # # assert done == 1
 
     # assert np.allclose(
     #     np.array(v).reshape(-1).astype(int),y.reshape(-1).astype(int))
@@ -127,6 +123,7 @@ if __name__ == "__main__":
 
     assert len(probability_of_1) == len(y)
 
+    print("writing encoder_out")
     for p,v1,v2 in tqdm(list(zip(probability_of_1,bitstream,y.reshape(-1).tolist())) ):
         assert v1 == v2
         counts = [
@@ -143,36 +140,30 @@ if __name__ == "__main__":
     assert done == 1
 
 
-    # del enc
-    # del encoderInputFile
-    # del encoderOutputFile
+    del enc
+    del encoderInputFile
+    del encoderOutputFile
 
-    # decoderInputFile = BitFile("encoder_out", "rb")
-    # decoderOutputFile = BitFile("decoder_out", "wb")
-    # dec = ArithmeticDecoder(decoderInputFile, decoderOutputFile, 3, 1)
+    decoderInputFile = BitFile("encoder_out", "rb")
+    decoderOutputFile = BitFile("decoder_out", "wb")
+    dec = ArithmeticDecoder(decoderInputFile, decoderOutputFile, 3, 1)
 
+    print("writing decoder_out")
+    for p in tqdm(probability_of_1):
+        counts = [
+            max(1,int(16000*(1-p))),
+            max(1,int(16000*p)),
+            1
+        ]
+        _,totals =defineIntervals(counts)
+        dec.do_one_step(totals)
+
+    _,totals =defineIntervals(counts)
+    done = dec.do_one_step(totals)
+    assert done == 1
 
     # # level 1
     # ptsL1 = c3d.xyz_displacements([0,1])
     # ptsL1 = ptsL1[np.lexsort((ptsL1[:, 2], ptsL1[:, 1], ptsL1[:, 0]))]
-
-    # print("writing decoder_out")
-    # for data in tqdm(dataloader):
-    #     X_b,y_b = data
-    #     X_b = X_b.float() #.to(device)
-    #     y_b = y_b.float() #.to(device)
-    #     outputs = model(X_b)
-    #     counts = [
-    #         int(16000*(1-outputs.item())),
-    #         int(16000*outputs.item()),
-    #         1
-    #     ]
-    #     _,totals =defineIntervals(counts)
-    #     dec.do_one_step(totals)
-
-    # _,totals =defineIntervals(counts)
-    # done = dec.do_one_step(totals)
-    # assert done == 1
-
 
 
