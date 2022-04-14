@@ -51,7 +51,10 @@ def causal_context_many_pcs(pcs,N,percentage_of_uncles):
     return y,X
 
 
-def plot_single_fig(ax,data,xvalues,xlabel,xscale = "linear"):#,title):
+def plot_single_fig(
+    ax,data,xvalues,xlabel,
+    xscale="linear",mlp_marker='o',static_marker='v',cabac_marker='^'
+):
     
     rates_mlp = data.get("mlp")
     rates_static = data.get("static")
@@ -59,21 +62,26 @@ def plot_single_fig(ax,data,xvalues,xlabel,xscale = "linear"):#,title):
             
     handles = []
     if rates_mlp:
-        mlp_marker = 'o'
         if (len(rates_mlp) == 1) and (len(xvalues) != 1):
             rates_mlp = rates_mlp[0] * np.ones(len(xvalues))
             mlp_marker = ""
-        mlp_handle,= ax.plot(xvalues, rates_mlp, color='blue', label='mlp', marker=mlp_marker)
+        mlp_handle,= ax.plot(
+            xvalues, rates_mlp, 
+            linestyle="solid",color='blue',
+            label='mlp',marker=mlp_marker
+        )
         handles.append(mlp_handle)
     if rates_static:
-        static_marker = 'v'
         if (len(rates_static) == 1) and (len(xvalues) != 1):
             rates_static = rates_static[0] * np.ones(len(xvalues))
             static_marker = ""
-        static_handle,= ax.plot(xvalues, rates_static, color='orange', label='static', marker=static_marker)
+        static_handle,= ax.plot(
+            xvalues, rates_static, 
+            linestyle="dashed",color='orange',
+            label='static',marker=static_marker
+        )
         handles.append(static_handle)        
-    if rates_cabac:        
-        cabac_marker = '^'
+    if rates_cabac:
         if (len(rates_cabac) == 1) and (len(xvalues) != 1):
             rates_cabac = rates_cabac[0] * np.ones(len(xvalues))
             cabac_marker = ""
@@ -82,20 +90,27 @@ def plot_single_fig(ax,data,xvalues,xlabel,xscale = "linear"):#,title):
             cabac_handle,= ax.plot(
                 [xvalues[i] for i in valid_indices], 
                 [rates_cabac[i] for i in valid_indices], 
-                color='green', label='cabac', marker=cabac_marker)
+                linestyle="dotted",color='green', 
+                label='cabac',marker=cabac_marker
+            )
             handles.append(cabac_handle)
         
-#     ax.set_title(title)
     ax.set_xlabel(xlabel)
     ax.set_ylabel('bits/sample')
     ax.set_xscale(xscale)
-#     ax.xaxis.set_ticks(xvalues)
     ax.legend(handles=handles,loc="upper right")
 
 
-def plot_comparison(xvalues,data,xlabel,xscale = "linear"):
+def plot_comparison(
+    xvalues,data,xlabel,
+    xscale="linear",mlp_marker='o',static_marker='v',cabac_marker='^'
+):
+
     fig, ax = plt.subplots(nrows=1, ncols=1,figsize=(4.8,4.8))    
-    plot_single_fig(ax,data,xvalues,xlabel,xscale=xscale)
+    plot_single_fig(
+        ax,data,xvalues,xlabel,xscale,
+        mlp_marker, static_marker, cabac_marker
+    )
     fig.tight_layout()
     plt.show()    
     return fig
