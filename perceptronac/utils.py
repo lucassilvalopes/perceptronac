@@ -25,11 +25,19 @@ def load_model(configs,N):
     return model
 
 
+def add_border(img,N):
+    ns = int(np.ceil(np.sqrt(N)))
+    nr,nc = img.shape[:2]
+    new_img = 255*np.ones((nr+ns,nc+2*ns))
+    new_img[ns:nr+ns,ns:nc+2*ns-ns] = img.copy()
+    return new_img
+
+
 def causal_context_many_imgs(pths,N):
     y = []
     X = []
     for pth in pths:
-        img = read_im2bw(pth,0.4)
+        img = add_border(read_im2bw(pth,0.4),N)
         partial_y,partial_X = causal_context(img, N)
         y.append(partial_y)
         X.append(partial_X)
@@ -56,12 +64,14 @@ def causal_context_many_pcs(pths,N,percentage_of_uncles):
 
 def plot_single_fig(
     ax,data,xvalues,xlabel,
-    xscale="linear",mlp_marker='o',static_marker='v',cabac_marker='^'
+    xscale="linear",mlp_marker='o',static_marker='v',cabac_marker='^',
+    jbig1_marker="s"
 ):
     
     rates_mlp = data.get("mlp")
     rates_static = data.get("static")
     rates_cabac = data.get("cabac")
+    rates_jbig1 = data.get("jbig1")
             
     handles = []
     if rates_mlp:
@@ -97,6 +107,19 @@ def plot_single_fig(
                 label='cabac',marker=cabac_marker
             )
             handles.append(cabac_handle)
+    if rates_jbig1:
+        if (len(rates_jbig1) == 1) and (len(xvalues) != 1):
+            rates_jbig1 = rates_jbig1[0] * np.ones(len(xvalues))
+            jbig1_marker = ""
+        valid_indices = [i for i,v in enumerate(rates_jbig1) if v != -1]
+        if valid_indices:            
+            jbig1_handle,= ax.plot(
+                [xvalues[i] for i in valid_indices], 
+                [rates_jbig1[i] for i in valid_indices], 
+                linestyle="dashdot",color='red', 
+                label='jbig1',marker=jbig1_marker
+            )
+            handles.append(jbig1_handle)
         
     ax.set_xlabel(xlabel)
     ax.set_ylabel('bits/sample')
@@ -106,13 +129,13 @@ def plot_single_fig(
 
 def plot_comparison(
     xvalues,data,xlabel,
-    xscale="linear",mlp_marker='o',static_marker='v',cabac_marker='^'
+    xscale="linear",mlp_marker='o',static_marker='v',cabac_marker='^',jbig1_marker="s"
 ):
 
     fig, ax = plt.subplots(nrows=1, ncols=1,figsize=(4.8,4.8))    
     plot_single_fig(
         ax,data,xvalues,xlabel,xscale,
-        mlp_marker, static_marker, cabac_marker
+        mlp_marker, static_marker, cabac_marker, jbig1_marker
     )
     fig.tight_layout()
     plt.show()    
