@@ -25,10 +25,11 @@ def load_model(configs,N):
     return model
 
 
-def causal_context_many_imgs(imgs,N):
+def causal_context_many_imgs(pths,N):
     y = []
     X = []
-    for img in imgs:
+    for pth in pths:
+        img = read_im2bw(pth,0.4)
         partial_y,partial_X = causal_context(img, N)
         y.append(partial_y)
         X.append(partial_X)
@@ -37,13 +38,14 @@ def causal_context_many_imgs(imgs,N):
     return y,X
 
 
-def causal_context_many_pcs(pcs,N,percentage_of_uncles):
+def causal_context_many_pcs(pths,N,percentage_of_uncles):
     y = []
     X = []
 
     M = int(percentage_of_uncles * N)
     print(f"using {N-M} siblings and {M} uncles.")
-    for pc in pcs:
+    for pth in pths:
+        pc = c3d.read_PC(pth)[1]
         _,partial_X,partial_y,_,_ = c3d.pc_causal_context(pc, N-M, M)
         y.append(np.expand_dims(partial_y.astype(int),1) )
         X.append(partial_X.astype(int))

@@ -8,7 +8,6 @@ from perceptronac.utils import save_N_model
 from perceptronac.utils import save_final_data
 from perceptronac.models import MLP_N_64N_32N_1
 from perceptronac.models import train_loop
-import perceptronac.coding3d as c3d
 
 
 if __name__ == "__main__":
@@ -38,15 +37,6 @@ if __name__ == "__main__":
         "percentage_of_uncles": 0.0 # must be specified if the data types is pointcloud
     }
 
-    if configs["data_type"] == "image":
-        datatraining = [read_im2bw(img,0.4) for img in configs["training_set"]]
-        datacoding = [read_im2bw(img,0.4) for img in configs["validation_set"]]
-    elif configs["data_type"] == "pointcloud":
-        datatraining = [c3d.read_PC(pc)[1] for pc in configs["training_set"]]
-        datacoding = [c3d.read_PC(pc)[1] for pc in configs["validation_set"]]
-    else:
-        raise ValueError(f'data type {configs["data_type"]} not supported')
-
     os.makedirs(f"results/exp_{configs['id']}")
 
     data = dict()
@@ -61,8 +51,8 @@ if __name__ == "__main__":
         print(f"--------------------- context size : {N} ---------------------")    
         N_data,mlp_model = train_loop(
             configs=configs,
-            datatraining=datatraining,
-            datacoding=datacoding,
+            datatraining=configs["training_set"],
+            datacoding=configs["validation_set"],
             N=N
         )
         
