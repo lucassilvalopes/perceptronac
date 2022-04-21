@@ -5,6 +5,7 @@ from netpbmfile import imwrite
 import numbers
 import pandas as pd
 import os
+import subprocess as sb
 import matplotlib.pyplot as plt
 from perceptronac.coding2d import causal_context
 import perceptronac.coding3d as c3d
@@ -198,6 +199,26 @@ def save_pbm(file_name, binary_image):
     
     data = binary_image.astype(np.uint8)
     imwrite(file_name, data,maxval=1)
+
+
+def jbig1_rate(im_path):
+    
+#     src_path = "ieee_tip2017_klt1024_3.pbm"
+#     dst_path = "ieee_tip2017_klt1024_3.jbg"
+
+    src_path = "/tmp/tmp.pbm"
+    dst_path = "/tmp/tmp.jbg"
+    
+    h,w = im2pbm(im_path,src_path,0.4)
+    sb.run(["pbmtojbg","-q",src_path,dst_path])
+    sz = os.path.getsize(dst_path) # bytes
+
+    rate = 8 * sz / (w * h)
+    
+    os.remove(src_path)
+    os.remove(dst_path)
+    
+    return rate
 
 
 def read_im2bw(file_name,level):

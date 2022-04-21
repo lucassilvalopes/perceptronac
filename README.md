@@ -41,6 +41,7 @@ This package makes available several functions useful for (multi-layer) perceptr
 
 ## Contributors
 
+- Philip Chou
 - Ricardo Lopes de Queiroz
 - Lucas Silva Lopes
 - Tomás Malheiros Borges

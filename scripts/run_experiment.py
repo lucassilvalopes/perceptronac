@@ -18,19 +18,19 @@ if __name__ == "__main__":
         "ModelClass":MLP_N_64N_32N_1,
         "OptimizerClass":torch.optim.SGD,
         "training_set": [
-            "/home/lucas/Desktop/computer_vision/mpeg-pcc-tmc13-v14.0/mpeg-pcc-tmc13-master/longdress/longdress_vox10_1300.ply"
+            "/home/lucaslopes/longdress/longdress_vox10_1300.ply"
         ],
         "validation_set": [
-            # "/home/lucas/Desktop/computer_vision/mpeg-pcc-tmc13-v14.0/mpeg-pcc-tmc13-master/redandblack/redandblack_vox10_1450.ply"
-            "/home/lucas/Desktop/computer_vision/mpeg-pcc-tmc13-v14.0/mpeg-pcc-tmc13-master/longdress/longdress_vox10_1051.ply"
+            # "/home/lucaslopes/redandblack/redandblack_vox10_1450.ply"
+            "/home/lucaslopes/longdress/longdress_vox10_1051.ply"
         ],
-        "epochs": 80, # 420,
-        "learning_rate": 0.0001, # 0.00001,
-        "batch_size": 1024, # 2048,
-        "num_workers":1,
+        "epochs": 420,
+        "learning_rate": 0.00001,
+        "batch_size": 2048,
+        "num_workers":4,
         "device":"cuda:0", #"cpu"
         "parent_id": "",
-        "N_vec": [47], # [0] + [round(pow(1.595, i)) for i in range(12) if (i+1)%2==0],
+        "N_vec": [0] + [round(pow(1.595, i)) for i in range(12) if (i+1)%2==0],
         "phases": ['train', 'valid'],
         "xscale": 'symlog',
         "reduction": 'last',
@@ -67,8 +67,6 @@ if __name__ == "__main__":
         )
         
         save_N_data(configs,N,N_data)
-        
-        save_N_model(configs,N,mlp_model)
 
         for phase in configs["phases"]:
             if configs['reduction'] == 'min':
