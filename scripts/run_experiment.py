@@ -35,15 +35,11 @@ if __name__ == "__main__":
         "save_dir": "results"
     }
 
-    os.makedirs(f"results/exp_{configs['id']}")
+    os.makedirs(f"{configs['save_dir'].rstrip('/')}/exp_{configs['id']}")
 
     data = dict()
     for phase in configs["phases"]:
-        data[phase] = {
-            "mlp": [], 
-            "static": [],    
-            "cabac": []          
-        }
+        data[phase] = dict()
 
     for N in configs["N_vec"]:
         print(f"--------------------- context size : {N} ---------------------")    
@@ -57,11 +53,9 @@ if __name__ == "__main__":
         save_N_data(configs,N,N_data)
 
         for phase in configs["phases"]:
-            if configs['reduction'] == 'min':
-                data[phase]["mlp"].append(min(N_data[phase]["mlp"]))
-            else:
-                data[phase]["mlp"].append(N_data[phase]["mlp"][-1])
-            data[phase]["static"].append(N_data[phase]["static"][-1])
-            data[phase]["cabac"].append(N_data[phase]["cabac"][-1])
+            for k in N_data[phase].keys():
+                v = min(N_data[phase][k]) if (configs['reduction'] == 'min') else N_data[phase][k][-1]
+                data[phase][k] = (data[phase][k] + [v]) if (k in data[phase].keys()) else [v]
+
         
     save_final_data(configs,data)

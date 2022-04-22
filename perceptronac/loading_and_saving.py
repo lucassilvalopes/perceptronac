@@ -9,7 +9,8 @@ import matplotlib.pyplot as plt
 
 def plot_single_curve(ax,rates,xvalues,linestyle,color,label,marker):
 
-    if (len(set(rates)) == 1):
+    handle = None
+    if (len(set(rates)) == 1) and (len(rates) != 1):
         marker = ""
     valid_indices = [i for i,v in enumerate(rates) if v != -1]
     if valid_indices:            

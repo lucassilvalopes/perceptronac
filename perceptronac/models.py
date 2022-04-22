@@ -258,9 +258,9 @@ def train_loop(configs,datatraining,datacoding,N):
     validset = CausalContextDataset(
         datacoding,configs["data_type"],N, configs["percentage_of_uncles"])
 
-    rate_static_t,rate_static_c = StaticAC().get_rates(trainset,validset)
-
-    if N > 0:
+    if N == 0:
+        rate_static_t,rate_static_c = StaticAC().get_rates(trainset,validset)
+    else:
         rate_cabac_t,rate_cabac_c = CABAC().get_rates(trainset,validset)        
         train_loss, valid_loss = MLP(configs).get_rates(trainset,validset)
         if (configs["data_type"] == "image"):
@@ -278,7 +278,6 @@ def train_loop(configs,datatraining,datacoding,N):
         for phase in phases:
             data[phase]["mlp"] = epochs*[rate_static_t] if phase == 'train' else epochs*[rate_static_c]
             data[phase]["cabac"] = epochs*[rate_static_t] if phase == 'train' else epochs*[rate_static_c]
-            data[phase]["static"] = epochs*[rate_static_t] if phase == 'train' else epochs*[rate_static_c]
             if configs["data_type"] == "image":
                 data[phase]["jbig1"] = epochs*[-1]
 
@@ -287,7 +286,6 @@ def train_loop(configs,datatraining,datacoding,N):
         for phase in phases:
             data[phase]["mlp"] = train_loss if phase == 'train' else valid_loss
             data[phase]["cabac"] = epochs*[rate_cabac_t] if phase == 'train' else epochs*[rate_cabac_c]
-            data[phase]["static"] = epochs*[rate_static_t] if phase == 'train' else epochs*[rate_static_c]
             if configs["data_type"] == "image":
                 data[phase]["jbig1"] = epochs*[rate_jbig1_t] if phase == 'train' else epochs*[rate_jbig1_c]
     
