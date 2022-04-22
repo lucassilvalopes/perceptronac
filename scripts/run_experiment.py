@@ -2,10 +2,8 @@
 import torch
 import time
 import os
-from perceptronac.utils import read_im2bw
-from perceptronac.utils import save_N_data
-from perceptronac.utils import save_N_model
-from perceptronac.utils import save_final_data
+from perceptronac.loading_and_saving import save_N_data
+from perceptronac.loading_and_saving import save_final_data
 from perceptronac.models import MLP_N_64N_32N_1
 from perceptronac.models import train_loop
 
@@ -33,7 +31,8 @@ if __name__ == "__main__":
         "xscale": 'symlog',
         "reduction": 'min',
         "data_type": 'image', # image, pointcloud
-        "percentage_of_uncles": 0.0 # must be specified if the data types is pointcloud
+        "percentage_of_uncles": 0.0, # must be specified if the data types is pointcloud
+        "save_dir": "results"
     }
 
     os.makedirs(f"results/exp_{configs['id']}")

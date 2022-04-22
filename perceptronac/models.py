@@ -9,18 +9,15 @@
 
 
 import torch
-from perceptronac.coding2d import causal_context
 from perceptronac.context_training import context_training
 from perceptronac.context_coding import context_coding
 from perceptronac.perfect_AC import perfect_AC
-from perceptronac.utils import read_im2bw
-from perceptronac.utils import load_model
 from perceptronac.utils import causal_context_many_imgs
 from perceptronac.utils import causal_context_many_pcs
-from perceptronac.utils import save_N_min_valid_loss_model
 from perceptronac.utils import jbig1_rate
-from perceptronac.utils import save_N_data
-from perceptronac.utils import save_N_model
+from perceptronac.loading_and_saving import load_model
+from perceptronac.loading_and_saving import save_N_min_valid_loss_model
+from perceptronac.loading_and_saving import save_N_model
 import numpy as np
 from tqdm import tqdm
 
