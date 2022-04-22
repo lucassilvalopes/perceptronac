@@ -276,18 +276,18 @@ def train_loop(configs,datatraining,datacoding,N):
     if N == 0:
         
         for phase in phases:
-            data[phase]["mlp"] = epochs*[rate_static_t] if phase == 'train' else epochs*[rate_static_c]
-            data[phase]["cabac"] = epochs*[rate_static_t] if phase == 'train' else epochs*[rate_static_c]
+            data[phase]["MLP"] = epochs*[rate_static_t] if phase == 'train' else epochs*[rate_static_c]
+            data[phase]["LUT"] = epochs*[rate_static_t] if phase == 'train' else epochs*[rate_static_c]
             if configs["data_type"] == "image":
-                data[phase]["jbig1"] = epochs*[-1]
+                data[phase]["JBIG1"] = epochs*[-1]
 
     else:
 
         for phase in phases:
-            data[phase]["mlp"] = train_loss if phase == 'train' else valid_loss
-            data[phase]["cabac"] = epochs*[rate_cabac_t] if phase == 'train' else epochs*[rate_cabac_c]
+            data[phase]["MLP"] = train_loss if phase == 'train' else valid_loss
+            data[phase]["LUT"] = epochs*[rate_cabac_t] if phase == 'train' else epochs*[rate_cabac_c]
             if configs["data_type"] == "image":
-                data[phase]["jbig1"] = epochs*[rate_jbig1_t] if phase == 'train' else epochs*[rate_jbig1_c]
+                data[phase]["JBIG1"] = epochs*[rate_jbig1_t] if phase == 'train' else epochs*[rate_jbig1_c]
     
     return data
 

@@ -26,11 +26,11 @@ def plot_single_curve(ax,rates,xvalues,linestyle,color,label,marker):
 def plot_comparison(xvalues,data,xlabel,xscale="linear",linestyles=None,colors=None,markers=None):
 
     if linestyles is None:
-        linestyles = ["dotted","dashdot","solid","dashed"]
+        linestyles = ["dashdot","dotted","solid","dashed"]
     if colors is None:
-        colors = ['green','red','blue','orange']
+        colors = ['red','green','blue','orange']
     if markers is None:
-        markers = ['^','s','o','v']
+        markers = ['s','^','o','v']
 
     fig, ax = plt.subplots(nrows=1, ncols=1,figsize=(4.8,4.8))    
 
@@ -121,7 +121,7 @@ def save_N_data(configs,N,N_data):
 def save_final_data(configs,data):
     
     xvalues = configs["N_vec"]
-    xlabel = "context_size"
+    xlabel = "context size"
     xscale = configs["xscale"]
     
     save_configs(f"{get_prefix(configs)}_conf",configs)
