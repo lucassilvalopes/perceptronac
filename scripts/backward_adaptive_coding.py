@@ -29,6 +29,17 @@ from perceptronac.loading_and_saving import save_values
 from tqdm import tqdm
 
 
+def weights_init(m):
+    """
+    https://discuss.pytorch.org/t/how-to-fix-define-the-initialization-weights-seed/20156/2
+    https://discuss.pytorch.org/t/access-weights-of-a-specific-module-in-nn-sequential/3627
+    https://pytorch.org/docs/stable/nn.init.html
+    """
+    if isinstance(m, torch.nn.Linear):
+        torch.nn.init.constant_(m.weight.data,0)
+        torch.nn.init.constant_(m.bias.data,0)
+
+
 class RealTimeCABAC:
 
     def __init__(self,N):
@@ -76,6 +87,18 @@ def backward_adaptive_coding(pths,N,lr):
     dataloader = torch.utils.data.DataLoader(trainset,batch_size=1,shuffle=False,num_workers=1)
         
     model = MLP_N_64N_32N_1(N)
+    model.apply(weights_init)
+
+    for i in range(len(model.layers)):
+        if isinstance(model.layers[i], torch.nn.Linear):
+            weightvalue = set(model.layers[i].weight.detach().numpy().reshape(-1).tolist())
+            assert len(weightvalue) == 1
+            print(f"layer {i} weights properly initialized to {weightvalue}")
+            biasvalue = set(model.layers[i].bias.detach().numpy().reshape(-1).tolist())
+            assert len(biasvalue) == 1
+            print(f"layer {i} biases properly initialized to {biasvalue}")
+            
+
     model.to(device)
     model.train(True)
 
@@ -134,31 +157,46 @@ def backward_adaptive_coding(pths,N,lr):
 
 if __name__ == "__main__":
 
+    exp_name = "SPL2021_first_10_sorted_pages"
+
+    pths = [os.path.join('SPL2021',f) for f in sorted(os.listdir('SPL2021'))[0:10]]
+
+    learning_rates = (3.162277659**np.array([-2,-3,-4,-5,-6,-7,-8]))
+
     data = dict()
+    for lr in learning_rates:
+        data["MLPlr={:.0e}".format(lr)] = np.zeros((1024*768))
+    data["LUT"] = np.zeros((1024*768))
 
-    fname = os.listdir('SPL2021')[0]
+    for pth in pths:
     
-    for lr in (3.162277659**np.array([-2,-3,-4,-5,-6,-7,-8])):
+        for lr in learning_rates:
 
-        partial_data = backward_adaptive_coding([os.path.join('SPL2021',fname)],26,lr)
-        for k in partial_data.keys():
-            if k not in data.keys():
-                data[k] = partial_data[k]
+            partial_data = backward_adaptive_coding([pth],26,lr)
+            for k in partial_data.keys():
+                try:
+                    data[k] = data[k] + np.array(partial_data[k])
+                except Exception as e:
+                    print(data)
+                    raise e
+
+    for k in data.keys():
+        data[k] = data[k]/len(pths)
         
     len_data = len(data['LUT'])
 
     xvalues = np.arange( len_data )
         
-    fig = plot_comparison(xvalues,data,"iter",
-        linestyles=7*["solid"],colors=["g","b","r","c","m","y","k"],markers=7*[""])
+    fig = plot_comparison(xvalues,data,"iteration",
+        linestyles=8*["solid"],colors=["g","b","r","c","m","y","k","0.75"],markers=8*[""])
 
     xticks = np.round(np.linspace(0,len_data-1,5)).astype(int)
 
     fig.axes[0].set_xticks( xticks)
     fig.axes[0].set_xticklabels( xticks)
 
-    fname = f"backward_adaptive_coding_{fname[:30]}"
+    fname = f"backward_adaptive_coding_{exp_name}"
 
     fig.savefig(fname+".png", dpi=300)
 
-    save_values(fname,xvalues,data,"iter")
+    save_values(fname,xvalues,data,"iteration")
