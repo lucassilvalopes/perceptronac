@@ -17,16 +17,27 @@
 # if you use batch size of 1 you are updating in real time
 # the learning rate will affect the convergence
 
-
+import os
 import torch
 import numpy as np
-from perceptronac.models import MLP_N_64N_32N_1, CABAC
+from perceptronac.models import MLP_N_64N_32N_1
 from perceptronac.utils import causal_context_many_imgs
 from perceptronac.perfect_AC import perfect_AC
 from perceptronac.models import Log2BCELoss, CausalContextDataset
-from perceptronac.utils import plot_comparison
-from perceptronac.utils import read_im2bw, save_values
+from perceptronac.loading_and_saving import plot_comparison
+from perceptronac.loading_and_saving import save_values
 from tqdm import tqdm
+
+
+def weights_init(m):
+    """
+    https://discuss.pytorch.org/t/how-to-fix-define-the-initialization-weights-seed/20156/2
+    https://discuss.pytorch.org/t/access-weights-of-a-specific-module-in-nn-sequential/3627
+    https://pytorch.org/docs/stable/nn.init.html
+    """
+    if isinstance(m, torch.nn.Linear):
+        torch.nn.init.constant_(m.weight.data,0)
+        torch.nn.init.constant_(m.bias.data,0)
 
 
 class RealTimeCABAC:
@@ -51,11 +62,13 @@ class RealTimeCABAC:
         pp[0,0] = c1 / (c1 + c0)
         return pp
 
-def backward_adaptive_coding(imgs,N,lr):
+def backward_adaptive_coding(pths,N,lr):
     
     device=torch.device("cuda:0")
+
+    trainset = CausalContextDataset(pths,"image",N)
+    y,X = trainset.y,trainset.X
     
-    y,X = causal_context_many_imgs(imgs, N)
     # y0 = y[y.reshape(-1)==0,:]
     # X0 = X[y.reshape(-1)==0,:]
     # y1 = y[y.reshape(-1)==1,:]
@@ -71,10 +84,21 @@ def backward_adaptive_coding(imgs,N,lr):
     #     y[2*i+1,:] = y1[i,:]
     #     X[2*i+1,:] = X1[i,:]
 
-    trainset = CausalContextDataset(X,y)
     dataloader = torch.utils.data.DataLoader(trainset,batch_size=1,shuffle=False,num_workers=1)
         
     model = MLP_N_64N_32N_1(N)
+    model.apply(weights_init)
+
+    for i in range(len(model.layers)):
+        if isinstance(model.layers[i], torch.nn.Linear):
+            weightvalue = set(model.layers[i].weight.detach().numpy().reshape(-1).tolist())
+            assert len(weightvalue) == 1
+            print(f"layer {i} weights properly initialized to {weightvalue}")
+            biasvalue = set(model.layers[i].bias.detach().numpy().reshape(-1).tolist())
+            assert len(biasvalue) == 1
+            print(f"layer {i} biases properly initialized to {biasvalue}")
+            
+
     model.to(device)
     model.train(True)
 
@@ -125,34 +149,54 @@ def backward_adaptive_coding(imgs,N,lr):
             
 
     data = {
-        "mlp": mlp_avg_code_length_history,
-        "cabac": cabac_avg_code_length_history
+        "MLPlr={:.0e}".format(lr): mlp_avg_code_length_history,
+        "LUT": cabac_avg_code_length_history
     }
     
     return data
 
 if __name__ == "__main__":
 
-    img = read_im2bw("/home/lucas/Desktop/computer_vision/3DCNN/perceptron_ac/images/ieee_tip2017_klt1024_3.png",0.4)
+    exp_name = "SPL2021_first_10_sorted_pages"
 
-    for lr in (3.162277659**np.array([-2,-3,-4,-5,-6,-7,-9,-10,-11,-12,-13,-14,-15,-16])):
+    pths = [os.path.join('SPL2021',f) for f in sorted(os.listdir('SPL2021'))[0:10]]
 
-        data = backward_adaptive_coding([img],26,lr)
+    learning_rates = (3.162277659**np.array([-2,-3,-4,-5,-6,-7,-8]))
+
+    data = dict()
+    for lr in learning_rates:
+        data["MLPlr={:.0e}".format(lr)] = np.zeros((1024*768))
+    data["LUT"] = np.zeros((1024*768))
+
+    for pth in pths:
+    
+        for lr in learning_rates:
+
+            partial_data = backward_adaptive_coding([pth],26,lr)
+            for k in partial_data.keys():
+                try:
+                    data[k] = data[k] + np.array(partial_data[k])
+                except Exception as e:
+                    print(data)
+                    raise e
+
+    for k in data.keys():
+        data[k] = data[k]/len(pths)
         
-        len_data = len(data['mlp'])
+    len_data = len(data['LUT'])
 
-        xvalues = np.arange( len_data )
+    xvalues = np.arange( len_data )
         
-        fig = plot_comparison(xvalues,data,"iter",
-            mlp_marker = "", static_marker = "", cabac_marker = "")
+    fig = plot_comparison(xvalues,data,"iteration",
+        linestyles=8*["solid"],colors=["g","b","r","c","m","y","k","0.75"],markers=8*[""])
 
-        xticks = np.round(np.linspace(0,len_data-1,5)).astype(int)
+    xticks = np.round(np.linspace(0,len_data-1,5)).astype(int)
 
-        fig.axes[0].set_xticks( xticks)
-        fig.axes[0].set_xticklabels( xticks)
+    fig.axes[0].set_xticks( xticks)
+    fig.axes[0].set_xticklabels( xticks)
 
-        fname = f"backward_adaptive_coding_lr_{lr}".replace(".","pt")
+    fname = f"backward_adaptive_coding_{exp_name}"
 
-        fig.savefig(fname+".png", dpi=300)
+    fig.savefig(fname+".png", dpi=300)
 
-        save_values(fname,xvalues,data,"iter")
+    save_values(fname,xvalues,data,"iteration")
