@@ -33,7 +33,7 @@ from tqdm import tqdm
 class RNG:
     """
     16 bit taps at [16,15,13,4] Fibonacci LFSR
-    
+
     https://stackoverflow.com/questions/7602919/how-do-i-generate-random-numbers-without-rand-function
     https://en.wikipedia.org/wiki/Linear-feedback_shift_register
     """
@@ -202,11 +202,11 @@ def backward_adaptive_coding(pths,N,lr):
 
 if __name__ == "__main__":
 
-    
+    exp_name = "SPL2021_first_10_sorted_pages"
 
-    pths = [os.path.join('SPL2021',f) for f in os.listdir('SPL2021')[0:1]]
-    exp_name = pths[0].split('/')[-1][:30]
-    learning_rates = [0.01]#(3.162277659**np.array([-2,-3,-4,-5,-6,-7,-8]))
+    pths = [os.path.join('SPL2021',f) for f in sorted(os.listdir('SPL2021'))[0:10]]
+    
+    learning_rates = (3.162277659**np.array([-2,-3,-4,-5,-6,-7,-8]))
 
     data = dict()
     for lr in learning_rates:
