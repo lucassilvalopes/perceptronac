@@ -18,6 +18,7 @@
 # the learning rate will affect the convergence
 
 import os
+import math
 import torch
 import numpy as np
 from perceptronac.models import MLP_N_64N_32N_1
@@ -29,15 +30,55 @@ from perceptronac.loading_and_saving import save_values
 from tqdm import tqdm
 
 
-def weights_init(m):
+class RNG:
+    """
+    16 bit taps at [16,15,13,4] Fibonacci LFSR
+    
+    https://stackoverflow.com/questions/7602919/how-do-i-generate-random-numbers-without-rand-function
+    https://en.wikipedia.org/wiki/Linear-feedback_shift_register
+    """
+
+    def __init__(self):
+        self.start_state = 1 << 15 | 1
+        self.lfsr = self.start_state
+
+    def rand(self):
+
+        #taps: 16 15 13 4; feedback polynomial: x^16 + x^15 + x^13 + x^4 + 1
+        bit = (self.lfsr ^ (self.lfsr >> 1) ^ (self.lfsr >> 3) ^ (self.lfsr >> 12)) & 1
+        self.lfsr = (self.lfsr >> 1) | (bit << 15)
+        output = self.lfsr / 65535.0
+        if (self.lfsr == self.start_state):
+            self.start_state = (self.start_state + 1) & 65535
+            self.lfsr = self.start_state
+        return output
+
+
+def rand_vec(rng,lb,ub,length):
+    vec = []
+    for _ in range(length):
+        vec.append((ub - lb) * rng.rand() + lb)
+    return vec
+
+
+def initialize_MLP_N_64N_32N_1(model):
     """
     https://discuss.pytorch.org/t/how-to-fix-define-the-initialization-weights-seed/20156/2
     https://discuss.pytorch.org/t/access-weights-of-a-specific-module-in-nn-sequential/3627
+    https://discuss.pytorch.org/t/how-are-layer-weights-and-biases-initialized-by-default/13073
+    https://adityassrana.github.io/blog/theory/2020/08/26/Weight-Init.html
     https://pytorch.org/docs/stable/nn.init.html
     """
-    if isinstance(m, torch.nn.Linear):
-        torch.nn.init.constant_(m.weight.data,0)
-        torch.nn.init.constant_(m.bias.data,0)
+    rng = RNG()
+    for i in range(len(model.layers)):
+        if isinstance(model.layers[i], torch.nn.Linear):
+            fan_in = model.layers[i].weight.size(1)
+            fan_out = model.layers[i].weight.size(0)
+            stdv = 1. / math.sqrt(fan_in)
+            with torch.no_grad():
+                model.layers[i].weight.data = \
+                    torch.tensor(rand_vec(rng,-stdv,stdv,fan_in*fan_out)).reshape(fan_out,fan_in)
+                model.layers[i].bias.data = torch.tensor(rand_vec(rng,-stdv,stdv,fan_out))
 
 
 class RealTimeCABAC:
@@ -87,16 +128,20 @@ def backward_adaptive_coding(pths,N,lr):
     dataloader = torch.utils.data.DataLoader(trainset,batch_size=1,shuffle=False,num_workers=1)
         
     model = MLP_N_64N_32N_1(N)
-    model.apply(weights_init)
+    initialize_MLP_N_64N_32N_1(model)
 
     for i in range(len(model.layers)):
         if isinstance(model.layers[i], torch.nn.Linear):
-            weightvalue = set(model.layers[i].weight.detach().numpy().reshape(-1).tolist())
-            assert len(weightvalue) == 1
-            print(f"layer {i} weights properly initialized to {weightvalue}")
-            biasvalue = set(model.layers[i].bias.detach().numpy().reshape(-1).tolist())
-            assert len(biasvalue) == 1
-            print(f"layer {i} biases properly initialized to {biasvalue}")
+            weightvalues = model.layers[i].weight.detach().numpy().reshape(-1).tolist()
+            w_avg = np.mean(weightvalues)
+            w_mn = np.min(weightvalues)
+            w_mx = np.max(weightvalues)
+            print(f"layer {i} weights mean {w_avg} min {w_mn} max {w_mx}")
+            biasvalues = model.layers[i].bias.detach().numpy().reshape(-1).tolist()
+            b_avg = np.mean(biasvalues)
+            b_mn = np.min(biasvalues)
+            b_mx = np.max(biasvalues)
+            print(f"layer {i} biases mean {b_avg} min {b_mn} max {b_mx}")
             
 
     model.to(device)
@@ -157,11 +202,11 @@ def backward_adaptive_coding(pths,N,lr):
 
 if __name__ == "__main__":
 
-    exp_name = "SPL2021_first_10_sorted_pages"
+    
 
-    pths = [os.path.join('SPL2021',f) for f in sorted(os.listdir('SPL2021'))[0:10]]
-
-    learning_rates = (3.162277659**np.array([-2,-3,-4,-5,-6,-7,-8]))
+    pths = [os.path.join('SPL2021',f) for f in os.listdir('SPL2021')[0:1]]
+    exp_name = pths[0].split('/')[-1][:30]
+    learning_rates = [0.01]#(3.162277659**np.array([-2,-3,-4,-5,-6,-7,-8]))
 
     data = dict()
     for lr in learning_rates:
@@ -173,12 +218,11 @@ if __name__ == "__main__":
         for lr in learning_rates:
 
             partial_data = backward_adaptive_coding([pth],26,lr)
-            for k in partial_data.keys():
-                try:
-                    data[k] = data[k] + np.array(partial_data[k])
-                except Exception as e:
-                    print(data)
-                    raise e
+            k = "MLPlr={:.0e}".format(lr)
+            data[k] = data[k] + np.array(partial_data[k])
+
+        data["LUT"] = data["LUT"] + np.array(partial_data["LUT"])
+
 
     for k in data.keys():
         data[k] = data[k]/len(pths)
@@ -199,4 +243,4 @@ if __name__ == "__main__":
 
     fig.savefig(fname+".png", dpi=300)
 
-    save_values(fname,xvalues,data,"iteration")
+    save_values(fname,[xvalues[-1]],{k:[v[-1]] for k,v in data.items()},"iteration")
