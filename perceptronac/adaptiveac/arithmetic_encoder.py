@@ -27,12 +27,13 @@ class ArithmeticEncoder:
         try:
             c = self.inputFile.inputBits(self.symbolSize)
             self.update(c, totals)
-            return 0
+            return c
         except EndOfBinaryFile:
-            self.update(self.nSymbols-1,totals) # termination symbol
+            c = self.nSymbols-1
+            self.update(c, totals) # termination symbol
             self.flush()
             self.outputFile.outputBits( 0, 16 ) # guarantees 16 bits for the decoder?
-            return 1
+            return c
 
     def update(self, c, totals):
         

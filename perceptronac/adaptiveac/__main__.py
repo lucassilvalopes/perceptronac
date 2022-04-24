@@ -30,9 +30,9 @@ def main():
 
     enc = ArithmeticEncoder(encoderInputFile, encoderOutputFile, nSymbols)
     
-    done = 0
-    while not done:
-        done = enc.do_one_step(totals)
+    symbol = 0
+    while not (symbol == 256):
+        symbol = enc.do_one_step(totals)
 
     print("Average Length: ")
     print("\n")
@@ -48,9 +48,9 @@ def main():
     decoderOutputFile = BitFile(decoderOutputFileName, "wb")
     dec = ArithmeticDecoder(decoderInputFile, decoderOutputFile, nSymbols)
 
-    done = 0
-    while not done:
-        done = dec.do_one_step(totals)
+    symbol = 0
+    while not (symbol == 256):
+        symbol = dec.do_one_step(totals)
 
 
 if __name__ == "__main__": 

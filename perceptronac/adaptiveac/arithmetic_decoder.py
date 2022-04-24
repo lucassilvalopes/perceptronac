@@ -30,11 +30,11 @@ class ArithmeticDecoder:
                 self.code = self.inputFile.inputBits(16)
             c = self.getSymbol(totals)
             if ( c == self.nSymbols-1 ):
-                return 1
+                return c
             else:
                 self.update(c, totals)
                 self.outputFile.outputBits(c, self.symbolSize)
-                return 0
+                return c
         except EndOfBinaryFile:
             raise CorruptedFile
 
