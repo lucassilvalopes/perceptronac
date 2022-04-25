@@ -14,20 +14,27 @@ from perceptronac.adaptiveac.exceptions import EndOfBinaryFile
 from perceptronac.coding3d import upsample_geometry
 
 
+def infinite_generator():
+    """https://stackoverflow.com/questions/45808140/using-tqdm-progress-bar-in-a-while-loop"""
+    while True:
+        yield
+
+
 def lexsort(V):
     return V[np.lexsort((V[:, 2], V[:, 1], V[:, 0]))]
 
 
 class MLP_N_64N_32N_1_PC_Coder:
 
-    def __init__(self,weights,context_size,last_octree_level,pc_path):
+    def __init__(self,weights,context_size,last_octree_level):
         self.weights = weights
         self.N = context_size
         self.last_level = last_octree_level
-        # TODO : remove the dependency of the decoder on the original pc
-        self.pc_path = pc_path
-        pc = c3d.read_PC(self.pc_path)[1]
-        self.X,self.y = self.X_y_from_pc_pyramid(self.pc_pyramid(pc))
+
+        self.data_to_encode = "data_to_encode.csv"
+        self.encoder_in = "encoder_in"
+        self.encoder_out = "encoder_out"
+        self.decoder_out = "decoder_out"
         
     def pc_pyramid(self,pc):
         pcs = [pc]
@@ -59,7 +66,7 @@ class MLP_N_64N_32N_1_PC_Coder:
 
         p = []
         v = []
-        for data in tqdm(dataloader):
+        for data in tqdm(dataloader, desc=f"writing {self.data_to_encode}"):
             X_b,y_b = data
             X_b = X_b.float() #.to(device)
             y_b = y_b.float() #.to(device)
@@ -70,98 +77,92 @@ class MLP_N_64N_32N_1_PC_Coder:
 
     def store_p_y(self,p,v):
         df = pd.DataFrame(data = np.vstack([p,v]).T,columns=['probability_of_1','bitstream'])
-        df.to_csv("data_to_encode.csv",index=False)
+        df.to_csv(self.data_to_encode,index=False)
 
     def load_p_y(self):
-        df = pd.read_csv("data_to_encode.csv")
+        df = pd.read_csv(self.data_to_encode)
         probability_of_1 = df['probability_of_1'].values.tolist()
         bitstream = df['bitstream'].values.tolist()
         return probability_of_1,bitstream
 
     def write_encoder_inpt_file(self,y):
-        print("writing encoder_in")
-        encoderInputFile = BitFile("encoder_in", "wb")
-        for y_b in y:
+        encoderInputFile = BitFile(self.encoder_in, "wb")
+        for y_b in tqdm(y, desc=f"writing {self.encoder_in}"):
             encoderInputFile.outputBit(int(y_b))
 
-    def batch_encode(self):
-        # TODO : make pc_path an input to this method instead of an attribute of the class 
-        # after removing the dependency of the decoder on the original pc
+    def batch_encode(self,pc_path):
 
         # TODO: remove attributes and create a file with only the geometry
 
-        p,v = self.p_y_from_X_y(self.X,self.y)
+        # TODO: generate the context only for the current sample in the encoder
+
+        # TODO : adapt the encoder loop to be similar to the decoder loop
+
+        pc = c3d.read_PC(pc_path)[1]
+
+        X,y = self.X_y_from_pc_pyramid(self.pc_pyramid(pc))
+
+        p,v = self.p_y_from_X_y(X,y)
 
         self.store_p_y(p,v)
         p,v = self.load_p_y()
 
         self.write_encoder_inpt_file(v)
 
-        self.encode(lambda x: x, p)
+        predictor = lambda x: x
+        context_generator = lambda pc,iteration : p[iteration,:]
+        update_pc = lambda pc,symbol,iteration: pc
 
-    def encode_realtime(self):
-        # TODO : make pc_path an input to this method instead of an attribute of the class 
-        # after removing the dependency of the decoder on the original pc
+        return self.encode(predictor,context_generator,update_pc)
 
-        # TODO: remove attributes and create a file with only the geometry
 
-        # TODO: generate the context for the current sample only in the encoder
+    def encode(self,predictor,context_generator,update_pc):
 
-        self.write_encoder_inpt_file(self.y.reshape(-1).tolist())
-
-        model = MLP_N_64N_32N_1(self.N)
-        model.load_state_dict(torch.load(self.weights))
-        model.train(False)
-
-        dset = torch.utils.data.TensorDataset(torch.tensor(self.X))
-        contextloader = torch.utils.data.DataLoader(dset,batch_size=1,shuffle=False)
-
-        self.encode(lambda X_b: model(X_b.float()).item(), contextloader)
-
-    def encode(self,predictor,contextloader):
-
-        encoderInputFile = BitFile("encoder_in", "rb")
-        encoderOutputFile = BitFile("encoder_out", "wb")
+        encoderInputFile = BitFile(self.encoder_in, "rb")
+        encoderOutputFile = BitFile(self.encoder_out, "wb")
         enc = ArithmeticEncoder(encoderInputFile, encoderOutputFile, 3, 1)
 
-        # TODO : adapt this loop to be similar to the decoder loop
-
-        print("writing encoder_out")
-        for context in tqdm(contextloader):
-            p = predictor(context)
+        pc = []
+        iteration = 0
+        for _ in tqdm(infinite_generator(),desc=f"writing {self.encoder_out}"):
+            p = predictor( context_generator(pc,iteration) )
             counts = [
                 max(1,int(16000*(1-p))),
                 max(1,int(16000*p)),
                 1
             ]
             _,totals =defineIntervals(counts)
-            done = enc.do_one_step(totals)
-            assert done == 0
-        
-        _,totals =defineIntervals(counts)
-        done = enc.do_one_step(totals)
-        assert done == 1
+            symbol = enc.do_one_step(totals)
+            if symbol == 2:
+                break
+            pc = update_pc(pc,symbol,iteration)
+            iteration += 1
+
+        return self.encoder_out
 
 
     def batch_decode(self):
 
+        # TODO : make the decoder construct the context and predict the probability from it
+        # removing the dependency on the "data_to_encode.csv" file.
+
+        p,_ = self.load_p_y()
         predictor = lambda x: x
-        context_generator = lambda pc,iteration : self.y[iteration,:]
-        update_pc = lambda pc,symbol: pc
-        self.decode(predictor,context_generator,update_pc)
-        self.batch_reconstruct()
+        context_generator = lambda pc,iteration : p[iteration,:]
+        update_pc = lambda pc,symbol,iteration: pc
+        _ = self.decode(predictor,context_generator,update_pc)
+        return self.batch_reconstruct()
 
 
     def decode(self,predictor,context_generator,update_pc):
 
-        decoderInputFile = BitFile("encoder_out", "rb")
-        decoderOutputFile = BitFile("decoder_out", "wb")
+        decoderInputFile = BitFile(self.encoder_out, "rb")
+        decoderOutputFile = BitFile(self.decoder_out, "wb")
         dec = ArithmeticDecoder(decoderInputFile, decoderOutputFile, 3, 1)
 
-        print("writing decoder_out")
         pc = []
         iteration = 0
-        while not (symbol == 2):
+        for _ in tqdm(infinite_generator(),desc=f"writing {self.decoder_out}"):
             p = predictor( context_generator(pc,iteration) )
             counts = [
                 max(1,int(16000*(1-p))),
@@ -170,7 +171,9 @@ class MLP_N_64N_32N_1_PC_Coder:
             ]
             _,totals =defineIntervals(counts)
             symbol = dec.do_one_step(totals)
-            pc = update_pc(pc, symbol)
+            if symbol == 2:
+                break
+            pc = update_pc(pc,symbol,iteration)
             iteration += 1
 
         return pc
@@ -178,7 +181,7 @@ class MLP_N_64N_32N_1_PC_Coder:
 
     def batch_reconstruct(self):
 
-        decoderOutputFile = BitFile("decoder_out", "rb")
+        decoderOutputFile = BitFile(self.decoder_out, "rb")
         decoderOutputFile.reset()
 
         last_level = 10
@@ -197,16 +200,18 @@ class MLP_N_64N_32N_1_PC_Coder:
             V_d = np.delete(V_d,is_to_delete,axis=0)
             print(f"level {level} len : {len(V_d)}")
 
-        pc = c3d.read_PC(self.pc_path)[1]
-        assert np.allclose(lexsort(pc),lexsort(V_d))
+        return V_d
 
 
 if __name__ == "__main__":
 
-    weights = "/home/lucaslopes/results/exp_1650138239/exp_1650138239_026_model.pt"
-    context_size = 26
+    weights = "/home/lucaslopes/results/exp_1649253745/exp_1649253745_047_model.pt"
+    context_size = 47
     last_octree_level = 10
-    pc_path = "/home/lucaslopes/longdress/longdress_vox10_1300.ply"
-    coder = MLP_N_64N_32N_1_PC_Coder(weights,context_size,last_octree_level,pc_path)
-    coder.batch_encode()
-    coder.batch_decode()
+    pc_path = "/home/lucaslopes/longdress/longdress_vox10_1051.ply"
+    coder = MLP_N_64N_32N_1_PC_Coder(weights,context_size,last_octree_level)
+    encoder_output_path = coder.batch_encode(pc_path)
+    recovered_pc = coder.batch_decode(encoder_output_path)
+
+    pc = c3d.read_PC(pc_path)[1]
+    assert np.allclose(lexsort(pc),lexsort(recovered_pc))

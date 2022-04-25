@@ -94,22 +94,22 @@ if __name__ == "__main__":
 
     ################ WRITING PROBABILITIES AND DATA ##################
 
-    # print("writing data_to_encode.csv")
-    # p = []
-    # v = []
-    # for data in tqdm(dataloader):
-    #     X_b,y_b = data
-    #     X_b = X_b.float() #.to(device)
-    #     y_b = y_b.float() #.to(device)
-    #     outputs = model(X_b)
-    #     p.append(outputs.item())
-    #     v.append(y_b.item())
+    print("writing data_to_encode.csv")
+    p = []
+    v = []
+    for data in tqdm(dataloader):
+        X_b,y_b = data
+        X_b = X_b.float() #.to(device)
+        y_b = y_b.float() #.to(device)
+        outputs = model(X_b)
+        p.append(outputs.item())
+        v.append(y_b.item())
 
-    # assert np.allclose(
-    #     np.array(v).reshape(-1).astype(int),y.reshape(-1).astype(int))
+    assert np.allclose(
+        np.array(v).reshape(-1).astype(int),y.reshape(-1).astype(int))
 
-    # df = pd.DataFrame(data = np.vstack([p,v]).T,columns=['probability_of_1','bitstream'])
-    # df.to_csv("data_to_encode.csv",index=False)
+    df = pd.DataFrame(data = np.vstack([p,v]).T,columns=['probability_of_1','bitstream'])
+    df.to_csv("data_to_encode.csv",index=False)
 
     ################# READING PROBABILITIES AND DATA ##################
 
@@ -120,11 +120,11 @@ if __name__ == "__main__":
 
     ################### WRITING ENCODER INPUT FILE ####################
 
-    # print("writing encoder_in")
-    # encoderInputFile = BitFile("encoder_in", "wb")
-    # for data in tqdm(dataloader):
-    #     X_b,y_b = data
-    #     encoderInputFile.outputBit(int(y_b.item()))
+    print("writing encoder_in")
+    encoderInputFile = BitFile("encoder_in", "wb")
+    for data in tqdm(dataloader):
+        X_b,y_b = data
+        encoderInputFile.outputBit(int(y_b.item()))
     
     ########### ENCODER INPUT FILE TO ENCODER OUTPUT FILE ##############
 
