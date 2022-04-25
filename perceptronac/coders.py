@@ -21,11 +21,11 @@ def lexsort(V):
 
 class MLP_N_64N_32N_1_PC_Coder:
 
-    def __init__(self,weights,context_size,last_octree_level,export_p_y = False):
+    def __init__(self,weights,context_size,last_octree_level,mode = ""):
         self.weights = weights
         self.N = context_size
         self.last_level = last_octree_level
-        self.export_p_y = export_p_y
+        self.mode = mode # "cache", "export", "" 
 
         self.data_to_encode = "data_to_encode.csv"
         self.encoder_in = "encoder_in"
@@ -52,6 +52,8 @@ class MLP_N_64N_32N_1_PC_Coder:
         return X,y
 
     def _p_y_from_X_y(self,X,y):
+        if (self.mode == "cache"):
+            return [],[]
 
         model = MLP_N_64N_32N_1(self.N)
         model.load_state_dict(torch.load(self.weights))
@@ -76,15 +78,17 @@ class MLP_N_64N_32N_1_PC_Coder:
         return p,v
 
     def _store_p_y(self,p,v):
-        if self.export_p_y:
+        if (self.mode == "export"):
             df = pd.DataFrame(data = np.vstack([p,v]).T,columns=['probability_of_1','bitstream'])
             df.to_csv(self.data_to_encode,index=False)
+        elif (self.mode == "cache"):
+            pass
         else:
             self.probability_of_1 = p
             self.bitstream = v
 
     def _load_p_y(self):
-        if self.export_p_y:
+        if (self.mode == "export") or (self.mode == "cache"):
             df = pd.read_csv(self.data_to_encode)
             probability_of_1 = df['probability_of_1'].values.tolist()
             bitstream = df['bitstream'].values.tolist()
@@ -212,7 +216,7 @@ if __name__ == "__main__":
     context_size = 47
     last_octree_level = 10
     pc_path = "/home/lucaslopes/longdress/longdress_vox10_1051.ply"
-    coder = MLP_N_64N_32N_1_PC_Coder(weights,context_size,last_octree_level)
+    coder = MLP_N_64N_32N_1_PC_Coder(weights,context_size,last_octree_level,mode = "cache")
     encoder_output_path = coder.encode(pc_path)
     recovered_pc = coder.decode(encoder_output_path)
 
