@@ -1,5 +1,6 @@
 import torch
 import numpy as np
+import math
 import itertools
 from perceptronac.models import MLP_N_64N_32N_1, CausalContextDataset
 import perceptronac.coding3d as c3d
@@ -139,8 +140,8 @@ class MLP_N_64N_32N_1_PC_Coder:
         for context in tqdm(contextloader,desc=f"writing {self.encoder_out}"):
             p = predictor(context)
             counts = [
-                max(1,int(16000*(1-p))),
-                max(1,int(16000*p)),
+                max(1,math.floor(16000*(1-p))),
+                max(1,math.ceil(16000*p)),
                 1
             ]
             _,totals =defineIntervals(counts)
@@ -165,7 +166,7 @@ class MLP_N_64N_32N_1_PC_Coder:
 
         p,_ = self._load_p_y()
         predictor = lambda x: x
-        context_generator = lambda pc,iteration : p[iteration,:]
+        context_generator = lambda pc,iteration : (p[iteration] if iteration < len(p) else p[-1])
         update_pc = lambda pc,symbol,iteration: pc
         _ = self._decode(predictor,context_generator,update_pc)
         return self._batch_reconstruct()
@@ -184,8 +185,8 @@ class MLP_N_64N_32N_1_PC_Coder:
         for iteration in tqdm(itertools.count(),desc=f"writing {self.decoder_out}"):
             p = predictor( context_generator(pc,iteration) )
             counts = [
-                max(1,int(16000*(1-p))),
-                max(1,int(16000*p)),
+                max(1,math.floor(16000*(1-p))),
+                max(1,math.ceil(16000*p)),
                 1
             ]
             _,totals =defineIntervals(counts)
