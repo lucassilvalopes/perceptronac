@@ -1,5 +1,6 @@
 import torch
 import numpy as np
+import itertools
 from perceptronac.models import MLP_N_64N_32N_1, CausalContextDataset
 import perceptronac.coding3d as c3d
 from perceptronac.utils import causal_context_many_pcs
@@ -14,22 +15,17 @@ from perceptronac.adaptiveac.exceptions import EndOfBinaryFile
 from perceptronac.coding3d import upsample_geometry
 
 
-def infinite_generator():
-    """https://stackoverflow.com/questions/45808140/using-tqdm-progress-bar-in-a-while-loop"""
-    while True:
-        yield
-
-
 def lexsort(V):
     return V[np.lexsort((V[:, 2], V[:, 1], V[:, 0]))]
 
 
 class MLP_N_64N_32N_1_PC_Coder:
 
-    def __init__(self,weights,context_size,last_octree_level):
+    def __init__(self,weights,context_size,last_octree_level,export_p_y = False):
         self.weights = weights
         self.N = context_size
         self.last_level = last_octree_level
+        self.export_p_y = export_p_y
 
         self.data_to_encode = "data_to_encode.csv"
         self.encoder_in = "encoder_in"
@@ -80,17 +76,21 @@ class MLP_N_64N_32N_1_PC_Coder:
         return p,v
 
     def _store_p_y(self,p,v):
-        # df = pd.DataFrame(data = np.vstack([p,v]).T,columns=['probability_of_1','bitstream'])
-        # df.to_csv(self.data_to_encode,index=False)
-        self.probability_of_1 = p
-        self.bitstream = v
+        if self.export_p_y:
+            df = pd.DataFrame(data = np.vstack([p,v]).T,columns=['probability_of_1','bitstream'])
+            df.to_csv(self.data_to_encode,index=False)
+        else:
+            self.probability_of_1 = p
+            self.bitstream = v
 
     def _load_p_y(self):
-        # df = pd.read_csv(self.data_to_encode)
-        # probability_of_1 = df['probability_of_1'].values.tolist()
-        # bitstream = df['bitstream'].values.tolist()
-        # return probability_of_1,bitstream
-        return self.probability_of_1,self.bitstream
+        if self.export_p_y:
+            df = pd.read_csv(self.data_to_encode)
+            probability_of_1 = df['probability_of_1'].values.tolist()
+            bitstream = df['bitstream'].values.tolist()
+            return probability_of_1,bitstream
+        else:
+            return self.probability_of_1,self.bitstream
 
     def _write_encoder_inpt_file(self,y):
         encoderInputFile = BitFile(self.encoder_in, "wb")
@@ -142,7 +142,7 @@ class MLP_N_64N_32N_1_PC_Coder:
 
     def decode(self):
 
-        # TODO : make the decoder construct the context and predict the probability from it
+        # TODO : make the decoder reconstruct the point cloud and predict the probabilitis from it 
         # in real time, removing the dependency on the vector of probabilities.
 
         # TODO : store the result in a file instead of returning the reconstructed point cloud
@@ -157,14 +157,16 @@ class MLP_N_64N_32N_1_PC_Coder:
 
 
     def _decode(self,predictor,context_generator,update_pc):
-
+        """
+        https://stackoverflow.com/questions/45808140/using-tqdm-progress-bar-in-a-while-loop
+        https://stackoverflow.com/questions/5737196/is-there-an-expression-for-an-infinite-iterator
+        """
         decoderInputFile = BitFile(self.encoder_out, "rb")
         decoderOutputFile = BitFile(self.decoder_out, "wb")
         dec = ArithmeticDecoder(decoderInputFile, decoderOutputFile, 3, 1)
 
         pc = []
-        iteration = 0
-        for _ in tqdm(infinite_generator(),desc=f"writing {self.decoder_out}"):
+        for iteration in tqdm(itertools.count(),desc=f"writing {self.decoder_out}"):
             p = predictor( context_generator(pc,iteration) )
             counts = [
                 max(1,int(16000*(1-p))),
@@ -176,7 +178,6 @@ class MLP_N_64N_32N_1_PC_Coder:
             if symbol == 2:
                 break
             pc = update_pc(pc,symbol,iteration)
-            iteration += 1
 
         return pc
 
