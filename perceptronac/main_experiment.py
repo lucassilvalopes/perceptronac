@@ -239,6 +239,46 @@ class RatesMLP:
             save_model(f"{get_prefix(self.configs)}_{N:03d}_model",mlp_model)
 
 
+def train_loop(configs,datatraining,datacoding,N):
+    
+    trainset = CausalContextDataset(
+        datatraining,configs["data_type"],N, configs["percentage_of_uncles"])
+    validset = CausalContextDataset(
+        datacoding,configs["data_type"],N, configs["percentage_of_uncles"])
+
+    if N == 0:
+        rates_static_t,rates_static_c = RatesStaticAC(configs).get_rates(trainset,validset)
+    else:
+        rates_cabac_t,rates_cabac_c = RatesCABAC(configs).get_rates(trainset,validset)        
+        rates_mlp_t,rates_mlp_c = RatesMLP(configs).get_rates(trainset,validset)
+        if (configs["data_type"] == "image"):
+            rates_jbig1_t,rates_jbig1_c = RatesJBIG1(configs).get_rates(trainset,validset)
+
+    phases=configs["phases"]
+    epochs=configs["epochs"]
+
+    data = dict()
+    for phase in phases:
+        data[phase] = dict()
+
+    if N == 0:
+        
+        for phase in phases:
+            data[phase]["MLP"] = rates_static_t if phase == 'train' else rates_static_c
+            data[phase]["LUT"] = rates_static_t if phase == 'train' else rates_static_c
+            if configs["data_type"] == "image":
+                data[phase]["JBIG1"] = epochs*[-1]
+
+    else:
+
+        for phase in phases:
+            data[phase]["MLP"] = rates_mlp_t if phase == 'train' else rates_mlp_c
+            data[phase]["LUT"] = rates_cabac_t if phase == 'train' else rates_cabac_c
+            if configs["data_type"] == "image":
+                data[phase]["JBIG1"] = rates_jbig1_t if phase == 'train' else rates_jbig1_c
+    
+    return data
+
 
 def save_N_data(configs,N,N_data):
     
@@ -267,47 +307,6 @@ def save_final_data(configs,data):
         save_values(f"{get_prefix(configs)}_{phase}_values",xvalues,data[phase],xlabel)
 
 
-def train_loop(configs,datatraining,datacoding,N):
-    
-    trainset = CausalContextDataset(
-        datatraining,configs["data_type"],N, configs["percentage_of_uncles"])
-    validset = CausalContextDataset(
-        datacoding,configs["data_type"],N, configs["percentage_of_uncles"])
-
-    if N == 0:
-        rate_static_t,rate_static_c = RatesStaticAC(configs).get_rates(trainset,validset)
-    else:
-        rate_cabac_t,rate_cabac_c = RatesCABAC(configs).get_rates(trainset,validset)        
-        train_loss, valid_loss = RatesMLP(configs).get_rates(trainset,validset)
-        if (configs["data_type"] == "image"):
-            rate_jbig1_t,rate_jbig1_c = RatesJBIG1(configs).get_rates(trainset,validset)
-
-    phases=configs["phases"]
-    epochs=configs["epochs"]
-
-    data = dict()
-    for phase in phases:
-        data[phase] = dict()
-
-    if N == 0:
-        
-        for phase in phases:
-            data[phase]["MLP"] = epochs*[rate_static_t] if phase == 'train' else epochs*[rate_static_c]
-            data[phase]["LUT"] = epochs*[rate_static_t] if phase == 'train' else epochs*[rate_static_c]
-            if configs["data_type"] == "image":
-                data[phase]["JBIG1"] = epochs*[-1]
-
-    else:
-
-        for phase in phases:
-            data[phase]["MLP"] = train_loss if phase == 'train' else valid_loss
-            data[phase]["LUT"] = epochs*[rate_cabac_t] if phase == 'train' else epochs*[rate_cabac_c]
-            if configs["data_type"] == "image":
-                data[phase]["JBIG1"] = epochs*[rate_jbig1_t] if phase == 'train' else epochs*[rate_jbig1_c]
-    
-    return data
-
-
 def experiment(configs):
 
     os.makedirs(f"{configs['save_dir'].rstrip('/')}/exp_{configs['id']}")
@@ -319,7 +318,9 @@ def experiment(configs):
     for N in configs["N_vec"]:
         print(f"--------------------- context size : {N} ---------------------")    
         N_data = train_loop(
-            configs=configs,
+            configs={
+                k:([ph for ph in v if ph != "coding"] if v == 'phases' else v) for k,v in configs.items()
+            },
             datatraining=configs["training_set"],
             datacoding=configs["validation_set"],
             N=N
