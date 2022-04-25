@@ -2,18 +2,16 @@
 import torch
 import time
 import os
-from perceptronac.loading_and_saving import save_N_data
-from perceptronac.loading_and_saving import save_final_data
 from perceptronac.models import MLP_N_64N_32N_1
-from perceptronac.models import train_loop
-from perceptronac.coders import MLP_N_64N_32N_1_PC_Coder
+from perceptronac.coders import PC_Coder
+from perceptronac.main_experiment import experiment
 
 if __name__ == "__main__":
 
     configs = {
         "id": str(int(time.time())),
         "ModelClass":MLP_N_64N_32N_1,
-        "CoderClass":MLP_N_64N_32N_1_PC_Coder,
+        "CoderClass":PC_Coder,
         "OptimizerClass":torch.optim.SGD,
         "training_set": [
             os.path.join('SPL2020',f) for f in os.listdir('SPL2020')[0:1]
@@ -36,27 +34,5 @@ if __name__ == "__main__":
         "save_dir": "results"
     }
 
-    os.makedirs(f"{configs['save_dir'].rstrip('/')}/exp_{configs['id']}")
+    experiment(configs)
 
-    data = dict()
-    for phase in configs["phases"]:
-        data[phase] = dict()
-
-    for N in configs["N_vec"]:
-        print(f"--------------------- context size : {N} ---------------------")    
-        N_data = train_loop(
-            configs=configs,
-            datatraining=configs["training_set"],
-            datacoding=configs["validation_set"],
-            N=N
-        )
-        
-        save_N_data(configs,N,N_data)
-
-        for phase in [ph for ph in configs["phases"] if ph != "coding"]:
-            for k in N_data[phase].keys():
-                v = min(N_data[phase][k]) if (configs['reduction'] == 'min') else N_data[phase][k][-1]
-                data[phase][k] = (data[phase][k] + [v]) if (k in data[phase].keys()) else [v]
-
-        
-    save_final_data(configs,data)
