@@ -223,6 +223,9 @@ class MLP_N_64N_32N_1_PC_Coder:
         return V_d
 
 
+def get_bpov(compressed_file,pc_len):
+    return (os.path.getsize(compressed_file) * 8) / pc_len
+
 if __name__ == "__main__":
 
     weights = "/home/lucaslopes/results/exp_1649253745/exp_1649253745_047_model.pt"
@@ -262,3 +265,4 @@ if __name__ == "__main__":
     recovered_pc = c3d.read_PC(pc_out)[1]
     assert np.allclose(lexsort(pc),lexsort(recovered_pc))
     print("\npoint cloud successfully reconstructed")
+    print(f"bpov : {get_bpov(encoder_output_path,len(pc))}")
