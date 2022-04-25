@@ -118,43 +118,62 @@ class CausalContextDataset(torch.utils.data.Dataset):
 
 
 class StaticAC:
-    def fit(self,y):
-        self.p = np.sum(y==1)/len(y)
-    def predict(self,y):
-        return self.p * np.ones(y.shape)
+    def __init__(self,y):
+        self.p = float(np.sum(y==1)/len(y))
+    def __call__(self,X):
+        return self.forward(X)
+    def forward(self,X):
+        if isinstance(X,torch.Tensor):
+            return self.p * torch.ones((X.shape[0],1),device=X.device)
+        else:
+            return self.p * np.ones((X.shape[0],1))
+
+
+class CABAC:
+    def __init__(self,X,y,max_context):
+        self.context_p = context_training(X,y,max_context)
+    def __call__(self, X):
+        return self.forward(X)
+    def forward(self, X):
+        if isinstance(X,torch.Tensor):
+            device = X.device
+            X = X.cpu().detach().numpy()
+            pp = context_coding(X,self.context_p)
+            return torch.tensor(pp,device=device)
+        else:
+            return context_coding(X,self.context_p)
+
+
+class RatesStaticAC:
     def get_rates(self,trainset,validset):
-        yt = trainset.y
-        yc = validset.y
-        self.fit(yt)
-        static_pred_t = self.predict(yt)
-        static_pred_c = self.predict(yc)
+        Xt,yt = trainset.X,trainset.y
+        Xc,yc = validset.X,validset.y
+        staticac = StaticAC(yt)
+        static_pred_t = staticac(Xt)
+        static_pred_c = staticac(Xc)
         rate_static_t = perfect_AC(yt,static_pred_t)
         rate_static_c = perfect_AC(yc,static_pred_c)
         return rate_static_t,rate_static_c
 
 
-class CABAC:
+class RatesCABAC:
     def __init__(self,max_context = 27):
         self.max_context = max_context
-    def fit(self,X,y):
-        self.context_p = context_training(X,y,self.max_context)
-    def predict(self,X,y):
-        return context_coding(X,y,self.context_p)
     def get_rates(self,trainset,validset):
         if (trainset.N > self.max_context):
             return -1, -1
         Xt,yt = trainset.X,trainset.y
         Xc,yc = validset.X,validset.y
-        self.fit(Xt,yt)
-        cabac_pred_t = self.predict(Xt,yt)
-        cabac_pred_c = self.predict(Xc,yc)
+        cabac = CABAC(Xt,yt,self.max_context)
+        cabac_pred_t = cabac(Xt)
+        cabac_pred_c = cabac(Xc)
         rate_cabac_t = perfect_AC(yt,cabac_pred_t)
         rate_cabac_c = perfect_AC(yc,cabac_pred_c)
         return rate_cabac_t,rate_cabac_c
 
 
-class JBIG1:
-    def predict(self,pths):
+class RatesJBIG1:
+    def avg_rate(self,pths):
         """
         make sure all images in pths have the same size
         """
@@ -168,12 +187,12 @@ class JBIG1:
             return -1, -1
         datatraining = trainset.pths
         datacoding = validset.pths
-        rate_jbig1_t = self.predict(datatraining)
-        rate_jbig1_c = self.predict(datacoding)
+        rate_jbig1_t = self.avg_rate(datatraining)
+        rate_jbig1_c = self.avg_rate(datacoding)
         return rate_jbig1_t,rate_jbig1_c        
 
 
-class MLP:
+class RatesMLP:
 
     def __init__(self,configs):
         self.configs = configs
@@ -259,12 +278,12 @@ def train_loop(configs,datatraining,datacoding,N):
         datacoding,configs["data_type"],N, configs["percentage_of_uncles"])
 
     if N == 0:
-        rate_static_t,rate_static_c = StaticAC().get_rates(trainset,validset)
+        rate_static_t,rate_static_c = RatesStaticAC().get_rates(trainset,validset)
     else:
-        rate_cabac_t,rate_cabac_c = CABAC().get_rates(trainset,validset)        
-        train_loss, valid_loss = MLP(configs).get_rates(trainset,validset)
+        rate_cabac_t,rate_cabac_c = RatesCABAC().get_rates(trainset,validset)        
+        train_loss, valid_loss = RatesMLP(configs).get_rates(trainset,validset)
         if (configs["data_type"] == "image"):
-            rate_jbig1_t,rate_jbig1_c = JBIG1().get_rates(trainset,validset)
+            rate_jbig1_t,rate_jbig1_c = RatesJBIG1().get_rates(trainset,validset)
 
     phases=configs["phases"]
     epochs=configs["epochs"]

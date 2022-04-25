@@ -12,13 +12,13 @@
 
 import numpy as np
 
-def context_coding(X, y, context_p):
+def context_coding(X, context_p):
     L,N = X.shape
     X = (X > 0).astype(int)
     po2 = 2 ** np.arange(0,N).reshape(-1,1)
     context = X @ po2
 
-    pp = np.zeros(y.shape) 
+    pp = np.zeros((L,1)) 
     for k in range(L):
         pp[k,0] = context_p[context[k,0],0]
     # r = perfect_AC(y, pp)

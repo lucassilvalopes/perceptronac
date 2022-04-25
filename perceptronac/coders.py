@@ -20,11 +20,22 @@ from perceptronac.coding3d import upsample_geometry
 def lexsort(V):
     return V[np.lexsort((V[:, 2], V[:, 1], V[:, 0]))]
 
+class MLP_N_64N_32N_1_Constructor:
 
-class MLP_N_64N_32N_1_PC_Coder:
+    def __init__(self,N,weights):
+        self.N = N
+        self.weights = weights
 
-    def __init__(self,weights,context_size,last_octree_level):
-        self._weights = weights
+    def construct(self):
+        model = MLP_N_64N_32N_1(self.N)
+        model.load_state_dict(torch.load(self.weights))
+        model.train(False)
+        return model
+
+class PC_Coder:
+
+    def __init__(self,model_constructor,context_size,last_octree_level):
+        self._model_constructor = model_constructor
         self._N = context_size
         self._last_level = last_octree_level
         self._use_cache = False
@@ -61,9 +72,7 @@ class MLP_N_64N_32N_1_PC_Coder:
 
     def _p_y_from_X_y(self,X,y):
 
-        model = MLP_N_64N_32N_1(self._N)
-        model.load_state_dict(torch.load(self._weights))
-        model.train(False)
+        model = self._model_constructor()
 
         dset = torch.utils.data.TensorDataset(torch.tensor(X),torch.tensor(y))
         dataloader = torch.utils.data.DataLoader(dset,batch_size=1,shuffle=False)
@@ -235,7 +244,8 @@ if __name__ == "__main__":
     pc_in = pc_path.replace(".ply","_geo.ply")
     c3d.write_PC(pc_in,c3d.read_PC(pc_path)[1])
     pc_out= pc_in.replace(".ply","_rec.ply")
-    cache = "data_to_encode.csv" # None
+    cache =  None # "data_to_encode.csv"
+    cache_enabled = False
     encoder_input_path = "encoder_in"
     encoder_output_path = "encoder_out"
     decoder_output_path = "decoder_out"
@@ -249,6 +259,7 @@ if __name__ == "__main__":
         pc_in: {pc_in}
         pc_out: {pc_out}
         cache: {cache}
+        cache_enabled: {cache_enabled}
         encoder_in: {encoder_input_path}
         encoder_out: {encoder_output_path}
         decoder_in: {encoder_output_path}
@@ -256,8 +267,11 @@ if __name__ == "__main__":
         """, flush=True
     )
 
-    coder = MLP_N_64N_32N_1_PC_Coder(weights,context_size,last_octree_level)
-    coder.enable_cache(cache)
+    constructor = MLP_N_64N_32N_1_Constructor(context_size,weights)
+    coder = PC_Coder(constructor.construct,context_size,last_octree_level)
+    if cache_enabled:
+        print("enabling cache")
+        coder.enable_cache(cache)
     coder.encode(pc_in,encoder_in=encoder_input_path,encoder_out=encoder_output_path)
     coder.decode(pc_out,decoder_in=encoder_output_path,decoder_out=decoder_output_path)
 
