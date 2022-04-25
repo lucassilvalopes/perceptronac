@@ -2,6 +2,7 @@ import torch
 import numpy as np
 import math
 import itertools
+import os
 from perceptronac.models import MLP_N_64N_32N_1, CausalContextDataset
 import perceptronac.coding3d as c3d
 from perceptronac.utils import causal_context_many_pcs
@@ -22,21 +23,26 @@ def lexsort(V):
 
 class MLP_N_64N_32N_1_PC_Coder:
 
-    def __init__(self,weights,context_size,last_octree_level,mode = ""):
-        self.weights = weights
-        self.N = context_size
-        self.last_level = last_octree_level
-        self.mode = mode # "cache", "export", "" 
+    def __init__(self,weights,context_size,last_octree_level):
+        self._weights = weights
+        self._N = context_size
+        self._last_level = last_octree_level
+        self._use_cache = False
+        self._cache_path = None
 
-        self.data_to_encode = "data_to_encode.csv"
-        # self.encoder_in = "encoder_in"
-        # self.encoder_out = "encoder_out"
-        # self.decoder_in = "encoder_out"
-        # self.decoder_out = "decoder_out"
+    def enable_cache(self,cache_path = None):
+        self._use_cache = True
+        self._cache_path = cache_path
+
+    def _setup_cache(self,pc_in):
+        if self._use_cache and (self._cache_path is None):
+            pc_id = os.path.splitext(os.path.basename(pc_in))[0]
+            class_id = self.__class__.__name__
+            self._cache_path = f"{class_id}_{pc_id}_cache"
         
     def _pc_pyramid(self,pc):
         pcs = [pc]
-        for _ in range(self.last_level-1,0,-1):
+        for _ in range(self._last_level-1,0,-1):
             pc = np.unique(np.floor(pc / 2),axis=0)
             pcs.append(pc)
         pcs = pcs[::-1]
@@ -46,7 +52,7 @@ class MLP_N_64N_32N_1_PC_Coder:
         y = []
         X = []
         for pc in pcs:
-            _,partial_X,partial_y,_,_ = c3d.pc_causal_context(pc, self.N, 0)
+            _,partial_X,partial_y,_,_ = c3d.pc_causal_context(pc, self._N, 0)
             y.append(np.expand_dims(partial_y.astype(int),1) )
             X.append(partial_X.astype(int))
         y = np.vstack(y)
@@ -55,8 +61,8 @@ class MLP_N_64N_32N_1_PC_Coder:
 
     def _p_y_from_X_y(self,X,y):
 
-        model = MLP_N_64N_32N_1(self.N)
-        model.load_state_dict(torch.load(self.weights))
+        model = MLP_N_64N_32N_1(self._N)
+        model.load_state_dict(torch.load(self._weights))
         model.train(False)
 
         dset = torch.utils.data.TensorDataset(torch.tensor(X),torch.tensor(y))
@@ -64,7 +70,7 @@ class MLP_N_64N_32N_1_PC_Coder:
 
         p = []
         v = []
-        for data in tqdm(dataloader, desc=f"writing {self.data_to_encode}"):
+        for data in tqdm(dataloader, desc=f"writing {self._cache_path}"):
             X_b,y_b = data
             X_b = X_b.float() #.to(device)
             y_b = y_b.float() #.to(device)
@@ -78,7 +84,7 @@ class MLP_N_64N_32N_1_PC_Coder:
         return p,v
 
     def _data_to_encode(self,pc):
-        if (self.mode == "cache"):
+        if self._use_cache and os.path.isfile(self._cache_path):
             return [],[]
         X,y = self._X_y_from_pc_pyramid(self._pc_pyramid(pc))
         p,v = self._p_y_from_X_y(X,y)
@@ -86,36 +92,35 @@ class MLP_N_64N_32N_1_PC_Coder:
         return p,v
 
     def _store_p_y(self,p,v):
-        if (self.mode == "export"):
-            df = pd.DataFrame(data = np.vstack([p,v]).T,columns=['probability_of_1','bitstream'])
-            df.to_csv(self.data_to_encode,index=False)
-        elif (self.mode == "cache"):
+        if self._use_cache and os.path.isfile(self._cache_path):
             pass
+        elif self._use_cache and not os.path.isfile(self._cache_path):
+            df = pd.DataFrame(data = np.vstack([p,v]).T,columns=['probability_of_1','bitstream'])
+            df.to_csv(self._cache_path,index=False)
         else:
-            self.probability_of_1 = p
-            self.bitstream = v
+            self._probability_of_1 = p
+            self._bitstream = v
 
     def _load_p_y(self):
-        if (self.mode == "export") or (self.mode == "cache"):
-            df = pd.read_csv(self.data_to_encode)
+        if self._use_cache:
+            df = pd.read_csv(self._cache_path)
             probability_of_1 = df['probability_of_1'].values.tolist()
             bitstream = df['bitstream'].values.tolist()
             return probability_of_1,bitstream
         else:
-            return self.probability_of_1,self.bitstream
+            return self._probability_of_1,self._bitstream
 
     def _write_encoder_inpt_file(self,y):
-        encoderInputFile = BitFile(self.encoder_in, "wb")
-        for y_b in tqdm(y, desc=f"writing {self.encoder_in}"):
+        encoderInputFile = BitFile(self._encoder_in, "wb")
+        for y_b in tqdm(y, desc=f"writing {self._encoder_in}"):
             encoderInputFile.outputBit(int(y_b))
 
-    def encode(self,pc_in,encoder_in="encoder_in",encoder_out="encoder_out"):
+    def encode(self,pc_in,encoder_in="/tmp/encoder_in",encoder_out="/tmp/encoder_out"):
 
-        self.encoder_in = encoder_in
-        self.encoder_out = encoder_out
+        self._encoder_in = encoder_in
+        self._encoder_out = encoder_out
 
-        # TODO: remove attributes and create a file with only the geometry
-        # to compare with the output from the decoder.
+        self._setup_cache(pc_in)
 
         pc = c3d.read_PC(pc_in)[1]
 
@@ -128,16 +133,14 @@ class MLP_N_64N_32N_1_PC_Coder:
 
         self._encode(lambda x: x, p)
 
-        return self.encoder_out
-
 
     def _encode(self,predictor,contextloader):
 
-        encoderInputFile = BitFile(self.encoder_in, "rb")
-        encoderOutputFile = BitFile(self.encoder_out, "wb")
+        encoderInputFile = BitFile(self._encoder_in, "rb")
+        encoderOutputFile = BitFile(self._encoder_out, "wb")
         enc = ArithmeticEncoder(encoderInputFile, encoderOutputFile, 3, 1)
 
-        for context in tqdm(contextloader,desc=f"writing {self.encoder_out}"):
+        for context in tqdm(contextloader,desc=f"writing {self._encoder_out}"):
             p = predictor(context)
             counts = [
                 max(1,math.floor(16000*(1-p))),
@@ -153,23 +156,21 @@ class MLP_N_64N_32N_1_PC_Coder:
         assert symbol == 2
 
 
-    def decode(self,pc_out,decoder_in="encoder_out",decoder_out="decoder_out"):
-
-        self.decoder_in = decoder_in
-        self.decoder_out = decoder_out
+    def decode(self,pc_out,decoder_in="/tmp/encoder_out",decoder_out="/tmp/decoder_out"):
 
         # TODO : make the decoder reconstruct the point cloud and predict the probabilitis from it 
         # in real time, removing the dependency on the vector of probabilities.
 
-        # TODO : store the result in a file instead of returning the reconstructed point cloud
-        # geometry.
+        self._decoder_in = decoder_in
+        self._decoder_out = decoder_out
 
         p,_ = self._load_p_y()
         predictor = lambda x: x
         context_generator = lambda pc,iteration : (p[iteration] if iteration < len(p) else p[-1])
         update_pc = lambda pc,symbol,iteration: pc
         _ = self._decode(predictor,context_generator,update_pc)
-        return self._batch_reconstruct()
+        xyz = self._batch_reconstruct()
+        c3d.write_PC(pc_out,xyz)
 
 
     def _decode(self,predictor,context_generator,update_pc):
@@ -177,12 +178,12 @@ class MLP_N_64N_32N_1_PC_Coder:
         https://stackoverflow.com/questions/45808140/using-tqdm-progress-bar-in-a-while-loop
         https://stackoverflow.com/questions/5737196/is-there-an-expression-for-an-infinite-iterator
         """
-        decoderInputFile = BitFile(self.decoder_in, "rb")
-        decoderOutputFile = BitFile(self.decoder_out, "wb")
+        decoderInputFile = BitFile(self._decoder_in, "rb")
+        decoderOutputFile = BitFile(self._decoder_out, "wb")
         dec = ArithmeticDecoder(decoderInputFile, decoderOutputFile, 3, 1)
 
         pc = []
-        for iteration in tqdm(itertools.count(),desc=f"writing {self.decoder_out}"):
+        for iteration in tqdm(itertools.count(),desc=f"writing {self._decoder_out}"):
             p = predictor( context_generator(pc,iteration) )
             counts = [
                 max(1,math.floor(16000*(1-p))),
@@ -200,7 +201,7 @@ class MLP_N_64N_32N_1_PC_Coder:
 
     def _batch_reconstruct(self):
 
-        decoderOutputFile = BitFile(self.decoder_out, "rb")
+        decoderOutputFile = BitFile(self._decoder_out, "rb")
         decoderOutputFile.reset()
 
         last_level = 10
@@ -228,9 +229,16 @@ if __name__ == "__main__":
     context_size = 47
     last_octree_level = 10
     pc_path = "/home/lucaslopes/longdress/longdress_vox10_1051.ply"
-    coder = MLP_N_64N_32N_1_PC_Coder(weights,context_size,last_octree_level,mode = "cache")
-    encoder_output_path = coder.encode(pc_path)
-    recovered_pc = coder.decode(pc_path.replace(".ply","_rec.ply"),decoder_in=encoder_output_path)
+    pc_in = pc_path.replace(".ply","_geo.ply")
+    c3d.write_PC(pc_in,c3d.read_PC(pc_path)[1])
+    pc_out= pc_in.replace(".ply","_rec.ply")
+    coder = MLP_N_64N_32N_1_PC_Coder(weights,context_size,last_octree_level)
+    coder.enable_cache("data_to_encode.csv")
+    
+    encoder_output_path = "encoder_out"
+    coder.encode(pc_in,encoder_in="encoder_in",encoder_out=encoder_output_path)
+    coder.decode(pc_out,decoder_in=encoder_output_path,decoder_out="decoder_out")
 
-    pc = c3d.read_PC(pc_path)[1]
+    pc = c3d.read_PC(pc_in)[1]
+    recovered_pc = c3d.read_PC(pc_out)[1]
     assert np.allclose(lexsort(pc),lexsort(recovered_pc))

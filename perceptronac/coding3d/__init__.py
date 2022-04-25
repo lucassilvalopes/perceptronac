@@ -34,6 +34,12 @@ def read_PC(path):
     return pc, V, C
 
 
+def write_PC(filename,xyz):
+    pointcloud = o3d.geometry.PointCloud()
+    pointcloud.points = o3d.utility.Vector3dVector(xyz)
+    o3d.io.write_point_cloud(filename, pointcloud, write_ascii=True)
+
+
 def parents_children(V, ordering):
     """
     V : input V sorted according to input ordering
