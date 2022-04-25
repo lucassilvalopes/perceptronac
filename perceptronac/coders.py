@@ -28,9 +28,10 @@ class MLP_N_64N_32N_1_PC_Coder:
         self.mode = mode # "cache", "export", "" 
 
         self.data_to_encode = "data_to_encode.csv"
-        self.encoder_in = "encoder_in"
-        self.encoder_out = "encoder_out"
-        self.decoder_out = "decoder_out"
+        # self.encoder_in = "encoder_in"
+        # self.encoder_out = "encoder_out"
+        # self.decoder_in = "encoder_out"
+        # self.decoder_out = "decoder_out"
         
     def _pc_pyramid(self,pc):
         pcs = [pc]
@@ -52,8 +53,6 @@ class MLP_N_64N_32N_1_PC_Coder:
         return X,y
 
     def _p_y_from_X_y(self,X,y):
-        if (self.mode == "cache"):
-            return [],[]
 
         model = MLP_N_64N_32N_1(self.N)
         model.load_state_dict(torch.load(self.weights))
@@ -74,6 +73,14 @@ class MLP_N_64N_32N_1_PC_Coder:
 
         assert np.allclose(
             np.array(v).reshape(-1).astype(int),y.reshape(-1).astype(int))
+
+        return p,v
+
+    def _data_to_encode(self,pc):
+        if (self.mode == "cache"):
+            return [],[]
+        X,y = self._X_y_from_pc_pyramid(self._pc_pyramid(pc))
+        p,v = self._p_y_from_X_y(X,y)
 
         return p,v
 
@@ -101,16 +108,17 @@ class MLP_N_64N_32N_1_PC_Coder:
         for y_b in tqdm(y, desc=f"writing {self.encoder_in}"):
             encoderInputFile.outputBit(int(y_b))
 
-    def encode(self,pc_path):
+    def encode(self,pc_in,encoder_in="encoder_in",encoder_out="encoder_out"):
+
+        self.encoder_in = encoder_in
+        self.encoder_out = encoder_out
 
         # TODO: remove attributes and create a file with only the geometry
         # to compare with the output from the decoder.
 
-        pc = c3d.read_PC(pc_path)[1]
+        pc = c3d.read_PC(pc_in)[1]
 
-        X,y = self._X_y_from_pc_pyramid(self._pc_pyramid(pc))
-
-        p,v = self._p_y_from_X_y(X,y)
+        p,v = self._data_to_encode(pc)
 
         self._store_p_y(p,v)
         p,v = self._load_p_y()
@@ -144,7 +152,10 @@ class MLP_N_64N_32N_1_PC_Coder:
         assert symbol == 2
 
 
-    def decode(self):
+    def decode(self,pc_out,decoder_in="encoder_out",decoder_out="decoder_out"):
+
+        self.decoder_in = decoder_in
+        self.decoder_out = decoder_out
 
         # TODO : make the decoder reconstruct the point cloud and predict the probabilitis from it 
         # in real time, removing the dependency on the vector of probabilities.
@@ -165,7 +176,7 @@ class MLP_N_64N_32N_1_PC_Coder:
         https://stackoverflow.com/questions/45808140/using-tqdm-progress-bar-in-a-while-loop
         https://stackoverflow.com/questions/5737196/is-there-an-expression-for-an-infinite-iterator
         """
-        decoderInputFile = BitFile(self.encoder_out, "rb")
+        decoderInputFile = BitFile(self.decoder_in, "rb")
         decoderOutputFile = BitFile(self.decoder_out, "wb")
         dec = ArithmeticDecoder(decoderInputFile, decoderOutputFile, 3, 1)
 
@@ -218,7 +229,7 @@ if __name__ == "__main__":
     pc_path = "/home/lucaslopes/longdress/longdress_vox10_1051.ply"
     coder = MLP_N_64N_32N_1_PC_Coder(weights,context_size,last_octree_level,mode = "cache")
     encoder_output_path = coder.encode(pc_path)
-    recovered_pc = coder.decode(encoder_output_path)
+    recovered_pc = coder.decode(pc_path.replace(".ply","_rec.ply"),decoder_in=encoder_output_path)
 
     pc = c3d.read_PC(pc_path)[1]
     assert np.allclose(lexsort(pc),lexsort(recovered_pc))
