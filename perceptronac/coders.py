@@ -38,7 +38,7 @@ class MLP_N_64N_32N_1_PC_Coder:
         if self._use_cache and (self._cache_path is None):
             pc_id = os.path.splitext(os.path.basename(pc_in))[0]
             class_id = self.__class__.__name__
-            self._cache_path = f"{class_id}_{pc_id}_cache"
+            self._cache_path = f"/tmp/{class_id}_{pc_id}_cache"
         
     def _pc_pyramid(self,pc):
         pcs = [pc]
@@ -70,7 +70,7 @@ class MLP_N_64N_32N_1_PC_Coder:
 
         p = []
         v = []
-        for data in tqdm(dataloader, desc=f"writing {self._cache_path}"):
+        for data in tqdm(dataloader, desc="preparing the data to encode"):
             X_b,y_b = data
             X_b = X_b.float() #.to(device)
             y_b = y_b.float() #.to(device)
@@ -206,7 +206,7 @@ class MLP_N_64N_32N_1_PC_Coder:
 
         last_level = 10
 
-        for level in range(1,last_level+1):
+        for level in tqdm(range(1,last_level+1),desc="reconstructing the pc"):
             if level == 1:
                 V_d = c3d.xyz_displacements([0,1])
             else:
@@ -218,7 +218,7 @@ class MLP_N_64N_32N_1_PC_Coder:
                 if bit == 0:
                     is_to_delete.append(i)
             V_d = np.delete(V_d,is_to_delete,axis=0)
-            print(f"level {level} len : {len(V_d)}")
+            # print(f"level {level} len : {len(V_d)}")
 
         return V_d
 
@@ -232,13 +232,33 @@ if __name__ == "__main__":
     pc_in = pc_path.replace(".ply","_geo.ply")
     c3d.write_PC(pc_in,c3d.read_PC(pc_path)[1])
     pc_out= pc_in.replace(".ply","_rec.ply")
-    coder = MLP_N_64N_32N_1_PC_Coder(weights,context_size,last_octree_level)
-    coder.enable_cache("data_to_encode.csv")
-    
+    cache = "data_to_encode.csv" # None
+    encoder_input_path = "encoder_in"
     encoder_output_path = "encoder_out"
-    coder.encode(pc_in,encoder_in="encoder_in",encoder_out=encoder_output_path)
-    coder.decode(pc_out,decoder_in=encoder_output_path,decoder_out="decoder_out")
+    decoder_output_path = "decoder_out"
+
+    print(
+        f"""
+        started coding
+        weights: {weights}
+        context_size: {context_size}
+        last_octree_level: {last_octree_level}
+        pc_in: {pc_in}
+        pc_out: {pc_out}
+        cache: {cache}
+        encoder_in: {encoder_input_path}
+        encoder_out: {encoder_output_path}
+        decoder_in: {encoder_output_path}
+        decoder_out: {decoder_output_path}
+        """, flush=True
+    )
+
+    coder = MLP_N_64N_32N_1_PC_Coder(weights,context_size,last_octree_level)
+    coder.enable_cache(cache)
+    coder.encode(pc_in,encoder_in=encoder_input_path,encoder_out=encoder_output_path)
+    coder.decode(pc_out,decoder_in=encoder_output_path,decoder_out=decoder_output_path)
 
     pc = c3d.read_PC(pc_in)[1]
     recovered_pc = c3d.read_PC(pc_out)[1]
     assert np.allclose(lexsort(pc),lexsort(recovered_pc))
+    print("\npoint cloud successfully reconstructed")
