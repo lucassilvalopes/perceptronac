@@ -22,6 +22,7 @@ from perceptronac.loading_and_saving import plot_comparison
 from perceptronac.loading_and_saving import save_configs
 import numpy as np
 from tqdm import tqdm
+import os
 
 
 class Perceptron(torch.nn.Module):
@@ -119,11 +120,16 @@ class CausalContextDataset(torch.utils.data.Dataset):
         return self.X[idx,:],self.y[idx,:]
 
 
-class StaticAC:
-    def __init__(self,y):
-        self.p = float(np.sum(y==1)/len(y))
+class StaticAC:        
     def __call__(self,X):
         return self.forward(X)
+    def load_p(self,y=None,p=None):
+        if y is not None:
+            self.p = float(np.sum(y==1)/len(y))
+        elif p is not None:
+            self.p = p
+        else:
+            raise ValueError("Specify either p or y")
     def forward(self,X):
         if isinstance(X,torch.Tensor):
             return self.p * torch.ones((X.shape[0],1),device=X.device)
@@ -153,22 +159,51 @@ class CABAC:
             return context_coding(X,self.context_p)
 
 
-class RatesStaticAC:
-    def get_rates(self,trainset,validset):
-        Xt,yt = trainset.X,trainset.y
-        Xc,yc = validset.X,validset.y
-        staticac = StaticAC(yt)
-        static_pred_t = staticac(Xt)
-        static_pred_c = staticac(Xc)
-        rate_static_t = perfect_AC(yt,static_pred_t)
-        rate_static_c = perfect_AC(yc,static_pred_c)
-        return rate_static_t,rate_static_c
-
-
 
 def get_prefix(configs, id_key = 'id' ):
     return f"{configs['save_dir'].rstrip('/')}/exp_{configs[id_key]}/exp_{configs[id_key]}"
 
+
+class RatesStaticAC:
+    def __init__(self,configs):
+        self.configs = configs
+
+    def get_rates(self,trainset,validset):
+        phases=self.configs["phases"]
+        epochs=self.configs["epochs"]
+        N = trainset.N
+        staticac = self.load_model(N)        
+        train_loss, valid_loss = [], []
+        for phase in sorted(phases):
+            if phase == 'train':
+                dataset = trainset
+                staticac.load_p(trainset.y)
+            else:
+                dataset = validset
+            X,y = dataset.X,dataset.y
+            static_pred = staticac(X)
+            final_loss = perfect_AC(y,static_pred)
+            if phase=='train':
+                train_loss.append(final_loss)
+            else:
+                valid_loss.append(final_loss)
+        self.save_N_model(N,staticac)
+        return epochs*train_loss, epochs*valid_loss
+
+    def load_model(self,N):
+        staticac = StaticAC()
+        if self.configs.get("parent_id"):
+            file_name = f"{get_prefix(self.configs,'parent_id')}_{N:03d}_p.npy"
+            with open(file_name, 'rb') as f:
+                p = np.load(f)
+            staticac.load_p(p[0])
+        return staticac
+
+    def save_N_model(self,N,staticac):
+        p = staticac.p
+        if ('train' in self.configs["phases"]) and (N==0):
+            with open(f"{get_prefix(self.configs)}_{N:03d}_p.npy", 'wb') as f:
+                np.save(f, np.array([p]))
 
 class RatesCABAC:
     def __init__(self,configs):
@@ -179,7 +214,7 @@ class RatesCABAC:
         max_context = self.configs["max_context"]
         epochs=self.configs["epochs"]
         N = trainset.N
-        cabac = self.load_model(self.configs,N)        
+        cabac = self.load_model(N)        
         train_loss, valid_loss = [], []
         for phase in sorted(phases): # train first then valid
             if phase == 'train':
@@ -187,11 +222,12 @@ class RatesCABAC:
                 cabac.load_lut(trainset.X,trainset.y)
             else:
                 dataset = validset
-            X,y = dataset.X,dataset.y
-            cabac_pred = cabac(X)
-            final_loss = perfect_AC(y,cabac_pred)
             if (dataset.N > max_context):
                 final_loss = -1
+            else:
+                X,y = dataset.X,dataset.y
+                cabac_pred = cabac(X)
+                final_loss = perfect_AC(y,cabac_pred)
             if phase=='train':
                 train_loss.append(final_loss)
             else:
@@ -216,6 +252,9 @@ class RatesCABAC:
 
 
 class RatesJBIG1:
+    def __init__(self,configs):
+        self.configs = configs
+
     def avg_rate(self,pths):
         """
         make sure all images in pths have the same size
@@ -226,14 +265,24 @@ class RatesJBIG1:
         return rate/len(pths)
 
     def get_rates(self,trainset,validset):
-        if (trainset.N != 10) or (validset.N != 10):
-            return -1, -1
-        datatraining = trainset.pths
-        datacoding = validset.pths
-        rate_jbig1_t = self.avg_rate(datatraining)
-        rate_jbig1_c = self.avg_rate(datacoding)
-        return rate_jbig1_t,rate_jbig1_c        
-
+        phases=self.configs["phases"]
+        epochs=self.configs["epochs"]
+        train_loss, valid_loss = [], []
+        for phase in sorted(phases): # train first then valid
+            if phase == 'train':
+                dataset = trainset
+            else:
+                dataset = validset
+            if (dataset.N != 10):
+                final_loss = -1
+            else:
+                final_loss = self.avg_rate(dataset.pths)
+            if phase=='train':
+                train_loss.append(final_loss)
+            else:
+                valid_loss.append(final_loss)
+        return epochs*train_loss, epochs*valid_loss
+     
 
 class RatesMLP:
 
@@ -371,12 +420,12 @@ def train_loop(configs,datatraining,datacoding,N):
         datacoding,configs["data_type"],N, configs["percentage_of_uncles"])
 
     if N == 0:
-        rate_static_t,rate_static_c = RatesStaticAC().get_rates(trainset,validset)
+        rate_static_t,rate_static_c = RatesStaticAC(configs).get_rates(trainset,validset)
     else:
         rate_cabac_t,rate_cabac_c = RatesCABAC(configs).get_rates(trainset,validset)        
         train_loss, valid_loss = RatesMLP(configs).get_rates(trainset,validset)
         if (configs["data_type"] == "image"):
-            rate_jbig1_t,rate_jbig1_c = RatesJBIG1().get_rates(trainset,validset)
+            rate_jbig1_t,rate_jbig1_c = RatesJBIG1(configs).get_rates(trainset,validset)
 
     phases=configs["phases"]
     epochs=configs["epochs"]
@@ -403,3 +452,30 @@ def train_loop(configs,datatraining,datacoding,N):
     
     return data
 
+
+def experiment(configs):
+
+    os.makedirs(f"{configs['save_dir'].rstrip('/')}/exp_{configs['id']}")
+
+    data = dict()
+    for phase in configs["phases"]:
+        data[phase] = dict()
+
+    for N in configs["N_vec"]:
+        print(f"--------------------- context size : {N} ---------------------")    
+        N_data = train_loop(
+            configs=configs,
+            datatraining=configs["training_set"],
+            datacoding=configs["validation_set"],
+            N=N
+        )
+        
+        save_N_data(configs,N,N_data)
+
+        for phase in [ph for ph in configs["phases"] if ph != "coding"]:
+            for k in N_data[phase].keys():
+                v = min(N_data[phase][k]) if (configs['reduction'] == 'min') else N_data[phase][k][-1]
+                data[phase][k] = (data[phase][k] + [v]) if (k in data[phase].keys()) else [v]
+
+        
+    save_final_data(configs,data)
