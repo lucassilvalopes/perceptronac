@@ -15,9 +15,11 @@ from perceptronac.perfect_AC import perfect_AC
 from perceptronac.utils import causal_context_many_imgs
 from perceptronac.utils import causal_context_many_pcs
 from perceptronac.utils import jbig1_rate
-from perceptronac.loading_and_saving import load_model
-from perceptronac.loading_and_saving import save_N_min_valid_loss_model
-from perceptronac.loading_and_saving import save_N_model
+from perceptronac.loading_and_saving import save_model
+from perceptronac.loading_and_saving import save_fig
+from perceptronac.loading_and_saving import save_values
+from perceptronac.loading_and_saving import plot_comparison
+from perceptronac.loading_and_saving import save_configs
 import numpy as np
 from tqdm import tqdm
 
@@ -130,8 +132,15 @@ class StaticAC:
 
 
 class CABAC:
-    def __init__(self,X,y,max_context):
-        self.context_p = context_training(X,y,max_context)
+    def __init__(self,max_context):
+        self.max_context = max_context
+    def load_lut(self,X=None,y=None,lut=None):
+        if lut is not None:
+            self.context_p = lut
+        elif (X is not None) and (y is not None):
+            self.context_p = context_training(X,y,self.max_context)
+        else:
+            raise ValueError("Specify either lut or both X and y")
     def __call__(self, X):
         return self.forward(X)
     def forward(self, X):
@@ -156,20 +165,54 @@ class RatesStaticAC:
         return rate_static_t,rate_static_c
 
 
+
+def get_prefix(configs, id_key = 'id' ):
+    return f"{configs['save_dir'].rstrip('/')}/exp_{configs[id_key]}/exp_{configs[id_key]}"
+
+
 class RatesCABAC:
-    def __init__(self,max_context = 27):
-        self.max_context = max_context
+    def __init__(self,configs):
+        self.configs = configs
+        
     def get_rates(self,trainset,validset):
-        if (trainset.N > self.max_context):
-            return -1, -1
-        Xt,yt = trainset.X,trainset.y
-        Xc,yc = validset.X,validset.y
-        cabac = CABAC(Xt,yt,self.max_context)
-        cabac_pred_t = cabac(Xt)
-        cabac_pred_c = cabac(Xc)
-        rate_cabac_t = perfect_AC(yt,cabac_pred_t)
-        rate_cabac_c = perfect_AC(yc,cabac_pred_c)
-        return rate_cabac_t,rate_cabac_c
+        phases=self.configs["phases"]
+        max_context = self.configs["max_context"]
+        epochs=self.configs["epochs"]
+        N = trainset.N
+        cabac = self.load_model(self.configs,N)        
+        train_loss, valid_loss = [], []
+        for phase in sorted(phases): # train first then valid
+            if phase == 'train':
+                dataset = trainset
+                cabac.load_lut(trainset.X,trainset.y)
+            else:
+                dataset = validset
+            X,y = dataset.X,dataset.y
+            cabac_pred = cabac(X)
+            final_loss = perfect_AC(y,cabac_pred)
+            if (dataset.N > max_context):
+                final_loss = -1
+            if phase=='train':
+                train_loss.append(final_loss)
+            else:
+                valid_loss.append(final_loss)
+        self.save_N_model(N,cabac)
+        return epochs*train_loss, epochs*valid_loss
+
+    def load_model(self,N):
+        cabac = CABAC(self.configs["max_context"])
+        if self.configs.get("parent_id"):
+            file_name = f"{get_prefix(self.configs,'parent_id')}_{N:03d}_lut.npy"
+            with open(file_name, 'rb') as f:
+                lut = np.load(f)
+            cabac.load_lut(lut.reshape(-1,1))
+        return cabac
+
+    def save_N_model(self,N,cabac):
+        lut = cabac.context_p.reshape(-1)
+        if ('train' in self.configs["phases"]) and (N>0):
+            with open(f"{get_prefix(self.configs)}_{N:03d}_lut.npy", 'wb') as f:
+                np.save(f, lut)
 
 
 class RatesJBIG1:
@@ -211,7 +254,7 @@ class RatesMLP:
         
         device = torch.device(device)
         
-        model = load_model(self.configs,N)
+        model = self.load_model(N)
         model.to(device)
         
         criterion = Log2BCELoss(reduction='sum')
@@ -262,12 +305,62 @@ class RatesMLP:
                 print("epoch :" , epoch, ", phase :", phase, ", loss :", final_loss)
                 
 
-            save_N_min_valid_loss_model(valid_loss,self.configs,N,model)
+            self.save_N_min_valid_loss_model(valid_loss,N,model)
  
         # save final model
-        save_N_model(self.configs,N,model)
+        self.save_N_model(N,model)
 
         return train_loss, valid_loss
+
+    def load_model(self,N):
+        ModelClass=self.configs["ModelClass"]
+        model = ModelClass(N)
+        if self.configs.get("parent_id"):
+            if ('train' not in self.configs["phases"]) and (self.configs["reduction"] == 'min'):
+                file_name = f"{get_prefix(self.configs,'parent_id')}_{N:03d}_min_valid_loss_model.pt"
+            else:
+                file_name = f"{get_prefix(self.configs,'parent_id')}_{N:03d}_model.pt"
+            print(f"loading file {file_name}")
+            model.load_state_dict(torch.load(file_name))
+        return model
+
+    def save_N_min_valid_loss_model(self,valid_loss,N,mlp_model):
+        if len(valid_loss) == 0:
+            pass
+        elif (min(valid_loss) == valid_loss[-1]) and ('train' in self.configs["phases"]) and (N>0):
+            save_model(f"{get_prefix(self.configs)}_{N:03d}_min_valid_loss_model",mlp_model)
+
+    def save_N_model(self,N,mlp_model):
+        if ('train' in self.configs["phases"]) and (N>0):
+            save_model(f"{get_prefix(self.configs)}_{N:03d}_model",mlp_model)
+
+
+
+def save_N_data(configs,N,N_data):
+    
+    xvalues = np.arange(configs["epochs"])
+    xlabel = "epoch"
+
+    for phase in configs["phases"]:
+        
+        fig = plot_comparison(xvalues,N_data[phase],xlabel)
+        save_fig(f"{get_prefix(configs)}_{N:03d}_{phase}_graph",fig)
+        save_values(f"{get_prefix(configs)}_{N:03d}_{phase}_values",xvalues,N_data[phase],xlabel)
+ 
+
+def save_final_data(configs,data):
+    
+    xvalues = configs["N_vec"]
+    xlabel = "context size"
+    xscale = configs["xscale"]
+    
+    save_configs(f"{get_prefix(configs)}_conf",configs)
+    
+    for phase in configs["phases"]:
+        
+        fig=plot_comparison(xvalues,data[phase],xlabel,xscale=xscale)
+        save_fig(f"{get_prefix(configs)}_{phase}_graph",fig)
+        save_values(f"{get_prefix(configs)}_{phase}_values",xvalues,data[phase],xlabel)
 
 
 def train_loop(configs,datatraining,datacoding,N):
@@ -280,7 +373,7 @@ def train_loop(configs,datatraining,datacoding,N):
     if N == 0:
         rate_static_t,rate_static_c = RatesStaticAC().get_rates(trainset,validset)
     else:
-        rate_cabac_t,rate_cabac_c = RatesCABAC().get_rates(trainset,validset)        
+        rate_cabac_t,rate_cabac_c = RatesCABAC(configs).get_rates(trainset,validset)        
         train_loss, valid_loss = RatesMLP(configs).get_rates(trainset,validset)
         if (configs["data_type"] == "image"):
             rate_jbig1_t,rate_jbig1_c = RatesJBIG1().get_rates(trainset,validset)
