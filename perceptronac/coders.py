@@ -64,8 +64,10 @@ class PC_Coder:
 
         model = self._model_constructor()
 
+        batch_size = 2048
+
         dset = torch.utils.data.TensorDataset(torch.tensor(X),torch.tensor(y))
-        dataloader = torch.utils.data.DataLoader(dset,batch_size=1,shuffle=False)
+        dataloader = torch.utils.data.DataLoader(dset,batch_size=batch_size,shuffle=False)
 
         p = []
         v = []
@@ -74,9 +76,15 @@ class PC_Coder:
             X_b = X_b.float() #.to(device)
             y_b = y_b.float() #.to(device)
             outputs = model(X_b)
-            p.append(outputs.item())
-            v.append(y_b.item())
-
+            p.append(outputs.detach().cpu().numpy())
+            v.append(y_b.detach().cpu().numpy())
+        
+        p = np.vstack(p)
+        v = np.vstack(v)
+        
+        p=p.reshape(-1).tolist()
+        v=v.reshape(-1).tolist()
+        
         assert np.allclose(
             np.array(v).reshape(-1).astype(int),y.reshape(-1).astype(int))
 
