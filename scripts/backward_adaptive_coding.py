@@ -232,7 +232,9 @@ if __name__ == "__main__":
     xvalues = np.arange( len_data )
         
     fig = plot_comparison(xvalues,data,"iteration",
-        linestyles=8*["solid"],colors=["g","b","r","c","m","y","k","0.75"],markers=8*[""])
+        linestyles={k:"solid" for k in data.keys()},
+        colors={k:c for k,c in zip(data.keys(),["g","b","r","c","m","y","k","0.75"])},
+        markers={k:"" for k in data.keys()})
 
     xticks = np.round(np.linspace(0,len_data-1,5)).astype(int)
 

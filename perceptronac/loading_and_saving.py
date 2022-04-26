@@ -23,25 +23,25 @@ def plot_single_curve(ax,rates,xvalues,linestyle,color,label,marker):
     return handle
 
 
-def plot_comparison(xvalues,data,xlabel,xscale="linear",linestyles=None,colors=None,markers=None):
+def plot_comparison(xvalues,data,xlabel,ylabel='bits/sample',xscale="linear",linestyles=None,colors=None,markers=None):
 
     if linestyles is None:
-        linestyles = ["dashdot","dotted","solid","dashed"]
+        linestyles = {"JBIG1":"dashdot","LUT":"dotted","MLP":"solid","STATIC":"dashed"}
     if colors is None:
-        colors = ['red','green','blue','orange']
+        colors = {"JBIG1":'red',"LUT":'green',"MLP":'blue',"STATIC":'orange'}
     if markers is None:
-        markers = ['s','^','o','v']
+        markers = {"JBIG1":'s',"LUT":'^',"MLP":'o',"STATIC":'v'}
 
     fig, ax = plt.subplots(nrows=1, ncols=1,figsize=(4.8,4.8))    
 
     handles = []
-    for k,linestyle,color,marker in zip(sorted(data.keys()),linestyles,colors,markers):
-        handle = plot_single_curve(ax,data[k],xvalues,linestyle,color,k,marker)
+    for k in data.keys():
+        handle = plot_single_curve(ax,data[k],xvalues,linestyles[k],colors[k],k,markers[k])
         if handle:
             handles.append(handle)
 
     ax.set_xlabel(xlabel)
-    ax.set_ylabel('bits/sample')
+    ax.set_ylabel(ylabel)
     ax.set_xscale(xscale)
     ax.legend(handles=handles,loc="upper right")
 

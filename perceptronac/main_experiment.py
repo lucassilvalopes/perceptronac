@@ -372,8 +372,11 @@ def save_final_data(configs,data):
     save_configs(f"{get_prefix(configs)}_conf",configs)
     
     for phase in configs["phases"]:
-        
-        fig=plot_comparison(xvalues,data[phase],xlabel,xscale=xscale)
+        if (phase == "coding") and (configs["data_type"] == "pointcloud"):
+            ylabel = 'bpov'
+        else:
+            ylabel = 'bits/sample'
+        fig=plot_comparison(xvalues,data[phase],xlabel,ylabel=ylabel,xscale=xscale)
         save_fig(f"{get_prefix(configs)}_{phase}_graph",fig)
         save_values(f"{get_prefix(configs)}_{phase}_values",xvalues,data[phase],xlabel)
 
