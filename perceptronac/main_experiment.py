@@ -74,6 +74,8 @@ class RatesCABAC:
         max_context = self.configs["max_context"]
         epochs=self.configs["epochs"]
         N = trainset.N
+        if (N > max_context):
+            return epochs*[-1],epochs*[-1]
         cabac = self.load_model(N)        
         train_loss, valid_loss = [], []
         for phase in sorted(phases): # train first then valid
@@ -82,12 +84,9 @@ class RatesCABAC:
                 cabac.load_lut(trainset.X,trainset.y)
             else:
                 dataset = validset
-            if (dataset.N > max_context):
-                final_loss = -1
-            else:
-                X,y = dataset.X,dataset.y
-                cabac_pred = cabac(X)
-                final_loss = perfect_AC(y,cabac_pred)
+            X,y = dataset.X,dataset.y
+            cabac_pred = cabac(X)
+            final_loss = perfect_AC(y,cabac_pred)
             if phase=='train':
                 train_loss.append(final_loss)
             else:
@@ -127,16 +126,16 @@ class RatesJBIG1:
     def get_rates(self,trainset,validset):
         phases=self.configs["phases"]
         epochs=self.configs["epochs"]
+        N = trainset.N
+        if (N != 10):
+            return epochs*[-1],epochs*[-1]
         train_loss, valid_loss = [], []
         for phase in sorted(phases): # train first then valid
             if phase == 'train':
                 dataset = trainset
             else:
                 dataset = validset
-            if (dataset.N != 10):
-                final_loss = -1
-            else:
-                final_loss = self.avg_rate(dataset.pths)
+            final_loss = self.avg_rate(dataset.pths)
             if phase=='train':
                 train_loss.append(final_loss)
             else:
@@ -255,7 +254,7 @@ def train_loop(configs,datatraining,datacoding,N):
         rates_static_t,rates_static_c = RatesStaticAC(configs).get_rates(trainset,validset)
     else:
         rates_cabac_t,rates_cabac_c = RatesCABAC(configs).get_rates(trainset,validset)        
-        rates_mlp_t,rates_mlp_c = RatesMLP(configs).get_rates(trainset,validset)
+        # rates_mlp_t,rates_mlp_c = RatesMLP(configs).get_rates(trainset,validset)
         if (configs["data_type"] == "image"):
             rates_jbig1_t,rates_jbig1_c = RatesJBIG1(configs).get_rates(trainset,validset)
 
@@ -269,7 +268,7 @@ def train_loop(configs,datatraining,datacoding,N):
     if N == 0:
         
         for phase in phases:
-            data[phase]["MLP"] = rates_static_t if phase == 'train' else rates_static_c
+            # data[phase]["MLP"] = rates_static_t if phase == 'train' else rates_static_c
             data[phase]["LUT"] = rates_static_t if phase == 'train' else rates_static_c
             if configs["data_type"] == "image":
                 data[phase]["JBIG1"] = epochs*[-1]
@@ -277,7 +276,7 @@ def train_loop(configs,datatraining,datacoding,N):
     else:
 
         for phase in phases:
-            data[phase]["MLP"] = rates_mlp_t if phase == 'train' else rates_mlp_c
+            # data[phase]["MLP"] = rates_mlp_t if phase == 'train' else rates_mlp_c
             data[phase]["LUT"] = rates_cabac_t if phase == 'train' else rates_cabac_c
             if configs["data_type"] == "image":
                 data[phase]["JBIG1"] = rates_jbig1_t if phase == 'train' else rates_jbig1_c
@@ -287,9 +286,12 @@ def train_loop(configs,datatraining,datacoding,N):
 
 def coding_loop(configs,N):
 
-    ok = configs["data_type"] == "pointcloud" and configs["percentage_of_uncles"] == 0 and \
-        isinstance(configs['ModelClass'],MLP_N_64N_32N_1) and len(configs["validation_set"]) == 1
-
+    cond1 = (configs["data_type"] == "pointcloud")
+    cond2 = (configs["percentage_of_uncles"] == 0)
+    cond3 = (configs['ModelClass'] == MLP_N_64N_32N_1)
+    cond4 = (len(configs["validation_set"]) == 1)
+    ok = cond1 and cond2 and cond3 and cond4
+        
     if not ok:
         m = f"""
             coding currently supported only for the combination
@@ -354,30 +356,29 @@ def experiment(configs):
     for phase in configs["phases"]:
         data[phase] = dict()
 
-    for N in configs["N_vec"]:
-        print(f"--------------------- context size : {N} ---------------------")    
-        if ("train" not in configs["phases"]) and ("valid" not in configs["phases"]):
-            break
-        N_data = train_loop(
-            configs={
-                k:([ph for ph in v if ph != "coding"] if v == 'phases' else v) for k,v in configs.items()
-            },
-            datatraining=configs["training_set"],
-            datacoding=configs["validation_set"],
-            N=N
-        )
-        
-        save_N_data(configs,N,N_data)
+    if ("train" in configs["phases"]) or ("valid" in configs["phases"]):
+        for N in configs["N_vec"]:
+            print(f"--------------------- context size : {N} ---------------------")    
+            N_data = train_loop(
+                configs={
+                    k:([ph for ph in v if ph != "coding"] if v == 'phases' else v) for k,v in configs.items()
+                },
+                datatraining=configs["training_set"],
+                datacoding=configs["validation_set"],
+                N=N
+            )
+            
+            save_N_data(configs,N,N_data)
 
-        for phase in [ph for ph in configs["phases"] if ph != "coding"]:
-            for k in N_data[phase].keys():
-                v = min(N_data[phase][k]) if (configs['reduction'] == 'min') else N_data[phase][k][-1]
-                data[phase][k] = (data[phase][k] + [v]) if (k in data[phase].keys()) else [v]
+            for phase in [ph for ph in configs["phases"] if ph != "coding"]:
+                for k in N_data[phase].keys():
+                    v = min(N_data[phase][k]) if (configs['reduction'] == 'min') else N_data[phase][k][-1]
+                    data[phase][k] = (data[phase][k] + [v]) if (k in data[phase].keys()) else [v]
 
-        
-    for N in configs["N_vec"]:
-        N_data = coding_loop(configs,N)
-        for k in N_data["coding"].keys():
-            data["coding"][k] = N_data["coding"][k]
+    if ("coding" in configs["phases"]):
+        for N in configs["N_vec"]:
+            N_data = coding_loop(configs,N)
+            for k in N_data["coding"].keys():
+                data["coding"][k] = N_data["coding"][k]
 
     save_final_data(configs,data)

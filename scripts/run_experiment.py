@@ -15,22 +15,23 @@ if __name__ == "__main__":
             "/home/lucaslopes/longdress/longdress_vox10_1300.ply"
         ],
         "validation_set": [
-            "/home/lucaslopes/longdress/longdress_vox10_1051.ply"
+            "/home/lucaslopes/redandblack/redandblack_vox10_1450.ply"
         ],
         "epochs": 420,
         "learning_rate": 0.00001,
         "batch_size": 2048,
         "num_workers":4,
         "device":"cuda:0", #"cpu"
-        "parent_id": "",
+        "parent_id": "",#"1650138239",
         "N_vec": sorted([0] + [round(pow(1.595, i)) for i in range(12) if (i+1)%2==0],reverse=True),
-        "phases": ['valid'], # ['train', 'valid', 'coding'],
+        "phases": ['train'], # ['train', 'valid', 'coding'],
         "xscale": 'symlog',
         "reduction": 'last', # min, last
         "data_type": 'pointcloud', # image, pointcloud
         "percentage_of_uncles": 0.0, # must be specified if the data types is pointcloud
         "last_octree_level": 10, # must be specified if the data types is pointcloud
-        "save_dir": "results"
+        "save_dir": "results",
+        "max_context": 27 # cabac
     }
 
     experiment(configs)

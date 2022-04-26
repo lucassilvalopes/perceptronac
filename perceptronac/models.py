@@ -143,7 +143,7 @@ class CABAC:
     def forward(self, X):
         if isinstance(X,torch.Tensor):
             device = X.device
-            X = X.cpu().detach().numpy()
+            X = X.detach().cpu().numpy()
             pp = context_coding(X,self.context_p)
             return torch.tensor(pp,device=device)
         else:
