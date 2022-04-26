@@ -23,7 +23,7 @@ if __name__ == "__main__":
         "num_workers":4,
         "device":"cuda:0", #"cpu"
         "parent_id": "1650138239",
-        "N_vec": sorted([0] + [round(pow(1.595, i)) for i in range(12) if (i+1)%2==0],reverse=True),
+        "N_vec": [0,2,4],#sorted([0] + [round(pow(1.595, i)) for i in range(12) if (i+1)%2==0],reverse=True),
         "phases": ['coding'], # ['train', 'valid', 'coding'],
         "xscale": 'symlog',
         "reduction": 'last', # min, last

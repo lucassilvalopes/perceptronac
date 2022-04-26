@@ -409,6 +409,7 @@ def experiment(configs):
         for N in configs["N_vec"]:
             N_data = coding_loop(configs,N)
             for k in N_data["coding"].keys():
-                data["coding"][k] = N_data["coding"][k]
+                v = N_data["coding"][k]
+                data["coding"][k] = (data["coding"][k] + [v]) if (k in data["coding"].keys()) else [v]
 
     save_final_data(configs,data)
