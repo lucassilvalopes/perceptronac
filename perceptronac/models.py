@@ -150,3 +150,14 @@ class CABAC:
             return context_coding(X,self.context_p)
 
 
+class MLP_N_64N_32N_1_Constructor:
+
+    def __init__(self,N,weights):
+        self.N = N
+        self.weights = weights
+
+    def construct(self):
+        model = MLP_N_64N_32N_1(self.N)
+        model.load_state_dict(torch.load(self.weights))
+        model.train(False)
+        return model

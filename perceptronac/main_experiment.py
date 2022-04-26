@@ -13,6 +13,11 @@ from perceptronac.models import CausalContextDataset
 import numpy as np
 from tqdm import tqdm
 import os
+from perceptronac.models import MLP_N_64N_32N_1
+from perceptronac.models import MLP_N_64N_32N_1_Constructor
+from perceptronac.coders import PC_Coder
+import perceptronac.coding3d as c3d
+from perceptronac.coders import get_bpov
 
 
 def get_prefix(configs, id_key = 'id' ):
@@ -280,6 +285,40 @@ def train_loop(configs,datatraining,datacoding,N):
     return data
 
 
+def coding_loop(configs,N):
+
+    ok = configs["data_type"] == "pointcloud" and configs["percentage_of_uncles"] == 0 and \
+        isinstance(configs['ModelClass'],MLP_N_64N_32N_1) and len(configs["validation_set"]) == 1
+
+    if not ok:
+        m = f"""
+            coding currently supported only for the combination
+            len(validation_set) : 1
+            data_type : pointcloud
+            percentage_of_uncles : 0
+            ModelClass : MLP_N_64N_32N_1
+            """
+        raise ValueError(m)
+
+    if (configs["reduction"] == 'min'):
+        weights = f"{get_prefix(configs,'parent_id')}_{N:03d}_min_valid_loss_model.pt"
+    else:
+        weights = f"{get_prefix(configs,'parent_id')}_{N:03d}_model.pt"
+    constructor = MLP_N_64N_32N_1_Constructor(N,weights)
+    coder = PC_Coder(constructor.construct,N,configs["last_octree_level"])
+    pc_in = configs["validation_set"][0]
+    pc_len = len(c3d.read_PC(pc_in)[1])
+    coder.encode(pc_in,encoder_in="/tmp/encoder_in",encoder_out="/tmp/encoder_out")
+    mlp_rate = get_bpov("/tmp/encoder_out",pc_len)
+
+    data = {
+        "coding": {
+            "MLP": mlp_rate
+        }   
+    }
+    return data
+    
+
 def save_N_data(configs,N,N_data):
     
     xvalues = np.arange(configs["epochs"])
@@ -317,6 +356,8 @@ def experiment(configs):
 
     for N in configs["N_vec"]:
         print(f"--------------------- context size : {N} ---------------------")    
+        if ("train" not in configs["phases"]) and ("valid" not in configs["phases"]):
+            break
         N_data = train_loop(
             configs={
                 k:([ph for ph in v if ph != "coding"] if v == 'phases' else v) for k,v in configs.items()
@@ -334,4 +375,9 @@ def experiment(configs):
                 data[phase][k] = (data[phase][k] + [v]) if (k in data[phase].keys()) else [v]
 
         
+    for N in configs["N_vec"]:
+        N_data = coding_loop(configs,N)
+        for k in N_data["coding"].keys():
+            data["coding"][k] = N_data["coding"][k]
+
     save_final_data(configs,data)

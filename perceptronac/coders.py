@@ -15,22 +15,12 @@ from perceptronac.adaptiveac.utils import defineIntervals
 import pandas as pd
 from perceptronac.adaptiveac.exceptions import EndOfBinaryFile
 from perceptronac.coding3d import upsample_geometry
+from perceptronac.models import MLP_N_64N_32N_1_Constructor
 
 
 def lexsort(V):
     return V[np.lexsort((V[:, 2], V[:, 1], V[:, 0]))]
 
-class MLP_N_64N_32N_1_Constructor:
-
-    def __init__(self,N,weights):
-        self.N = N
-        self.weights = weights
-
-    def construct(self):
-        model = MLP_N_64N_32N_1(self.N)
-        model.load_state_dict(torch.load(self.weights))
-        model.train(False)
-        return model
 
 class PC_Coder:
 
