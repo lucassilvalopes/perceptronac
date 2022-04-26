@@ -37,7 +37,7 @@ class RatesStaticAC:
         for phase in sorted(phases):
             if phase == 'train':
                 dataset = trainset
-                staticac.load_p(trainset.y)
+                staticac.load_p(y=trainset.y)
             else:
                 dataset = validset
             X,y = dataset.X,dataset.y
@@ -56,12 +56,12 @@ class RatesStaticAC:
             file_name = f"{get_prefix(self.configs,'parent_id')}_{N:03d}_p.npy"
             with open(file_name, 'rb') as f:
                 p = np.load(f)
-            staticac.load_p(p[0])
+            staticac.load_p(p=p[0])
         return staticac
 
     def save_N_model(self,N,staticac):
-        p = staticac.p
         if ('train' in self.configs["phases"]) and (N==0):
+            p = staticac.p
             with open(f"{get_prefix(self.configs)}_{N:03d}_p.npy", 'wb') as f:
                 np.save(f, np.array([p]))
 
@@ -81,7 +81,7 @@ class RatesCABAC:
         for phase in sorted(phases): # train first then valid
             if phase == 'train':
                 dataset = trainset
-                cabac.load_lut(trainset.X,trainset.y)
+                cabac.load_lut(X=trainset.X,y=trainset.y)
             else:
                 dataset = validset
             X,y = dataset.X,dataset.y
@@ -100,12 +100,12 @@ class RatesCABAC:
             file_name = f"{get_prefix(self.configs,'parent_id')}_{N:03d}_lut.npy"
             with open(file_name, 'rb') as f:
                 lut = np.load(f)
-            cabac.load_lut(lut.reshape(-1,1))
+            cabac.load_lut(lut=lut.reshape(-1,1))
         return cabac
 
     def save_N_model(self,N,cabac):
-        lut = cabac.context_p.reshape(-1)
         if ('train' in self.configs["phases"]) and (N>0):
+            lut = cabac.context_p.reshape(-1)
             with open(f"{get_prefix(self.configs)}_{N:03d}_lut.npy", 'wb') as f:
                 np.save(f, lut)
 
@@ -254,7 +254,7 @@ def train_loop(configs,datatraining,datacoding,N):
         rates_static_t,rates_static_c = RatesStaticAC(configs).get_rates(trainset,validset)
     else:
         rates_cabac_t,rates_cabac_c = RatesCABAC(configs).get_rates(trainset,validset)        
-        # rates_mlp_t,rates_mlp_c = RatesMLP(configs).get_rates(trainset,validset)
+        rates_mlp_t,rates_mlp_c = RatesMLP(configs).get_rates(trainset,validset)
         if (configs["data_type"] == "image"):
             rates_jbig1_t,rates_jbig1_c = RatesJBIG1(configs).get_rates(trainset,validset)
 
@@ -268,7 +268,7 @@ def train_loop(configs,datatraining,datacoding,N):
     if N == 0:
         
         for phase in phases:
-            # data[phase]["MLP"] = rates_static_t if phase == 'train' else rates_static_c
+            data[phase]["MLP"] = rates_static_t if phase == 'train' else rates_static_c
             data[phase]["LUT"] = rates_static_t if phase == 'train' else rates_static_c
             if configs["data_type"] == "image":
                 data[phase]["JBIG1"] = epochs*[-1]
@@ -276,7 +276,7 @@ def train_loop(configs,datatraining,datacoding,N):
     else:
 
         for phase in phases:
-            # data[phase]["MLP"] = rates_mlp_t if phase == 'train' else rates_mlp_c
+            data[phase]["MLP"] = rates_mlp_t if phase == 'train' else rates_mlp_c
             data[phase]["LUT"] = rates_cabac_t if phase == 'train' else rates_cabac_c
             if configs["data_type"] == "image":
                 data[phase]["JBIG1"] = rates_jbig1_t if phase == 'train' else rates_jbig1_c
