@@ -161,3 +161,30 @@ class MLP_N_64N_32N_1_Constructor:
         model.load_state_dict(torch.load(self.weights))
         model.train(False)
         return model
+
+
+class StaticAC_Constructor:
+
+    def __init__(self,weights):
+        self.weights = weights
+
+    def construct(self):
+        staticac = StaticAC()
+        with open(self.weights, 'rb') as f:
+            p = np.load(f)
+        staticac.load_p(p=p[0])
+        return staticac
+
+
+class CABAC_Constructor:
+
+    def __init__(self,weights,max_context):
+        self.weights = weights
+        self.max_context = max_context
+
+    def construct(self):
+        cabac = CABAC(self.max_context)
+        with open(self.weights, 'rb') as f:
+            lut = np.load(f)
+        cabac.load_lut(lut=lut.reshape(-1,1))
+        return cabac

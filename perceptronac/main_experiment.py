@@ -15,6 +15,8 @@ from tqdm import tqdm
 import os
 from perceptronac.models import MLP_N_64N_32N_1
 from perceptronac.models import MLP_N_64N_32N_1_Constructor
+from perceptronac.models import CABAC_Constructor
+from perceptronac.models import StaticAC_Constructor
 from perceptronac.coders import PC_Coder
 import perceptronac.coding3d as c3d
 from perceptronac.coders import get_bpov
@@ -302,22 +304,50 @@ def coding_loop(configs,N):
             """
         raise ValueError(m)
 
-    if (configs["reduction"] == 'min'):
-        weights = f"{get_prefix(configs,'parent_id')}_{N:03d}_min_valid_loss_model.pt"
-    else:
-        weights = f"{get_prefix(configs,'parent_id')}_{N:03d}_model.pt"
-    constructor = MLP_N_64N_32N_1_Constructor(N,weights)
-    coder = PC_Coder(constructor.construct,N,configs["last_octree_level"])
     pc_in = configs["validation_set"][0]
     pc_len = len(c3d.read_PC(pc_in)[1])
-    coder.encode(pc_in,encoder_in="/tmp/encoder_in",encoder_out="/tmp/encoder_out")
-    mlp_rate = get_bpov("/tmp/encoder_out",pc_len)
 
-    data = {
-        "coding": {
-            "MLP": mlp_rate
-        }   
-    }
+    if N == 0:
+        weights = f"{get_prefix(configs,'parent_id')}_{N:03d}_p.npy"
+        constructor = StaticAC_Constructor(weights)
+        coder = PC_Coder(constructor.construct,N,configs["last_octree_level"])
+        coder.encode(pc_in,encoder_in="/tmp/encoder_in",encoder_out="/tmp/encoder_out")
+        staticac_rate = get_bpov("/tmp/encoder_out",pc_len)
+
+    else:
+        if (configs["reduction"] == 'min'):
+            weights = f"{get_prefix(configs,'parent_id')}_{N:03d}_min_valid_loss_model.pt"
+        else:
+            weights = f"{get_prefix(configs,'parent_id')}_{N:03d}_model.pt"
+        constructor = MLP_N_64N_32N_1_Constructor(N,weights)
+        coder = PC_Coder(constructor.construct,N,configs["last_octree_level"])
+        coder.encode(pc_in,encoder_in="/tmp/encoder_in",encoder_out="/tmp/encoder_out")
+        mlp_rate = get_bpov("/tmp/encoder_out",pc_len)
+
+        if N <= configs["max_context"] :
+            weights = f"{get_prefix(configs,'parent_id')}_{N:03d}_lut.npy"
+            constructor = CABAC_Constructor(weights,configs["max_context"])
+            coder = PC_Coder(constructor.construct,N,configs["last_octree_level"])
+            coder.encode(pc_in,encoder_in="/tmp/encoder_in",encoder_out="/tmp/encoder_out")
+            cabac_rate = get_bpov("/tmp/encoder_out",pc_len)
+        else:
+            cabac_rate = -1
+
+    if N == 0:
+        data = {
+            "coding": {
+                "MLP": staticac_rate,
+                "LUT": staticac_rate
+            }   
+        }
+    else:
+        data = {
+            "coding": {
+                "MLP": mlp_rate,
+                "LUT": cabac_rate
+            }   
+        }
+
     return data
     
 
