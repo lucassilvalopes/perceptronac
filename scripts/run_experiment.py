@@ -18,7 +18,7 @@ if __name__ == "__main__":
             os.path.join('SPL2020',f) for f in os.listdir('SPL2020')[0:1]
         ],
         "validation_set": [
-            os.path.join('SPL2021',f) for f in sorted(os.listdir('SPL2021'))[:10]
+            os.path.join('SPL2021',f) for f in sorted(os.listdir('SPL2021'))[-10:]
         ],
         "epochs": 1,
         "learning_rate": 0.00001,
