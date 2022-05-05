@@ -61,6 +61,21 @@ def rand_vec(rng,lb,ub,length):
     return vec
 
 
+def randperm(rng,n):
+    """
+    Sattolo's algorithm.
+
+    https://en.wikipedia.org/wiki/Fisher%E2%80%93Yates_shuffle
+    """
+    items = list(range(n))
+    i = n
+    while i > 1:
+        i = i - 1
+        j = round((i-1) * rng.rand())  # 0 <= j <= i-1
+        items[j], items[i] = items[i], items[j]
+    return items
+
+
 def initialize_MLP_N_64N_32N_1(model):
     """
     https://discuss.pytorch.org/t/how-to-fix-define-the-initialization-weights-seed/20156/2
@@ -77,8 +92,12 @@ def initialize_MLP_N_64N_32N_1(model):
             stdv = 1. / math.sqrt(fan_in)
             with torch.no_grad():
                 model.layers[i].weight.data = \
-                    torch.tensor(rand_vec(rng,-stdv,stdv,fan_in*fan_out)).reshape(fan_out,fan_in)
-                model.layers[i].bias.data = torch.tensor(rand_vec(rng,-stdv,stdv,fan_out))
+                    torch.linspace(-stdv,stdv,fan_in*fan_out)[randperm(rng,fan_in*fan_out)].reshape(fan_out,fan_in)
+                    # torch.tensor(rand_vec(rng,-stdv,stdv,fan_in*fan_out)).reshape(fan_out,fan_in)
+
+                model.layers[i].bias.data = \
+                    torch.linspace(-stdv,stdv,fan_out)[randperm(rng,fan_out)]
+                    # torch.tensor(rand_vec(rng,-stdv,stdv,fan_out))
 
 
 class RealTimeCABAC:
@@ -202,9 +221,9 @@ def backward_adaptive_coding(pths,N,lr):
 
 if __name__ == "__main__":
 
-    exp_name = "SPL2021_first_10_sorted_pages"
+    exp_name = "SPL2021_last_10_sorted_pages"
 
-    pths = [os.path.join('SPL2021',f) for f in sorted(os.listdir('SPL2021'))[0:10]]
+    pths = [os.path.join('SPL2021',f) for f in sorted(os.listdir('SPL2021'))[-10:]]
     
     learning_rates = (3.162277659**np.array([-2,-3,-4,-5,-6,-7,-8]))
 
