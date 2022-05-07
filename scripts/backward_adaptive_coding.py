@@ -122,7 +122,7 @@ class RealTimeCABAC:
         pp[0,0] = c1 / (c1 + c0)
         return pp
 
-def backward_adaptive_coding(pths,N,lr):
+def backward_adaptive_coding(pths,N,lr,with_cabac=False):
     
     device=torch.device("cuda:0")
 
@@ -166,16 +166,18 @@ def backward_adaptive_coding(pths,N,lr):
     model.to(device)
     model.train(True)
 
-    cabac = RealTimeCABAC(N)
-
     criterion = Log2BCELoss(reduction='sum')
     optimizer = torch.optim.SGD(model.parameters(), lr=lr)
 
     mlp_avg_code_length_history = []
-    cabac_avg_code_length_history = []
-
+    
     mlp_running_loss = 0.0
-    cabac_running_loss = 0.0
+    
+    if with_cabac:
+        cabac = RealTimeCABAC(N)
+        cabac_avg_code_length_history = []
+        cabac_running_loss = 0.0
+
     iteration = 0
 
     for data in tqdm(dataloader):
@@ -192,62 +194,73 @@ def backward_adaptive_coding(pths,N,lr):
 
         mlp_running_loss += loss.item()
         mlp_avg_code_length_history.append( mlp_running_loss / (iteration + 1) )
-        # print("mlp out ",outputs.item()," mlp_loss ", loss.item(), "true ", y_b.item())
+
         assert y_b.item() == y[iteration,0]
         assert np.allclose(X_b.cpu().numpy().reshape(-1) , X[iteration,:].reshape(-1))
 
-        cabac_pred_t = cabac.predict(X[iteration:iteration+1,:])
-        cabac.update(X[iteration:iteration+1,:],y[iteration:iteration+1,:])
+        if with_cabac:
+            cabac_pred_t = cabac.predict(X[iteration:iteration+1,:])
+            cabac.update(X[iteration:iteration+1,:],y[iteration:iteration+1,:])
 
-        cabac_loss = perfect_AC(y[iteration:iteration+1,:],cabac_pred_t)
-        # print("cabac_pred_t ",cabac_pred_t," cabac_loss ", cabac_loss, "true ", y_b.item())
-        cabac_running_loss += cabac_loss
-        cabac_avg_code_length_history.append( cabac_running_loss / (iteration + 1) )
+            cabac_loss = perfect_AC(y[iteration:iteration+1,:],cabac_pred_t)
 
-        # print(
-        #     "iteration :" , iteration, 
-        #     ", mlp avg code len :", mlp_running_loss / (iteration + 1), 
-        #     # ", cabac avg code len :", cabac_running_loss / (iteration + 1)
-        # )
+            cabac_running_loss += cabac_loss
+            cabac_avg_code_length_history.append( cabac_running_loss / (iteration + 1) )
+
+
         iteration += 1
             
 
-    data = {
-        "MLPlr={:.0e}".format(lr): mlp_avg_code_length_history,
-        "LUT": cabac_avg_code_length_history
-    }
+    data = dict()
+
+    data["MLPlr={:.0e}".format(lr)] = mlp_avg_code_length_history
+    if with_cabac:
+        data["LUT"] = cabac_avg_code_length_history
     
     return data
 
 if __name__ == "__main__":
 
-    exp_name = "SPL2021_last_10_sorted_pages"
+    N = 67
+
+    max_N = 26
+
+    exp_name = "SPL2021_last_10_sorted_pages_N67_lr1e-2"
 
     pths = [os.path.join('SPL2021',f) for f in sorted(os.listdir('SPL2021'))[-10:]]
     
-    learning_rates = (3.162277659**np.array([-2,-3,-4,-5,-6,-7,-8]))
+    learning_rates = [0.01]# (3.162277659**np.array([-2,-4,-8]))
+
+    # exp_name = "Parameter_Estimation_for_Sinus"
+
+    # pths = [
+    #     "/home/lucaslopes/perceptronac/SPL2021/Parameter_Estimation_for_Sinusoidal_Frequency-Modulated_Signals_Using_Phase_Modulation_3.png"
+    # ]
+
+    # learning_rates = [0.01]
+
+    len_data = 1024*768
 
     data = dict()
     for lr in learning_rates:
-        data["MLPlr={:.0e}".format(lr)] = np.zeros((1024*768))
-    data["LUT"] = np.zeros((1024*768))
+        data["MLPlr={:.0e}".format(lr)] = np.zeros((len_data))
+    if (N<=max_N):
+        data["LUT"] = np.zeros((len_data))
 
     for pth in pths:
     
-        for lr in learning_rates:
-
-            partial_data = backward_adaptive_coding([pth],26,lr)
+        for i_lr,lr in enumerate(learning_rates):
+            with_cabac = ((i_lr == len(learning_rates)-1) and (N<=max_N))
+            partial_data = backward_adaptive_coding([pth],N,lr,with_cabac=with_cabac)
             k = "MLPlr={:.0e}".format(lr)
             data[k] = data[k] + np.array(partial_data[k])
-
-        data["LUT"] = data["LUT"] + np.array(partial_data["LUT"])
+        if (N<=max_N):
+            data["LUT"] = data["LUT"] + np.array(partial_data["LUT"])
 
 
     for k in data.keys():
         data[k] = data[k]/len(pths)
         
-    len_data = len(data['LUT'])
-
     xvalues = np.arange( len_data )
         
     fig = plot_comparison(xvalues,data,"iteration",
@@ -264,4 +277,6 @@ if __name__ == "__main__":
 
     fig.savefig(fname+".png", dpi=300)
 
-    save_values(fname,[xvalues[-1]],{k:[v[-1]] for k,v in data.items()},"iteration")
+    # save_values(fname,[xvalues[-1]],{k:[v[-1]] for k,v in data.items()},"iteration")
+
+    save_values(fname,xvalues,data,"iteration")

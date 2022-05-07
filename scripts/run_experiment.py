@@ -12,22 +12,22 @@ if __name__ == "__main__":
         "ModelClass":MLP_N_64N_32N_1,
         "OptimizerClass":torch.optim.SGD,
         "training_set": [
-            "/home/lucaslopes/longdress/longdress_vox10_1300.ply"
+            os.path.join('SPL2020',f) for f in os.listdir('SPL2020')
         ],
         "validation_set": [
-            "/home/lucaslopes/longdress/longdress_vox10_1300.ply"
+            os.path.join('SPL2020V',f) for f in sorted(os.listdir('SPL2020V'))[:5]
         ],
-        "epochs": 1,
+        "epochs": 300,
         "learning_rate": 0.00001,
         "batch_size": 2048,
         "num_workers":4,
         "device":"cuda:0", #"cpu"
-        "parent_id": "1650138239",
+        "parent_id": "",
         "N_vec": sorted([0] + [round(pow(1.595, i)) for i in range(12) if (i+1)%2==0],reverse=True),
-        "phases": ['coding'], # ['train', 'valid', 'coding'],
+        "phases": ['train','valid'], # ['train', 'valid', 'coding'],
         "xscale": 'symlog',
-        "reduction": 'last', # min, last
-        "data_type": 'pointcloud', # image, pointcloud
+        "reduction": 'min', # min, last
+        "data_type": 'image', # image, pointcloud
         "percentage_of_uncles": 0.0, # must be specified if the data types is pointcloud
         "last_octree_level": 10, # must be specified if the data types is pointcloud
         "save_dir": "results",
