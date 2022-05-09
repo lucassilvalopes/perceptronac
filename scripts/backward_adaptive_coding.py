@@ -122,78 +122,98 @@ class RealTimeCABAC:
         pp[0,0] = c1 / (c1 + c0)
         return pp
 
+class RealTimeAC:
+    def __init__(self):
+        self.c1 = 0
+        self.c0 = 0
+    def update(self,yi):
+        if (yi[0,0] == 1):
+            self.c1 = self.c1 + 1
+        else:
+            self.c0 = self.c0 + 1
+    def predict(self):
+        c1 = max(1,self.c1)
+        c0 = max(1,self.c0)
+        assert c1 > 0
+        assert c0 > 0 
+        pp = np.zeros((1,1)) 
+        pp[0,0] = c1 / (c1 + c0)
+        return pp
+
 def backward_adaptive_coding(pths,N,lr,with_cabac=False):
     
-    device=torch.device("cuda:0")
 
     trainset = CausalContextDataset(pths,"image",N)
     y,X = trainset.y,trainset.X
-    
-    # y0 = y[y.reshape(-1)==0,:]
-    # X0 = X[y.reshape(-1)==0,:]
-    # y1 = y[y.reshape(-1)==1,:]
-    # X1 = X[y.reshape(-1)==1,:]
+    dataloader = torch.utils.data.DataLoader(trainset,batch_size=1,shuffle=False,num_workers=6)
 
-    # y = np.zeros((100,1))
-    # X = np.zeros((100,X.shape[1]))
+    with_mlp = True
+    with_static = False
+    if N == 0:
+        with_mlp = False
+        with_cabac = False
+        with_static = True
 
-    # for i in range(50):
-    #     y[2*i,:] = y0[i,:]
-    #     X[2*i,:] = X0[i,:]
-    # for i in range(50):
-    #     y[2*i+1,:] = y1[i,:]
-    #     X[2*i+1,:] = X1[i,:]
+    if with_mlp:
 
-    dataloader = torch.utils.data.DataLoader(trainset,batch_size=1,shuffle=False,num_workers=1)
+        device=torch.device("cuda:0")
+
+        model = MLP_N_64N_32N_1(N)
+        initialize_MLP_N_64N_32N_1(model)
+
+        for i in range(len(model.layers)):
+            if isinstance(model.layers[i], torch.nn.Linear):
+                weightvalues = model.layers[i].weight.detach().numpy().reshape(-1).tolist()
+                w_avg = np.mean(weightvalues)
+                w_mn = np.min(weightvalues)
+                w_mx = np.max(weightvalues)
+                print(f"layer {i} weights mean {w_avg} min {w_mn} max {w_mx}")
+                biasvalues = model.layers[i].bias.detach().numpy().reshape(-1).tolist()
+                b_avg = np.mean(biasvalues)
+                b_mn = np.min(biasvalues)
+                b_mx = np.max(biasvalues)
+                print(f"layer {i} biases mean {b_avg} min {b_mn} max {b_mx}")
+                
+
+        model.to(device)
+        model.train(True)
+
+        criterion = Log2BCELoss(reduction='sum')
+        optimizer = torch.optim.SGD(model.parameters(), lr=lr)
+
+        mlp_avg_code_length_history = []
         
-    model = MLP_N_64N_32N_1(N)
-    initialize_MLP_N_64N_32N_1(model)
-
-    for i in range(len(model.layers)):
-        if isinstance(model.layers[i], torch.nn.Linear):
-            weightvalues = model.layers[i].weight.detach().numpy().reshape(-1).tolist()
-            w_avg = np.mean(weightvalues)
-            w_mn = np.min(weightvalues)
-            w_mx = np.max(weightvalues)
-            print(f"layer {i} weights mean {w_avg} min {w_mn} max {w_mx}")
-            biasvalues = model.layers[i].bias.detach().numpy().reshape(-1).tolist()
-            b_avg = np.mean(biasvalues)
-            b_mn = np.min(biasvalues)
-            b_mx = np.max(biasvalues)
-            print(f"layer {i} biases mean {b_avg} min {b_mn} max {b_mx}")
-            
-
-    model.to(device)
-    model.train(True)
-
-    criterion = Log2BCELoss(reduction='sum')
-    optimizer = torch.optim.SGD(model.parameters(), lr=lr)
-
-    mlp_avg_code_length_history = []
-    
-    mlp_running_loss = 0.0
+        mlp_running_loss = 0.0
     
     if with_cabac:
         cabac = RealTimeCABAC(N)
         cabac_avg_code_length_history = []
         cabac_running_loss = 0.0
 
+    if with_static:
+        static = RealTimeAC()
+        static_avg_code_length_history = []
+        static_running_loss = 0.0
+
     iteration = 0
 
     for data in tqdm(dataloader):
 
         X_b,y_b= data
-        X_b = X_b.float().to(device)
-        y_b = y_b.float().to(device)
 
-        optimizer.zero_grad()
-        outputs = model(X_b)
-        loss = criterion(outputs, y_b)
-        loss.backward()
-        optimizer.step()
+        if with_mlp:
 
-        mlp_running_loss += loss.item()
-        mlp_avg_code_length_history.append( mlp_running_loss / (iteration + 1) )
+            X_b = X_b.float().to(device)
+            y_b = y_b.float().to(device)
+
+            optimizer.zero_grad()
+            outputs = model(X_b)
+            loss = criterion(outputs, y_b)
+            loss.backward()
+            optimizer.step()
+
+            mlp_running_loss += loss.item()
+            mlp_avg_code_length_history.append( mlp_running_loss / (iteration + 1) )
 
         assert y_b.item() == y[iteration,0]
         assert np.allclose(X_b.cpu().numpy().reshape(-1) , X[iteration,:].reshape(-1))
@@ -206,57 +226,65 @@ def backward_adaptive_coding(pths,N,lr,with_cabac=False):
 
             cabac_running_loss += cabac_loss
             cabac_avg_code_length_history.append( cabac_running_loss / (iteration + 1) )
+        
+        if with_static:
+            static_pred_t = static.predict()
+            static.update(y[iteration:iteration+1,:])
+
+            static_loss = perfect_AC(y[iteration:iteration+1,:],static_pred_t)
+
+            static_running_loss += static_loss
+            static_avg_code_length_history.append( static_running_loss / (iteration + 1) )
 
 
         iteration += 1
             
 
     data = dict()
-
-    data["MLPlr={:.0e}".format(lr)] = mlp_avg_code_length_history
+    if with_mlp:
+        data["MLPlr={:.0e}".format(lr)] = mlp_avg_code_length_history
     if with_cabac:
         data["LUT"] = cabac_avg_code_length_history
+    if with_static:
+        data["STATIC"] = static_avg_code_length_history
     
     return data
 
 if __name__ == "__main__":
 
-    N = 67
+    N = 0
 
     max_N = 26
 
-    exp_name = "SPL2021_last_10_sorted_pages_N67_lr1e-2"
+    exp_name = f"SPL2021_last_10_sorted_pages_N{N}_lr1e-2"
 
-    pths = [os.path.join('SPL2021',f) for f in sorted(os.listdir('SPL2021'))[-10:]]
+    pths = [os.path.join('/home/lucas/Documents/data/SPL2021',f) for f in sorted(os.listdir('/home/lucas/Documents/data/SPL2021'))[-10:]]
     
     learning_rates = [0.01]# (3.162277659**np.array([-2,-4,-8]))
-
-    # exp_name = "Parameter_Estimation_for_Sinus"
-
-    # pths = [
-    #     "/home/lucaslopes/perceptronac/SPL2021/Parameter_Estimation_for_Sinusoidal_Frequency-Modulated_Signals_Using_Phase_Modulation_3.png"
-    # ]
-
-    # learning_rates = [0.01]
 
     len_data = 1024*768
 
     data = dict()
-    for lr in learning_rates:
-        data["MLPlr={:.0e}".format(lr)] = np.zeros((len_data))
-    if (N<=max_N):
-        data["LUT"] = np.zeros((len_data))
+    if N > 0:
+        for lr in learning_rates:
+            data["MLPlr={:.0e}".format(lr)] = np.zeros((len_data))
+        if (N<=max_N):
+            data["LUT"] = np.zeros((len_data))
+    else:
+        data["STATIC"] = np.zeros((len_data))
 
     for pth in pths:
-    
-        for i_lr,lr in enumerate(learning_rates):
-            with_cabac = ((i_lr == len(learning_rates)-1) and (N<=max_N))
-            partial_data = backward_adaptive_coding([pth],N,lr,with_cabac=with_cabac)
-            k = "MLPlr={:.0e}".format(lr)
-            data[k] = data[k] + np.array(partial_data[k])
-        if (N<=max_N):
-            data["LUT"] = data["LUT"] + np.array(partial_data["LUT"])
-
+        if N > 0:
+            for i_lr,lr in enumerate(learning_rates):
+                with_cabac = ((i_lr == len(learning_rates)-1) and (N<=max_N))
+                partial_data = backward_adaptive_coding([pth],N,lr,with_cabac=with_cabac)
+                k = "MLPlr={:.0e}".format(lr)
+                data[k] = data[k] + np.array(partial_data[k])
+            if (N<=max_N):
+                data["LUT"] = data["LUT"] + np.array(partial_data["LUT"])
+        else:
+            partial_data = backward_adaptive_coding([pth],0,0)
+            data["STATIC"] = data["STATIC"] + np.array(partial_data["STATIC"])
 
     for k in data.keys():
         data[k] = data[k]/len(pths)
