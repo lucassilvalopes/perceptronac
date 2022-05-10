@@ -250,61 +250,77 @@ def backward_adaptive_coding(pths,N,lr,with_cabac=False):
     
     return data
 
-if __name__ == "__main__":
 
-    N = 0
+def backward_adaptive_coding_experiment(exp_name,docs,Ns,learning_rates):
 
     max_N = 26
 
-    exp_name = f"SPL2021_last_10_sorted_pages_N{N}_lr1e-2"
+    for N in Ns:
 
-    pths = [os.path.join('/home/lucas/Documents/data/SPL2021',f) for f in sorted(os.listdir('/home/lucas/Documents/data/SPL2021'))[-10:]]
-    
-    learning_rates = [0.01]# (3.162277659**np.array([-2,-4,-8]))
+        len_data = len(docs[0]) * 1024*768
 
-    len_data = 1024*768
-
-    data = dict()
-    if N > 0:
-        for lr in learning_rates:
-            data["MLPlr={:.0e}".format(lr)] = np.zeros((len_data))
-        if (N<=max_N):
-            data["LUT"] = np.zeros((len_data))
-    else:
-        data["STATIC"] = np.zeros((len_data))
-
-    for pth in pths:
+        data = dict()
         if N > 0:
-            for i_lr,lr in enumerate(learning_rates):
-                with_cabac = ((i_lr == len(learning_rates)-1) and (N<=max_N))
-                partial_data = backward_adaptive_coding([pth],N,lr,with_cabac=with_cabac)
-                k = "MLPlr={:.0e}".format(lr)
-                data[k] = data[k] + np.array(partial_data[k])
+            for lr in learning_rates:
+                data["MLPlr={:.0e}".format(lr)] = np.zeros((len_data))
             if (N<=max_N):
-                data["LUT"] = data["LUT"] + np.array(partial_data["LUT"])
+                data["LUT"] = np.zeros((len_data))
         else:
-            partial_data = backward_adaptive_coding([pth],0,0)
-            data["STATIC"] = data["STATIC"] + np.array(partial_data["STATIC"])
+            data["STATIC"] = np.zeros((len_data))
 
-    for k in data.keys():
-        data[k] = data[k]/len(pths)
-        
-    xvalues = np.arange( len_data )
-        
-    fig = plot_comparison(xvalues,data,"iteration",
-        linestyles={k:"solid" for k in data.keys()},
-        colors={k:c for k,c in zip(data.keys(),["g","b","r","c","m","y","k","0.75"])},
-        markers={k:"" for k in data.keys()})
+        for doc in docs:
+            if N > 0:
+                for i_lr,lr in enumerate(learning_rates):
+                    with_cabac = ((i_lr == len(learning_rates)-1) and (N<=max_N))
+                    partial_data = backward_adaptive_coding(doc,N,lr,with_cabac=with_cabac)
+                    k = "MLPlr={:.0e}".format(lr)
+                    data[k] = data[k] + np.array(partial_data[k])
+                if (N<=max_N):
+                    data["LUT"] = data["LUT"] + np.array(partial_data["LUT"])
+            else:
+                partial_data = backward_adaptive_coding(doc,0,0)
+                data["STATIC"] = data["STATIC"] + np.array(partial_data["STATIC"])
 
-    xticks = np.round(np.linspace(0,len_data-1,5)).astype(int)
+        for k in data.keys():
+            data[k] = data[k]/len(docs)
+            
+        xvalues = np.arange( len_data )
+            
+        fig = plot_comparison(xvalues,data,"iteration",
+            linestyles={k:"solid" for k in data.keys()},
+            colors={k:c for k,c in zip(data.keys(),["g","b","r","c","m","y","k","0.75"])},
+            markers={k:"" for k in data.keys()})
 
-    fig.axes[0].set_xticks( xticks)
-    fig.axes[0].set_xticklabels( xticks)
+        xticks = np.round(np.linspace(0,len_data-1,5)).astype(int)
 
-    fname = f"backward_adaptive_coding_{exp_name}"
+        fig.axes[0].set_xticks( xticks)
+        fig.axes[0].set_xticklabels( xticks)
 
-    fig.savefig(fname+".png", dpi=300)
+        fname = f"backward_adaptive_coding_{exp_name}_N{N}"
 
-    # save_values(fname,[xvalues[-1]],{k:[v[-1]] for k,v in data.items()},"iteration")
+        fig.savefig(fname+".png", dpi=300)
 
-    save_values(fname,xvalues,data,"iteration")
+        # save_values(fname,[xvalues[-1]],{k:[v[-1]] for k,v in data.items()},"iteration")
+
+        save_values(fname,xvalues,data,"iteration")
+
+
+if __name__ == "__main__":
+
+    exp_name = "Adaptive_Detection_of_Dim_5pages_lr1e-2"
+
+    docs = [ # docs[i,j] = the path to the j'th page from the i'th document
+        [
+            "/home/lucas/Documents/data/SPL2021/all_pages/Adaptive_Detection_of_Dim_Maneuvering_Targets_in_Adjacent_Range_Cells_1.png",
+            "/home/lucas/Documents/data/SPL2021/all_pages/Adaptive_Detection_of_Dim_Maneuvering_Targets_in_Adjacent_Range_Cells_2.png",
+            "/home/lucas/Documents/data/SPL2021/all_pages/Adaptive_Detection_of_Dim_Maneuvering_Targets_in_Adjacent_Range_Cells_3.png",
+            "/home/lucas/Documents/data/SPL2021/all_pages/Adaptive_Detection_of_Dim_Maneuvering_Targets_in_Adjacent_Range_Cells_4.png",
+            "/home/lucas/Documents/data/SPL2021/all_pages/Adaptive_Detection_of_Dim_Maneuvering_Targets_in_Adjacent_Range_Cells_5.png"
+        ]
+    ]
+
+    Ns = [26] # [0,2,4,10,26,67,170]
+    
+    learning_rates = [0.01] # (3.162277659**np.array([-2,-4,-8]))
+
+    backward_adaptive_coding_experiment(exp_name,docs,Ns,learning_rates)
