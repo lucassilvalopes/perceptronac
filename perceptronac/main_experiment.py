@@ -248,9 +248,9 @@ class RatesMLP:
 def train_loop(configs,datatraining,datacoding,N):
     
     trainset = CausalContextDataset(
-        datatraining,configs["data_type"],N, configs["percentage_of_uncles"])
+        datatraining,configs["data_type"],N, configs["percentage_of_uncles"],getXy_later=('train' not in configs["phases"]))
     validset = CausalContextDataset(
-        datacoding,configs["data_type"],N, configs["percentage_of_uncles"])
+        datacoding,configs["data_type"],N, configs["percentage_of_uncles"],getXy_later=('valid' not in configs["phases"]))
 
     if N == 0:
         rates_static_t,rates_static_c = RatesStaticAC(configs).get_rates(trainset,validset)

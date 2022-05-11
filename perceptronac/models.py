@@ -83,12 +83,15 @@ class Log2BCELoss(torch.nn.Module):
 
 
 class CausalContextDataset(torch.utils.data.Dataset):
-    def __init__(self,pths,data_type,N,percentage_of_uncles=None):
+    def __init__(self,pths,data_type,N,percentage_of_uncles=None,getXy_later=False):
         self.pths = pths
         self.data_type = data_type
         self.N = N
         self.percentage_of_uncles = percentage_of_uncles
-        self.getXy()
+        if getXy_later:
+            self.y,self.X = [],[]
+        else:
+            self.getXy()
 
     def getXy(self):
         if self.data_type == "image":
