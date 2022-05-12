@@ -34,7 +34,12 @@ def context_training(X,y,max_context=20):
         else:
             p0[context[k,0],0] = p0[context[k,0],0] + 1
 
-    p1 = p1 + (p1 == 0).astype(int)
-    p0 = p0 + (p0 == 0).astype(int)
-    p = p1 / (p1 + p0)
+    # p1 = p1 + (p1 == 0).astype(int)
+    # p0 = p0 + (p0 == 0).astype(int)
+    # p = p1 / (p1 + p0)
+
+    p = np.clip(p1,1,None) / (np.clip(p1,1,None) + np.clip(p0,1,None))
+    p[np.logical_and(p0 != 0,p1 == 0)]=(0 + np.finfo(p.dtype).eps)
+    p[np.logical_and(p0 == 0,p1 != 0)]=(1 - np.finfo(p.dtype).eps)
+
     return p
