@@ -120,9 +120,9 @@ class RealTimeCABAC:
         pp = np.zeros((1,1)) 
         pp[0,0] = np.max([1,c1]) / (np.max([1,c1]) + np.max([1,c0]))
         if c0 != 0 and c1 == 0:
-            pp[0,0]=(0 + np.finfo(type(pp)).eps)
+            pp[0,0]=(0 + np.finfo(pp.dtype).eps)
         elif c0 == 0 and c1 != 0:
-            pp[0,0]=(1 - np.finfo(type(pp)).eps)
+            pp[0,0]=(1 - np.finfo(pp.dtype).eps)
 
         return pp
 
@@ -139,9 +139,9 @@ class RealTimeAC:
         pp = np.zeros((1,1)) 
         pp[0,0] = np.max([1,self.c1]) / (np.max([1,self.c1]) + np.max([1,self.c0]))
         if self.c0 != 0 and self.c1 == 0:
-            pp[0,0]=(0 + np.finfo(type(pp)).eps)
+            pp[0,0]=(0 + np.finfo(pp.dtype).eps)
         elif self.c0 == 0 and self.c1 != 0:
-            pp[0,0]=(1 - np.finfo(type(pp)).eps)
+            pp[0,0]=(1 - np.finfo(pp.dtype).eps)
         return pp
 
 def backward_adaptive_coding(pths,N,lr,with_cabac=False,with_mlp=True):
