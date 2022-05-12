@@ -114,12 +114,16 @@ class RealTimeCABAC:
             self.c0[context[0,0],0] = self.c0[context[0,0],0] + 1
     def predict(self,Xi):
         context = Xi @ self.po2
-        c1 = np.max([1,self.c1[context[0,0],0]])
-        c0 = np.max([1,self.c0[context[0,0],0]])
-        assert c1 > 0
-        assert c0 > 0 
+        c1 = self.c1[context[0,0],0]
+        c0 = self.c0[context[0,0],0]
+
         pp = np.zeros((1,1)) 
-        pp[0,0] = c1 / (c1 + c0)
+        pp[0,0] = np.max([1,c1]) / (np.max([1,c1]) + np.max([1,c0]))
+        if c0 != 0 and c1 == 0:
+            pp[0,0]=(0 + np.finfo(type(pp)).eps)
+        elif c0 == 0 and c1 != 0:
+            pp[0,0]=(1 - np.finfo(type(pp)).eps)
+
         return pp
 
 class RealTimeAC:
@@ -132,12 +136,12 @@ class RealTimeAC:
         else:
             self.c0 = self.c0 + 1
     def predict(self):
-        c1 = max(1,self.c1)
-        c0 = max(1,self.c0)
-        assert c1 > 0
-        assert c0 > 0 
         pp = np.zeros((1,1)) 
-        pp[0,0] = c1 / (c1 + c0)
+        pp[0,0] = np.max([1,self.c1]) / (np.max([1,self.c1]) + np.max([1,self.c0]))
+        if self.c0 != 0 and self.c1 == 0:
+            pp[0,0]=(0 + np.finfo(type(pp)).eps)
+        elif self.c0 == 0 and self.c1 != 0:
+            pp[0,0]=(1 - np.finfo(type(pp)).eps)
         return pp
 
 def backward_adaptive_coding(pths,N,lr,with_cabac=False,with_mlp=True):
@@ -309,15 +313,15 @@ if __name__ == "__main__":
 
     # exp_name = "SPL2021_last_10_sorted_pages_lr1e-2"
 
-    exp_name = "Adaptive_Detection_of_Dim_5pages_corrected_lut"
+    exp_name = "Adaptive_Detection_of_Dim_corrected_lut"
 
     docs = [ # docs[i,j] = the path to the j'th page from the i'th document
         [
-            "/home/lucas/Documents/data/SPL2021/all_pages/Adaptive_Detection_of_Dim_Maneuvering_Targets_in_Adjacent_Range_Cells_1.png",
-            "/home/lucas/Documents/data/SPL2021/all_pages/Adaptive_Detection_of_Dim_Maneuvering_Targets_in_Adjacent_Range_Cells_2.png",
-            "/home/lucas/Documents/data/SPL2021/all_pages/Adaptive_Detection_of_Dim_Maneuvering_Targets_in_Adjacent_Range_Cells_3.png",
-            "/home/lucas/Documents/data/SPL2021/all_pages/Adaptive_Detection_of_Dim_Maneuvering_Targets_in_Adjacent_Range_Cells_4.png",
-            "/home/lucas/Documents/data/SPL2021/all_pages/Adaptive_Detection_of_Dim_Maneuvering_Targets_in_Adjacent_Range_Cells_5.png"
+            #"/home/lucas/Documents/data/SPL2021/all_pages/Adaptive_Detection_of_Dim_Maneuvering_Targets_in_Adjacent_Range_Cells_1.png",
+            #"/home/lucas/Documents/data/SPL2021/all_pages/Adaptive_Detection_of_Dim_Maneuvering_Targets_in_Adjacent_Range_Cells_2.png",
+            "SPL2021/Adaptive_Detection_of_Dim_Maneuvering_Targets_in_Adjacent_Range_Cells_3.png",
+            #"/home/lucas/Documents/data/SPL2021/all_pages/Adaptive_Detection_of_Dim_Maneuvering_Targets_in_Adjacent_Range_Cells_4.png",
+            #"/home/lucas/Documents/data/SPL2021/all_pages/Adaptive_Detection_of_Dim_Maneuvering_Targets_in_Adjacent_Range_Cells_5.png"
         ]
     ]
 
