@@ -140,14 +140,14 @@ class RealTimeAC:
         pp[0,0] = c1 / (c1 + c0)
         return pp
 
-def backward_adaptive_coding(pths,N,lr,with_cabac=False):
+def backward_adaptive_coding(pths,N,lr,with_cabac=False,with_mlp=True):
     
 
     trainset = CausalContextDataset(pths,"image",N)
     y,X = trainset.y,trainset.X
     dataloader = torch.utils.data.DataLoader(trainset,batch_size=1,shuffle=False,num_workers=6)
 
-    with_mlp = True
+    #with_mlp = True
     with_static = False
     if N == 0:
         with_mlp = False
@@ -271,11 +271,11 @@ def backward_adaptive_coding_experiment(exp_name,docs,Ns,learning_rates):
         for doc in docs:
             if N > 0:
                 for i_lr,lr in enumerate(learning_rates):
-                    with_cabac = ((i_lr == len(learning_rates)-1) and (N<=max_N))
-                    partial_data = backward_adaptive_coding(doc,N,lr,with_cabac=with_cabac)
+                    partial_data = backward_adaptive_coding(doc,N,lr)
                     k = "MLPlr={:.0e}".format(lr)
                     data[k] = data[k] + np.array(partial_data[k])
                 if (N<=max_N):
+                    partial_data = backward_adaptive_coding(doc,N,0,with_cabac=True,with_mlp=False)
                     data["LUT"] = data["LUT"] + np.array(partial_data["LUT"])
             else:
                 partial_data = backward_adaptive_coding(doc,0,0)
@@ -307,24 +307,24 @@ def backward_adaptive_coding_experiment(exp_name,docs,Ns,learning_rates):
 
 if __name__ == "__main__":
 
-    exp_name = "SPL2021_last_10_sorted_pages_lr1e-2"
+    # exp_name = "SPL2021_last_10_sorted_pages_lr1e-2"
 
-    # exp_name = "Adaptive_Detection_of_Dim_5pages_lr1e-2"
+    exp_name = "Adaptive_Detection_of_Dim_5pages_corrected_lut"
 
-    # docs = [ # docs[i,j] = the path to the j'th page from the i'th document
-    #     [
-    #         "/home/lucas/Documents/data/SPL2021/all_pages/Adaptive_Detection_of_Dim_Maneuvering_Targets_in_Adjacent_Range_Cells_1.png",
-    #         "/home/lucas/Documents/data/SPL2021/all_pages/Adaptive_Detection_of_Dim_Maneuvering_Targets_in_Adjacent_Range_Cells_2.png",
-    #         "/home/lucas/Documents/data/SPL2021/all_pages/Adaptive_Detection_of_Dim_Maneuvering_Targets_in_Adjacent_Range_Cells_3.png",
-    #         "/home/lucas/Documents/data/SPL2021/all_pages/Adaptive_Detection_of_Dim_Maneuvering_Targets_in_Adjacent_Range_Cells_4.png",
-    #         "/home/lucas/Documents/data/SPL2021/all_pages/Adaptive_Detection_of_Dim_Maneuvering_Targets_in_Adjacent_Range_Cells_5.png"
-    #     ]
-    # ]
+    docs = [ # docs[i,j] = the path to the j'th page from the i'th document
+        [
+            "/home/lucas/Documents/data/SPL2021/all_pages/Adaptive_Detection_of_Dim_Maneuvering_Targets_in_Adjacent_Range_Cells_1.png",
+            "/home/lucas/Documents/data/SPL2021/all_pages/Adaptive_Detection_of_Dim_Maneuvering_Targets_in_Adjacent_Range_Cells_2.png",
+            "/home/lucas/Documents/data/SPL2021/all_pages/Adaptive_Detection_of_Dim_Maneuvering_Targets_in_Adjacent_Range_Cells_3.png",
+            "/home/lucas/Documents/data/SPL2021/all_pages/Adaptive_Detection_of_Dim_Maneuvering_Targets_in_Adjacent_Range_Cells_4.png",
+            "/home/lucas/Documents/data/SPL2021/all_pages/Adaptive_Detection_of_Dim_Maneuvering_Targets_in_Adjacent_Range_Cells_5.png"
+        ]
+    ]
 
-    docs = [[os.path.join('/home/lucas/Documents/data/SPL2021/pages',f)] for f in sorted(os.listdir('/home/lucas/Documents/data/SPL2021/pages'))[-10:]]
+    # docs = [[os.path.join('/home/lucas/Documents/data/SPL2021/pages',f)] for f in sorted(os.listdir('/home/lucas/Documents/data/SPL2021/pages'))[-10:]]
 
-    Ns = [107] # [0,2,4,10,26,67,170] # [26,33,42,53,67,84,107,135,170]
+    Ns = [26] # [0,2,4,10,26,67,170] # [26,33,42,53,67,84,107,135,170]
     
-    learning_rates = [0.01] # (3.162277659**np.array([-2,-4,-8]))
+    learning_rates = [] # (3.162277659**np.array([-2,-4,-8]))
 
     backward_adaptive_coding_experiment(exp_name,docs,Ns,learning_rates)
