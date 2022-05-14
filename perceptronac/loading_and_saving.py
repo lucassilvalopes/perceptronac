@@ -23,7 +23,8 @@ def plot_single_curve(ax,rates,xvalues,linestyle,color,label,marker):
     return handle
 
 
-def plot_comparison(xvalues,data,xlabel,ylabel='bits/sample',xscale="linear",linestyles=None,colors=None,markers=None):
+def plot_comparison(xvalues,data,xlabel,ylabel='bits/sample',xscale="linear",linestyles=None,colors=None,markers=None,
+    legend_ncol=None):
 
     if linestyles is None:
         linestyles = {"JBIG1":"dashdot","LUT":"dotted","MLP":"solid","STATIC":"dashed"}
@@ -31,7 +32,9 @@ def plot_comparison(xvalues,data,xlabel,ylabel='bits/sample',xscale="linear",lin
         colors = {"JBIG1":'red',"LUT":'green',"MLP":'blue',"STATIC":'orange'}
     if markers is None:
         markers = {"JBIG1":'s',"LUT":'^',"MLP":'o',"STATIC":'v'}
-
+    if legend_ncol is None:
+        legend_ncol = 1
+    
     fig, ax = plt.subplots(nrows=1, ncols=1,figsize=(4.8,4.8))    
 
     handles = []
@@ -43,7 +46,7 @@ def plot_comparison(xvalues,data,xlabel,ylabel='bits/sample',xscale="linear",lin
     ax.set_xlabel(xlabel)
     ax.set_ylabel(ylabel)
     ax.set_xscale(xscale)
-    ax.legend(handles=handles,loc="upper right")
+    ax.legend(handles=handles,loc="upper right", ncol=legend_ncol)
 
     fig.tight_layout()
     plt.show()    
