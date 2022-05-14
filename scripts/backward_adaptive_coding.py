@@ -102,10 +102,21 @@ def initialize_MLP_N_64N_32N_1(model):
 
 class RealTimeCABAC:
 
-    def __init__(self,N):
+    def __init__(self,N,central_tendency="mode"):
         self.po2 = 2 ** np.arange(0,N).reshape(-1,1)
-        self.c1 = np.zeros((2**N,1))
-        self.c0 = np.zeros((2**N,1))
+        self.central_tendency = central_tendency
+        if self.central_tendency=="mode":
+            self.c1 = np.zeros((2**N,1))
+            self.c0 = np.zeros((2**N,1))
+        elif self.central_tendency=="mean":
+            self.c1 = np.ones((2**N,1))
+            self.c0 = np.ones((2**N,1))
+        else:
+            self.bad_central_tendency()
+
+    def bad_central_tendency(self):
+        raise ValueError(f"{self.central_tendency} not an option, only \"mode\" or \"mean\"")
+
     def update(self,Xi,yi):
         context = Xi @ self.po2
         if (yi[0,0] == 1):
@@ -118,18 +129,31 @@ class RealTimeCABAC:
         c0 = self.c0[context[0,0],0]
 
         pp = np.zeros((1,1)) 
-        pp[0,0] = np.max([1,c1]) / (np.max([1,c1]) + np.max([1,c0]))
-        if c0 != 0 and c1 == 0:
-            pp[0,0]=(0 + np.finfo(pp.dtype).eps)
-        elif c0 == 0 and c1 != 0:
-            pp[0,0]=(1 - np.finfo(pp.dtype).eps)
-
+        if self.central_tendency == "mode":
+            pp[0,0] = np.max([1,c1]) / (np.max([1,c1]) + np.max([1,c0]))
+            if c0 != 0 and c1 == 0:
+                pp[0,0]=(0 + np.finfo(pp.dtype).eps)
+            elif c0 == 0 and c1 != 0:
+                pp[0,0]=(1 - np.finfo(pp.dtype).eps)
+        elif self.central_tendency=="mean":
+            pp[0,0] = c1 / (c1 + c0)
+        else:
+            self.bad_central_tendency()
         return pp
 
 class RealTimeAC:
-    def __init__(self):
-        self.c1 = 0
-        self.c0 = 0
+    def __init__(self,central_tendency="mode"):
+        self.central_tendency = central_tendency
+        if self.central_tendency=="mode":
+            self.c1 = 0
+            self.c0 = 0
+        elif self.central_tendency=="mean":
+            self.c1 = 1
+            self.c0 = 1
+        else:
+            self.bad_central_tendency() 
+    def bad_central_tendency(self):
+        raise ValueError(f"{self.central_tendency} not an option, only \"mode\" or \"mean\"")
     def update(self,yi):
         if (yi[0,0] == 1):
             self.c1 = self.c1 + 1
@@ -137,11 +161,16 @@ class RealTimeAC:
             self.c0 = self.c0 + 1
     def predict(self):
         pp = np.zeros((1,1)) 
-        pp[0,0] = np.max([1,self.c1]) / (np.max([1,self.c1]) + np.max([1,self.c0]))
-        if self.c0 != 0 and self.c1 == 0:
-            pp[0,0]=(0 + np.finfo(pp.dtype).eps)
-        elif self.c0 == 0 and self.c1 != 0:
-            pp[0,0]=(1 - np.finfo(pp.dtype).eps)
+        if self.central_tendency == "mode":
+            pp[0,0] = np.max([1,self.c1]) / (np.max([1,self.c1]) + np.max([1,self.c0]))
+            if self.c0 != 0 and self.c1 == 0:
+                pp[0,0]=(0 + np.finfo(pp.dtype).eps)
+            elif self.c0 == 0 and self.c1 != 0:
+                pp[0,0]=(1 - np.finfo(pp.dtype).eps)
+        elif self.central_tendency=="mean":
+            pp[0,0] = self.c1 / (self.c1 + self.c0)
+        else:
+            self.bad_central_tendency()
         return pp
 
 def backward_adaptive_coding(pths,N,lr,with_cabac=False,with_mlp=True):
@@ -311,9 +340,9 @@ def backward_adaptive_coding_experiment(exp_name,docs,Ns,learning_rates):
 
 if __name__ == "__main__":
 
-    # exp_name = "SPL2021_last_10_sorted_pages_lr1e-2"
+    # exp_name = "SPL2021_last_10_sorted_pages_corrected_lut"
 
-    exp_name = "Adaptive_Detection_of_Dim_corrected_lut"
+    exp_name = "Adaptive_Detection_of_Dim_corrected_lut_lr1e-1_lr1e-2_lr1e-4"
 
     docs = [ # docs[i,j] = the path to the j'th page from the i'th document
         [
@@ -325,10 +354,10 @@ if __name__ == "__main__":
         ]
     ]
 
-    # docs = [[os.path.join('/home/lucas/Documents/data/SPL2021/pages',f)] for f in sorted(os.listdir('/home/lucas/Documents/data/SPL2021/pages'))[-10:]]
+    # docs = [[os.path.join('SPL2021',f)] for f in sorted(os.listdir('SPL2021'))[-10:]]
 
-    Ns = [26] # [0,2,4,10,26,67,170] # [26,33,42,53,67,84,107,135,170]
+    Ns = [10] # [0,2,4,10,26,67,170] # [26,33,42,53,67,84,107,135,170]
     
-    learning_rates = [] # (3.162277659**np.array([-2,-4,-8]))
+    learning_rates = (3.162277659**np.array([-2,-4,-8]))
 
     backward_adaptive_coding_experiment(exp_name,docs,Ns,learning_rates)
