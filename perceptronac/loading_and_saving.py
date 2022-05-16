@@ -7,6 +7,41 @@ import os
 import matplotlib.pyplot as plt
 
 
+# https://matplotlib.org/3.5.0/gallery/lines_bars_and_markers/linestyles.html
+linestyle_tuple = {
+     'solid':                 'solid', # Same as (0, ()) or '-'
+     'dotted':                'dotted', # Same as (0, (1, 1)) or ':'
+     'dashed':                'dashed', # Same as '--'
+     'dashdot':               'dashdot', # Same as '-.'
+     'loosely dotted':        (0, (1, 10)),
+     'dotted':                (0, (1, 1)),
+     'densely dotted':        (0, (1, 1)),
+     'loosely dashed':        (0, (5, 10)),
+     'dashed':                (0, (5, 5)),
+     'densely dashed':        (0, (5, 1)),
+     'loosely dashdotted':    (0, (3, 10, 1, 10)),
+     'dashdotted':            (0, (3, 5, 1, 5)),
+     'densely dashdotted':    (0, (3, 1, 1, 1)),
+     'dashdotdotted':         (0, (3, 5, 1, 5, 1, 5)),
+     'loosely dashdotdotted': (0, (3, 10, 1, 10, 1, 10)),
+     'densely dashdotdotted': (0, (3, 1, 1, 1, 1, 1))
+}
+
+
+def change_aspect(ax,ratio=0.5):
+    #https://www.statology.org/matplotlib-aspect-ratio/
+
+    #define y-unit to x-unit ratio
+    #ratio = 0.5
+
+    #get x and y limits
+    x_left, x_right = ax.get_xlim()
+    y_low, y_high = ax.get_ylim()
+
+    #set aspect ratio
+    ax.set_aspect(abs((x_right-x_left)/(y_low-y_high))*ratio)
+
+
 def plot_single_curve(ax,rates,xvalues,linestyle,color,label,marker):
 
     handle = None
@@ -24,7 +59,7 @@ def plot_single_curve(ax,rates,xvalues,linestyle,color,label,marker):
 
 
 def plot_comparison(xvalues,data,xlabel,ylabel='bits/sample',xscale="linear",linestyles=None,colors=None,markers=None,
-    legend_ncol=None):
+    labels=None,legend_ncol=None):
 
     if linestyles is None:
         linestyles = {"JBIG1":"dashdot","LUT":"dotted","MLP":"solid","STATIC":"dashed"}
@@ -32,6 +67,8 @@ def plot_comparison(xvalues,data,xlabel,ylabel='bits/sample',xscale="linear",lin
         colors = {"JBIG1":'red',"LUT":'green',"MLP":'blue',"STATIC":'orange'}
     if markers is None:
         markers = {"JBIG1":'s',"LUT":'^',"MLP":'o',"STATIC":'v'}
+    if labels is None:
+        labels = {k:k for k in data.keys()}
     if legend_ncol is None:
         legend_ncol = 1
     
@@ -39,7 +76,7 @@ def plot_comparison(xvalues,data,xlabel,ylabel='bits/sample',xscale="linear",lin
 
     handles = []
     for k in data.keys():
-        handle = plot_single_curve(ax,data[k],xvalues,linestyles[k],colors[k],k,markers[k])
+        handle = plot_single_curve(ax,data[k],xvalues,linestyles[k],colors[k],labels[k],markers[k])
         if handle:
             handles.append(handle)
 

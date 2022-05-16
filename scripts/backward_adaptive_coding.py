@@ -27,32 +27,9 @@ from perceptronac.perfect_AC import perfect_AC
 from perceptronac.models import Log2BCELoss, CausalContextDataset
 from perceptronac.loading_and_saving import plot_comparison
 from perceptronac.loading_and_saving import save_values
+from perceptronac.loading_and_saving import linestyle_tuple
+from perceptronac.loading_and_saving import change_aspect
 from tqdm import tqdm
-
-
-# https://matplotlib.org/3.5.0/gallery/lines_bars_and_markers/linestyles.html
-linestyle_str = {
-     'solid': 'solid',      # Same as (0, ()) or '-'
-     'dotted': 'dotted',    # Same as (0, (1, 1)) or ':'
-     'dashed': 'dashed',    # Same as '--'
-     'dashdot': 'dashdot'   # Same as '-.'
-}
-
-linestyle_tuple = {
-     'loosely dotted':        (0, (1, 10)),
-     'dotted':                (0, (1, 1)),
-     'densely dotted':        (0, (1, 1)),
-     'loosely dashed':        (0, (5, 10)),
-     'dashed':                (0, (5, 5)),
-     'densely dashed':        (0, (5, 1)),
-     'loosely dashdotted':    (0, (3, 10, 1, 10)),
-     'dashdotted':            (0, (3, 5, 1, 5)),
-     'densely dashdotted':    (0, (3, 1, 1, 1)),
-     'dashdotdotted':         (0, (3, 5, 1, 5, 1, 5)),
-     'loosely dashdotdotted': (0, (3, 10, 1, 10, 1, 10)),
-     'densely dashdotdotted': (0, (3, 1, 1, 1, 1, 1))
-}
-
 
 
 class RNG:
@@ -265,7 +242,8 @@ def backward_adaptive_coding(pths,N,lr,central_tendencies,with_lut=False,with_ml
     return data
 
 
-def backward_adaptive_coding_experiment(exp_name,docs,Ns,learning_rates,central_tendencies,colors,linestyles):
+def backward_adaptive_coding_experiment(exp_name,docs,Ns,learning_rates,central_tendencies,colors,linestyles,
+    labels,legend_ncol):
 
     max_N = 26
 
@@ -303,9 +281,11 @@ def backward_adaptive_coding_experiment(exp_name,docs,Ns,learning_rates,central_
         xvalues = np.arange( len_data )
             
         fig = plot_comparison(xvalues,data,"iteration",
-            linestyles={k:ls for k,ls in zip(data.keys(),linestyles)},
-            colors={k:c for k,c in zip(data.keys(),colors)},
-            markers={k:"" for k in data.keys()})
+            linestyles={k:ls for k,ls in zip(sorted(data.keys()),linestyles)},
+            colors={k:c for k,c in zip(sorted(data.keys()),colors)},
+            markers={k:"" for k in sorted(data.keys())},
+            labels={k:lb for k,lb in zip(sorted(data.keys()),labels)},
+            legend_ncol=legend_ncol)
 
         xticks = np.round(np.linspace(0,len_data-1,5)).astype(int)
 
@@ -314,6 +294,8 @@ def backward_adaptive_coding_experiment(exp_name,docs,Ns,learning_rates,central_
 
         ax, = fig.axes
         ax.set_ylim([0.0, 0.5])
+
+        change_aspect(ax)
 
         fname = f"backward_adaptive_coding_{exp_name}_N{N}"
 
@@ -328,15 +310,15 @@ if __name__ == "__main__":
 
     # exp_name = "SPL2021_last_10_sorted_pages_corrected_lut"
 
-    exp_name = "Adaptive_Detection_of_Dim_lut_mean_mode"
+    exp_name = "Adaptive_Detection_of_Dim_page1_lut_mean_mode_lr1e-1_lr1e-2_lr1e-4"
 
     docs = [ # docs[i,j] = the path to the j'th page from the i'th document
         [
-            #"/home/lucas/Documents/data/SPL2021/all_pages/Adaptive_Detection_of_Dim_Maneuvering_Targets_in_Adjacent_Range_Cells_1.png",
-            #"/home/lucas/Documents/data/SPL2021/all_pages/Adaptive_Detection_of_Dim_Maneuvering_Targets_in_Adjacent_Range_Cells_2.png",
-            "SPL2021/Adaptive_Detection_of_Dim_Maneuvering_Targets_in_Adjacent_Range_Cells_3.png",
-            #"/home/lucas/Documents/data/SPL2021/all_pages/Adaptive_Detection_of_Dim_Maneuvering_Targets_in_Adjacent_Range_Cells_4.png",
-            #"/home/lucas/Documents/data/SPL2021/all_pages/Adaptive_Detection_of_Dim_Maneuvering_Targets_in_Adjacent_Range_Cells_5.png"
+            "SPL2021all_pages/Adaptive_Detection_of_Dim_Maneuvering_Targets_in_Adjacent_Range_Cells_1.png",
+            #"SPL2021all_pages/Adaptive_Detection_of_Dim_Maneuvering_Targets_in_Adjacent_Range_Cells_2.png",
+            #"SPL2021all_pages/Adaptive_Detection_of_Dim_Maneuvering_Targets_in_Adjacent_Range_Cells_3.png",
+            #"SPL2021all_pages/Adaptive_Detection_of_Dim_Maneuvering_Targets_in_Adjacent_Range_Cells_4.png",
+            #"SPL2021all_pages/Adaptive_Detection_of_Dim_Maneuvering_Targets_in_Adjacent_Range_Cells_5.png",
         ]
     ]
 
@@ -344,30 +326,32 @@ if __name__ == "__main__":
 
     Ns = [26] # [0,2,4,10,26,67,170] # [26,33,42,53,67,84,107,135,170]
     
-    learning_rates = [] #(3.162277659**np.array([-2,-4,-8]))
+    learning_rates = (3.162277659**np.array([-2,-4,-8]))
 
-    central_tendencies = ["mode","mean"]
+    central_tendencies = ["mean","mode"]
+
+    labels = [
+        'B LUT', # LUTmean
+        'U LUT', # LUTmode
+        r'APC $\lambda=10^{-1}$', # MLPlr=1e-01
+        r'APC $\lambda=10^{-2}$', # MLPlr=1e-02
+        r'APC $\lambda=10^{-4}$' # MLPlr=1e-04
+    ]
 
     linestyles = [
-        "solid", # "LUTmode"
-        # "dashdot",
-        # "dashed",
-        # "dotted",
-        # linestyle_tuple['loosely dashdot'], 
-        # linestyle_tuple['loosely dashed'],
-        # linestyle_tuple['loosely dotted'],
-        linestyle_tuple['dashdotdotted'] # "LUTmean"
+        "solid", # "LUTmean"
+        linestyle_tuple['densely dotted'], # "LUTmode"
+        "dashdot", # MLPlr=1e-01
+        "dashed", # MLPlr=1e-02
+        "dotted", # MLPlr=1e-04
     ]
 
     colors = [
-        "g",
-        # "r",
-        # "b",
-        # "c",
-        # "m",
-        # "y",
-        # "k",
-        "0.5"
+        "g", # "LUTmean"
+        "0.5", # "LUTmode"
+        "r", # MLPlr=1e-01
+        "b", # MLPlr=1e-02
+        "c", # MLPlr=1e-04  
     ]
 
-    backward_adaptive_coding_experiment(exp_name,docs,Ns,learning_rates,central_tendencies,colors,linestyles)
+    backward_adaptive_coding_experiment(exp_name,docs,Ns,learning_rates,central_tendencies,colors,linestyles,labels,2)
