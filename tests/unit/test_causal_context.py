@@ -7,28 +7,17 @@ import unittest
 class TestCausalContext(unittest.TestCase):
     def setUp(self):
         test_data_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),"test_data")
-        # self.yt = np.genfromtxt(os.path.join(test_data_dir,"yt.txt"), delimiter=",").reshape(-1,1)
-        self.yt = np.load(os.path.join(test_data_dir,"yt.npz"))["arr_0"]
-        # self.Xt = np.genfromtxt(os.path.join(test_data_dir,"Xt.txt"), delimiter=",")
-        self.Xt = np.load(os.path.join(test_data_dir,"Xt.npz"))["arr_0"]
-        # self.imgtraining = np.genfromtxt(os.path.join(test_data_dir,"imgtraining.txt"), delimiter=",")
-        self.imgtraining = np.load(os.path.join(test_data_dir,"imgtraining.npz"))["arr_0"]
-
+        self.yt = np.load(os.path.join(test_data_dir,"yt.npz"))["arr_0"] # original vector of outcomes obtained using matlab
+        self.Xt = np.load(os.path.join(test_data_dir,"Xt.npz"))["arr_0"] # original causal context matrix obtained using matlab
+        self.imgtraining = np.load(os.path.join(test_data_dir,"imgtraining.npz"))["arr_0"] # original binary image obtained using matlab
 
     def test_shape(self):
-
         yt2,Xt2 = causal_context(self.imgtraining, 60)
-
         self.assertEqual(self.imgtraining.shape , (1024,791) )
-
         n_samples = ( 1024-int(np.ceil(np.sqrt(60))) ) * ( 791 -2* int(np.ceil(np.sqrt(60))))
-
         self.assertEqual(Xt2.shape , (n_samples, 60) )
-
         self.assertEqual(yt2.shape , (n_samples,1) )
-
         self.assertTrue(np.allclose(self.yt,yt2))
-
         self.assertTrue(np.allclose(self.Xt,Xt2))
 
 
