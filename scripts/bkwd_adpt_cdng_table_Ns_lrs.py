@@ -4,11 +4,11 @@ from perceptronac.backward_adaptive_coding import backward_adaptive_coding_exper
 
 if __name__ == "__main__":
 
-    exp_name = "A_PDE_Model_for_Smooth_lr1e-1_lr1e-2_lr1e-3_lr1e-4"
+    exp_name = "A_PDE_Model_for_Smooth_lr1e-1_lr1e-2_lr1e-3_lr1e-4" # "Adaptive_Detection_of_Dim_lr1e-1_lr1e-2_lr1e-3_lr1e-4"
 
     docs = [
         [
-            "/home/lucas/Documents/data/SPL2020V/pages/A_PDE_Model_for_Smooth_Surface_Reconstruction_from_2D_Parallel_Slices_2.png"
+            "/home/lucas/Documents/data/SPL2020V/pages/A_PDE_Model_for_Smooth_Surface_Reconstruction_from_2D_Parallel_Slices_2.png" # "/home/lucaslopes/perceptronac/SPL2021/Adaptive_Detection_of_Dim_Maneuvering_Targets_in_Adjacent_Range_Cells_3.png"
         ]
     ]
 
