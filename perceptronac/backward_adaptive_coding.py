@@ -243,7 +243,7 @@ def backward_adaptive_coding(pths,N,lr,central_tendencies,with_lut=False,with_ml
 
 
 def backward_adaptive_coding_experiment(exp_name,docs,Ns,learning_rates,central_tendencies,colors,linestyles,
-    labels,legend_ncol):
+    labels,legend_ncol,ylim):
 
     max_N = 26
 
@@ -293,7 +293,7 @@ def backward_adaptive_coding_experiment(exp_name,docs,Ns,learning_rates,central_
         fig.axes[0].set_xticklabels( xticks)
 
         ax, = fig.axes
-        ax.set_ylim([0.0, 0.5])
+        ax.set_ylim(ylim)
 
         change_aspect(ax)
 
@@ -306,52 +306,3 @@ def backward_adaptive_coding_experiment(exp_name,docs,Ns,learning_rates,central_
         save_values(fname,xvalues,data,"iteration")
 
 
-if __name__ == "__main__":
-
-    # exp_name = "SPL2021_last_10_sorted_pages_corrected_lut"
-
-    exp_name = "Adaptive_Detection_of_Dim_page1_lut_mean_mode_lr1e-1_lr1e-2_lr1e-4"
-
-    docs = [ # docs[i,j] = the path to the j'th page from the i'th document
-        [
-            "SPL2021all_pages/Adaptive_Detection_of_Dim_Maneuvering_Targets_in_Adjacent_Range_Cells_1.png",
-            #"SPL2021all_pages/Adaptive_Detection_of_Dim_Maneuvering_Targets_in_Adjacent_Range_Cells_2.png",
-            #"SPL2021all_pages/Adaptive_Detection_of_Dim_Maneuvering_Targets_in_Adjacent_Range_Cells_3.png",
-            #"SPL2021all_pages/Adaptive_Detection_of_Dim_Maneuvering_Targets_in_Adjacent_Range_Cells_4.png",
-            #"SPL2021all_pages/Adaptive_Detection_of_Dim_Maneuvering_Targets_in_Adjacent_Range_Cells_5.png",
-        ]
-    ]
-
-    # docs = [[os.path.join('SPL2021',f)] for f in sorted(os.listdir('SPL2021'))[-10:]]
-
-    Ns = [26] # [0,2,4,10,26,67,170] # [26,33,42,53,67,84,107,135,170]
-    
-    learning_rates = (3.162277659**np.array([-2,-4,-8]))
-
-    central_tendencies = ["mean","mode"]
-
-    labels = [
-        'B LUT', # LUTmean
-        'U LUT', # LUTmode
-        r'APC $\lambda=10^{-1}$', # MLPlr=1e-01
-        r'APC $\lambda=10^{-2}$', # MLPlr=1e-02
-        r'APC $\lambda=10^{-4}$' # MLPlr=1e-04
-    ]
-
-    linestyles = [
-        "solid", # "LUTmean"
-        linestyle_tuple['densely dotted'], # "LUTmode"
-        "dashdot", # MLPlr=1e-01
-        "dashed", # MLPlr=1e-02
-        "dotted", # MLPlr=1e-04
-    ]
-
-    colors = [
-        "g", # "LUTmean"
-        "0.5", # "LUTmode"
-        "r", # MLPlr=1e-01
-        "b", # MLPlr=1e-02
-        "c", # MLPlr=1e-04  
-    ]
-
-    backward_adaptive_coding_experiment(exp_name,docs,Ns,learning_rates,central_tendencies,colors,linestyles,labels,2)
