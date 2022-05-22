@@ -12,22 +12,23 @@ if __name__ == "__main__":
         "ModelClass":MLP_N_64N_32N_1,
         "OptimizerClass":torch.optim.SGD,
         "training_set": [
-            "eduardo/contexts_symbols.txt"
+            os.path.join('SPL2020',f) for f in os.listdir('SPL2020')
         ],
         "validation_set": [
-            "eduardo/contexts_symbols.txt"
+            #os.path.join('SPL2020V',f) for f in sorted(os.listdir('SPL2020V'))[:5] # validation
+            os.path.join('SPL2021',f) for f in sorted(os.listdir('SPL2021'))[-10:] # test
         ],
-        "epochs": 300,
+        "epochs": 1, # 300,
         "learning_rate": 0.00001,
         "batch_size": 2048,
         "num_workers":4,
         "device":"cuda:0", #"cpu"
-        "parent_id": "",
-        "N_vec": [14], # sorted([0] + [round(pow(1.595, i)) for i in range(12) if (i+1)%2==0],reverse=True),
-        "phases": ['train'], # ['train', 'valid'], # ['coding'],
+        "parent_id": "1652657310",
+        "N_vec": sorted([0] + [round(pow(1.595, i)) for i in range(12) if (i+1)%2==0],reverse=True),
+        "phases": ['valid'], # ['train', 'valid'], # ['coding'],
         "xscale": 'symlog',
         "reduction": 'min', # min, last
-        "data_type": 'csv', # image, pointcloud, csv
+        "data_type": 'image', # image, pointcloud
         "percentage_of_uncles": 0.0, # must be specified if the data types is pointcloud
         "last_octree_level": 10, # must be specified if the data types is pointcloud
         "save_dir": "results",

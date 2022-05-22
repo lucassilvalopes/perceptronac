@@ -103,9 +103,14 @@ class CausalContextDataset(torch.utils.data.Dataset):
                 raise ValueError(m)
             self.y,self.X = causal_context_many_pcs(
                 self.pths, self.N, self.percentage_of_uncles)
+        elif self.data_type == "csv":
+            Xy = np.vstack([np.genfromtxt(pth) for pth in self.pths])
+            assert Xy.shape[1] - 1 == self.N
+            self.X = Xy[:,:self.N]
+            self.y = Xy[:,self.N:]
         else:
             m = f"Data type {self.data_type} not supported.\n"+\
-                "Supported data types : image, pointcloud."
+                "Supported data types : image, pointcloud, csv."
             raise ValueError(m)
 
     def __len__(self):
