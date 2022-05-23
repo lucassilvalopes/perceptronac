@@ -269,7 +269,7 @@ class RatesArbitraryWidthMLP(RatesMLP):
         return f"{get_prefix(self.configs,id_key=id_key)}_W{self.W:07d}_model.pt"
 
     def instantiate_model(self):
-        return ArbitraryWidthMLP(self.N,self.H)
+        return ArbitraryWidthMLP(self.N,self.W)
 
 
 def train_loop(configs,datatraining,datacoding,N):
