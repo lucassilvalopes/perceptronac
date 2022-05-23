@@ -6,6 +6,7 @@ from perceptronac.loading_and_saving import save_fig
 from perceptronac.loading_and_saving import save_values
 from perceptronac.loading_and_saving import plot_comparison
 from perceptronac.loading_and_saving import save_configs
+from perceptronac.loading_and_saving import save_data
 from perceptronac.models import Log2BCELoss
 from perceptronac.models import CABAC
 from perceptronac.models import StaticAC
@@ -15,6 +16,7 @@ from tqdm import tqdm
 import os
 from perceptronac.models import MLP_N_64N_32N_1
 from perceptronac.models import MLP_N_64N_32N_1_Constructor
+from perceptronac.models import ArbitraryWidthMLP
 from perceptronac.models import CABAC_Constructor
 from perceptronac.models import StaticAC_Constructor
 from perceptronac.coders import PC_Coder
@@ -147,12 +149,11 @@ class RatesJBIG1:
 
 class RatesMLP:
 
-    def __init__(self,configs):
+    def __init__(self,configs,N):
         self.configs = configs
+        self.N = N
 
     def get_rates(self,trainset,validset):
-
-        N = trainset.N
 
         OptimizerClass=self.configs["OptimizerClass"]
         epochs=self.configs["epochs"]
@@ -164,7 +165,7 @@ class RatesMLP:
         
         device = torch.device(device)
         
-        model = self.load_model(N)
+        model = self.load_model()
         model.to(device)
         
         criterion = Log2BCELoss(reduction='sum')
@@ -215,34 +216,60 @@ class RatesMLP:
                 print("epoch :" , epoch, ", phase :", phase, ", loss :", final_loss)
                 
 
-            self.save_N_min_valid_loss_model(valid_loss,N,model)
+            self.save_N_min_valid_loss_model(valid_loss,model)
  
         # save final model
-        self.save_N_model(N,model)
+        self.save_N_model(model)
 
         return train_loss, valid_loss
 
-    def load_model(self,N):
+
+    def min_valid_loss_model_name(self, id_key = "id"):
+        return f"{get_prefix(self.configs,id_key=id_key)}_{self.N:03d}_min_valid_loss_model.pt"
+
+    def last_train_loss_model_name(self, id_key = "id"):
+        return f"{get_prefix(self.configs,id_key=id_key)}_{self.N:03d}_model.pt"
+
+    def instantiate_model(self):
         ModelClass=self.configs["ModelClass"]
-        model = ModelClass(N)
+        return ModelClass(self.N)
+
+    def load_model(self):
+        model = self.instantiate_model()
         if self.configs.get("parent_id"):
             if ('train' not in self.configs["phases"]) and (self.configs["reduction"] == 'min'):
-                file_name = f"{get_prefix(self.configs,'parent_id')}_{N:03d}_min_valid_loss_model.pt"
+                file_name = self.min_valid_loss_model_name(id_key='parent_id')
             else:
-                file_name = f"{get_prefix(self.configs,'parent_id')}_{N:03d}_model.pt"
+                file_name = self.last_train_loss_model_name(id_key='parent_id')
             print(f"loading file {file_name}")
             model.load_state_dict(torch.load(file_name))
         return model
 
-    def save_N_min_valid_loss_model(self,valid_loss,N,mlp_model):
+    def save_N_min_valid_loss_model(self,valid_loss,mlp_model):
         if len(valid_loss) == 0:
             pass
-        elif (min(valid_loss) == valid_loss[-1]) and ('train' in self.configs["phases"]) and (N>0):
-            save_model(f"{get_prefix(self.configs)}_{N:03d}_min_valid_loss_model",mlp_model)
+        elif (min(valid_loss) == valid_loss[-1]) and ('train' in self.configs["phases"]) and (self.N>0):
+            save_model(self.min_valid_loss_model_name(),mlp_model)
 
-    def save_N_model(self,N,mlp_model):
-        if ('train' in self.configs["phases"]) and (N>0):
-            save_model(f"{get_prefix(self.configs)}_{N:03d}_model",mlp_model)
+    def save_N_model(self,mlp_model):
+        if ('train' in self.configs["phases"]) and (self.N>0):
+            save_model(self.last_train_loss_model_name(),mlp_model)
+
+
+class RatesArbitraryWidthMLP(RatesMLP):
+
+    def __init__(self,configs,N,W):
+        super().__init__(configs,N)
+        self.W = W
+
+    def min_valid_loss_model_name(self, id_key = "id"):
+        return f"{get_prefix(self.configs,id_key=id_key)}_W{self.W:07d}_min_valid_loss_model.pt"
+
+    def last_train_loss_model_name(self, id_key = "id"):
+        return f"{get_prefix(self.configs,id_key=id_key)}_W{self.W:07d}_model.pt"
+
+    def instantiate_model(self):
+        return ArbitraryWidthMLP(self.N,self.H)
 
 
 def train_loop(configs,datatraining,datacoding,N):
@@ -256,7 +283,7 @@ def train_loop(configs,datatraining,datacoding,N):
         rates_static_t,rates_static_c = RatesStaticAC(configs).get_rates(trainset,validset)
     else:
         rates_cabac_t,rates_cabac_c = RatesCABAC(configs).get_rates(trainset,validset)        
-        rates_mlp_t,rates_mlp_c = RatesMLP(configs).get_rates(trainset,validset)
+        rates_mlp_t,rates_mlp_c = RatesMLP(configs,N).get_rates(trainset,validset)
         if (configs["data_type"] == "image"):
             rates_jbig1_t,rates_jbig1_c = RatesJBIG1(configs).get_rates(trainset,validset)
 
@@ -351,36 +378,6 @@ def coding_loop(configs,N):
     return data
     
 
-def save_N_data(configs,N,N_data):
-    
-    xvalues = np.arange(configs["epochs"])
-    xlabel = "epoch"
-
-    for phase in configs["phases"]:
-        
-        fig = plot_comparison(xvalues,N_data[phase],xlabel)
-        save_fig(f"{get_prefix(configs)}_{N:03d}_{phase}_graph",fig)
-        save_values(f"{get_prefix(configs)}_{N:03d}_{phase}_values",xvalues,N_data[phase],xlabel)
- 
-
-def save_final_data(configs,data):
-    
-    xvalues = configs["N_vec"]
-    xlabel = "context size"
-    xscale = configs["xscale"]
-    
-    save_configs(f"{get_prefix(configs)}_conf",configs)
-    
-    for phase in configs["phases"]:
-        if (phase == "coding") and (configs["data_type"] == "pointcloud"):
-            ylabel = 'bpov'
-        else:
-            ylabel = 'bits/sample'
-        fig=plot_comparison(xvalues,data[phase],xlabel,ylabel=ylabel,xscale=xscale)
-        save_fig(f"{get_prefix(configs)}_{phase}_graph",fig)
-        save_values(f"{get_prefix(configs)}_{phase}_values",xvalues,data[phase],xlabel)
-
-
 def experiment(configs):
 
     os.makedirs(f"{configs['save_dir'].rstrip('/')}/exp_{configs['id']}")
@@ -394,14 +391,15 @@ def experiment(configs):
             print(f"--------------------- context size : {N} ---------------------")    
             N_data = train_loop(
                 configs={
-                    k:([ph for ph in v if ph != "coding"] if v == 'phases' else v) for k,v in configs.items()
+                    k:([ph for ph in v if ph != "coding"] if k == 'phases' else v) for k,v in configs.items()
                 },
                 datatraining=configs["training_set"],
                 datacoding=configs["validation_set"],
                 N=N
             )
             
-            save_N_data(configs,N,N_data)
+            for phase in [ph for ph in configs["phases"] if ph != "coding"]:
+                save_data(f"{get_prefix(configs)}_{N:03d}_{phase}",np.arange(configs["epochs"]),N_data[phase],"epoch")
 
             for phase in [ph for ph in configs["phases"] if ph != "coding"]:
                 for k in N_data[phase].keys():
@@ -415,4 +413,36 @@ def experiment(configs):
                 v = N_data["coding"][k]
                 data["coding"][k] = (data["coding"][k] + [v]) if (k in data["coding"].keys()) else [v]
 
-    save_final_data(configs,data)
+    save_configs(f"{get_prefix(configs)}_conf",configs)
+
+    for phase in configs["phases"]:
+        ylabel = 'bpov' if ((phase == "coding") and (configs["data_type"] == "pointcloud")) else 'bits/sample'
+        save_data(f"{get_prefix(configs)}_{phase}",configs["N_vec"],data[phase],"context size",ylabel,configs["xscale"])
+
+
+def rate_vs_complexity_experiment(configs):
+
+    os.makedirs(f"{configs['save_dir'].rstrip('/')}/exp_{configs['id']}")
+
+    trainset = CausalContextDataset(
+        configs["training_set"],"image",configs["N"], percentage_of_uncles=None,getXy_later=('train' not in configs["phases"]))
+    validset = CausalContextDataset(
+        configs["validation_set"],"image",configs["N"], percentage_of_uncles=None,getXy_later=('valid' not in configs["phases"]))
+
+    data = dict()
+    for phase in configs["phases"]:
+        data[phase] = dict()
+
+    for W in configs["W_vec"]:
+        rates_mlp_t,rates_mlp_c = RatesArbitraryWidthMLP(configs,configs["N"],W).get_rates(trainset,validset)
+
+        for phase in configs["phases"]:
+            rates_mlp = rates_mlp_t if phase == 'train' else rates_mlp_c
+            save_data(f"{get_prefix(configs)}_W{W:07d}_{phase}",np.arange(configs["epochs"]),{"MLP":rates_mlp},"epoch")
+            v = min(rates_mlp) if (configs['reduction'] == 'min') else rates_mlp[-1]
+            data[phase]["MLP"] = (data[phase]["MLP"] + [v]) if ("MLP" in data[phase].keys()) else [v]
+
+    save_configs(f"{get_prefix(configs)}_conf",configs)
+
+    for phase in configs["phases"]:
+        save_data(f"{get_prefix(configs)}_{phase}",configs["W_vec"],data[phase],"complexity",xscale=configs["xscale"])

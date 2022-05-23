@@ -116,3 +116,8 @@ def save_model(file_name,model):
     file_name = os.path.splitext(file_name)[0]
     torch.save(model.eval().state_dict(), f"{file_name}.pt")
     
+
+def save_data(fn_prefix,xvalues,data,xlabel,ylabel='bits/sample',xscale="linear"):
+    fig=plot_comparison(xvalues,data,xlabel,ylabel=ylabel,xscale=xscale)
+    save_fig(f"{fn_prefix}_graph",fig)
+    save_values(f"{fn_prefix}_values",xvalues,data,xlabel)

@@ -28,6 +28,19 @@ class Perceptron(torch.nn.Module):
         return x
 
 
+class ArbitraryWidthMLP(torch.nn.Module):
+    def __init__(self,N,W):
+        super().__init__()
+        self.layers = torch.nn.Sequential(
+            torch.nn.Linear(N, W),
+            torch.nn.ReLU(),
+            torch.nn.Linear(W, 1),
+            torch.nn.Sigmoid()
+        )
+    def forward(self, x):
+        return self.layers(x)
+
+
 class MLP_N_64N_32N_1(torch.nn.Module):
     def __init__(self,N):
         super().__init__()
