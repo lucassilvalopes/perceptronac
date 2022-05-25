@@ -17,12 +17,12 @@ if __name__ == "__main__":
         ],
         "epochs": 300,
         "learning_rate": 0.00001,
-        "batch_size": 2048,
+        "batch_size": 4096,
         "num_workers":4,
         "device":"cuda:0", #"cpu"
         "parent_id": "",
         "N": 10,
-        "W_vec": [4,16,64,256,1024], # [2,4,8,16,32,64,128,256,512,1024,2048,4096],
+        "W_vec": [2048,4096], # [2,4,8,16,32,64,128,256,512,1024,2048,4096],
         "phases": ['train'], # ['train', 'valid'],
         "xscale": 'log',
         "reduction": 'min', # min, last

@@ -117,7 +117,10 @@ def save_model(file_name,model):
     torch.save(model.eval().state_dict(), f"{file_name}.pt")
     
 
-def save_data(fn_prefix,xvalues,data,xlabel,ylabel='bits/sample',xscale="linear"):
+def save_data(fn_prefix,xvalues,data,xlabel,ylabel='bits/sample',xscale="linear",specify_xticks=False):
     fig=plot_comparison(xvalues,data,xlabel,ylabel=ylabel,xscale=xscale)
+    if specify_xticks:
+        fig.axes[0].set_xticks(xvalues)
+        fig.axes[0].set_xticklabels(xvalues)
     save_fig(f"{fn_prefix}_graph",fig)
     save_values(f"{fn_prefix}_values",xvalues,data,xlabel)

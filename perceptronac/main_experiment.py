@@ -445,4 +445,4 @@ def rate_vs_complexity_experiment(configs):
     save_configs(f"{get_prefix(configs)}_conf",configs)
 
     for phase in configs["phases"]:
-        save_data(f"{get_prefix(configs)}_{phase}",configs["W_vec"],data[phase],"complexity",xscale=configs["xscale"])
+        save_data(f"{get_prefix(configs)}_{phase}",configs["W_vec"],data[phase],"complexity",xscale=configs["xscale"],specify_xticks=True)
