@@ -17,6 +17,7 @@ import os
 from perceptronac.models import MLP_N_64N_32N_1
 from perceptronac.models import MLP_N_64N_32N_1_Constructor
 from perceptronac.models import ArbitraryWidthMLP
+from perceptronac.models import ArbitraryMLP
 from perceptronac.models import CABAC_Constructor
 from perceptronac.models import StaticAC_Constructor
 from perceptronac.coders import PC_Coder
@@ -272,6 +273,22 @@ class RatesArbitraryWidthMLP(RatesMLP):
         return ArbitraryWidthMLP(self.N,self.W)
 
 
+class RatesArbitraryMLP(RatesMLP):
+
+    def __init__(self,configs,widths):
+        super().__init__(configs,widths[0])
+        self.widths = widths
+
+    def min_valid_loss_model_name(self, id_key = "id"):
+        return f"{get_prefix(self.configs,id_key=id_key)}_{'_'.join(self.widths)}_min_valid_loss_model.pt"
+
+    def last_train_loss_model_name(self, id_key = "id"):
+        return f"{get_prefix(self.configs,id_key=id_key)}_{'_'.join(self.widths)}_model.pt"
+
+    def instantiate_model(self):
+        return ArbitraryMLP(self.widths)
+
+
 def train_loop(configs,datatraining,datacoding,N):
     
     trainset = CausalContextDataset(
@@ -420,6 +437,28 @@ def experiment(configs):
         save_data(f"{get_prefix(configs)}_{phase}",configs["N_vec"],data[phase],"context size",ylabel,configs["xscale"])
 
 
+def fixed_width_two_layer_mlp_parameters(inputs,width,outputs):
+    return width * (inputs + 1) + width * (width + 1) + outputs * (width + 1)
+
+def one_layer_mlp_parameters(inputs,width,outputs):
+    return width * (inputs + 1) + outputs * (width + 1)
+
+def find_best_width_for_this_number_of_parameters(inputs,outputs,number_of_parameters,parameters_for_width_function):
+    minimum_number_of_parameters = parameters_for_width_function(inputs,1,outputs)
+    assert number_of_parameters > minimum_number_of_parameters
+    chosen_number_of_parameters = minimum_number_of_parameters
+    chosen_width = 1
+    while chosen_number_of_parameters < number_of_parameters:
+        previous_chosen_width = chosen_width
+        previous_chosen_number_of_parameters = chosen_number_of_parameters
+        chosen_width += 1
+        chosen_number_of_parameters = parameters_for_width_function(inputs,chosen_width,outputs)
+    if number_of_parameters - previous_chosen_number_of_parameters < chosen_number_of_parameters - number_of_parameters:
+        chosen_width = previous_chosen_width
+        chosen_number_of_parameters = previous_chosen_number_of_parameters
+    return chosen_width, chosen_number_of_parameters
+
+
 def rate_vs_complexity_experiment(configs):
 
     os.makedirs(f"{configs['save_dir'].rstrip('/')}/exp_{configs['id']}")
@@ -433,16 +472,23 @@ def rate_vs_complexity_experiment(configs):
     for phase in configs["phases"]:
         data[phase] = dict()
 
-    for W in configs["W_vec"]:
-        rates_mlp_t,rates_mlp_c = RatesArbitraryWidthMLP(configs,configs["N"],W).get_rates(trainset,validset)
+    actual_params = dict()
+    for topology in ["OneHiddenLayerMLP" , "FixedWidth2HiddenLayersMLP"]:
+        actual_params[topology] = []
+        for P in configs["P_vec"]:
+            parameters_for_width_function = fixed_width_two_layer_mlp_parameters if topology == "FixedWidth2HiddenLayersMLP" else one_layer_mlp_parameters
+            width,params = find_best_width_for_this_number_of_parameters(configs["N"],1,P,parameters_for_width_function)
+            actual_params[topology].append(params)
+            widths = [configs["N"],width,width,1] if topology == "FixedWidth2HiddenLayersMLP" else [configs["N"],width,1]
+            rates_mlp_t,rates_mlp_c = RatesArbitraryMLP(configs,widths).get_rates(trainset,validset)
 
-        for phase in configs["phases"]:
-            rates_mlp = rates_mlp_t if phase == 'train' else rates_mlp_c
-            save_data(f"{get_prefix(configs)}_W{W:07d}_{phase}",np.arange(configs["epochs"]),{"MLP":rates_mlp},"epoch")
-            v = min(rates_mlp) if (configs['reduction'] == 'min') else rates_mlp[-1]
-            data[phase]["MLP"] = (data[phase]["MLP"] + [v]) if ("MLP" in data[phase].keys()) else [v]
+            for phase in configs["phases"]:
+                rates_mlp = rates_mlp_t if phase == 'train' else rates_mlp_c
+                save_data(f"{get_prefix(configs)}_{'_'.join(widths)}_{phase}",np.arange(configs["epochs"]),{topology:rates_mlp},"epoch")
+                v = min(rates_mlp) if (configs['reduction'] == 'min') else rates_mlp[-1]
+                data[phase][topology] = (data[phase][topology] + [v]) if (topology in data[phase].keys()) else [v]
 
     save_configs(f"{get_prefix(configs)}_conf",configs)
 
     for phase in configs["phases"]:
-        save_data(f"{get_prefix(configs)}_{phase}",configs["W_vec"],data[phase],"complexity",xscale=configs["xscale"],specify_xticks=True)
+        save_data(f"{get_prefix(configs)}_{phase}",actual_params,data[phase],"complexity",xscale=configs["xscale"])

@@ -41,6 +41,36 @@ class ArbitraryWidthMLP(torch.nn.Module):
         return self.layers(x)
 
 
+class ArbitraryMLP(torch.nn.Module):
+    def __init__(self,widths,intended_loss = "BCELoss"):
+        """
+        Examples: 
+            For a binary classification, the following are equivalent:
+                - widths=[N,64*N,32*N,1] with intended_loss="BCELoss" or "BCEWithLogitsLoss"
+                - widths=[N,64*N,32*N,2] with intended_loss="CrossEntropyLoss" oe "NLLLoss"
+        """
+        super().__init__()
+        self.layers = torch.nn.ModuleList()
+        for i in range(len(widths[:-1])):
+            self.layers.append(torch.nn.Linear(widths[i],widths[i+1]))
+            if i < len(widths[:-1])-1:
+                self.layers.append(torch.nn.ReLU())
+            elif intended_loss == "BCELoss":
+                self.layers.append(torch.nn.Sigmoid())
+            elif intended_loss == "BCEWithLogitsLoss":
+                # Sigmoid is included in the nn.BCEWithLogitsLoss
+                pass                
+            elif intended_loss == "CrossEntropyLoss":
+                # Softmax is included in the nn.CrossEntropyLoss
+                pass
+            elif intended_loss == "NLLLoss":
+                self.layers.append(torch.nn.LogSoftmax())
+    def forward(self, x):
+        for layer in self.layers:
+            x = layer(x)
+        return x
+
+
 class MLP_N_64N_32N_1(torch.nn.Module):
     def __init__(self,N):
         super().__init__()
