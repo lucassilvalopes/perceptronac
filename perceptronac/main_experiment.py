@@ -280,10 +280,10 @@ class RatesArbitraryMLP(RatesMLP):
         self.widths = widths
 
     def min_valid_loss_model_name(self, id_key = "id"):
-        return f"{get_prefix(self.configs,id_key=id_key)}_{'_'.join(self.widths)}_min_valid_loss_model.pt"
+        return f"{get_prefix(self.configs,id_key=id_key)}_{'_'.join(map(str,self.widths))}_min_valid_loss_model.pt"
 
     def last_train_loss_model_name(self, id_key = "id"):
-        return f"{get_prefix(self.configs,id_key=id_key)}_{'_'.join(self.widths)}_model.pt"
+        return f"{get_prefix(self.configs,id_key=id_key)}_{'_'.join(map(str,self.widths))}_model.pt"
 
     def instantiate_model(self):
         return ArbitraryMLP(self.widths)
@@ -472,6 +472,19 @@ def rate_vs_complexity_experiment(configs):
     for phase in configs["phases"]:
         data[phase] = dict()
 
+    linestyles={
+        "OneHiddenLayerMLP": "None",
+        "FixedWidth2HiddenLayersMLP": "None"
+    }
+    colors={
+        "OneHiddenLayerMLP": "b",
+        "FixedWidth2HiddenLayersMLP": "c"
+    }
+    markers={
+        "OneHiddenLayerMLP": "o",
+        "FixedWidth2HiddenLayersMLP": "s"
+    }
+
     actual_params = dict()
     for topology in ["OneHiddenLayerMLP" , "FixedWidth2HiddenLayersMLP"]:
         actual_params[topology] = []
@@ -484,11 +497,13 @@ def rate_vs_complexity_experiment(configs):
 
             for phase in configs["phases"]:
                 rates_mlp = rates_mlp_t if phase == 'train' else rates_mlp_c
-                save_data(f"{get_prefix(configs)}_{'_'.join(widths)}_{phase}",np.arange(configs["epochs"]),{topology:rates_mlp},"epoch")
+                save_data(f"{get_prefix(configs)}_{'_'.join(map(str,widths))}_{phase}",np.arange(configs["epochs"]),{topology:rates_mlp},"epoch",
+                    linestyles=linestyles, colors=colors, markers=markers)
                 v = min(rates_mlp) if (configs['reduction'] == 'min') else rates_mlp[-1]
                 data[phase][topology] = (data[phase][topology] + [v]) if (topology in data[phase].keys()) else [v]
 
     save_configs(f"{get_prefix(configs)}_conf",configs)
 
     for phase in configs["phases"]:
-        save_data(f"{get_prefix(configs)}_{phase}",actual_params,data[phase],"complexity",xscale=configs["xscale"])
+        save_data(f"{get_prefix(configs)}_{phase}",actual_params,data[phase],"complexity",xscale=configs["xscale"],
+            linestyles=linestyles, colors=colors, markers=markers)
