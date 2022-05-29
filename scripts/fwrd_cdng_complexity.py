@@ -3,6 +3,7 @@ import torch
 import time
 import os
 from perceptronac.main_experiment import rate_vs_complexity_experiment
+from perceptronac.main_experiment import one_layer_mlp_parameters
 
 if __name__ == "__main__":
 
@@ -22,8 +23,7 @@ if __name__ == "__main__":
         "device":"cuda:0", #"cpu"
         "parent_id": "",
         "N": 10,
-        # parameters of a 1 hidden layer mlp with powers of 2 number of hidden units : 2 hidden units -> 25 parameters, 4 hidden units -> 49 parameters ...
-        "P_vec": [25, 97, 385, 1537, 6145, 24577], # [25, 49, 97, 193, 385, 769, 1537, 3073, 6145, 12289, 24577, 49153], 
+        "P_vec": list(map(lambda i : one_layer_mlp_parameters(10,4**i,1),range(1,8))),
         "phases": ['train'], # ['train', 'valid'],
         "xscale": 'log',
         "reduction": 'min', # min, last
