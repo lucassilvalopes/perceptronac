@@ -15,7 +15,7 @@ if __name__ == "__main__":
         "validation_set": [
             os.path.join('SPL2020V',f) for f in sorted(os.listdir('SPL2020V'))[:5]
         ],
-        "epochs": 1,
+        "epochs": 100,
         "learning_rate": 0.0001,
         "batch_size": 1024,
         "num_workers":4,
@@ -23,7 +23,7 @@ if __name__ == "__main__":
         "parent_id": "",
         "N": 10,
         # parameters of a 1 hidden layer mlp with powers of 2 number of hidden units : 2 hidden units -> 25 parameters, 4 hidden units -> 49 parameters ...
-        "P_vec": [25, 49, 97, 193, 385], # [25, 49, 97, 193, 385, 769, 1537, 3073, 6145, 12289, 24577, 49153], 
+        "P_vec": [25, 97, 385, 1537, 6145, 24577], # [25, 49, 97, 193, 385, 769, 1537, 3073, 6145, 12289, 24577, 49153], 
         "phases": ['train'], # ['train', 'valid'],
         "xscale": 'log',
         "reduction": 'min', # min, last

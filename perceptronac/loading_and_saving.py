@@ -97,7 +97,7 @@ def save_values(csv_name,xvalues,data,xlabel):
     csv_name = os.path.splitext(csv_name)[0]
     values = pd.DataFrame(data)
     if isinstance(xvalues,dict):
-        values.index = pd.MultiIndex.from_tuples(zip(*xvalues.values()), names=list(xvalues.keys()))
+        values.index = pd.MultiIndex.from_tuples(zip(*xvalues.values()), names=list(map( lambda k: f"{k}_index",xvalues.keys())))
     else:
         values.index = xvalues
         values.index.name = xlabel
