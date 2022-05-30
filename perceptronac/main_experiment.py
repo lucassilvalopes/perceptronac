@@ -257,22 +257,6 @@ class RatesMLP:
             save_model(self.last_train_loss_model_name(),mlp_model)
 
 
-class RatesArbitraryWidthMLP(RatesMLP):
-
-    def __init__(self,configs,N,W):
-        super().__init__(configs,N)
-        self.W = W
-
-    def min_valid_loss_model_name(self, id_key = "id"):
-        return f"{get_prefix(self.configs,id_key=id_key)}_W{self.W:07d}_min_valid_loss_model.pt"
-
-    def last_train_loss_model_name(self, id_key = "id"):
-        return f"{get_prefix(self.configs,id_key=id_key)}_W{self.W:07d}_model.pt"
-
-    def instantiate_model(self):
-        return ArbitraryWidthMLP(self.N,self.W)
-
-
 class RatesArbitraryMLP(RatesMLP):
 
     def __init__(self,configs,widths):
@@ -437,26 +421,41 @@ def experiment(configs):
         save_data(f"{get_prefix(configs)}_{phase}",configs["N_vec"],data[phase],"context size",ylabel,configs["xscale"])
 
 
-def fixed_width_two_layer_mlp_parameters(inputs,width,outputs):
-    return width * (inputs + 1) + width * (width + 1) + outputs * (width + 1)
+class FixedWidthMLPTopology:
+    def __init__(self,name,linestyle,color,marker,inputs,outputs,n_hidden_layers):
+        self.name = name # "OneHiddenLayerMLP"
+        self.linestyle = linestyle # "None"
+        self.color = color #"b"
+        self.marker = marker #"o"
+        self.inputs = inputs
+        self.outputs = outputs
+        self.n_hidden_layers = n_hidden_layers # 1
 
-def one_layer_mlp_parameters(inputs,width,outputs):
-    return width * (inputs + 1) + outputs * (width + 1)
+    def mlp_closest_to_n_params(self,n_parameters):
+        parameters_for_width_function = lambda inputs,width,outputs: self.fixed_width_mlp_parameters(inputs,width,outputs,self.n_hidden_layers)
+        width,params = self.find_best_width_for_this_number_of_parameters(self.inputs,self.outputs,n_parameters,parameters_for_width_function)
+        widths = [self.inputs] + self.n_hidden_layers * [width] + [self.outputs]
+        return widths,params
 
-def find_best_width_for_this_number_of_parameters(inputs,outputs,number_of_parameters,parameters_for_width_function):
-    minimum_number_of_parameters = parameters_for_width_function(inputs,1,outputs)
-    assert number_of_parameters > minimum_number_of_parameters
-    chosen_number_of_parameters = minimum_number_of_parameters
-    chosen_width = 1
-    while chosen_number_of_parameters < number_of_parameters:
-        previous_chosen_width = chosen_width
-        previous_chosen_number_of_parameters = chosen_number_of_parameters
-        chosen_width += 1
-        chosen_number_of_parameters = parameters_for_width_function(inputs,chosen_width,outputs)
-    if number_of_parameters - previous_chosen_number_of_parameters < chosen_number_of_parameters - number_of_parameters:
-        chosen_width = previous_chosen_width
-        chosen_number_of_parameters = previous_chosen_number_of_parameters
-    return chosen_width, chosen_number_of_parameters
+    @staticmethod
+    def find_best_width_for_this_number_of_parameters(inputs,outputs,number_of_parameters,parameters_for_width_function):
+        minimum_number_of_parameters = parameters_for_width_function(inputs,1,outputs)
+        assert number_of_parameters > minimum_number_of_parameters
+        chosen_number_of_parameters = minimum_number_of_parameters
+        chosen_width = 1
+        while chosen_number_of_parameters < number_of_parameters:
+            previous_chosen_width = chosen_width
+            previous_chosen_number_of_parameters = chosen_number_of_parameters
+            chosen_width += 1
+            chosen_number_of_parameters = parameters_for_width_function(inputs,chosen_width,outputs)
+        if number_of_parameters - previous_chosen_number_of_parameters < chosen_number_of_parameters - number_of_parameters:
+            chosen_width = previous_chosen_width
+            chosen_number_of_parameters = previous_chosen_number_of_parameters
+        return chosen_width, chosen_number_of_parameters
+    
+    @staticmethod
+    def fixed_width_mlp_parameters(inputs,width,outputs,n_hidden_layers):
+        return width * (inputs + 1) + (n_hidden_layers - 1) * width * (width + 1) + outputs * (width + 1)
 
 
 def rate_vs_complexity_experiment(configs):
@@ -472,35 +471,30 @@ def rate_vs_complexity_experiment(configs):
     for phase in configs["phases"]:
         data[phase] = dict()
 
-    linestyles={
-        "OneHiddenLayerMLP": "None",
-        "FixedWidth2HiddenLayersMLP": "None"
-    }
-    colors={
-        "OneHiddenLayerMLP": "b",
-        "FixedWidth2HiddenLayersMLP": "c"
-    }
-    markers={
-        "OneHiddenLayerMLP": "o",
-        "FixedWidth2HiddenLayersMLP": "s"
-    }
+    topologies = [
+        FixedWidthMLPTopology("OneHiddenLayerMLP","None","b","o",configs["N"],1,1),
+        FixedWidthMLPTopology("FixedWidth2HiddenLayersMLP","None","c","s",configs["N"],1,2),
+        FixedWidthMLPTopology("FixedWidth3HiddenLayersMLP","None","m","*",configs["N"],1,3)
+    ]
+
+    linestyles={t.name:t.linestyle for t in topologies}
+    colors={t.name:t.color for t in topologies}
+    markers={t.name:t.marker for t in topologies}
 
     actual_params = dict()
-    for topology in ["OneHiddenLayerMLP" , "FixedWidth2HiddenLayersMLP"]:
-        actual_params[topology] = []
+    for topology in topologies:
+        actual_params[topology.name] = []
         for P in configs["P_vec"]:
-            parameters_for_width_function = fixed_width_two_layer_mlp_parameters if topology == "FixedWidth2HiddenLayersMLP" else one_layer_mlp_parameters
-            width,params = find_best_width_for_this_number_of_parameters(configs["N"],1,P,parameters_for_width_function)
-            actual_params[topology].append(params)
-            widths = [configs["N"],width,width,1] if topology == "FixedWidth2HiddenLayersMLP" else [configs["N"],width,1]
+            widths,params = topology.mlp_closest_to_n_params(P)
+            actual_params[topology.name].append(params)
             rates_mlp_t,rates_mlp_c = RatesArbitraryMLP(configs,widths).get_rates(trainset,validset)
 
             for phase in configs["phases"]:
                 rates_mlp = rates_mlp_t if phase == 'train' else rates_mlp_c
-                save_data(f"{get_prefix(configs)}_{'_'.join(map(str,widths))}_{phase}",np.arange(configs["epochs"]),{topology:rates_mlp},"epoch",
+                save_data(f"{get_prefix(configs)}_{'_'.join(map(str,widths))}_{phase}",np.arange(configs["epochs"]),{topology.name:rates_mlp},"epoch",
                     linestyles=linestyles, colors=colors, markers=markers)
                 v = min(rates_mlp) if (configs['reduction'] == 'min') else rates_mlp[-1]
-                data[phase][topology] = (data[phase][topology] + [v]) if (topology in data[phase].keys()) else [v]
+                data[phase][topology.name] = (data[phase][topology.name] + [v]) if (topology.name in data[phase].keys()) else [v]
 
     save_configs(f"{get_prefix(configs)}_conf",configs)
 
