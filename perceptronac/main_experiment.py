@@ -458,6 +458,22 @@ class FixedWidthMLPTopology:
         return width * (inputs + 1) + (n_hidden_layers - 1) * width * (width + 1) + outputs * (width + 1)
 
 
+class FW1HLMLPTopology(FixedWidthMLPTopology):
+    """fixed width 1 hidden layer multi layer perceptron topology"""
+    def __init__(self,inputs,outputs):
+        super().__init__("FW1HLMLP","None","b","o",inputs,outputs,1)
+
+class FW2HLMLPTopology(FixedWidthMLPTopology):
+    """fixed width 2 hidden layer multi layer perceptron topology"""
+    def __init__(self,inputs,outputs):
+        super().__init__("FW2HLMLP","None","c","s",inputs,outputs,2)
+
+class FW3HLMLPTopology(FixedWidthMLPTopology):
+    """fixed width 3 hidden layer multi layer perceptron topology"""
+    def __init__(self,inputs,outputs):
+        super().__init__("FW3HLMLP","None","m","*",inputs,outputs,3)
+
+
 def rate_vs_complexity_experiment(configs):
 
     os.makedirs(f"{configs['save_dir'].rstrip('/')}/exp_{configs['id']}")
@@ -471,11 +487,7 @@ def rate_vs_complexity_experiment(configs):
     for phase in configs["phases"]:
         data[phase] = dict()
 
-    topologies = [
-        FixedWidthMLPTopology("OneHiddenLayerMLP","None","b","o",configs["N"],1,1),
-        FixedWidthMLPTopology("FixedWidth2HiddenLayersMLP","None","c","s",configs["N"],1,2),
-        FixedWidthMLPTopology("FixedWidth3HiddenLayersMLP","None","m","*",configs["N"],1,3)
-    ]
+    topologies = [ t(configs["N"],1) for t in configs["topologies"] ]
 
     linestyles={t.name:t.linestyle for t in topologies}
     colors={t.name:t.color for t in topologies}
