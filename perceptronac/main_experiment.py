@@ -486,6 +486,13 @@ class FW3HLMLPTopology(FixedWidthMLPTopology):
     def __init__(self,inputs,outputs):
         super().__init__("FW3HLMLP","None","m","*",inputs,outputs,3)
 
+class N_2W_1W_1_MLP(MLPTopology):
+    def __init__(self,inputs,outputs):
+        super().__init__("N_2W_1W_1_MLP","None","r","^",inputs,outputs,[2,1])
+
+class N_1W_2W_1_MLP(MLPTopology):
+    def __init__(self,inputs,outputs):
+        super().__init__("N_1W_2W_1_MLP","None","g","v",inputs,outputs,[1,2])
 
 def rate_vs_complexity_experiment(configs):
 
