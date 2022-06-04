@@ -23,6 +23,7 @@ from perceptronac.models import StaticAC_Constructor
 from perceptronac.coders import PC_Coder
 import perceptronac.coding3d as c3d
 from perceptronac.coders import get_bpov
+import random
 
 
 def get_prefix(configs, id_key = 'id' ):
@@ -154,7 +155,7 @@ class RatesMLP:
         self.configs = configs
         self.N = N
 
-    def get_rates(self,trainset,validset):
+    def get_rates(self,datatraining,datacoding):
 
         OptimizerClass=self.configs["OptimizerClass"]
         epochs=self.configs["epochs"]
@@ -174,47 +175,51 @@ class RatesMLP:
 
         train_loss, valid_loss = [], []
         print("starting training")
-        print("len trainset : ", len(trainset),", len validset : ",len(validset))
+        # print("len trainset : ", len(trainset),", len validset : ",len(validset))
         for epoch in range(epochs):
             
             for phase in phases:
-                
+
                 if phase == 'train':
                     model.train(True)
-                    dataloader = torch.utils.data.DataLoader(
-                        trainset,batch_size=batch_size,shuffle=True,num_workers=num_workers)
+                    pths = datatraining
                 else:
                     model.train(False)
-                    dataloader=torch.utils.data.DataLoader(
-                        validset,batch_size=batch_size,shuffle=False,num_workers=num_workers)
+                    pths = datacoding 
 
-                running_loss = 0.0
-                for data in tqdm(dataloader):
+                for pth in random.sample(pths, len(pths)):
 
-                    Xt_b,yt_b= data
-                    Xt_b = Xt_b.float().to(device)
-                    yt_b = yt_b.float().to(device)
+                    dset = CausalContextDataset([pth], self.configs["data_type"], self.N, self.configs["percentage_of_uncles"])
 
-                    if phase == 'train':
-                        optimizer.zero_grad()
-                        outputs = model(Xt_b)
-                        loss = criterion(outputs, yt_b)
-                        loss.backward()
-                        optimizer.step()
-                    else:
-                        with torch.no_grad():
+                    dataloader=torch.utils.data.DataLoader(dset,batch_size=batch_size,shuffle=True,num_workers=num_workers)
+
+                    running_loss = 0.0
+                    for data in tqdm(dataloader):
+
+                        Xt_b,yt_b= data
+                        Xt_b = Xt_b.float().to(device)
+                        yt_b = yt_b.float().to(device)
+
+                        if phase == 'train':
+                            optimizer.zero_grad()
                             outputs = model(Xt_b)
                             loss = criterion(outputs, yt_b)
+                            loss.backward()
+                            optimizer.step()
+                        else:
+                            with torch.no_grad():
+                                outputs = model(Xt_b)
+                                loss = criterion(outputs, yt_b)
 
-                    running_loss += loss.item()
-                
-                final_loss = running_loss / len(dataloader.dataset)
-                if phase=='train':
-                    train_loss.append(final_loss)
-                else:
-                    valid_loss.append(final_loss)
-                
-                print("epoch :" , epoch, ", phase :", phase, ", loss :", final_loss)
+                        running_loss += loss.item()
+                    
+                    final_loss = running_loss / len(dataloader.dataset)
+                    if phase=='train':
+                        train_loss.append(final_loss)
+                    else:
+                        valid_loss.append(final_loss)
+                    
+                    print("epoch :" , epoch, ", phase :", phase, ", loss :", final_loss)
                 
 
             self.save_N_min_valid_loss_model(valid_loss,model)
@@ -284,7 +289,7 @@ def train_loop(configs,datatraining,datacoding,N):
         rates_static_t,rates_static_c = RatesStaticAC(configs).get_rates(trainset,validset)
     else:
         rates_cabac_t,rates_cabac_c = RatesCABAC(configs).get_rates(trainset,validset)        
-        rates_mlp_t,rates_mlp_c = RatesMLP(configs,N).get_rates(trainset,validset)
+        rates_mlp_t,rates_mlp_c = RatesMLP(configs,N).get_rates(datatraining,datacoding) # .get_rates(trainset,validset)
         if (configs["data_type"] == "image"):
             rates_jbig1_t,rates_jbig1_c = RatesJBIG1(configs).get_rates(trainset,validset)
 
@@ -498,10 +503,10 @@ def rate_vs_complexity_experiment(configs):
 
     os.makedirs(f"{configs['save_dir'].rstrip('/')}/exp_{configs['id']}")
 
-    trainset = CausalContextDataset(
-        configs["training_set"],"image",configs["N"], percentage_of_uncles=None,getXy_later=('train' not in configs["phases"]))
-    validset = CausalContextDataset(
-        configs["validation_set"],"image",configs["N"], percentage_of_uncles=None,getXy_later=('valid' not in configs["phases"]))
+    # trainset = CausalContextDataset(
+    #     configs["training_set"],"image",configs["N"], percentage_of_uncles=None,getXy_later=('train' not in configs["phases"]))
+    # validset = CausalContextDataset(
+    #     configs["validation_set"],"image",configs["N"], percentage_of_uncles=None,getXy_later=('valid' not in configs["phases"]))
 
     data = dict()
     for phase in configs["phases"]:
@@ -519,7 +524,7 @@ def rate_vs_complexity_experiment(configs):
         for P in configs["P_vec"]:
             widths,params = topology.mlp_closest_to_n_params(P)
             actual_params[topology.name].append(params)
-            rates_mlp_t,rates_mlp_c = RatesArbitraryMLP(configs,widths).get_rates(trainset,validset)
+            rates_mlp_t,rates_mlp_c = RatesArbitraryMLP(configs,widths).get_rates(configs["training_set"],configs["validation_set"]) # .get_rates(trainset,validset)
 
             for phase in configs["phases"]:
                 rates_mlp = rates_mlp_t if phase == 'train' else rates_mlp_c
