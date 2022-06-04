@@ -421,25 +421,23 @@ def experiment(configs):
         save_data(f"{get_prefix(configs)}_{phase}",configs["N_vec"],data[phase],"context size",ylabel,configs["xscale"])
 
 
-class FixedWidthMLPTopology:
-    def __init__(self,name,linestyle,color,marker,inputs,outputs,n_hidden_layers):
-        self.name = name # "OneHiddenLayerMLP"
-        self.linestyle = linestyle # "None"
-        self.color = color #"b"
-        self.marker = marker #"o"
+class MLPTopology:
+    def __init__(self,name,linestyle,color,marker,inputs,outputs,hidden_layers_proportions):
+        self.name = name
+        self.linestyle = linestyle
+        self.color = color
+        self.marker = marker
         self.inputs = inputs
         self.outputs = outputs
-        self.n_hidden_layers = n_hidden_layers # 1
+        self.hidden_layers_proportions = hidden_layers_proportions
 
     def mlp_closest_to_n_params(self,n_parameters):
-        parameters_for_width_function = lambda inputs,width,outputs: self.fixed_width_mlp_parameters(inputs,width,outputs,self.n_hidden_layers)
-        width,params = self.find_best_width_for_this_number_of_parameters(self.inputs,self.outputs,n_parameters,parameters_for_width_function)
-        widths = [self.inputs] + self.n_hidden_layers * [width] + [self.outputs]
+        base_width,params = self.find_best_width_for_this_number_of_parameters(n_parameters)
+        widths = self.mlp_for_base_width(base_width)
         return widths,params
 
-    @staticmethod
-    def find_best_width_for_this_number_of_parameters(inputs,outputs,number_of_parameters,parameters_for_width_function):
-        minimum_number_of_parameters = parameters_for_width_function(inputs,1,outputs)
+    def find_best_width_for_this_number_of_parameters(self,number_of_parameters):
+        minimum_number_of_parameters = self.mlp_parameters_for_base_width(1)
         assert number_of_parameters > minimum_number_of_parameters
         chosen_number_of_parameters = minimum_number_of_parameters
         chosen_width = 1
@@ -447,16 +445,31 @@ class FixedWidthMLPTopology:
             previous_chosen_width = chosen_width
             previous_chosen_number_of_parameters = chosen_number_of_parameters
             chosen_width += 1
-            chosen_number_of_parameters = parameters_for_width_function(inputs,chosen_width,outputs)
+            chosen_number_of_parameters = self.mlp_parameters_for_base_width(chosen_width)
         if number_of_parameters - previous_chosen_number_of_parameters < chosen_number_of_parameters - number_of_parameters:
             chosen_width = previous_chosen_width
             chosen_number_of_parameters = previous_chosen_number_of_parameters
         return chosen_width, chosen_number_of_parameters
     
-    @staticmethod
-    def fixed_width_mlp_parameters(inputs,width,outputs,n_hidden_layers):
-        return width * (inputs + 1) + (n_hidden_layers - 1) * width * (width + 1) + outputs * (width + 1)
+    def mlp_for_base_width(self,base_width):
+        widths = [self.inputs] + list(map(lambda mf : base_width * mf , self.hidden_layers_proportions)) + [self.outputs]
+        return widths
 
+    def mlp_parameters_for_base_width(self,base_width):
+        widths = self.mlp_for_base_width(base_width)
+        return self.mlp_parameters(widths)
+
+    @staticmethod
+    def mlp_parameters(widths):
+        p=0
+        for i in range(1,len(widths)):
+            p += widths[i] * ( widths[i-1] + 1 )
+        return p
+
+
+class FixedWidthMLPTopology(MLPTopology):
+    def __init__(self,name,linestyle,color,marker,inputs,outputs,n_hidden_layers):
+        super().__init__(name,linestyle,color,marker,inputs,outputs,n_hidden_layers * [1])
 
 class FW1HLMLPTopology(FixedWidthMLPTopology):
     """fixed width 1 hidden layer multi layer perceptron topology"""

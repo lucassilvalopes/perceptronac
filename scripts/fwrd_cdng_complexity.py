@@ -26,7 +26,7 @@ if __name__ == "__main__":
         "device":"cuda:0", #"cpu"
         "parent_id": "",
         "N": 10,
-        "P_vec": [49,193], #list(map(lambda i : FixedWidthMLPTopology.fixed_width_mlp_parameters(10,4**i,1,1),range(1,7))),
+        "P_vec": [49,193], #list(map(lambda i : MLPTopology.mlp_parameters([10,4**i,1]),range(1,7))),
         "phases": ['train'], # ['train', 'valid'],
         "xscale": 'log',
         "reduction": 'min', # min, last
