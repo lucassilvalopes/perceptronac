@@ -189,9 +189,15 @@ class RatesMLP:
 
                 running_loss = 0.0
                 n_samples = 0.0
-                for pth in random.sample(pths, len(pths)):
 
-                    dset = CausalContextDataset([pth], self.configs["data_type"], self.N, self.configs["percentage_of_uncles"])
+                shuffled_pths = random.sample(pths, len(pths))
+
+                pths_per_dset = max(1,len(shuffled_pths)//self.configs["dset_pieces"])
+
+                for shuffled_pths_i in range(0,len(shuffled_pths),pths_per_dset):
+
+                    dset = CausalContextDataset(shuffled_pths[shuffled_pths_i:(shuffled_pths_i+pths_per_dset)], 
+                        self.configs["data_type"], self.N, self.configs["percentage_of_uncles"])
 
                     dataloader=torch.utils.data.DataLoader(dset,batch_size=batch_size,shuffle=True,num_workers=num_workers)
 
