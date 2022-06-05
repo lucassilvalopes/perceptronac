@@ -15,11 +15,11 @@ if __name__ == "__main__":
             os.path.join(r,f) for r,ds,fs in os.walk("/home/lucaslopes/perceptronac/NNOC/training") for f in fs if f.endswith("npz")
         ],
         "validation_set": [
-            "/home/lucaslopes/perceptronac/NNOC/testing/redandblack/redandblack_vox10_1450_N100_contexts.npz"
+            "/home/lucaslopes/perceptronac/NNOC/validation/longdress_vox10_1300_N100_contexts.npz"
         ],
         "epochs": 100, # 300,
         "learning_rate": 0.00001,
-        "batch_size": 2048,
+        "batch_size": 30000,
         "num_workers":4,
         "device":"cuda:0", #"cpu"
         "parent_id": "",

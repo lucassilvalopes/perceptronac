@@ -175,7 +175,7 @@ class RatesMLP:
 
         train_loss, valid_loss = [], []
         print("starting training")
-        # print("len trainset : ", len(trainset),", len validset : ",len(validset))
+        print(f"len trainset : {len(datatraining)} {self.configs['data_type']}s, len validset : {len(datacoding)} {self.configs['data_type']}s")
         for epoch in range(epochs):
             
             for phase in phases:
@@ -187,13 +187,14 @@ class RatesMLP:
                     model.train(False)
                     pths = datacoding 
 
+                running_loss = 0.0
+                n_samples = 0.0
                 for pth in random.sample(pths, len(pths)):
 
                     dset = CausalContextDataset([pth], self.configs["data_type"], self.N, self.configs["percentage_of_uncles"])
 
                     dataloader=torch.utils.data.DataLoader(dset,batch_size=batch_size,shuffle=True,num_workers=num_workers)
 
-                    running_loss = 0.0
                     for data in tqdm(dataloader):
 
                         Xt_b,yt_b= data
@@ -212,14 +213,16 @@ class RatesMLP:
                                 loss = criterion(outputs, yt_b)
 
                         running_loss += loss.item()
+
+                    n_samples += len(dataloader.dataset)
                     
-                    final_loss = running_loss / len(dataloader.dataset)
-                    if phase=='train':
-                        train_loss.append(final_loss)
-                    else:
-                        valid_loss.append(final_loss)
-                    
-                    print("epoch :" , epoch, ", phase :", phase, ", loss :", final_loss)
+                final_loss = running_loss / n_samples
+                if phase=='train':
+                    train_loss.append(final_loss)
+                else:
+                    valid_loss.append(final_loss)
+                
+                print("epoch :" , epoch, ", phase :", phase, ", loss :", final_loss)
                 
 
             self.save_N_min_valid_loss_model(valid_loss,model)
