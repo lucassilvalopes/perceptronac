@@ -12,19 +12,19 @@ if __name__ == "__main__":
         "ModelClass":MLP_N_64N_32N_1,
         "OptimizerClass":torch.optim.SGD,
         "training_set": [
-            "eduardo/contexts_symbols.txt"
+            os.path.join(r,f) for r,ds,fs in os.walk("/home/lucaslopes/perceptronac/NNOC/training") for f in fs if f.endswith("npz")
         ],
         "validation_set": [
-            "eduardo/contexts_symbols.txt"
+            "/home/lucaslopes/perceptronac/NNOC/testing/redandblack/redandblack_vox10_1450_N100_contexts.npz"
         ],
-        "epochs": 300,
+        "epochs": 100, # 300,
         "learning_rate": 0.00001,
         "batch_size": 2048,
         "num_workers":4,
         "device":"cuda:0", #"cpu"
         "parent_id": "",
-        "N_vec": [14], # sorted([0] + [round(pow(1.595, i)) for i in range(12) if (i+1)%2==0],reverse=True),
-        "phases": ['train'], # ['train', 'valid'], # ['coding'],
+        "N_vec": [100],
+        "phases": ['train', 'valid'], # ['coding'],
         "xscale": 'symlog',
         "reduction": 'min', # min, last
         "data_type": 'table', # image, pointcloud, table

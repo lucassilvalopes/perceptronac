@@ -14,6 +14,7 @@ from perceptronac.context_coding import context_coding
 from perceptronac.utils import causal_context_many_imgs
 from perceptronac.utils import causal_context_many_pcs
 import numpy as np
+import os
 
 
 class Perceptron(torch.nn.Module):
@@ -50,13 +51,13 @@ class ArbitraryMLP(torch.nn.Module):
                 - widths=[N,64*N,32*N,2] with intended_loss="CrossEntropyLoss" oe "NLLLoss"
         """
         super().__init__()
-        self.layers = torch.nn.ModuleList()
+        modules = []
         for i in range(len(widths[:-1])):
-            self.layers.append(torch.nn.Linear(widths[i],widths[i+1]))
+            modules.append(torch.nn.Linear(widths[i],widths[i+1]))
             if i < len(widths[:-1])-1:
-                self.layers.append(torch.nn.ReLU())
+                modules.append(torch.nn.ReLU())
             elif intended_loss == "BCELoss":
-                self.layers.append(torch.nn.Sigmoid())
+                modules.append(torch.nn.Sigmoid())
             elif intended_loss == "BCEWithLogitsLoss":
                 # Sigmoid is included in the nn.BCEWithLogitsLoss
                 pass                
@@ -64,11 +65,10 @@ class ArbitraryMLP(torch.nn.Module):
                 # Softmax is included in the nn.CrossEntropyLoss
                 pass
             elif intended_loss == "NLLLoss":
-                self.layers.append(torch.nn.LogSoftmax())
+                modules.append(torch.nn.LogSoftmax())
+        self.layers = torch.nn.Sequential(*modules)
     def forward(self, x):
-        for layer in self.layers:
-            x = layer(x)
-        return x
+        return self.layers(x)
 
 
 class MLP_N_64N_32N_1(torch.nn.Module):
@@ -146,15 +146,24 @@ class CausalContextDataset(torch.utils.data.Dataset):
                 raise ValueError(m)
             self.y,self.X = causal_context_many_pcs(
                 self.pths, self.N, self.percentage_of_uncles)
-        elif self.data_type == "csv":
-            Xy = np.vstack([np.genfromtxt(pth) for pth in self.pths])
+        elif self.data_type == "table":
+            Xy = np.vstack([self.load_table(pth) for pth in self.pths])
             assert Xy.shape[1] - 1 == self.N
             self.X = Xy[:,:self.N]
             self.y = Xy[:,self.N:]
         else:
             m = f"Data type {self.data_type} not supported.\n"+\
-                "Supported data types : image, pointcloud, csv."
+                "Supported data types : image, pointcloud, table."
             raise ValueError(m)
+
+    @staticmethod
+    def load_table(pth):
+        if pth.endswith("txt") or pth.endswith("csv"):
+            return np.genfromtxt(pth)
+        elif pth.endswith("npz"):
+            return np.load(pth)["arr_0"]
+        else:
+            raise ValueError(f"Unknown table format {os.path.splitext(pth)[1]}")
 
     def __len__(self):
         return len(self.y)
