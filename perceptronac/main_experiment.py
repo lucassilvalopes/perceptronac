@@ -31,21 +31,21 @@ def get_prefix(configs, id_key = 'id' ):
 
 
 class RatesStaticAC:
-    def __init__(self,configs):
+    def __init__(self,configs,N):
         self.configs = configs
+        self.N = N
 
-    def get_rates(self,trainset,validset):
+    def get_rates(self,datatraining,datacoding):
         phases=self.configs["phases"]
         epochs=self.configs["epochs"]
-        N = trainset.N
-        staticac = self.load_model(N)        
+        staticac = self.load_model()        
         train_loss, valid_loss = [], []
         for phase in sorted(phases):
             if phase == 'train':
-                dataset = trainset
-                staticac.load_p(y=trainset.y)
+                dataset = CausalContextDataset(datatraining, self.configs["data_type"], self.N, self.configs["percentage_of_uncles"])
+                staticac.load_p(y=dataset.y)
             else:
-                dataset = validset
+                dataset = CausalContextDataset(datacoding, self.configs["data_type"], self.N, self.configs["percentage_of_uncles"])
             X,y = dataset.X,dataset.y
             static_pred = staticac(X)
             final_loss = perfect_AC(y,static_pred)
@@ -53,43 +53,43 @@ class RatesStaticAC:
                 train_loss.append(final_loss)
             else:
                 valid_loss.append(final_loss)
-        self.save_N_model(N,staticac)
+        self.save_N_model(staticac)
         return epochs*train_loss, epochs*valid_loss
 
-    def load_model(self,N):
+    def load_model(self):
         staticac = StaticAC()
         if self.configs.get("parent_id"):
-            file_name = f"{get_prefix(self.configs,'parent_id')}_{N:03d}_p.npy"
+            file_name = f"{get_prefix(self.configs,'parent_id')}_{self.N:03d}_p.npy"
             with open(file_name, 'rb') as f:
                 p = np.load(f)
             staticac.load_p(p=p[0])
         return staticac
 
-    def save_N_model(self,N,staticac):
-        if ('train' in self.configs["phases"]) and (N==0):
+    def save_N_model(self,staticac):
+        if ('train' in self.configs["phases"]) and (self.N==0):
             p = staticac.p
-            with open(f"{get_prefix(self.configs)}_{N:03d}_p.npy", 'wb') as f:
+            with open(f"{get_prefix(self.configs)}_{self.N:03d}_p.npy", 'wb') as f:
                 np.save(f, np.array([p]))
 
 class RatesCABAC:
-    def __init__(self,configs):
+    def __init__(self,configs,N):
         self.configs = configs
+        self.N = N
         
-    def get_rates(self,trainset,validset):
+    def get_rates(self,datatraining,datacoding):
         phases=self.configs["phases"]
         max_context = self.configs["max_context"]
         epochs=self.configs["epochs"]
-        N = trainset.N
-        if (N > max_context):
+        if (self.N > max_context):
             return epochs*[-1],epochs*[-1]
-        cabac = self.load_model(N)        
+        cabac = self.load_model()        
         train_loss, valid_loss = [], []
         for phase in sorted(phases): # train first then valid
             if phase == 'train':
-                dataset = trainset
-                cabac.load_lut(X=trainset.X,y=trainset.y)
+                dataset = CausalContextDataset(datatraining, self.configs["data_type"], self.N, self.configs["percentage_of_uncles"])
+                cabac.load_lut(X=dataset.X,y=dataset.y)
             else:
-                dataset = validset
+                dataset = CausalContextDataset(datacoding, self.configs["data_type"], self.N, self.configs["percentage_of_uncles"])
             X,y = dataset.X,dataset.y
             cabac_pred = cabac(X)
             final_loss = perfect_AC(y,cabac_pred)
@@ -97,28 +97,29 @@ class RatesCABAC:
                 train_loss.append(final_loss)
             else:
                 valid_loss.append(final_loss)
-        self.save_N_model(N,cabac)
+        self.save_N_model(cabac)
         return epochs*train_loss, epochs*valid_loss
 
-    def load_model(self,N):
+    def load_model(self):
         cabac = CABAC(self.configs["max_context"])
         if self.configs.get("parent_id"):
-            file_name = f"{get_prefix(self.configs,'parent_id')}_{N:03d}_lut.npy"
+            file_name = f"{get_prefix(self.configs,'parent_id')}_{self.N:03d}_lut.npy"
             with open(file_name, 'rb') as f:
                 lut = np.load(f)
             cabac.load_lut(lut=lut.reshape(-1,1))
         return cabac
 
-    def save_N_model(self,N,cabac):
-        if ('train' in self.configs["phases"]) and (N>0):
+    def save_N_model(self,cabac):
+        if ('train' in self.configs["phases"]) and (self.N>0):
             lut = cabac.context_p.reshape(-1)
-            with open(f"{get_prefix(self.configs)}_{N:03d}_lut.npy", 'wb') as f:
+            with open(f"{get_prefix(self.configs)}_{self.N:03d}_lut.npy", 'wb') as f:
                 np.save(f, lut)
 
 
 class RatesJBIG1:
-    def __init__(self,configs):
+    def __init__(self,configs,N):
         self.configs = configs
+        self.N = N
 
     def avg_rate(self,pths):
         """
@@ -129,18 +130,17 @@ class RatesJBIG1:
             rate += jbig1_rate(pth)
         return rate/len(pths)
 
-    def get_rates(self,trainset,validset):
+    def get_rates(self,datatraining,datacoding):
         phases=self.configs["phases"]
         epochs=self.configs["epochs"]
-        N = trainset.N
-        if (N != 10):
+        if (self.N != 10):
             return epochs*[-1],epochs*[-1]
         train_loss, valid_loss = [], []
         for phase in sorted(phases): # train first then valid
             if phase == 'train':
-                dataset = trainset
+                dataset = CausalContextDataset(datatraining, self.configs["data_type"], self.N, self.configs["percentage_of_uncles"])
             else:
-                dataset = validset
+                dataset = CausalContextDataset(datacoding, self.configs["data_type"], self.N, self.configs["percentage_of_uncles"])
             final_loss = self.avg_rate(dataset.pths)
             if phase=='train':
                 train_loss.append(final_loss)
@@ -280,18 +280,18 @@ class RatesArbitraryMLP(RatesMLP):
 
 def train_loop(configs,datatraining,datacoding,N):
     
-    trainset = CausalContextDataset(
-        datatraining,configs["data_type"],N, configs["percentage_of_uncles"],getXy_later=('train' not in configs["phases"]))
-    validset = CausalContextDataset(
-        datacoding,configs["data_type"],N, configs["percentage_of_uncles"],getXy_later=('valid' not in configs["phases"]))
+    # trainset = CausalContextDataset(
+    #     datatraining,configs["data_type"],N, configs["percentage_of_uncles"],getXy_later=('train' not in configs["phases"]))
+    # validset = CausalContextDataset(
+    #     datacoding,configs["data_type"],N, configs["percentage_of_uncles"],getXy_later=('valid' not in configs["phases"]))
 
     if N == 0:
-        rates_static_t,rates_static_c = RatesStaticAC(configs).get_rates(trainset,validset)
+        rates_static_t,rates_static_c = RatesStaticAC(configs,N).get_rates(datatraining,datacoding) # .get_rates(trainset,validset)
     else:
-        rates_cabac_t,rates_cabac_c = RatesCABAC(configs).get_rates(trainset,validset)        
+        rates_cabac_t,rates_cabac_c = RatesCABAC(configs,N).get_rates(datatraining,datacoding) # .get_rates(trainset,validset)
         rates_mlp_t,rates_mlp_c = RatesMLP(configs,N).get_rates(datatraining,datacoding) # .get_rates(trainset,validset)
         if (configs["data_type"] == "image"):
-            rates_jbig1_t,rates_jbig1_c = RatesJBIG1(configs).get_rates(trainset,validset)
+            rates_jbig1_t,rates_jbig1_c = RatesJBIG1(configs,N).get_rates(datatraining,datacoding) # .get_rates(trainset,validset)
 
     phases=configs["phases"]
     epochs=configs["epochs"]
