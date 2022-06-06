@@ -26,8 +26,31 @@ from perceptronac.coders import get_bpov
 import random
 
 
-def get_prefix(configs, id_key = 'id' ):
-    return f"{configs['save_dir'].rstrip('/')}/exp_{configs[id_key]}/exp_{configs[id_key]}"
+def get_prefix(configs, id_key = 'id', parent_id_index = None ):
+    """
+    {"parent_id":""} or 
+    {"parent_id":[]} or 
+    {"parent_id":"123456789"} or 
+    {"parent_id":["123456789","111456789"]} or 
+    {"parent_id":["123456789"]}
+    """
+    if not configs[id_key]:
+        raise ValueError("Attempted to get prefix for empty id")
+
+    if id_key == "parent_id":
+        if isinstance(configs["parent_id"],list):
+            if len(configs["parent_id"])==1:
+                identifier = configs["parent_id"][0]
+            else:
+                if parent_id_index is None:
+                    raise ValueError("parent_id_index must be specified in case of multiple parents")
+                else:
+                    identifier = configs["parent_id"][parent_id_index]
+        else:
+            identifier = configs[id_key]
+    else:
+        identifier = configs[id_key]
+    return f"{configs['save_dir'].rstrip('/')}/exp_{identifier}/exp_{identifier}"
 
 
 class RatesStaticAC:
@@ -240,11 +263,13 @@ class RatesMLP:
         return train_loss, valid_loss
 
 
-    def min_valid_loss_model_name(self, id_key = "id"):
-        return f"{get_prefix(self.configs,id_key=id_key)}_{self.N:03d}_min_valid_loss_model.pt"
+    def min_valid_loss_model_name(self, id_key = "id", parent_id_index = None):
+        prefix = get_prefix(self.configs,id_key=id_key,parent_id_index=parent_id_index)
+        return f"{prefix}_{self.N:03d}_min_valid_loss_model.pt"
 
-    def last_train_loss_model_name(self, id_key = "id"):
-        return f"{get_prefix(self.configs,id_key=id_key)}_{self.N:03d}_model.pt"
+    def last_train_loss_model_name(self, id_key = "id", parent_id_index = None):
+        prefix = get_prefix(self.configs,id_key=id_key,parent_id_index=parent_id_index)
+        return f"{prefix}_{self.N:03d}_model.pt"
 
     def instantiate_model(self):
         ModelClass=self.configs["ModelClass"]
@@ -252,11 +277,26 @@ class RatesMLP:
 
     def load_model(self):
         model = self.instantiate_model()
+
+        use_min = False
+        if ('train' not in self.configs["phases"]) and (self.configs["reduction"] == 'min'):
+            use_min = True
+
+        parent_ids = []
         if self.configs.get("parent_id"):
-            if ('train' not in self.configs["phases"]) and (self.configs["reduction"] == 'min'):
-                file_name = self.min_valid_loss_model_name(id_key='parent_id')
-            else:
-                file_name = self.last_train_loss_model_name(id_key='parent_id')
+            parent_ids = self.configs["parent_id"] if isinstance(self.configs["parent_id"],list) else [self.configs["parent_id"]]
+        
+        available_models = []
+        for i,parent_id in enumerate(parent_ids):
+            file_name = self.min_valid_loss_model_name(id_key='parent_id',parent_id_index=i) if use_min else \
+                self.last_train_loss_model_name(id_key='parent_id',parent_id_index=i)
+            if os.path.isfile(file_name):
+                available_models.append(file_name)
+
+        if len(available_models) > 1:
+            raise Exception("Multiple models available to load. No rule has been set to solve this issue.")
+        elif len(available_models) == 1:
+            file_name = available_models[0]
             print(f"loading file {file_name}")
             model.load_state_dict(torch.load(file_name))
         return model
@@ -278,11 +318,13 @@ class RatesArbitraryMLP(RatesMLP):
         super().__init__(configs,widths[0])
         self.widths = widths
 
-    def min_valid_loss_model_name(self, id_key = "id"):
-        return f"{get_prefix(self.configs,id_key=id_key)}_{'_'.join(map(str,self.widths))}_min_valid_loss_model.pt"
+    def min_valid_loss_model_name(self, id_key = "id", parent_id_index = None):
+        prefix = get_prefix(self.configs,id_key=id_key,parent_id_index=parent_id_index)
+        return f"{prefix}_{'_'.join(map(str,self.widths))}_min_valid_loss_model.pt"
 
-    def last_train_loss_model_name(self, id_key = "id"):
-        return f"{get_prefix(self.configs,id_key=id_key)}_{'_'.join(map(str,self.widths))}_model.pt"
+    def last_train_loss_model_name(self, id_key = "id", parent_id_index = None):
+        prefix = get_prefix(self.configs,id_key=id_key,parent_id_index=parent_id_index)
+        return f"{prefix}_{'_'.join(map(str,self.widths))}_model.pt"
 
     def instantiate_model(self):
         return ArbitraryMLP(self.widths)
