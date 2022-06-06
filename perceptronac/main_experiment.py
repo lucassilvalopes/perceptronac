@@ -200,8 +200,8 @@ class RatesMLP:
                         self.configs["data_type"], self.N, self.configs["percentage_of_uncles"])
 
                     dataloader=torch.utils.data.DataLoader(dset,batch_size=batch_size,shuffle=True,num_workers=num_workers)
-
-                    for data in tqdm(dataloader):
+                    pbar = tqdm(total=np.ceil(len(dset)/batch_size))
+                    for data in dataloader:
 
                         Xt_b,yt_b= data
                         Xt_b = Xt_b.float().to(device)
@@ -219,8 +219,9 @@ class RatesMLP:
                                 loss = criterion(outputs, yt_b)
 
                         running_loss += loss.item()
-
+                        pbar.update(1)
                     n_samples += len(dataloader.dataset)
+                    pbar.close()
                     
                 final_loss = running_loss / n_samples
                 if phase=='train':
