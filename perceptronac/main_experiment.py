@@ -376,60 +376,75 @@ def coding_loop(configs,N):
     cond1 = (configs["data_type"] == "pointcloud")
     cond2 = (configs["percentage_of_uncles"] == 0)
     cond3 = (configs['ModelClass'] == MLP_N_64N_32N_1)
-    cond4 = (len(configs["validation_set"]) == 1)
-    ok = cond1 and cond2 and cond3 and cond4
+    ok = cond1 and cond2 and cond3
         
     if not ok:
         m = f"""
             coding currently supported only for the combination
-            len(validation_set) : 1
             data_type : pointcloud
             percentage_of_uncles : 0
             ModelClass : MLP_N_64N_32N_1
             """
         raise ValueError(m)
 
-    pc_in = configs["validation_set"][0]
-    pc_len = len(c3d.read_PC(pc_in)[1])
-
     if N == 0:
-        weights = f"{get_prefix(configs,'parent_id')}_{N:03d}_p.npy"
-        constructor = StaticAC_Constructor(weights)
-        coder = PC_Coder(constructor.construct,N,configs["last_octree_level"])
-        coder.encode(pc_in,encoder_in="/tmp/encoder_in",encoder_out="/tmp/encoder_out")
-        staticac_rate = get_bpov("/tmp/encoder_out",pc_len)
 
-    else:
-        if (configs["reduction"] == 'min'):
-            weights = f"{get_prefix(configs,'parent_id')}_{N:03d}_min_valid_loss_model.pt"
-        else:
-            weights = f"{get_prefix(configs,'parent_id')}_{N:03d}_model.pt"
-        constructor = MLP_N_64N_32N_1_Constructor(N,weights)
-        coder = PC_Coder(constructor.construct,N,configs["last_octree_level"])
-        coder.encode(pc_in,encoder_in="/tmp/encoder_in",encoder_out="/tmp/encoder_out")
-        mlp_rate = get_bpov("/tmp/encoder_out",pc_len)
-
-        if N <= configs["max_context"] :
-            weights = f"{get_prefix(configs,'parent_id')}_{N:03d}_lut.npy"
-            constructor = CABAC_Constructor(weights,configs["max_context"])
+        staticac_rates = []
+        for pc_in in configs["validation_set"]:
+            pc_len = len(c3d.read_PC(pc_in)[1])
+            weights = f"{get_prefix(configs,'parent_id')}_{N:03d}_p.npy"
+            constructor = StaticAC_Constructor(weights)
             coder = PC_Coder(constructor.construct,N,configs["last_octree_level"])
             coder.encode(pc_in,encoder_in="/tmp/encoder_in",encoder_out="/tmp/encoder_out")
-            cabac_rate = get_bpov("/tmp/encoder_out",pc_len)
+            staticac_rate = get_bpov("/tmp/encoder_out",pc_len)
+            staticac_rates.append(staticac_rate)
+
+    else:
+
+        mlp_rates = []
+        for pc_in in configs["validation_set"]:
+            pc_len = len(c3d.read_PC(pc_in)[1])
+            if (configs["reduction"] == 'min'):
+                weights = f"{get_prefix(configs,'parent_id')}_{N:03d}_min_valid_loss_model.pt"
+            else:
+                weights = f"{get_prefix(configs,'parent_id')}_{N:03d}_model.pt"
+            constructor = MLP_N_64N_32N_1_Constructor(N,weights)
+            coder = PC_Coder(constructor.construct,N,configs["last_octree_level"])
+            coder.encode(pc_in,encoder_in="/tmp/encoder_in",encoder_out="/tmp/encoder_out")
+            mlp_rate = get_bpov("/tmp/encoder_out",pc_len)
+            mlp_rates.append(mlp_rate)
+
+        if N <= configs["max_context"] :
+
+            cabac_rates = []
+            for pc_in in configs["validation_set"]:
+                pc_len = len(c3d.read_PC(pc_in)[1])
+                weights = f"{get_prefix(configs,'parent_id')}_{N:03d}_lut.npy"
+                constructor = CABAC_Constructor(weights,configs["max_context"])
+                coder = PC_Coder(constructor.construct,N,configs["last_octree_level"])
+                coder.encode(pc_in,encoder_in="/tmp/encoder_in",encoder_out="/tmp/encoder_out")
+                cabac_rate = get_bpov("/tmp/encoder_out",pc_len)
+                cabac_rates.append(cabac_rate)
+
         else:
-            cabac_rate = -1
+
+            cabac_rates = []
+            for pc_in in configs["validation_set"]:
+                cabac_rate = -1
+                cabac_rates.append(cabac_rate)
 
     if N == 0:
         data = {
             "coding": {
-                "MLP": staticac_rate,
-                "LUT": staticac_rate
+                "MLP": staticac_rates,
+                "LUT": staticac_rates
             }   
         }
     else:
         data = {
             "coding": {
-                "MLP": mlp_rate,
-                "LUT": cabac_rate
+                "MLP": mlp_rates,
+                "LUT": cabac_rates
             }   
         }
 
@@ -467,8 +482,11 @@ def experiment(configs):
     if ("coding" in configs["phases"]):
         for N in configs["N_vec"]:
             N_data = coding_loop(configs,N)
+
+            save_data(f"{get_prefix(configs)}_{N:03d}_coding",np.arange(len(configs["validation_set"])),N_data["coding"],"frame")        
+
             for k in N_data["coding"].keys():
-                v = N_data["coding"][k]
+                v = np.mean(N_data["coding"][k])
                 data["coding"][k] = (data["coding"][k] + [v]) if (k in data["coding"].keys()) else [v]
 
     save_configs(f"{get_prefix(configs)}_conf",configs)
