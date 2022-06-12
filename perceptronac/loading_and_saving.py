@@ -93,9 +93,12 @@ def plot_comparison(xvalues,data,xlabel,ylabel='bits/sample',xscale="linear",lin
     return fig
 
 
-def save_values(csv_name,xvalues,data,xlabel):
+def save_values(csv_name,xvalues,data,xlabel,extra=None):
     csv_name = os.path.splitext(csv_name)[0]
     values = pd.DataFrame(data)
+    if extra is not None:
+        for k,v in extra.items():
+            values[k] = v
     if isinstance(xvalues,dict):
         values.index = pd.MultiIndex.from_tuples(zip(*xvalues.values()), names=list(map( lambda k: f"{k}_index",xvalues.keys())))
     else:
@@ -123,10 +126,10 @@ def save_model(file_name,model):
     torch.save(model.eval().state_dict(), f"{file_name}.pt")
     
 
-def save_data(fn_prefix,xvalues,data,xlabel,ylabel='bits/sample',xscale="linear",specify_xticks=False,**kwargs):
+def save_data(fn_prefix,xvalues,data,xlabel,ylabel='bits/sample',xscale="linear",specify_xticks=False,extra=None,**kwargs):
     fig=plot_comparison(xvalues,data,xlabel,ylabel=ylabel,xscale=xscale,**kwargs)
     if specify_xticks:
         fig.axes[0].set_xticks(xvalues)
         fig.axes[0].set_xticklabels(xvalues)
     save_fig(f"{fn_prefix}_graph",fig)
-    save_values(f"{fn_prefix}_values",xvalues,data,xlabel)
+    save_values(f"{fn_prefix}_values",xvalues,data,xlabel,extra)

@@ -570,4 +570,5 @@ def rate_vs_complexity_experiment(configs):
 
     for phase in configs["phases"]:
         save_data(f"{get_prefix(configs)}_{phase}",actual_params,data[phase],"complexity",xscale=configs["xscale"],
+            extra={"topology": ['_'.join(map(str,widths)) for widths in configs["topologies"]] },
             linestyles={"MLP":"None"}, colors={"MLP":"k"}, markers={"MLP":"x"})

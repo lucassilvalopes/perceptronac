@@ -7,12 +7,17 @@ from perceptronac.main_experiment import MLPTopologyCalculator
 
 if __name__ == "__main__":
 
-    P_vec = list(map(lambda i : MLPTopologyCalculator.mlp_parameters([10,4**i,1]),range(1,7)))
+    # P_vec = list(map(lambda i : MLPTopologyCalculator.mlp_parameters([10,4**i,1]),range(1,7)))
+    # topologies = []
+    # for calc in [MLPTopologyCalculator(10,1,hidden_layers_proportions) for hidden_layers_proportions in [ 1 * [1] , 2 * [1] , 3 * [1] , [2,1] , [1,2] ] ]:
+    #     for P in P_vec:
+    #         top,_ = calc.mlp_closest_to_n_params(P)
+    #         topologies.append(top)
     topologies = []
-    for calc in [MLPTopologyCalculator(10,1,hidden_layers_proportions) for hidden_layers_proportions in [ 1 * [1] , 2 * [1] , 3 * [1] , [2,1] , [1,2] ] ]:
-        for P in P_vec:
-            top,_ = calc.mlp_closest_to_n_params(P)
-            topologies.append(top)
+
+    topologies = topologies + [
+        [10,h1,h2,1] for h1 in [10,20,40,80,160,320,640] for h2 in [10,20,40,80,160,320,640]
+    ]
 
     configs = {
         "id": str(int(time.time())),
