@@ -478,12 +478,8 @@ def experiment(configs):
         save_data(f"{get_prefix(configs)}_{phase}",configs["N_vec"],data[phase],"context size",ylabel,configs["xscale"])
 
 
-class MLPTopology:
-    def __init__(self,name,linestyle,color,marker,inputs,outputs,hidden_layers_proportions):
-        self.name = name
-        self.linestyle = linestyle
-        self.color = color
-        self.marker = marker
+class MLPTopologyCalculator:
+    def __init__(self,inputs,outputs,hidden_layers_proportions):
         self.inputs = inputs
         self.outputs = outputs
         self.hidden_layers_proportions = hidden_layers_proportions
@@ -524,33 +520,6 @@ class MLPTopology:
         return p
 
 
-class FixedWidthMLPTopology(MLPTopology):
-    def __init__(self,name,linestyle,color,marker,inputs,outputs,n_hidden_layers):
-        super().__init__(name,linestyle,color,marker,inputs,outputs,n_hidden_layers * [1])
-
-class FW1HLMLPTopology(FixedWidthMLPTopology):
-    """fixed width 1 hidden layer multi layer perceptron topology"""
-    def __init__(self,inputs,outputs):
-        super().__init__("FW1HLMLP","None","b","o",inputs,outputs,1)
-
-class FW2HLMLPTopology(FixedWidthMLPTopology):
-    """fixed width 2 hidden layer multi layer perceptron topology"""
-    def __init__(self,inputs,outputs):
-        super().__init__("FW2HLMLP","None","c","s",inputs,outputs,2)
-
-class FW3HLMLPTopology(FixedWidthMLPTopology):
-    """fixed width 3 hidden layer multi layer perceptron topology"""
-    def __init__(self,inputs,outputs):
-        super().__init__("FW3HLMLP","None","m","*",inputs,outputs,3)
-
-class N_2W_1W_1_MLP(MLPTopology):
-    def __init__(self,inputs,outputs):
-        super().__init__("N_2W_1W_1_MLP","None","r","^",inputs,outputs,[2,1])
-
-class N_1W_2W_1_MLP(MLPTopology):
-    def __init__(self,inputs,outputs):
-        super().__init__("N_1W_2W_1_MLP","None","g","v",inputs,outputs,[1,2])
-
 def rate_vs_complexity_experiment(configs):
 
     os.makedirs(f"{configs['save_dir'].rstrip('/')}/exp_{configs['id']}")
@@ -564,29 +533,23 @@ def rate_vs_complexity_experiment(configs):
     for phase in configs["phases"]:
         data[phase] = dict()
 
-    topologies = [ t(configs["N"],1) for t in configs["topologies"] ]
+    actual_params = []
+    for widths in configs["topologies"]:
 
-    linestyles={t.name:t.linestyle for t in topologies}
-    colors={t.name:t.color for t in topologies}
-    markers={t.name:t.marker for t in topologies}
+        params = MLPTopologyCalculator.mlp_parameters(widths)
+        actual_params.append(params)
 
-    actual_params = dict()
-    for topology in topologies:
-        actual_params[topology.name] = []
-        for P in configs["P_vec"]:
-            widths,params = topology.mlp_closest_to_n_params(P)
-            actual_params[topology.name].append(params)
-            rates_mlp_t,rates_mlp_c = RatesArbitraryMLP(configs,widths).get_rates(configs["training_set"],configs["validation_set"]) # .get_rates(trainset,validset)
+        rates_mlp_t,rates_mlp_c = RatesArbitraryMLP(configs,widths).get_rates(configs["training_set"],configs["validation_set"]) # .get_rates(trainset,validset)
 
-            for phase in configs["phases"]:
-                rates_mlp = rates_mlp_t if phase == 'train' else rates_mlp_c
-                save_data(f"{get_prefix(configs)}_{'_'.join(map(str,widths))}_{phase}",np.arange(configs["epochs"]),{topology.name:rates_mlp},"epoch",
-                    linestyles=linestyles, colors=colors, markers=markers)
-                v = min(rates_mlp) if (configs['reduction'] == 'min') else rates_mlp[-1]
-                data[phase][topology.name] = (data[phase][topology.name] + [v]) if (topology.name in data[phase].keys()) else [v]
+        for phase in configs["phases"]:
+            rates_mlp = rates_mlp_t if phase == 'train' else rates_mlp_c
+            save_data(f"{get_prefix(configs)}_{'_'.join(map(str,widths))}_{phase}",np.arange(configs["epochs"]),{"MLP":rates_mlp},"epoch",
+                linestyles={"MLP":"None"}, colors={"MLP":"k"}, markers={"MLP":"x"})
+            v = min(rates_mlp) if (configs['reduction'] == 'min') else rates_mlp[-1]
+            data[phase]["MLP"] = (data[phase]["MLP"] + [v]) if ("MLP" in data[phase].keys()) else [v]
 
     save_configs(f"{get_prefix(configs)}_conf",configs)
 
     for phase in configs["phases"]:
         save_data(f"{get_prefix(configs)}_{phase}",actual_params,data[phase],"complexity",xscale=configs["xscale"],
-            linestyles=linestyles, colors=colors, markers=markers)
+            linestyles={"MLP":"None"}, colors={"MLP":"k"}, markers={"MLP":"x"})

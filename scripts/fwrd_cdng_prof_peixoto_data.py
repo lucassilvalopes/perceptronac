@@ -12,21 +12,21 @@ if __name__ == "__main__":
         "ModelClass":MLP_N_64N_32N_1,
         "OptimizerClass":torch.optim.SGD,
         "training_set": [
-            "eduardo/contexts_symbols.txt"
+            "/home/lucas/Documents/data/eduardo/david_frame0000_contexts_symbols.txt"
         ],
         "validation_set": [
-            "eduardo/contexts_symbols.txt"
+            "/home/lucas/Documents/data/eduardo/andrew_frame0000_contexts_symbols.txt"
         ],
-        "epochs": 300,
-        "learning_rate": 0.00001,
+        "epochs": 1,
+        "learning_rate": 0.0001,
         "batch_size": 2048,
         "num_workers":4,
         "device":"cuda:0", #"cpu"
-        "parent_id": "",
+        "parent_id": "1654539631",
         "N_vec": [14], # sorted([0] + [round(pow(1.595, i)) for i in range(12) if (i+1)%2==0],reverse=True),
-        "phases": ['train'], # ['train', 'valid'], # ['coding'],
+        "phases": ['valid'], # ['train', 'valid'], # ['coding'],
         "xscale": 'symlog',
-        "reduction": 'min', # min, last
+        "reduction": 'last', # min, last
         "data_type": 'table', # image, pointcloud, table
         "percentage_of_uncles": 0.0, # must be specified if the data types is pointcloud
         "last_octree_level": 10, # must be specified if the data types is pointcloud
