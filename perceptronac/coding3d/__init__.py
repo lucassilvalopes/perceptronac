@@ -104,6 +104,10 @@ def voxels_in_raster_causal_neighborhood(r):
     return v
 
 
+def voxels_in_non_causal_raster_neighborhood(r):
+    return voxels_in_neighborhood(r)-voxels_in_raster_causal_neighborhood(r)+1
+
+
 def voxels_in_neighborhood(r):
     v = 0
     for x in np.arange(-r, r+1, 1):
@@ -114,7 +118,7 @@ def voxels_in_neighborhood(r):
     return v-1 # remove the center voxel
 
 
-def raster_causal_nbhd(nbhd,ordering):
+def raster_causal_nbhd_idx(nbhd,ordering):
 
     assert ordering in [1,2,3]
 
@@ -131,27 +135,22 @@ def raster_causal_nbhd(nbhd,ordering):
         medium_speed = 0
         slowest = 2
 
-    nbhd = np.delete(
-        nbhd, 
+    return np.logical_or( 
         np.logical_or( 
-            np.logical_or( 
-                (nbhd[:, slowest] > 0) ,
-                np.logical_and( 
-                    (nbhd[:, slowest] == 0) , 
-                    (nbhd[:, medium_speed] > 0) 
-                )
-            ),
-            np.logical_and(
-                np.logical_and( 
-                    (nbhd[:, slowest] == 0) , 
-                    (nbhd[:, medium_speed] == 0) 
-                ),
-                (nbhd[:, fastest] >= 0)
+            (nbhd[:, slowest] > 0) ,
+            np.logical_and( 
+                (nbhd[:, slowest] == 0) , 
+                (nbhd[:, medium_speed] > 0) 
             )
-        ), 
-        axis=0
+        ),
+        np.logical_and(
+            np.logical_and( 
+                (nbhd[:, slowest] == 0) , 
+                (nbhd[:, medium_speed] == 0) 
+            ),
+            (nbhd[:, fastest] >= 0)
+        )
     )
-    return nbhd
 
 
 def pc_causal_context(V, N, M, ordering = 1, squeeze_nbhd: bool = False):
@@ -201,7 +200,9 @@ def pc_causal_context(V, N, M, ordering = 1, squeeze_nbhd: bool = False):
 
     causal_neighs,this_nbhd = causal_siblings(V,V_nni,N,ordering)
 
-    phi,prev_nbhd = uncles(V_nni,M)
+    phi,prev_nbhd = non_causal_uncles(V_nni,M,ordering)
+
+    # phi,prev_nbhd = uncles(V_nni,M)
 
     contexts = np.column_stack((causal_neighs, phi))
     return V_nni,contexts, occupancy, this_nbhd, prev_nbhd
@@ -215,7 +216,7 @@ def causal_siblings(V,V_nni,N,ordering):
 
     this_nbhd = xyz_displacements(np.arange(-current_level_r, current_level_r+1, 1))
     this_nbhd = this_nbhd[(np.linalg.norm(this_nbhd, axis=1) <= current_level_r), :]
-    this_nbhd = raster_causal_nbhd(this_nbhd, ordering)
+    this_nbhd = np.delete(this_nbhd, raster_causal_nbhd_idx(this_nbhd,ordering), axis=0)
     this_nbhd = this_nbhd[np.argsort(np.linalg.norm(this_nbhd,axis=1), kind='mergesort'),:]
 
     causal_neighs = get_neighbors(V_nni,V,this_nbhd)
@@ -225,9 +226,26 @@ def causal_siblings(V,V_nni,N,ordering):
     return causal_neighs,this_nbhd
 
 
-def non_causal_uncles():
+def non_causal_uncles(V_nni,M,ordering):
 
-    pass
+    previous_level_r = 1
+    while voxels_in_non_causal_raster_neighborhood(previous_level_r) < M:
+        previous_level_r += 1
+
+    prev_nbhd = xyz_displacements(np.arange(-previous_level_r, previous_level_r+1, 1))
+    prev_nbhd = prev_nbhd[(np.linalg.norm(prev_nbhd, axis=1) <= previous_level_r), :]
+    prev_nbhd = np.delete(prev_nbhd, np.logical_not(raster_causal_nbhd_idx(prev_nbhd,ordering)), axis=0)
+    prev_nbhd = prev_nbhd[np.argsort(np.linalg.norm(prev_nbhd,axis=1), kind='mergesort'),:]
+
+    V_d, child_idx = np.unique(np.floor(V_nni / 2), axis=0, return_inverse=True)
+    # child_idx holds, in the order of V_nni, indices from V_d 
+    phi = get_neighbors(V_d,V_d,prev_nbhd)
+    phi = phi[child_idx, :]
+    
+    phi = phi[:,:M]
+    prev_nbhd = prev_nbhd[:M,:]
+    return phi,prev_nbhd
+
 
 
 def uncles(V_nni,M):
