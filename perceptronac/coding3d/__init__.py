@@ -169,7 +169,7 @@ def pc_causal_context(V, N, M, ordering = 1, squeeze_nbhd: bool = False):
         V_d = np.floor(V / 2)[np.sort(idx), :]
 
 
-    :param V: (N-by-3) Voxelized geometry to be coded (assuming that V_d
+    :param V: (L-by-3) Voxelized geometry to be coded (assuming that V_d
               the previous level has already been encoded).
     :param N: How many causal neighbors from the current level to use.
     :param M: How many neighbors from the previous level to use.
@@ -195,6 +195,19 @@ def pc_causal_context(V, N, M, ordering = 1, squeeze_nbhd: bool = False):
         m = f"""ordering must be 1,2 or 3"""
         raise ValueError(m)
 
+    V,V_nni = parents_children(V,ordering)
+
+    occupancy = ismember_xyz(V_nni, V)
+
+    causal_neighs,this_nbhd = causal_siblings(V,V_nni,N,ordering)
+
+    phi,prev_nbhd = uncles(V_nni,M)
+
+    contexts = np.column_stack((causal_neighs, phi))
+    return V_nni,contexts, occupancy, this_nbhd, prev_nbhd
+
+def causal_siblings(V,V_nni,N,ordering):
+
     # neighs
     current_level_r = 1
     while voxels_in_raster_causal_neighborhood(current_level_r) < N:
@@ -205,14 +218,33 @@ def pc_causal_context(V, N, M, ordering = 1, squeeze_nbhd: bool = False):
     this_nbhd = raster_causal_nbhd(this_nbhd, ordering)
     this_nbhd = this_nbhd[np.argsort(np.linalg.norm(this_nbhd,axis=1), kind='mergesort'),:]
 
-    V,V_nni = parents_children(V,ordering)
-
-    occupancy = ismember_xyz(V_nni, V)
-
     causal_neighs = get_neighbors(V_nni,V,this_nbhd)
 
     causal_neighs = causal_neighs[:,:N]
     this_nbhd = this_nbhd[:N,:]
+    return causal_neighs,this_nbhd
+
+
+def non_causal_uncles():
+
+    pass
+
+
+def uncles(V_nni,M):
+    """
+    Returns the M occupancies of the M closest uncles (voxels in the previous octree level) of each point in V_nni.
+    Both causal and non-causal uncles are included.
+
+    V_d (L'-by-3) : previous level points.
+    V_nni (8*L'-by-3) : all 8 children of each point in V_d.
+    prev_nbhd (M-by-3) : displacements from the central point to get the neighboring points in the previous level.
+    child_idx (8*L') : for each point in V_nni, child_idx points to the parent in V_d. 
+        That is V_d[child_idx[i],:] is the parent of V_nni[i,:] .
+    phi (8*L'-by-M) : for each point in V_nni, phi holds the occupancy of the uncles.
+        That is phi[i,:] holds the occupancy of the points in (V_d[child_idx[i],:] + prev_nbhd) .
+
+    OBS: 'mergesort' in np.argsort and 'F' in np.reshape or np.flatten is to be compliant with matlab.
+    """
 
     # parent neighs (aka uncles)
     previous_level_r = 1
@@ -231,6 +263,4 @@ def pc_causal_context(V, N, M, ordering = 1, squeeze_nbhd: bool = False):
     
     phi = phi[:,:M]
     prev_nbhd = prev_nbhd[:M,:]
-
-    contexts = np.column_stack((causal_neighs, phi))
-    return V_nni,contexts, occupancy, this_nbhd, prev_nbhd
+    return phi,prev_nbhd
