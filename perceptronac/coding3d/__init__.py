@@ -86,39 +86,39 @@ def get_neighbors(query_V,V,nbhd):
     return neighs
 
 
-def voxels_in_raster_causal_neighborhood(r):
+def voxels_in_raster_neighborhood(r,include=[1,1,1,0,0,0]):
     """
-    raster order does not matter
+    Predicts the number of voxels in a raster neighborhood.
+    The raster order does not matter.
     """
+
     v = 0
     for x in np.arange(-r, r+1, 1):
         for y in np.arange(-r, r+1, 1):
             for z in np.arange(-r, r+1, 1):
                 if np.linalg.norm([x,y,z]) <= r:
                     if x < 0:
-                        v += 1
+                        if include[0]:
+                            v += 1
                     elif x == 0 and y < 0:
-                        v += 1
+                        if include[1]:
+                            v += 1
                     elif x == 0 and y == 0 and z < 0:
-                        v += 1
+                        if include[2]:
+                            v += 1
+                    elif x == 0 and y == 0 and z >= 0:
+                        if include[5]:
+                            v += 1
+                    elif x == 0 and y > 0:
+                        if include[4]:
+                            v += 1
+                    elif x > 0:
+                        if include[3]:
+                            v += 1
     return v
 
 
-def voxels_in_non_causal_raster_neighborhood(r):
-    return voxels_in_neighborhood(r)-voxels_in_raster_causal_neighborhood(r)+1
-
-
-def voxels_in_neighborhood(r):
-    v = 0
-    for x in np.arange(-r, r+1, 1):
-        for y in np.arange(-r, r+1, 1):
-            for z in np.arange(-r, r+1, 1):
-                if np.linalg.norm([x,y,z]) <= r:
-                    v += 1
-    return v-1 # remove the center voxel
-
-
-def raster_causal_nbhd_idx(nbhd,ordering):
+def raster_nbhd(nbhd,ordering,include=[1,1,1,0,0,0]):
 
     assert ordering in [1,2,3]
 
@@ -135,25 +135,34 @@ def raster_causal_nbhd_idx(nbhd,ordering):
         medium_speed = 0
         slowest = 2
 
-    return np.logical_or( 
-        np.logical_or( 
-            (nbhd[:, slowest] > 0) ,
-            np.logical_and( 
-                (nbhd[:, slowest] == 0) , 
-                (nbhd[:, medium_speed] > 0) 
-            )
-        ),
-        np.logical_and(
-            np.logical_and( 
-                (nbhd[:, slowest] == 0) , 
-                (nbhd[:, medium_speed] == 0) 
-            ),
-            (nbhd[:, fastest] >= 0)
-        )
-    )
+    first = nbhd[:, fastest]
+    second = nbhd[:, medium_speed]
+    last = nbhd[:, slowest]
+
+    causal_half_space = last < 0
+    non_causal_half_space = last > 0
+
+    causal_half_plane = np.logical_and( last == 0 , second < 0 )
+    non_causal_half_plane = np.logical_and( last == 0 , second > 0 )
+
+    causal_half_line = np.logical_and( np.logical_and( last == 0 , second == 0 ), first < 0 )
+    non_causal_half_line = np.logical_and( np.logical_and( last == 0 , second == 0 ), first >= 0 )
+
+    pieces = [
+        causal_half_space,causal_half_plane,causal_half_line,
+        non_causal_half_space,non_causal_half_plane,non_causal_half_line
+    ]
+
+    mask = np.zeros(nbhd.shape[0]).astype(bool)
+    for i in range(len(pieces)):
+        if include[i]:
+            mask = np.logical_or(mask,pieces[i])
+
+    return np.delete(nbhd, np.logical_not(mask), axis=0)
 
 
-def pc_causal_context(V, N, M, ordering = 1, squeeze_nbhd: bool = False):
+
+def pc_causal_context(V, N, M, ordering = 1, causal_half_space_only: bool = False):
     """
     Find causal contexts to help guess the occupancy of each voxel in V using
     its own causal neighbors in the current level and its parent neighborhood.
@@ -198,25 +207,25 @@ def pc_causal_context(V, N, M, ordering = 1, squeeze_nbhd: bool = False):
 
     occupancy = ismember_xyz(V_nni, V)
 
-    causal_neighs,this_nbhd = causal_siblings(V,V_nni,N,ordering)
+    causal_neighs,this_nbhd = causal_siblings(V,V_nni,N,ordering,causal_half_space_only)
 
-    phi,prev_nbhd = non_causal_uncles(V_nni,M,ordering)
-
-    # phi,prev_nbhd = uncles(V_nni,M)
+    phi,prev_nbhd = uncles(V_nni,M,ordering)
 
     contexts = np.column_stack((causal_neighs, phi))
     return V_nni,contexts, occupancy, this_nbhd, prev_nbhd
 
-def causal_siblings(V,V_nni,N,ordering):
+def causal_siblings(V,V_nni,N,ordering,causal_half_space_only=False):
+
+    include = ([1,0,0,0,0,0] if causal_half_space_only else [1,1,1,0,0,0])
 
     # neighs
     current_level_r = 1
-    while voxels_in_raster_causal_neighborhood(current_level_r) < N:
+    while voxels_in_raster_neighborhood(current_level_r,include=include) < N:
         current_level_r += 1
 
     this_nbhd = xyz_displacements(np.arange(-current_level_r, current_level_r+1, 1))
     this_nbhd = this_nbhd[(np.linalg.norm(this_nbhd, axis=1) <= current_level_r), :]
-    this_nbhd = np.delete(this_nbhd, raster_causal_nbhd_idx(this_nbhd,ordering), axis=0)
+    this_nbhd = raster_nbhd(this_nbhd,ordering,include=include)
     this_nbhd = this_nbhd[np.argsort(np.linalg.norm(this_nbhd,axis=1), kind='mergesort'),:]
 
     causal_neighs = get_neighbors(V_nni,V,this_nbhd)
@@ -226,32 +235,9 @@ def causal_siblings(V,V_nni,N,ordering):
     return causal_neighs,this_nbhd
 
 
-def non_causal_uncles(V_nni,M,ordering):
-
-    previous_level_r = 1
-    while voxels_in_non_causal_raster_neighborhood(previous_level_r) < M:
-        previous_level_r += 1
-
-    prev_nbhd = xyz_displacements(np.arange(-previous_level_r, previous_level_r+1, 1))
-    prev_nbhd = prev_nbhd[(np.linalg.norm(prev_nbhd, axis=1) <= previous_level_r), :]
-    prev_nbhd = np.delete(prev_nbhd, np.logical_not(raster_causal_nbhd_idx(prev_nbhd,ordering)), axis=0)
-    prev_nbhd = prev_nbhd[np.argsort(np.linalg.norm(prev_nbhd,axis=1), kind='mergesort'),:]
-
-    V_d, child_idx = np.unique(np.floor(V_nni / 2), axis=0, return_inverse=True)
-    # child_idx holds, in the order of V_nni, indices from V_d 
-    phi = get_neighbors(V_d,V_d,prev_nbhd)
-    phi = phi[child_idx, :]
-    
-    phi = phi[:,:M]
-    prev_nbhd = prev_nbhd[:M,:]
-    return phi,prev_nbhd
-
-
-
-def uncles(V_nni,M):
+def uncles(V_nni,M,ordering):
     """
     Returns the M occupancies of the M closest uncles (voxels in the previous octree level) of each point in V_nni.
-    Both causal and non-causal uncles are included.
 
     V_d (L'-by-3) : previous level points.
     V_nni (8*L'-by-3) : all 8 children of each point in V_d.
@@ -264,14 +250,14 @@ def uncles(V_nni,M):
     OBS: 'mergesort' in np.argsort and 'F' in np.reshape or np.flatten is to be compliant with matlab.
     """
 
-    # parent neighs (aka uncles)
+    include = [0,1,1,1,1,1]
     previous_level_r = 1
-    while voxels_in_neighborhood(previous_level_r) < M:
+    while voxels_in_raster_neighborhood(previous_level_r,include=include) < M:
         previous_level_r += 1
 
     prev_nbhd = xyz_displacements(np.arange(-previous_level_r, previous_level_r+1, 1))
     prev_nbhd = prev_nbhd[(np.linalg.norm(prev_nbhd, axis=1) <= previous_level_r), :]
-    prev_nbhd = np.delete(prev_nbhd,prev_nbhd.tolist().index([0,0,0]), axis=0)
+    prev_nbhd = raster_nbhd(prev_nbhd,ordering,include=include)
     prev_nbhd = prev_nbhd[np.argsort(np.linalg.norm(prev_nbhd,axis=1), kind='mergesort'),:]
 
     V_d, child_idx = np.unique(np.floor(V_nni / 2), axis=0, return_inverse=True)
