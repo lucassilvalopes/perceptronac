@@ -90,6 +90,15 @@ def voxels_in_raster_neighborhood(r,include=[1,1,1,0,0,0]):
     """
     Predicts the number of voxels in a raster neighborhood.
     The raster order does not matter.
+
+    Divides the space in 6 parts:
+    - causal-half-space and non-causal-half-space, which are the half-spaces before and after the current plane being scanned
+    - causal-half-plane and non-causal-half-plane, which are the half-planes before and after the current line being scanned
+    - causal-half-line and non-causal-half-line, which are the half-lines before and after the current point being scanned
+      (the current point being scanned is included in the non-causal-half-line).
+
+    The vector "include" determines the absence or presence of each of these 6 parts, in the order :
+    causal-half-space, causal-half-plane, causal-half-line, non-causal-half-space, non-causal-half-plane, non-causal-half-line
     """
 
     v = 0
@@ -185,6 +194,9 @@ def pc_causal_context(V, N, M, ordering = 1, causal_half_space_only: bool = Fals
                           1 - Raster XYZ;
                           2 - Raster YZX;
                           3 - Raster ZXY;
+    
+    :param causal_half_space_only: If True, neighbors in the plane currently being 
+                                    scanned will no be used.
 
     :return: contexts (8*L'-by-n+m) The causal nbhd neighbours found in V, plus
                                      m bits indicating the parent neighborhood. L'
@@ -193,9 +205,9 @@ def pc_causal_context(V, N, M, ordering = 1, causal_half_space_only: bool = Fals
 
              occupancy (8*L'-by-1)    The occupancy of each of the 8 possible children of V_d.
 
-             this_nbhd (n-by-3)      The causal neighborhood.
+             this_nbhd (n-by-3)      Causal neighbors as displacements from the central voxel.
     
-             prev_nbhd (m-by-3)      The previous level neighbors.
+             prev_nbhd (m-by-3)      Previous level neighbors also as displacements.
     
     """
 
@@ -238,6 +250,7 @@ def causal_siblings(V,V_nni,N,ordering,causal_half_space_only=False):
 def uncles(V_nni,M,ordering):
     """
     Returns the M occupancies of the M closest uncles (voxels in the previous octree level) of each point in V_nni.
+    Uncles with all 8 children in the causal neighborhood are discarded.
 
     V_d (L'-by-3) : previous level points.
     V_nni (8*L'-by-3) : all 8 children of each point in V_d.
