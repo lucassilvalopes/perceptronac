@@ -226,6 +226,33 @@ def pc_causal_context(V, N, M, ordering = 1, causal_half_space_only: bool = Fals
     contexts = np.column_stack((causal_neighs, phi))
     return V_nni,contexts, occupancy, this_nbhd, prev_nbhd
 
+
+def determine_best_partition(N_plus_M,causal_half_space_only):
+
+    this_include = ([1,0,0,0,0,0] if causal_half_space_only else [1,1,1,0,0,0])
+    prev_include = [0,1,1,1,1,1]
+
+    initial_N = 1
+    initial_M = 1
+    for prev_r in range(1,N_plus_M) : # prev_r will never reach N_plus_M. This avoids infinite loop in case of a bug.
+        candidate_N = voxels_in_raster_neighborhood(2*prev_r,include=this_include)
+        candidate_M = voxels_in_raster_neighborhood(prev_r,include=prev_include)
+        if candidate_N + candidate_M > N_plus_M:
+            break
+        else:
+            initial_N = candidate_N
+            initial_M = candidate_M
+
+    final_N = initial_N
+    final_M = initial_M
+    while final_N + final_M < N_plus_M:
+        if (final_M - initial_M)/(candidate_M - initial_M) > (final_N - initial_N)/(candidate_N - initial_N) :
+            final_N += 1
+        else:
+            final_M += 1
+    return final_N, final_M
+
+
 def causal_siblings(V,V_nni,N,ordering,causal_half_space_only=False):
 
     include = ([1,0,0,0,0,0] if causal_half_space_only else [1,1,1,0,0,0])
