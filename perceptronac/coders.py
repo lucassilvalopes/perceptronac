@@ -24,10 +24,11 @@ def lexsort(V):
 
 class PC_Coder:
 
-    def __init__(self,model_constructor,context_size,last_octree_level):
+    def __init__(self,model_constructor,context_size,last_octree_level,percentage_of_uncles=0):
         self._model_constructor = model_constructor
         self._N = context_size
         self._last_level = last_octree_level
+        self.percentage_of_uncles = percentage_of_uncles
         self._use_cache = False
         self._cache_path = None
 
@@ -53,7 +54,7 @@ class PC_Coder:
         y = []
         X = []
         for pc in pcs:
-            _,partial_X,partial_y,_,_ = c3d.pc_causal_context(pc, self._N, 0)
+            _,partial_X,partial_y,_,_ = c3d.pc_causal_context(pc, self._N, self.percentage_of_uncles)
             y.append(np.expand_dims(partial_y.astype(int),1) )
             X.append(partial_X.astype(int))
         y = np.vstack(y)

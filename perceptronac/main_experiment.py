@@ -374,15 +374,13 @@ def train_loop(configs,datatraining,datacoding,N):
 def coding_loop(configs,N):
 
     cond1 = (configs["data_type"] == "pointcloud")
-    cond2 = (configs["percentage_of_uncles"] == 0)
-    cond3 = (configs['ModelClass'] == MLP_N_64N_32N_1)
-    ok = cond1 and cond2 and cond3
+    cond2 = (configs['ModelClass'] == MLP_N_64N_32N_1)
+    ok = cond1 and cond2
         
     if not ok:
         m = f"""
             coding currently supported only for the combination
             data_type : pointcloud
-            percentage_of_uncles : 0
             ModelClass : MLP_N_64N_32N_1
             """
         raise ValueError(m)
@@ -394,7 +392,7 @@ def coding_loop(configs,N):
             pc_len = len(c3d.read_PC(pc_in)[1])
             weights = f"{get_prefix(configs,'parent_id')}_{N:03d}_p.npy"
             constructor = StaticAC_Constructor(weights)
-            coder = PC_Coder(constructor.construct,N,configs["last_octree_level"])
+            coder = PC_Coder(constructor.construct,N,configs["last_octree_level"],percentage_of_uncles=configs["percentage_of_uncles"])
             coder.encode(pc_in,encoder_in="/tmp/encoder_in",encoder_out="/tmp/encoder_out")
             staticac_rate = get_bpov("/tmp/encoder_out",pc_len)
             staticac_rates.append(staticac_rate)
@@ -409,7 +407,7 @@ def coding_loop(configs,N):
             else:
                 weights = f"{get_prefix(configs,'parent_id')}_{N:03d}_model.pt"
             constructor = MLP_N_64N_32N_1_Constructor(N,weights)
-            coder = PC_Coder(constructor.construct,N,configs["last_octree_level"])
+            coder = PC_Coder(constructor.construct,N,configs["last_octree_level"],percentage_of_uncles=configs["percentage_of_uncles"])
             coder.encode(pc_in,encoder_in="/tmp/encoder_in",encoder_out="/tmp/encoder_out")
             mlp_rate = get_bpov("/tmp/encoder_out",pc_len)
             mlp_rates.append(mlp_rate)
@@ -421,7 +419,7 @@ def coding_loop(configs,N):
                 pc_len = len(c3d.read_PC(pc_in)[1])
                 weights = f"{get_prefix(configs,'parent_id')}_{N:03d}_lut.npy"
                 constructor = CABAC_Constructor(weights,configs["max_context"])
-                coder = PC_Coder(constructor.construct,N,configs["last_octree_level"])
+                coder = PC_Coder(constructor.construct,N,configs["last_octree_level"],percentage_of_uncles=configs["percentage_of_uncles"])
                 coder.encode(pc_in,encoder_in="/tmp/encoder_in",encoder_out="/tmp/encoder_out")
                 cabac_rate = get_bpov("/tmp/encoder_out",pc_len)
                 cabac_rates.append(cabac_rate)
