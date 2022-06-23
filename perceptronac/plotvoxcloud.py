@@ -177,7 +177,7 @@ TEMPLATE_VG = """
 
 def plotvoxcloud(points, rgb, lights_on = False):
 
-    camera_position = points.max(0) + abs(points.max(0))
+    camera_position = points.max(0) + (points.max(0) - points.min(0))
     look = points.mean(0)
     axis_size = points.ptp() * 1.5
 
