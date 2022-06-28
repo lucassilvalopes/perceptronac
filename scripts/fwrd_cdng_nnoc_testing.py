@@ -16,15 +16,15 @@ if __name__ == "__main__":
         ],
         "validation_set": [
             # "/home/lucaslopes/perceptronac/NNOC/validation/longdress_vox10_1300_N100_contexts.npz"
-            # "/home/lucaslopes/perceptronac/NNOC/testing/redandblack_vox10_1450.ply"
-            os.path.join("/home/lucaslopes/perceptronac/NNOC/testing/redandblack",f) for f in sorted(os.listdir("/home/lucaslopes/perceptronac/NNOC/testing/redandblack"))
+            "/home/lucaslopes/perceptronac/NNOC/testing/redandblack_vox10_1450.ply"
+            # os.path.join("/home/lucaslopes/perceptronac/NNOC/testing/redandblack",f) for f in sorted(os.listdir("/home/lucaslopes/perceptronac/NNOC/testing/redandblack"))
         ],
         "epochs": 100, # 300,
         "learning_rate": 0.00001,
         "batch_size": 30000,
         "num_workers":4,
         "device":"cuda:0", #"cpu"
-        "parent_id": "?",
+        "parent_id": "1656023574",
         "N_vec": [107],
         "phases": ['coding'],
         "xscale": 'symlog',
