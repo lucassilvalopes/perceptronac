@@ -29,21 +29,8 @@ class Perceptron(torch.nn.Module):
         return x
 
 
-class ArbitraryWidthMLP(torch.nn.Module):
-    def __init__(self,N,W):
-        super().__init__()
-        self.layers = torch.nn.Sequential(
-            torch.nn.Linear(N, W),
-            torch.nn.ReLU(),
-            torch.nn.Linear(W, 1),
-            torch.nn.Sigmoid()
-        )
-    def forward(self, x):
-        return self.layers(x)
-
-
 class ArbitraryMLP(torch.nn.Module):
-    def __init__(self,widths,intended_loss = "BCELoss"):
+    def __init__(self,widths,intended_loss = "BCELoss", head_x3 = False):
         """
         Examples: 
             For a binary classification, the following are equivalent:
@@ -52,9 +39,15 @@ class ArbitraryMLP(torch.nn.Module):
         """
         super().__init__()
         modules = []
-        for i in range(len(widths[:-1])):
-            modules.append(torch.nn.Linear(widths[i],widths[i+1]))
-            if i < len(widths[:-1])-1:
+        n_layers = len(widths[:-1])
+        for i in range(n_layers):
+            
+            if (i == n_layers-1) and head_x3: 
+                modules.append(ColorHead(widths[i],widths[i+1]))
+            else:
+                modules.append(torch.nn.Linear(widths[i],widths[i+1]))
+
+            if i < n_layers-1: 
                 modules.append(torch.nn.ReLU())
             elif intended_loss == "BCELoss":
                 modules.append(torch.nn.Sigmoid())
@@ -65,55 +58,89 @@ class ArbitraryMLP(torch.nn.Module):
                 # Softmax is included in the nn.CrossEntropyLoss
                 pass
             elif intended_loss == "NLLLoss":
-                modules.append(torch.nn.LogSoftmax())
+                modules.append(torch.nn.LogSoftmax(dim=1))
         self.layers = torch.nn.Sequential(*modules)
     def forward(self, x):
         return self.layers(x)
 
 
+class ColorHead(torch.nn.Module):
+    """
+    inspirations:
+    https://github.com/usuyama/pytorch-unet/blob/master/pytorch_unet.py
+    https://github.com/pytorch/vision/blob/main/torchvision/models/segmentation/fcn.py
+    https://pytorch.org/docs/stable/generated/torch.cat.html
+    """
+    def __init__(self,in_dim,C):
+        super().__init__()
+        self.ch1 = torch.nn.Linear(in_dim,C)
+        self.ch2 = torch.nn.Linear(in_dim,C)
+        self.ch3 = torch.nn.Linear(in_dim,C)
+
+    def forward(self, x):
+        x = torch.cat([self.ch1(x).unsqueeze(2),self.ch2(x).unsqueeze(2),self.ch3(x).unsqueeze(2)], dim=2)
+        return x
+        
+
+# class MLP_N_64N_32N_1(torch.nn.Module):
+#     def __init__(self,N):
+#         super().__init__()
+#         self.layers = torch.nn.Sequential(
+#             torch.nn.Linear(N, 64*N),
+#             torch.nn.ReLU(),
+#             torch.nn.Linear(64*N, 32*N),
+#             torch.nn.ReLU(),
+#             torch.nn.Linear(32*N, 1),
+#             torch.nn.Sigmoid()
+#         )
+#     def forward(self, x):
+#         return self.layers(x)
+
+
 class MLP_N_64N_32N_1(torch.nn.Module):
+    """binary image or point cloud geometry"""
+    def __init__(self,N):
+        self.mlp = ArbitraryMLP([N,64*N,32*N,1],intended_loss="BCELoss",head_x3=False)
+    def forward(self, x):
+        return self.mlp(x)
+
+
+class MLP_N_64N_32N_256(torch.nn.Module):
+    """grayscale image"""
+    def __init__(self,N):
+        self.mlp = ArbitraryMLP([N,64*N,32*N,256],intended_loss="CrossEntropyLoss",head_x3=False)
+    def forward(self, x):
+        return self.mlp(x)
+
+
+class MLP_N_64N_32N_3x256(torch.nn.Module):
+    """color image"""
+    def __init__(self,N):
+        self.mlp = ArbitraryMLP([3*N,64*N,32*N,256],intended_loss="CrossEntropyLoss",head_x3=True)
+    def forward(self, x):
+        return self.mlp(x)
+
+
+class Pointnet_3_64N_32N_16N_1(torch.nn.Module):
     def __init__(self,N):
         super().__init__()
-        self.layers = torch.nn.Sequential(
-            torch.nn.Linear(N, 64*N),
+        self.mlp1 = torch.nn.Sequential(
+            torch.nn.Linear(3, 64*N),
             torch.nn.ReLU(),
             torch.nn.Linear(64*N, 32*N),
+            torch.nn.ReLU()
+        )
+        self.mlp2 = torch.nn.Sequential(
+            torch.nn.Linear(32*N, 16*N),
             torch.nn.ReLU(),
-            torch.nn.Linear(32*N, 1),
+            torch.nn.Linear(16*N, 1),
             torch.nn.Sigmoid()
         )
     def forward(self, x):
-        return self.layers(x)
-
-
-class MLP_N_1024_512_1(torch.nn.Module):
-    def __init__(self,N):
-        super().__init__()
-        self.layers = torch.nn.Sequential(
-            torch.nn.Linear(N, 1024),
-            torch.nn.ReLU(),
-            torch.nn.Linear(1024, 512),
-            torch.nn.ReLU(),
-            torch.nn.Linear(512, 1),
-            torch.nn.Sigmoid()
-        )
-    def forward(self, x):
-        return self.layers(x)
-
-
-class MLP_N_2048_1024_1(torch.nn.Module):
-    def __init__(self,N):
-        super().__init__()
-        self.layers = torch.nn.Sequential(
-            torch.nn.Linear(N, 2048),
-            torch.nn.ReLU(),
-            torch.nn.Linear(2048, 1024),
-            torch.nn.ReLU(),
-            torch.nn.Linear(1024, 1),
-            torch.nn.Sigmoid()
-        )
-    def forward(self, x):
-        return self.layers(x)
+        x = self.mlp1(x)
+        x = torch.max(x,dim=1,keepdim=False)
+        x = self.mlp2(x)
+        return x
 
 
 class Log2BCELoss(torch.nn.Module):
@@ -125,10 +152,20 @@ class Log2BCELoss(torch.nn.Module):
         return self.bce_loss(pred, target)/torch.log(torch.tensor(2,dtype=target.dtype,device=target.device))
 
 
+class Log2CrossEntropyLoss(torch.nn.Module):
+    def __init__(self,*args,**kwargs):
+        super().__init__()
+        self.cross_entropy_loss = torch.nn.CrossEntropyLoss(*args,**kwargs)
+
+    def forward(self, pred, target):
+        return self.cross_entropy_loss(pred, target)/torch.log(torch.tensor(2,dtype=target.dtype,device=target.device))
+
+
 class CausalContextDataset(torch.utils.data.Dataset):
-    def __init__(self,pths,data_type,N,percentage_of_uncles=None,getXy_later=False):
+    def __init__(self,pths,data_type,N,percentage_of_uncles=None,getXy_later=False,color_mode="binary"):
         self.pths = pths
         self.data_type = data_type
+        self.color_mode = color_mode
         self.N = N
         self.percentage_of_uncles = percentage_of_uncles
         if getXy_later:
@@ -138,8 +175,8 @@ class CausalContextDataset(torch.utils.data.Dataset):
 
     def getXy(self):
         if self.data_type == "image":
-            self.y,self.X = causal_context_many_imgs(self.pths, self.N)
-        elif self.data_type == "pointcloud":
+            self.y,self.X = causal_context_many_imgs(self.pths, self.N,color_mode=self.color_mode)
+        elif self.data_type == "pointcloud" and self.color_mode == "binary":
             if self.percentage_of_uncles is None:
                 m = f"Input percentage_of_uncles must be specified "+\
                     "for data type pointcloud."
@@ -148,12 +185,17 @@ class CausalContextDataset(torch.utils.data.Dataset):
                 self.pths, self.N, self.percentage_of_uncles)
         elif self.data_type == "table":
             Xy = np.vstack([self.load_table(pth) for pth in self.pths])
-            assert Xy.shape[1] - 1 == self.N
-            self.X = Xy[:,:self.N]
-            self.y = Xy[:,self.N:]
+            if self.color_mode in ["binary","gray"]:
+                assert Xy.shape[1] - 1 == self.N
+                self.X = Xy[:,:self.N]
+                self.y = Xy[:,self.N:]
+            else: # rgb
+                assert Xy.shape[1] - 3 == 3*self.N
+                self.X = Xy[:,:3*self.N]
+                self.y = Xy[:,3*self.N:]                
         else:
-            m = f"Data type {self.data_type} not supported.\n"+\
-                "Supported data types : image, pointcloud, table."
+            m = f"Data type {self.data_type} with color mode {self.color_mode} not supported.\n"+\
+                "Currently supported: image (binary,gray,rgb), pointcloud (binary), table (binary,gray,rgb)."
             raise ValueError(m)
 
     @staticmethod

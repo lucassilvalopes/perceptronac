@@ -8,6 +8,7 @@ from perceptronac.loading_and_saving import plot_comparison
 from perceptronac.loading_and_saving import save_configs
 from perceptronac.loading_and_saving import save_data
 from perceptronac.models import Log2BCELoss
+from perceptronac.models import Log2CrossEntropyLoss
 from perceptronac.models import CABAC
 from perceptronac.models import StaticAC
 from perceptronac.models import CausalContextDataset
@@ -16,7 +17,6 @@ from tqdm import tqdm
 import os
 from perceptronac.models import MLP_N_64N_32N_1
 from perceptronac.models import MLP_N_64N_32N_1_Constructor
-from perceptronac.models import ArbitraryWidthMLP
 from perceptronac.models import ArbitraryMLP
 from perceptronac.models import CABAC_Constructor
 from perceptronac.models import StaticAC_Constructor
@@ -193,7 +193,7 @@ class RatesMLP:
         model = self.load_model()
         model.to(device)
         
-        criterion = Log2BCELoss(reduction='sum')
+        criterion = self.load_criterion()
         optimizer = OptimizerClass(model.parameters(), lr=learning_rate)
 
         train_loss, valid_loss = [], []
@@ -220,7 +220,7 @@ class RatesMLP:
                 for shuffled_pths_i in range(0,len(shuffled_pths),pths_per_dset):
 
                     dset = CausalContextDataset(shuffled_pths[shuffled_pths_i:(shuffled_pths_i+pths_per_dset)], 
-                        self.configs["data_type"], self.N, self.configs["percentage_of_uncles"])
+                        self.configs["data_type"], self.N, self.configs["percentage_of_uncles"],color_mode=self.configs["color_mode"])
 
                     dataloader=torch.utils.data.DataLoader(dset,batch_size=batch_size,shuffle=True,num_workers=num_workers)
                     pbar = tqdm(total=np.ceil(len(dset)/batch_size))
@@ -242,8 +242,8 @@ class RatesMLP:
                                 loss = criterion(outputs, yt_b)
 
                         running_loss += loss.item()
+                        n_samples += yt_b.numel()
                         pbar.update(1)
-                    n_samples += len(dataloader.dataset)
                     pbar.close()
                     
                 final_loss = running_loss / n_samples
@@ -274,6 +274,13 @@ class RatesMLP:
     def instantiate_model(self):
         ModelClass=self.configs["ModelClass"]
         return ModelClass(self.N)
+
+    def load_criterion(self):
+        if self.configs["color_mode"] == "binary":
+            criterion = Log2BCELoss(reduction='sum')
+        else: # "gray" or "rgb"
+            criterion = Log2CrossEntropyLoss(reduction='sum')
+        return criterion
 
     def load_model(self):
         model = self.instantiate_model()
@@ -332,19 +339,6 @@ class RatesArbitraryMLP(RatesMLP):
 
 def train_loop(configs,datatraining,datacoding,N):
     
-    # trainset = CausalContextDataset(
-    #     datatraining,configs["data_type"],N, configs["percentage_of_uncles"],getXy_later=('train' not in configs["phases"]))
-    # validset = CausalContextDataset(
-    #     datacoding,configs["data_type"],N, configs["percentage_of_uncles"],getXy_later=('valid' not in configs["phases"]))
-
-    if N == 0:
-        rates_static_t,rates_static_c = RatesStaticAC(configs,N).get_rates(datatraining,datacoding) # .get_rates(trainset,validset)
-    else:
-        rates_cabac_t,rates_cabac_c = RatesCABAC(configs,N).get_rates(datatraining,datacoding) # .get_rates(trainset,validset)
-        rates_mlp_t,rates_mlp_c = RatesMLP(configs,N).get_rates(datatraining,datacoding) # .get_rates(trainset,validset)
-        if (configs["data_type"] == "image"):
-            rates_jbig1_t,rates_jbig1_c = RatesJBIG1(configs,N).get_rates(datatraining,datacoding) # .get_rates(trainset,validset)
-
     phases=configs["phases"]
     epochs=configs["epochs"]
 
@@ -352,22 +346,29 @@ def train_loop(configs,datatraining,datacoding,N):
     for phase in phases:
         data[phase] = dict()
 
-    if N == 0:
-        
-        for phase in phases:
-            data[phase]["MLP"] = rates_static_t if phase == 'train' else rates_static_c
-            data[phase]["LUT"] = rates_static_t if phase == 'train' else rates_static_c
-            if configs["data_type"] == "image":
-                data[phase]["JBIG1"] = epochs*[-1]
+    static_condition = (N == 0) and (configs["color_mode"] == "binary")
+    cabac_condition = (N > 0) and (configs["color_mode"] == "binary")
+    mlp_condition = (N > 0)
+    jbig1_condition = (configs["data_type"] == "image") and (configs["color_mode"] == "binary")
 
-    else:
+    rates_empty_t,rates_empty_c= epochs*[-1],epochs*[-1]
+    if static_condition:
+        rates_static_t,rates_static_c = RatesStaticAC(configs,N).get_rates(datatraining,datacoding)
+    if cabac_condition:
+        rates_cabac_t,rates_cabac_c = RatesCABAC(configs,N).get_rates(datatraining,datacoding)
+    if mlp_condition:
+        rates_mlp_t,rates_mlp_c = RatesMLP(configs,N).get_rates(datatraining,datacoding)
+    if jbig1_condition:
+        rates_jbig1_t,rates_jbig1_c = RatesJBIG1(configs,N).get_rates(datatraining,datacoding)
 
-        for phase in phases:
-            data[phase]["MLP"] = rates_mlp_t if phase == 'train' else rates_mlp_c
-            data[phase]["LUT"] = rates_cabac_t if phase == 'train' else rates_cabac_c
-            if configs["data_type"] == "image":
-                data[phase]["JBIG1"] = rates_jbig1_t if phase == 'train' else rates_jbig1_c
-    
+    for phase in phases:
+        data[phase]["MLP"] = (rates_static_t if static_condition else (rates_mlp_t if mlp_condition else rates_empty_t)) \
+            if phase == 'train' else (rates_static_c if static_condition else (rates_mlp_c if mlp_condition else rates_empty_c))
+        data[phase]["LUT"] = (rates_static_t if static_condition else (rates_cabac_t if cabac_condition else rates_empty_t)) \
+            if phase == 'train' else (rates_static_c if static_condition else (rates_cabac_c if cabac_condition else rates_empty_c))
+        data[phase]["JBIG1"] = (rates_jbig1_t if jbig1_condition else rates_empty_t) \
+            if phase == 'train' else (rates_jbig1_c if jbig1_condition else rates_empty_c)
+
     return data
 
 
@@ -375,12 +376,14 @@ def coding_loop(configs,N):
 
     cond1 = (configs["data_type"] == "pointcloud")
     cond2 = (configs['ModelClass'] == MLP_N_64N_32N_1)
-    ok = cond1 and cond2
+    cond3 = (configs["color_mode"] == "binary")
+    ok = cond1 and cond2 and cond3
         
     if not ok:
         m = f"""
             coding currently supported only for the combination
             data_type : pointcloud
+            color_mode : binary
             ModelClass : MLP_N_64N_32N_1
             """
         raise ValueError(m)

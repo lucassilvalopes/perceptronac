@@ -14,8 +14,8 @@ class TestEntropyCalculations(unittest.TestCase):
         test_data_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),"test_data")
         self.imgtraining = np.load(os.path.join(test_data_dir,"imgtraining.npz"))["arr_0"]
         self.imgcoding = np.load(os.path.join(test_data_dir,"imgcoding.npz"))["arr_0"]
-        self.yt,self.Xt = causal_context(self.imgtraining, 10)
-        self.yc,self.Xc = causal_context(self.imgcoding, 10)
+        self.yt,self.Xt = causal_context((self.imgtraining > 0).astype(int), 10)
+        self.yc,self.Xc = causal_context((self.imgcoding > 0).astype(int), 10)
 
         # test_data_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),"test_data")
         # yy = np.genfromtxt(os.path.join(test_data_dir,"yy.txt"), delimiter=",").reshape(-1,1)

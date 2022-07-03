@@ -12,7 +12,7 @@ class TestCausalContext(unittest.TestCase):
         self.imgtraining = np.load(os.path.join(test_data_dir,"imgtraining.npz"))["arr_0"] # original binary image obtained using matlab
 
     def test_shape(self):
-        yt2,Xt2 = causal_context(self.imgtraining, 60)
+        yt2,Xt2 = causal_context((self.imgtraining > 0).astype(int), 60)
         self.assertEqual(self.imgtraining.shape , (1024,791) )
         n_samples = ( 1024-int(np.ceil(np.sqrt(60))) ) * ( 791 -2* int(np.ceil(np.sqrt(60))))
         self.assertEqual(Xt2.shape , (n_samples, 60) )

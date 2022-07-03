@@ -2,6 +2,26 @@
 import numpy as np
 
 def causal_context(img,N):
+    """
+    Causal contexts and samples for 1 channel images.
+    The context is composed of the N closest pixels in the causal neighborhood.
+    Works with grayscale image, binary image or 1 channel from a color image.
+    For binary image, pass in a matrix of 0s and 1s and type int.
+    For grayscale image or 1 channel from a color image, 
+    pass in a matrix with int values in the range [0,255].
+    Samples for which a complete context cannot be obtained are removed.
+    Those are the pixels within a distance of ns from the top,left or right borders, 
+    where ns is the radius of the circle needed to contain the N causal samples, 
+    which is (approximately,overestimated) calculated as int(np.ceil(np.sqrt(N))).
+    
+    Args:
+        img (nr by nc) : 1 channel image passed as a matrix (2D tensor)
+        N : context size
+
+    Returns:
+        X (nr-ns by nc-2*ns,N) : matrix with one causal context in each line
+        y (nr-ns by nc-2*ns,1) : vector with samples
+    """
 
     ns = int(np.ceil(np.sqrt(N)))
     Im = np.arange(-ns,1).reshape((-1,1),order='F') @ np.ones((1,2*ns+1))
@@ -23,7 +43,7 @@ def causal_context(img,N):
     for k in range(N):
         S[0,k] = iv[ind[ns+1+k,0],0]
         S[1,k] = jv[ind[ns+1+k,0],0]
-    img = (img > 0).astype(int)
+    # img = (img > 0).astype(int)
     nr,nc = img.shape 
     imgy = img[ns:nr,ns:nc-ns]
     y = imgy.reshape((-1,1),order='F')

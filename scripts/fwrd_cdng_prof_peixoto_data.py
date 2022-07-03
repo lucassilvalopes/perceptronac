@@ -28,6 +28,7 @@ if __name__ == "__main__":
         "xscale": 'symlog',
         "reduction": 'last', # min, last
         "data_type": 'table', # image, pointcloud, table
+        "color_mode": 'binary', # binary,gray,rgb
         "percentage_of_uncles": 0.0, # must be specified if the data types is pointcloud
         "last_octree_level": 10, # must be specified if the data types is pointcloud
         "save_dir": "results",

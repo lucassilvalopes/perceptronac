@@ -28,6 +28,14 @@ def read_im2bw(file_name,level):
     return np.array(r).astype(int)
 
 
+def read_im2gray(file_name):
+    return np.array(Image.open(file_name).convert('L'))
+
+
+def read_im2rgb(file_name):
+    return np.array(Image.open(file_name))
+
+
 def save_pbm(file_name, binary_image):
     """
     
@@ -53,12 +61,54 @@ def add_border(img,N):
     return new_img
 
 
-def causal_context_many_imgs(pths,N):
+def causal_context_many_imgs(pths,N,color_mode="binary"):
+    if color_mode == "binary":
+        return causal_context_many_imgs_binary(pths,N)
+    elif color_mode == "gray":
+        return causal_context_many_imgs_gray(pths,N)
+    elif color_mode == "rgb":
+        return causal_context_many_imgs_rgb(pths,N)
+    else:
+        raise ValueError(f"Color mode {color_mode} not supported. Options: binary, gray, rgb.")
+
+
+def causal_context_many_imgs_binary(pths,N):
     y = []
     X = []
     for pth in pths:
         img = add_border(read_im2bw(pth,0.4),N)
+        partial_y,partial_X = causal_context((img > 0).astype(int), N)
+        y.append(partial_y)
+        X.append(partial_X)
+    y = np.vstack(y)
+    X = np.vstack(X)
+    return y,X
+
+def causal_context_many_imgs_gray(pths,N):
+    y = []
+    X = []
+    for pth in pths:
+        img = read_im2gray(pth)
         partial_y,partial_X = causal_context(img, N)
+        y.append(partial_y)
+        X.append(partial_X)
+    y = np.vstack(y)
+    X = np.vstack(X)
+    return y,X
+
+def causal_context_many_imgs_rgb(pths,N):
+    y = []
+    X = []
+    for pth in pths:
+        img = read_im2rgb(pth)
+        partial_y = []
+        partial_X = []
+        for ch in range(3):
+            ch_y,ch_X = causal_context(img[:,:,ch], N)
+            partial_y.append(ch_y)
+            partial_X.append(np.expand_dims(ch_X,2))
+        partial_y = np.concatenate(partial_y,axis=1)
+        partial_X = np.concatenate(partial_X,axis=2).reshape(-1,3*N, order='C')
         y.append(partial_y)
         X.append(partial_X)
     y = np.vstack(y)
