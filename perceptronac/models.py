@@ -213,7 +213,8 @@ class CausalContextDataset(torch.utils.data.Dataset):
         return self.X[idx,:],self.y[idx,:]
 
 
-class StaticAC:        
+#static binary arithmetic coder
+class StaticAC:
     def __call__(self,X):
         return self.forward(X)
     def load_p(self,y=None,p=None):
@@ -230,6 +231,56 @@ class StaticAC:
             return self.p * np.ones((X.shape[0],1))
 
 
+#static 256 arithmetic coder
+class S256AC:
+    def __call__(self,X):
+        return self.forward(X)
+    def load_ps(self,y=None,ps=None):
+        if y is not None:
+            self.ps = np.histogram(y[:,0], bins=list(range(256)))[0]/len(y[:,0])
+        elif ps is not None:
+            self.ps = ps
+        else:
+            raise ValueError("Specify either ps or y")
+    def forward(self,X):
+        if isinstance(X,torch.Tensor):
+            device = X.device
+            return torch.matmul(
+                torch.ones((X.shape[0],1),device=device),
+                torch.tensor(self.ps.reshape(1,-1),device=device)
+            )
+        else:
+            return np.ones((X.shape[0],1)) @ self.ps.reshape(1,-1)
+
+
+#three static 256 arithmetic coders, for color images
+class S256ACx3:
+    def __init__(self):
+        self.ch1_staticac = S256AC()
+        self.ch2_staticac = S256AC()
+        self.ch3_staticac = S256AC()
+    def load(self,y=None,psx3=None):
+        if y is not None:
+            self.ch1_staticac.load(y[:,0:1])
+            self.ch2_staticac.load(y[:,1:2])
+            self.ch3_staticac.load(y[:,2:3])
+        elif psx3 is not None:
+            self.ch1_staticac.load(psx3[:,0])
+            self.ch2_staticac.load(psx3[:,1])
+            self.ch3_staticac.load(psx3[:,2])
+        else:
+            raise ValueError("Specify either psx3 or y")
+    def forward(self,X):
+        ch1_staticac_out = self.ch1_staticac(X)
+        ch2_staticac_out = self.ch2_staticac(X)
+        ch3_staticac_out = self.ch3_staticac(X)
+        if isinstance(X,torch.Tensor):
+            return torch.cat([ch1_staticac_out,ch2_staticac_out,ch3_staticac_out],dim=2)
+        else:
+            return np.concatenate([ch1_staticac_out,ch2_staticac_out,ch3_staticac_out],axis=2)
+
+
+#context adaptive binary arithmetic coder
 class CABAC:
     def __init__(self,max_context):
         self.max_context = max_context
