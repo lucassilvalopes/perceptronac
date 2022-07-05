@@ -9,8 +9,8 @@
 
 
 import torch
-from perceptronac.context_training import context_training
-from perceptronac.context_coding import context_coding
+from perceptronac.context_training import context_training,context_training_nonbinary
+from perceptronac.context_coding import context_coding,context_coding_nonbinary
 from perceptronac.utils import causal_context_many_imgs
 from perceptronac.utils import causal_context_many_pcs
 import numpy as np
@@ -237,47 +237,25 @@ class S256AC:
         return self.forward(X)
     def load_ps(self,y=None,ps=None):
         if y is not None:
-            self.ps = np.histogram(y[:,0], bins=list(range(256)))[0]/len(y[:,0])
+            n_channels = y.shape[1]
+            n_symbols = 256
+            n_samples = y.shape[0]
+            self.ps = np.zeros((1,n_symbols,n_channels))
+            for ch in range(n_channels):
+                self.ps[0,:,ch] = np.histogram(y[:,ch], bins=list(range(n_symbols)))[0]/n_samples
         elif ps is not None:
             self.ps = ps
         else:
             raise ValueError("Specify either ps or y")
     def forward(self,X):
+        n_channels = self.ps.shape[1]
+        n_symbols = self.ps.shape[0]
+        n_predictions = X.shape[0]
         if isinstance(X,torch.Tensor):
             device = X.device
-            return torch.matmul(
-                torch.ones((X.shape[0],1),device=device),
-                torch.tensor(self.ps.reshape(1,-1),device=device)
-            )
+            return torch.ones((n_predictions,n_symbols,n_channels),device=device) * torch.tensor(self.ps,device=device)
         else:
-            return np.ones((X.shape[0],1)) @ self.ps.reshape(1,-1)
-
-
-#three static 256 arithmetic coders, for color images
-class S256ACx3:
-    def __init__(self):
-        self.ch1_staticac = S256AC()
-        self.ch2_staticac = S256AC()
-        self.ch3_staticac = S256AC()
-    def load(self,y=None,psx3=None):
-        if y is not None:
-            self.ch1_staticac.load(y[:,0:1])
-            self.ch2_staticac.load(y[:,1:2])
-            self.ch3_staticac.load(y[:,2:3])
-        elif psx3 is not None:
-            self.ch1_staticac.load(psx3[:,0])
-            self.ch2_staticac.load(psx3[:,1])
-            self.ch3_staticac.load(psx3[:,2])
-        else:
-            raise ValueError("Specify either psx3 or y")
-    def forward(self,X):
-        ch1_staticac_out = self.ch1_staticac(X)
-        ch2_staticac_out = self.ch2_staticac(X)
-        ch3_staticac_out = self.ch3_staticac(X)
-        if isinstance(X,torch.Tensor):
-            return torch.cat([ch1_staticac_out,ch2_staticac_out,ch3_staticac_out],dim=2)
-        else:
-            return np.concatenate([ch1_staticac_out,ch2_staticac_out,ch3_staticac_out],axis=2)
+            return np.ones((n_predictions,n_symbols,n_channels)) * self.ps
 
 
 #context adaptive binary arithmetic coder
@@ -301,6 +279,28 @@ class CABAC:
             return torch.tensor(pp,device=device)
         else:
             return context_coding(X,self.context_p)
+
+
+#context adaptive 256 arithmetic coder
+class CA256AC:
+    def load_lut(self,X=None,y=None,table=None,contexts=None):
+        if (table is not None) and (contexts is not None):
+            self.table = table
+            self.contexts = contexts
+        elif (X is not None) and (y is not None):
+            self.table,self.contexts = context_training_nonbinary(X,y)
+        else:
+            raise ValueError("Specify either both table and contexts or both X and y")
+    def __call__(self, X):
+        return self.forward(X)
+    def forward(self, X):
+        if isinstance(X,torch.Tensor):
+            device = X.device
+            X = X.detach().cpu().numpy()
+            pp = context_coding_nonbinary(X,self.table,self.contexts)
+            return torch.tensor(pp,device=device)
+        else:
+            return context_coding_nonbinary(X,self.table,self.contexts)
 
 
 class MLP_N_64N_32N_1_Constructor:
