@@ -179,8 +179,6 @@ class CausalContextDataset(torch.utils.data.Dataset):
     def getXy(self):
         if self.data_type == "image":
             self.y,self.X = causal_context_many_imgs(self.pths, self.N,color_mode=self.color_mode)
-            if self.color_mode != "binary":
-                self.X = self.X/255 # input values in the range [0,1]
         elif self.data_type == "pointcloud" and self.color_mode == "binary":
             if self.percentage_of_uncles is None:
                 m = f"Input percentage_of_uncles must be specified "+\

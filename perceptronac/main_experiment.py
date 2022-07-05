@@ -281,6 +281,9 @@ class RatesMLP:
                         Xt_b = Xt_b.float().to(device)
                         yt_b = yt_b.float().to(device)
 
+                        if self.configs["color_mode"] != "binary":
+                            Xt_b = Xt_b/255 # input values in the range [0,1]
+
                         if phase == 'train':
                             optimizer.zero_grad()
                             outputs = model(Xt_b)
