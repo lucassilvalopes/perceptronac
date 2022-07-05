@@ -96,7 +96,7 @@ def causal_context_many_imgs_gray(pths,N):
     X = np.vstack(X)
     return y,X
 
-def causal_context_many_imgs_rgb(pths,N):
+def causal_context_many_imgs_rgb(pths,N,interleaved=True):
     y = []
     X = []
     for pth in pths:
@@ -106,9 +106,15 @@ def causal_context_many_imgs_rgb(pths,N):
         for ch in range(3):
             ch_y,ch_X = causal_context(img[:,:,ch], N)
             partial_y.append(ch_y)
-            partial_X.append(np.expand_dims(ch_X,2))
+            if interleaved and N > 0:
+                partial_X.append(np.expand_dims(ch_X,2))
+            else:
+                partial_X.append(ch_X)
         partial_y = np.concatenate(partial_y,axis=1)
-        partial_X = np.concatenate(partial_X,axis=2).reshape(-1,3*N, order='C')
+        if interleaved and N > 0:
+            partial_X = np.concatenate(partial_X,axis=2).reshape(-1,3*N, order='C')
+        else:
+            partial_X = np.concatenate(partial_X,axis=1)
         y.append(partial_y)
         X.append(partial_X)
     y = np.vstack(y)

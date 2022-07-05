@@ -34,5 +34,7 @@ def context_coding_nonbinary(X,table,contexts):
 
     predictions = np.ones((n_predictions,n_symbols,n_channels))/256
     for i in tqdm(range(n_predictions),desc="coding with lut"):
-        predictions[i:i+1,:,:] = table[np.all(contexts - X[i:i+1,:] == 0,axis=1),:,:]
+        mask = np.all(contexts - X[i:i+1,:] == 0,axis=1)
+        if np.any(mask):
+            predictions[i:i+1,:,:] = table[mask,:,:]
     return predictions

@@ -66,4 +66,9 @@ def context_training_nonbinary(X,y):
             for v in values[:,ch].tolist():
                 table[i:i+1,v,ch] += 1 
 
-    return table / np.sum(table,axis=1,keepdims=True), contexts
+    table = table / np.sum(table,axis=1,keepdims=True)
+
+    table[table==0] = (0 + np.finfo(table.dtype).eps)
+    table[table==1] = (1 - np.finfo(table.dtype).eps)
+
+    return table, contexts

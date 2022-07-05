@@ -100,6 +100,7 @@ class ColorHead(torch.nn.Module):
 class MLP_N_64N_32N_1(torch.nn.Module):
     """binary image or point cloud geometry"""
     def __init__(self,N):
+        super().__init__()
         self.mlp = ArbitraryMLP([N,64*N,32*N,1],intended_loss="BCELoss",head_x3=False)
     def forward(self, x):
         return self.mlp(x)
@@ -108,6 +109,7 @@ class MLP_N_64N_32N_1(torch.nn.Module):
 class MLP_N_64N_32N_256(torch.nn.Module):
     """grayscale image"""
     def __init__(self,N):
+        super().__init__()
         self.mlp = ArbitraryMLP([N,64*N,32*N,256],intended_loss="CrossEntropyLoss",head_x3=False)
     def forward(self, x):
         return self.mlp(x)
@@ -116,6 +118,7 @@ class MLP_N_64N_32N_256(torch.nn.Module):
 class MLP_N_64N_32N_3x256(torch.nn.Module):
     """color image"""
     def __init__(self,N):
+        super().__init__()
         self.mlp = ArbitraryMLP([3*N,64*N,32*N,256],intended_loss="CrossEntropyLoss",head_x3=True)
     def forward(self, x):
         return self.mlp(x)
@@ -158,7 +161,7 @@ class Log2CrossEntropyLoss(torch.nn.Module):
         self.cross_entropy_loss = torch.nn.CrossEntropyLoss(*args,**kwargs)
 
     def forward(self, pred, target):
-        return self.cross_entropy_loss(pred, target)/torch.log(torch.tensor(2,dtype=target.dtype,device=target.device))
+        return self.cross_entropy_loss(pred, target.long())/torch.log(torch.tensor(2,dtype=target.dtype,device=target.device))
 
 
 class CausalContextDataset(torch.utils.data.Dataset):
@@ -242,14 +245,17 @@ class S256AC:
             n_samples = y.shape[0]
             self.ps = np.zeros((1,n_symbols,n_channels))
             for ch in range(n_channels):
-                self.ps[0,:,ch] = np.histogram(y[:,ch], bins=list(range(n_symbols)))[0]/n_samples
+                for s in range(n_symbols):
+                    self.ps[0,s,ch] = float(np.sum(y[:,ch]==s)/len(y[:,ch]))
+            self.ps[self.ps==0] = (0 + np.finfo(self.ps.dtype).eps)
+            self.ps[self.ps==1] = (1 - np.finfo(self.ps.dtype).eps)
         elif ps is not None:
             self.ps = ps
         else:
             raise ValueError("Specify either ps or y")
     def forward(self,X):
-        n_channels = self.ps.shape[1]
-        n_symbols = self.ps.shape[0]
+        n_channels = self.ps.shape[2]
+        n_symbols = self.ps.shape[1]
         n_predictions = X.shape[0]
         if isinstance(X,torch.Tensor):
             device = X.device

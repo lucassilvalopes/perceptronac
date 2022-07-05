@@ -397,18 +397,18 @@ def train_loop(configs,datatraining,datacoding,N):
     for phase in phases:
         data[phase] = dict()
 
-    static_condition = (N == 0) and (configs["color_mode"] == "binary")
-    cabac_condition = (N > 0) and (configs["color_mode"] == "binary")
+    static_condition = (N == 0)
+    cabac_condition = (N > 0)
     mlp_condition = (N > 0)
     jbig1_condition = (configs["data_type"] == "image") and (configs["color_mode"] == "binary")
 
     rates_empty_t,rates_empty_c= epochs*[-1],epochs*[-1]
     if static_condition:
         rates_static_t,rates_static_c = RatesStaticAC(configs,N).get_rates(datatraining,datacoding)
-    if cabac_condition:
-        rates_cabac_t,rates_cabac_c = RatesCAAC(configs,N).get_rates(datatraining,datacoding)
     if mlp_condition:
         rates_mlp_t,rates_mlp_c = RatesMLP(configs,N).get_rates(datatraining,datacoding)
+    if cabac_condition:
+        rates_cabac_t,rates_cabac_c = RatesCAAC(configs,N).get_rates(datatraining,datacoding)
     if jbig1_condition:
         rates_jbig1_t,rates_jbig1_c = RatesJBIG1(configs,N).get_rates(datatraining,datacoding)
 
