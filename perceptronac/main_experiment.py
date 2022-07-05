@@ -9,8 +9,8 @@ from perceptronac.loading_and_saving import save_configs
 from perceptronac.loading_and_saving import save_data
 from perceptronac.models import Log2BCELoss
 from perceptronac.models import Log2CrossEntropyLoss
-from perceptronac.models import CABAC
-from perceptronac.models import StaticAC
+from perceptronac.models import CABAC,CA256AC
+from perceptronac.models import StaticAC,S256AC
 from perceptronac.models import CausalContextDataset
 import numpy as np
 from tqdm import tqdm
@@ -61,17 +61,20 @@ class RatesStaticAC:
     def get_rates(self,datatraining,datacoding):
         phases=self.configs["phases"]
         epochs=self.configs["epochs"]
+        color_mode = self.configs["color_mode"]
+        data_type = self.configs["data_type"]
+        percentage_of_uncles = self.configs["percentage_of_uncles"]
         staticac = self.load_model()        
         train_loss, valid_loss = [], []
         for phase in sorted(phases):
             if phase == 'train':
-                dataset = CausalContextDataset(datatraining, self.configs["data_type"], self.N, self.configs["percentage_of_uncles"])
-                staticac.load_p(y=dataset.y)
+                dataset = CausalContextDataset(datatraining, data_type, self.N, percentage_of_uncles, color_mode=color_mode)
+                staticac.load(y=dataset.y)
             else:
-                dataset = CausalContextDataset(datacoding, self.configs["data_type"], self.N, self.configs["percentage_of_uncles"])
+                dataset = CausalContextDataset(datacoding, data_type, self.N, percentage_of_uncles, color_mode=color_mode)
             X,y = dataset.X,dataset.y
             static_pred = staticac(X)
-            final_loss = perfect_AC(y,static_pred)
+            final_loss = perfect_AC(y,static_pred,binary=(color_mode == "binary"))
             if phase=='train':
                 train_loss.append(final_loss)
             else:
@@ -80,21 +83,39 @@ class RatesStaticAC:
         return epochs*train_loss, epochs*valid_loss
 
     def load_model(self):
-        staticac = StaticAC()
-        if self.configs.get("parent_id"):
-            file_name = f"{get_prefix(self.configs,'parent_id')}_{self.N:03d}_p.npy"
-            with open(file_name, 'rb') as f:
-                p = np.load(f)
-            staticac.load_p(p=p[0])
+        color_mode = self.configs["color_mode"]
+        if color_mode == "binary":
+            staticac = StaticAC()
+            if self.configs.get("parent_id"):
+                with open(f"{get_prefix(self.configs,'parent_id')}_{self.N:03d}_p.npy", 'rb') as f:
+                    p = np.load(f)
+                staticac.load(p=p[0])
+        elif color_mode == "gray" or color_mode == "rgb":
+            staticac = S256AC()
+            if self.configs.get("parent_id"):
+                n_channels = 3 if color_mode == "rgb" else 1
+                n_symbols = 256
+                with open(f"{get_prefix(self.configs,'parent_id')}_{self.N:03d}_ps.npy", 'rb') as f:
+                    ps = np.load(f)
+                staticac.load(ps=ps.reshape(1,n_symbols,n_channels))
         return staticac
 
     def save_N_model(self,staticac):
         if ('train' in self.configs["phases"]) and (self.N==0):
-            p = staticac.p
-            with open(f"{get_prefix(self.configs)}_{self.N:03d}_p.npy", 'wb') as f:
-                np.save(f, np.array([p]))
+            if isinstance(staticac,StaticAC):
+                p = staticac.p
+                with open(f"{get_prefix(self.configs)}_{self.N:03d}_p.npy", 'wb') as f:
+                    np.save(f, np.array([p]))
+            elif isinstance(staticac,S256AC):
+                ps = staticac.ps.reshape(-1)
+                with open(f"{get_prefix(self.configs)}_{self.N:03d}_ps.npy", 'wb') as f:
+                    np.save(f, ps)
+            else:
+                ValueError("Unknown object")
 
-class RatesCABAC:
+
+
+class RatesCAAC:
     def __init__(self,configs,N):
         self.configs = configs
         self.N = N
@@ -103,19 +124,22 @@ class RatesCABAC:
         phases=self.configs["phases"]
         max_context = self.configs["max_context"]
         epochs=self.configs["epochs"]
+        color_mode = self.configs["color_mode"]
+        data_type = self.configs["data_type"]
+        percentage_of_uncles = self.configs["percentage_of_uncles"]
         if (self.N > max_context):
             return epochs*[-1],epochs*[-1]
         cabac = self.load_model()        
         train_loss, valid_loss = [], []
         for phase in sorted(phases): # train first then valid
             if phase == 'train':
-                dataset = CausalContextDataset(datatraining, self.configs["data_type"], self.N, self.configs["percentage_of_uncles"])
-                cabac.load_lut(X=dataset.X,y=dataset.y)
+                dataset = CausalContextDataset(datatraining, data_type, self.N, percentage_of_uncles, color_mode=color_mode)
+                cabac.load(X=dataset.X,y=dataset.y)
             else:
-                dataset = CausalContextDataset(datacoding, self.configs["data_type"], self.N, self.configs["percentage_of_uncles"])
+                dataset = CausalContextDataset(datacoding, data_type, self.N, percentage_of_uncles, color_mode=color_mode)
             X,y = dataset.X,dataset.y
             cabac_pred = cabac(X)
-            final_loss = perfect_AC(y,cabac_pred)
+            final_loss = perfect_AC(y,cabac_pred,binary=(color_mode == "binary"))
             if phase=='train':
                 train_loss.append(final_loss)
             else:
@@ -124,23 +148,50 @@ class RatesCABAC:
         return epochs*train_loss, epochs*valid_loss
 
     def load_model(self):
-        cabac = CABAC(self.configs["max_context"])
-        if self.configs.get("parent_id"):
-            file_name = f"{get_prefix(self.configs,'parent_id')}_{self.N:03d}_lut.npy"
-            with open(file_name, 'rb') as f:
-                lut = np.load(f)
-            cabac.load_lut(lut=lut.reshape(-1,1))
+        color_mode = self.configs["color_mode"]
+        max_context = self.configs["max_context"]
+        if color_mode == "binary":
+            cabac = CABAC(max_context)
+            if self.configs.get("parent_id"):
+                file_name = f"{get_prefix(self.configs,'parent_id')}_{self.N:03d}_lut.npy"
+                with open(file_name, 'rb') as f:
+                    lut = np.load(f)
+                cabac.load(lut=lut.reshape(-1,1))
+        elif color_mode == "gray" or color_mode == "rgb":
+            cabac = CA256AC()
+            if self.configs.get("parent_id"):
+                n_channels = 3 if color_mode == "rgb" else 1
+                n_symbols = 256
+                with open(f"{get_prefix(self.configs,'parent_id')}_{self.N:03d}_table.npy", 'rb') as f:
+                    table = np.load(f)
+                with open(f"{get_prefix(self.configs,'parent_id')}_{self.N:03d}_contexts.npy", 'rb') as f:
+                    contexts = np.load(f)
+                cabac.load(table=table.reshape(-1,n_symbols,n_channels),contexts=contexts.reshape(-1,self.N))
+        else:
+            raise ValueError(f"Color mode {color_mode} not supported. Options: binary, gray, rgb.")
         return cabac
 
     def save_N_model(self,cabac):
         if ('train' in self.configs["phases"]) and (self.N>0):
-            lut = cabac.context_p.reshape(-1)
-            with open(f"{get_prefix(self.configs)}_{self.N:03d}_lut.npy", 'wb') as f:
-                np.save(f, lut)
+            if isinstance(cabac,CABAC):
+                lut = cabac.context_p.reshape(-1)
+                with open(f"{get_prefix(self.configs)}_{self.N:03d}_lut.npy", 'wb') as f:
+                    np.save(f, lut)
+            elif isinstance(cabac,CA256AC):
+                table = cabac.table.reshape(-1)
+                with open(f"{get_prefix(self.configs)}_{self.N:03d}_table.npy", 'wb') as f:
+                    np.save(f, table)
+                contexts = cabac.contexts.reshape(-1)
+                with open(f"{get_prefix(self.configs)}_{self.N:03d}_contexts.npy", 'wb') as f:
+                    np.save(f, contexts)
+            else:
+                ValueError("Unknown object")
 
 
 class RatesJBIG1:
     def __init__(self,configs,N):
+        if not (configs["color_mode"] == "binary" and configs["data_type"] == "image"):
+            raise ValueError("RatesJBIG1 currently supports only binary images")
         self.configs = configs
         self.N = N
 
@@ -355,7 +406,7 @@ def train_loop(configs,datatraining,datacoding,N):
     if static_condition:
         rates_static_t,rates_static_c = RatesStaticAC(configs,N).get_rates(datatraining,datacoding)
     if cabac_condition:
-        rates_cabac_t,rates_cabac_c = RatesCABAC(configs,N).get_rates(datatraining,datacoding)
+        rates_cabac_t,rates_cabac_c = RatesCAAC(configs,N).get_rates(datatraining,datacoding)
     if mlp_condition:
         rates_mlp_t,rates_mlp_c = RatesMLP(configs,N).get_rates(datatraining,datacoding)
     if jbig1_condition:

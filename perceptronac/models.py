@@ -217,7 +217,7 @@ class CausalContextDataset(torch.utils.data.Dataset):
 class StaticAC:
     def __call__(self,X):
         return self.forward(X)
-    def load_p(self,y=None,p=None):
+    def load(self,y=None,p=None):
         if y is not None:
             self.p = float(np.sum(y==1)/len(y))
         elif p is not None:
@@ -235,7 +235,7 @@ class StaticAC:
 class S256AC:
     def __call__(self,X):
         return self.forward(X)
-    def load_ps(self,y=None,ps=None):
+    def load(self,y=None,ps=None):
         if y is not None:
             n_channels = y.shape[1]
             n_symbols = 256
@@ -262,7 +262,7 @@ class S256AC:
 class CABAC:
     def __init__(self,max_context):
         self.max_context = max_context
-    def load_lut(self,X=None,y=None,lut=None):
+    def load(self,X=None,y=None,lut=None):
         if lut is not None:
             self.context_p = lut
         elif (X is not None) and (y is not None):
@@ -283,7 +283,7 @@ class CABAC:
 
 #context adaptive 256 arithmetic coder
 class CA256AC:
-    def load_lut(self,X=None,y=None,table=None,contexts=None):
+    def load(self,X=None,y=None,table=None,contexts=None):
         if (table is not None) and (contexts is not None):
             self.table = table
             self.contexts = contexts
@@ -325,7 +325,7 @@ class StaticAC_Constructor:
         staticac = StaticAC()
         with open(self.weights, 'rb') as f:
             p = np.load(f)
-        staticac.load_p(p=p[0])
+        staticac.load(p=p[0])
         return staticac
 
 
@@ -339,5 +339,5 @@ class CABAC_Constructor:
         cabac = CABAC(self.max_context)
         with open(self.weights, 'rb') as f:
             lut = np.load(f)
-        cabac.load_lut(lut=lut.reshape(-1,1))
+        cabac.load(lut=lut.reshape(-1,1))
         return cabac
