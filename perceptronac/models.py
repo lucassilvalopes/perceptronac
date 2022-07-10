@@ -245,10 +245,7 @@ class S256AC:
             n_samples = y.shape[0]
             self.ps = np.zeros((1,n_symbols,n_channels))
             for ch in range(n_channels):
-                for s in range(n_symbols):
-                    self.ps[0,s,ch] = float(np.sum(y[:,ch]==s)/len(y[:,ch]))
-            self.ps[self.ps==0] = (0 + np.finfo(self.ps.dtype).eps)
-            self.ps[self.ps==1] = (1 - np.finfo(self.ps.dtype).eps)
+                self.ps[0,:,ch] = np.histogram(y[:,ch], bins=list(range(n_symbols+1)))[0]/n_samples
         elif ps is not None:
             self.ps = ps
         else:
