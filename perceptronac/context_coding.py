@@ -32,7 +32,7 @@ def context_coding_nonbinary(X, context_c):
     po2 = 2 ** (n_bits * np.arange(0,N).reshape(-1,1))
     context = X @ po2
 
-    counts_to_prob = lambda x : x/np.sum(x)
+    counts_to_prob = lambda x : x/np.sum(x) if np.any(x>0) else np.ones(x.shape)/(2**n_bits)
 
     pp = np.zeros((L,2**n_bits)) 
     for k in range(L):

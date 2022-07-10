@@ -294,7 +294,7 @@ class CA256AC:
             self.lut = lut
         elif (X is not None) and (y is not None):
             n_channels = y.shape[1]
-            self.lut = [context_training_nonbinary(X,y[:,ch:ch+1]) for ch in n_channels]
+            self.lut = [context_training_nonbinary(X,y[:,ch:ch+1]) for ch in range(n_channels)]
         else:
             raise ValueError("Specify either lut or both X and y")
     def __call__(self, X):

@@ -38,5 +38,5 @@ def perfect_AC_generic(b, p):
         b (-1 by n_channels): symbols to encode for each of the n_channels of each sample
         p (-1 by n_symbols by n_channels): probabilities for each of the n_symbols for each of the n_channels
     """
-    rate = np.sum( - np.maximum( np.log2(p) , 100) * np.transpose(one_hot_encode(b,p.shape[1]), (0, 2, 1)) ) / np.prod(b.shape)
-    return rate
+    rate = np.sum( - np.maximum( np.log(p) , -100) * np.transpose(one_hot_encode(b,p.shape[1]), (0, 2, 1)) ) / np.prod(b.shape)
+    return rate/ np.log(2)
