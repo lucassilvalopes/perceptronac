@@ -11,7 +11,7 @@
 # r = perfect_AC(y, pp);
 
 import numpy as np
-from tqdm import tqdm
+
 
 def context_coding(X, context_p):
     L,N = X.shape
@@ -26,15 +26,16 @@ def context_coding(X, context_p):
     return pp
 
 
-def context_coding_nonbinary(X,table,contexts):
+def context_coding_nonbinary(X, context_c):
+    n_bits = 8
+    L,N = X.shape
+    po2 = 2 ** (n_bits * np.arange(0,N).reshape(-1,1))
+    context = X @ po2
 
-    n_channels = table.shape[2]
-    n_symbols = 256
-    n_predictions = X.shape[0]
+    counts_to_prob = lambda x : x/np.sum(x)
 
-    predictions = np.ones((n_predictions,n_symbols,n_channels))/256
-    for i in tqdm(range(n_predictions),desc="coding with lut"):
-        mask = np.all(contexts - X[i:i+1,:] == 0,axis=1)
-        if np.any(mask):
-            predictions[i:i+1,:,:] = table[mask,:,:]
-    return predictions
+    pp = np.zeros((L,2**n_bits)) 
+    for k in range(L):
+        pp[k,:] = counts_to_prob(context_c[context[k,0],:].toarray())
+
+    return pp

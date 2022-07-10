@@ -17,7 +17,8 @@
 # p = p1 ./ (p1 + p0); 
 
 import numpy as np
-from tqdm import tqdm
+from scipy.sparse import lil_matrix
+
 
 def context_training(X,y,max_context=20):
     L,N = X.shape
@@ -48,27 +49,14 @@ def context_training(X,y,max_context=20):
 
 def context_training_nonbinary(X,y):
     """
-    works with gray and rgb
+    https://cmdlinetips.com/2018/03/sparse-matrices-in-python-with-scipy/
+    https://docs.scipy.org/doc/scipy/reference/sparse.html
     """
-    contexts, reconstruction_indices, counts = np.unique(X, axis=0, return_inverse=True, return_counts=True)
-    assert np.allclose(contexts[reconstruction_indices],X)
-
-    # TODO : if counts too large, return error
-
-    n_channels = y.shape[1]
-    n_contexts = contexts.shape[0]
-    n_symbols = 256
-
-    table = np.zeros((n_contexts,n_symbols,n_channels)) # obs: int is larger than float in python
-    for i in tqdm(range(n_contexts),desc="training lut"):
-        values = y[np.all(X - contexts[i:i+1,:] == 0,axis=1)]
-        for ch in range(n_channels):
-            for v in values[:,ch].tolist():
-                table[i:i+1,v,ch] += 1 
-
-    table = table / np.sum(table,axis=1,keepdims=True)
-
-    table[table==0] = (0 + np.finfo(table.dtype).eps)
-    table[table==1] = (1 - np.finfo(table.dtype).eps)
-
-    return table, contexts
+    n_bits = 8
+    L,N = X.shape
+    po2 = 2 ** (n_bits * np.arange(0,N).reshape(-1,1))
+    context = X @ po2
+    c = lil_matrix((2**(n_bits*N),2**n_bits))
+    for k in range(L):
+        c[context[k,0],y[k,0]] = c[context[k,0],y[k,0]] + 1
+    return c

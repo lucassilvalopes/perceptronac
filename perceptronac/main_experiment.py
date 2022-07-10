@@ -24,6 +24,8 @@ from perceptronac.coders import PC_Coder
 import perceptronac.coding3d as c3d
 from perceptronac.coders import get_bpov
 import random
+from scipy.sparse import save_npz
+from scipy.sparse import load_npz
 
 
 def get_prefix(configs, id_key = 'id', parent_id_index = None ):
@@ -158,15 +160,16 @@ class RatesCAAC:
                     lut = np.load(f)
                 cabac.load(lut=lut.reshape(-1,1))
         elif color_mode == "gray" or color_mode == "rgb":
+            # https://docs.scipy.org/doc/scipy/reference/generated/scipy.sparse.csr_matrix.html
+            # https://docs.scipy.org/doc/scipy/reference/generated/scipy.sparse.load_npz.html#scipy.sparse.load_npz
             cabac = CA256AC()
             if self.configs.get("parent_id"):
                 n_channels = 3 if color_mode == "rgb" else 1
-                n_symbols = 256
-                with open(f"{get_prefix(self.configs,'parent_id')}_{self.N:03d}_table.npy", 'rb') as f:
-                    table = np.load(f)
-                with open(f"{get_prefix(self.configs,'parent_id')}_{self.N:03d}_contexts.npy", 'rb') as f:
-                    contexts = np.load(f)
-                cabac.load(table=table.reshape(-1,n_symbols,n_channels),contexts=contexts.reshape(-1,self.N))
+                lut = []
+                for i in range(n_channels):
+                    with open(f"{get_prefix(self.configs,'parent_id')}_{self.N:03d}_lut_ch{i}.npy", 'rb') as f:
+                        lut.append( load_npz(f).tolil() )
+                cabac.load(lut=lut)
         else:
             raise ValueError(f"Color mode {color_mode} not supported. Options: binary, gray, rgb.")
         return cabac
@@ -178,12 +181,11 @@ class RatesCAAC:
                 with open(f"{get_prefix(self.configs)}_{self.N:03d}_lut.npy", 'wb') as f:
                     np.save(f, lut)
             elif isinstance(cabac,CA256AC):
-                table = cabac.table.reshape(-1)
-                with open(f"{get_prefix(self.configs)}_{self.N:03d}_table.npy", 'wb') as f:
-                    np.save(f, table)
-                contexts = cabac.contexts.reshape(-1)
-                with open(f"{get_prefix(self.configs)}_{self.N:03d}_contexts.npy", 'wb') as f:
-                    np.save(f, contexts)
+                # https://docs.scipy.org/doc/scipy/reference/generated/scipy.sparse.lil_matrix.html
+                # https://docs.scipy.org/doc/scipy/reference/generated/scipy.sparse.save_npz.html
+                for i,context_c in enumerate(cabac.lut):
+                    with open(f"{get_prefix(self.configs)}_{self.N:03d}_lut_ch{i}.npy", 'wb') as f:
+                        save_npz(f, context_c.tocsr())
             else:
                 ValueError("Unknown object")
 

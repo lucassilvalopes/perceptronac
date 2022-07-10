@@ -289,24 +289,24 @@ class CABAC:
 
 #context adaptive 256 arithmetic coder
 class CA256AC:
-    def load(self,X=None,y=None,table=None,contexts=None):
-        if (table is not None) and (contexts is not None):
-            self.table = table
-            self.contexts = contexts
+    def load(self,X=None,y=None,lut=None):
+        if (lut is not None):
+            self.lut = lut
         elif (X is not None) and (y is not None):
-            self.table,self.contexts = context_training_nonbinary(X,y)
+            n_channels = y.shape[1]
+            self.lut = [context_training_nonbinary(X,y[:,ch:ch+1]) for ch in n_channels]
         else:
-            raise ValueError("Specify either both table and contexts or both X and y")
+            raise ValueError("Specify either lut or both X and y")
     def __call__(self, X):
         return self.forward(X)
     def forward(self, X):
         if isinstance(X,torch.Tensor):
             device = X.device
             X = X.detach().cpu().numpy()
-            pp = context_coding_nonbinary(X,self.table,self.contexts)
+            pp = np.concatenate([np.expand_dims(context_coding_nonbinary(X,context_c),2) for context_c in self.lut],axis=2)
             return torch.tensor(pp,device=device)
         else:
-            return context_coding_nonbinary(X,self.table,self.contexts)
+            return np.concatenate([np.expand_dims(context_coding_nonbinary(X,context_c),2) for context_c in self.lut],axis=2)
 
 
 class MLP_N_64N_32N_1_Constructor:
