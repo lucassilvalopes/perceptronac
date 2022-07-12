@@ -36,7 +36,7 @@ if __name__ == "__main__":
         "device":"cuda:0", #"cpu"
         "parent_id": "",
         "N": 10,
-        "phases": ['train'], # ['train', 'valid'],
+        "phases": ['train','valid'], # ['train', 'valid'],
         "xscale": 'log',
         "reduction": 'min', # min, last
         "data_type": 'image', # image, pointcloud, table

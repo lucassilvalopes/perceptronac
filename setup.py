@@ -12,7 +12,7 @@ install_requires = [
     'pandas==1.1.5',
     'matplotlib==3.3.4',
     'tqdm==4.60.0',
-    'open3d==0.13.0',
+    'open3d==0.14.1',
     'scikit-learn==0.24.1',
     'numba==0.53.1',
     'tika==1.24',
