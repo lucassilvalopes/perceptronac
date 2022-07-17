@@ -7,6 +7,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 from perceptronac.perfect_AC import perfect_AC_binary
 from perceptronac.models import StaticAC
+from perceptronac.perfect_AC import perfect_AC_generic
+from perceptronac.models import S256AC
 
 # %%
 def get_model_parameters_values(model):
@@ -125,7 +127,7 @@ def encode_network_int8_to_binary_symbols(values):
 
     staticac.load(bitstream.reshape(-1,1))
 
-    rate = perfect_AC_binary(bitstream.reshape(-1,1),staticac(bitstream.reshape(-1,1)))
+    rate = perfect_AC_binary(bitstream.reshape(-1,1),staticac(np.zeros((bitstream.shape[0], 0), dtype=np.int64)))
 
     return rate
 
@@ -136,6 +138,17 @@ def encode_network_integer_symbols(quantized):
 
     return rate
 
+def encode_network_integer_symbols_2(values):
+
+    intstream = values - np.min(values)
+
+    staticac = S256AC()
+
+    staticac.load(intstream.reshape(-1,1))
+
+    rate = perfect_AC_generic(intstream.reshape(-1,1),staticac(np.zeros((intstream.shape[0], 0), dtype=np.int64)))
+
+    return rate
 
 # %%
 
@@ -160,4 +173,7 @@ if __name__ == "__main__":
     print(encode_network_int8_to_binary_symbols(np.round(get_model_parameters_values(model)/Delta).astype(int)))
 
     print(encode_network_integer_symbols(np.round(get_model_parameters_values(model)/Delta).astype(int)))
+    
+    print(encode_network_integer_symbols_2(np.round(get_model_parameters_values(model)/Delta).astype(int)))
+
 
