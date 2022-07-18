@@ -651,15 +651,21 @@ class RatesQuantizedArbitraryMLP(RatesArbitraryMLP):
 
     def __init__(self,configs,widths,quantization_bits):
         super().__init__(configs,widths)
+        self.params = MLPTopologyCalculator.mlp_parameters(widths)
         self.quantization_bits = quantization_bits
         assert configs["phases"] == ["valid"]
         assert len(self.get_available_models()) > 0
 
     def quantize_model(self):
         model = super().load_model()
-        Delta = estimate_midtread_uniform_quantization_delta(model,self.quantization_bits)
-        model = midtread_uniform_quantization(model,Delta)
-        bits,samples = encode_network_integer_symbols_2(midtread_uniform_quantization_values(model,Delta))
+        # if f"torch.float{int(self.quantization_bits)}" == str(model.layers[0].weight.data.dtype):
+        if self.quantization_bits == 32:
+            bits = self.params * self.quantization_bits
+            samples = self.params
+        else:
+            Delta = estimate_midtread_uniform_quantization_delta(model,self.quantization_bits)
+            model = midtread_uniform_quantization(model,Delta)
+            bits,samples = encode_network_integer_symbols_2(midtread_uniform_quantization_values(model,Delta))
         return model,bits,samples
 
     def load_model(self):
