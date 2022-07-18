@@ -338,9 +338,7 @@ class RatesMLP:
             criterion = Log2CrossEntropyLoss(reduction='sum')
         return criterion
 
-    def load_model(self):
-        model = self.instantiate_model()
-
+    def get_available_models(self):
         use_min = False
         if ('train' not in self.configs["phases"]) and (self.configs["reduction"] == 'min'):
             use_min = True
@@ -355,6 +353,12 @@ class RatesMLP:
                 self.last_train_loss_model_name(id_key='parent_id',parent_id_index=i)
             if os.path.isfile(file_name):
                 available_models.append(file_name)
+        return available_models
+
+    def load_model(self):
+        model = self.instantiate_model()
+
+        available_models = self.get_available_models()
 
         if len(available_models) > 1:
             raise Exception("Multiple models available to load. No rule has been set to solve this issue.")
@@ -629,3 +633,31 @@ def rate_vs_complexity_experiment(configs):
         save_data(f"{get_prefix(configs)}_{phase}",actual_params,data[phase],"complexity",xscale=configs["xscale"],
             extra={"topology": ['_'.join(map(str,widths)) for widths in configs["topologies"]] },
             linestyles={"MLP":"None"}, colors={"MLP":"k"}, markers={"MLP":"x"})
+
+# take pre-calculated weights, load, quantize with different numbers of bits, recalculate the train and validation rates
+# calculate the rate to compress the network, calculate the total number of bits needed to compress the network and the 
+# training or the validation data. Create a class that when loading also quantize the network with a given number of bits.
+
+from perceptronac.mlp_quantization import estimate_midtread_uniform_quantization_delta
+from perceptronac.mlp_quantization import midtread_uniform_quantization
+from perceptronac.mlp_quantization import midtread_uniform_quantization_values
+from perceptronac.mlp_quantization import encode_network_integer_symbols_2
+
+class RatesQuantizedArbitraryMLP(RatesArbitraryMLP):
+
+    def __init__(self,configs,widths,quantization_bits):
+        super().__init__(configs,widths)
+        self.quantization_bits = quantization_bits
+        assert configs["phases"] == ["valid"]
+        assert len(self.get_available_models()) > 0
+
+    def quantize_model(self,model):
+        Delta = estimate_midtread_uniform_quantization_delta(model,self.quantization_bits)
+        model = midtread_uniform_quantization(model,Delta)
+        bits,samples = encode_network_integer_symbols_2(midtread_uniform_quantization_values(model,Delta))
+        return model,bits,samples
+
+    def load_model(self):
+        model = super().load_model()
+        model = self.quantize_model(model)[0]
+        return model 

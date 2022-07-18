@@ -61,6 +61,10 @@ def midtread_uniform_quantization(model,Delta):
                 model.layers[i].bias.data = Delta * torch.round(model.layers[i].bias.data/Delta)
     return model
 
+def midtread_uniform_quantization_values(model,Delta):
+    return np.round(get_model_parameters_values(model)/Delta).astype(int)
+
+
 def visualize_parameters_quantization_process(all_parameters,Delta):
 
     print("Delta")
@@ -129,14 +133,18 @@ def encode_network_int8_to_binary_symbols(values):
 
     rate = perfect_AC_binary(bitstream.reshape(-1,1),staticac(np.zeros((bitstream.shape[0], 0), dtype=np.int64)))
 
-    return rate
+    n_samples = len(bitstream)
+
+    return rate * n_samples, n_samples
 
 
 def encode_network_integer_symbols(quantized):
 
     rate = entropy(quantized)
 
-    return rate
+    n_samples = len(quantized)
+
+    return rate * n_samples, n_samples
 
 def encode_network_integer_symbols_2(values):
 
@@ -148,7 +156,9 @@ def encode_network_integer_symbols_2(values):
 
     rate = perfect_AC_generic(intstream.reshape(-1,1),staticac(np.zeros((intstream.shape[0], 0), dtype=np.int64)))
 
-    return rate
+    n_samples = len(intstream)
+
+    return rate * n_samples, n_samples
 
 # %%
 
@@ -170,10 +180,10 @@ if __name__ == "__main__":
 
     model2 = midtread_uniform_quantization(model,Delta)
 
-    print(encode_network_int8_to_binary_symbols(np.round(get_model_parameters_values(model)/Delta).astype(int)))
+    print(np.divide(*encode_network_int8_to_binary_symbols(midtread_uniform_quantization_values(model,Delta))))
 
-    print(encode_network_integer_symbols(np.round(get_model_parameters_values(model)/Delta).astype(int)))
+    print(np.divide(*encode_network_integer_symbols(midtread_uniform_quantization_values(model,Delta))))
     
-    print(encode_network_integer_symbols_2(np.round(get_model_parameters_values(model)/Delta).astype(int)))
+    print(np.divide(*encode_network_integer_symbols_2(midtread_uniform_quantization_values(model,Delta))))
 
 
