@@ -231,7 +231,7 @@ class RatesMLP:
         self.configs = configs
         self.N = N
 
-    def get_rates(self,datatraining,datacoding):
+    def get_rates(self,datatraining,datacoding,output_n_samples=False):
 
         OptimizerClass=self.configs["OptimizerClass"]
         epochs=self.configs["epochs"]
@@ -250,6 +250,7 @@ class RatesMLP:
         optimizer = OptimizerClass(model.parameters(), lr=learning_rate)
 
         train_loss, valid_loss = [], []
+        train_samples, valid_samples = [], []
         print("starting training")
         print(f"len trainset : {len(datatraining)} {self.configs['data_type']}s, len validset : {len(datacoding)} {self.configs['data_type']}s")
         for epoch in range(epochs):
@@ -305,8 +306,10 @@ class RatesMLP:
                 final_loss = running_loss / n_samples
                 if phase=='train':
                     train_loss.append(final_loss)
+                    train_samples.append(n_samples)
                 else:
                     valid_loss.append(final_loss)
+                    valid_samples.append(n_samples)
                 
                 print("epoch :" , epoch, ", phase :", phase, ", loss :", final_loss)
                 
@@ -315,9 +318,10 @@ class RatesMLP:
  
         # save final model
         self.save_N_model(model)
-
-        return train_loss, valid_loss
-
+        if output_n_samples:
+            return train_loss, valid_loss, train_samples, valid_samples
+        else:
+            return train_loss, valid_loss
 
     def min_valid_loss_model_name(self, id_key = "id", parent_id_index = None):
         prefix = get_prefix(self.configs,id_key=id_key,parent_id_index=parent_id_index)
@@ -651,13 +655,69 @@ class RatesQuantizedArbitraryMLP(RatesArbitraryMLP):
         assert configs["phases"] == ["valid"]
         assert len(self.get_available_models()) > 0
 
-    def quantize_model(self,model):
+    def quantize_model(self):
+        model = super().load_model()
         Delta = estimate_midtread_uniform_quantization_delta(model,self.quantization_bits)
         model = midtread_uniform_quantization(model,Delta)
         bits,samples = encode_network_integer_symbols_2(midtread_uniform_quantization_values(model,Delta))
         return model,bits,samples
 
     def load_model(self):
-        model = super().load_model()
-        model = self.quantize_model(model)[0]
+        model = self.quantize_model()[0]
         return model 
+
+    def quantization_info(self):
+        _,bits,samples = self.quantize_model()
+        return bits,samples
+
+# next step : create an experiment similar to the rate_vs_complexity_experiment , but instead of plotting rate vs complexity,
+# it plots number of bits to encode the data and the model, or (data_bits + model_bits)/data_samples, AND maybe distortion,
+# measured as the decrease in the rate to encode the data, or data_bits / data_samples. Then it is rate-including-the-model
+# vs rate-for-just-the-data. Or rate-data-model vs rate-data. And I can include the points for the original networks to compare.
+
+def rate_vs_rate_experiment(configs):
+
+    os.makedirs(f"{configs['save_dir'].rstrip('/')}/exp_{configs['id']}")
+
+    assert configs["phases"] == ["valid"]
+    assert configs["epochs"] == 1
+
+    data = dict()
+    data["valid"] = dict()
+    data["valid"]["MLP"] = []
+
+    x_axis = []
+    y_axis = []
+    params_metadata = []
+    qbits_metadata = []
+    topology_metadata = []
+    for widths in configs["topologies"]:
+
+        for qbits in configs["qbits_vec"]:
+
+            params = MLPTopologyCalculator.mlp_parameters(widths)
+            params_metadata.append(params)
+            qbits_metadata.append(qbits)
+            topology_metadata.append('_'.join(map(str,widths)))
+
+            quantizedMLP = RatesQuantizedArbitraryMLP(configs,widths,qbits)
+            quantized_mlp_results = quantizedMLP.get_rates(configs["training_set"],configs["validation_set"],output_n_samples=True)
+            data_rate = quantized_mlp_results[1][0]
+            data_samples = quantized_mlp_results[3][0]
+            model_bits,model_samples = quantizedMLP.quantization_info()
+            data_bits = data_rate * data_samples
+
+            y_value = (data_bits + model_bits)/data_samples
+
+            x_value = data_rate
+
+            x_axis.append(x_value)
+            y_axis.append(y_value)
+
+
+    save_configs(f"{get_prefix(configs)}_conf",configs)
+
+    save_data(f"{get_prefix(configs)}_valid",x_axis,{"MLP":y_axis},"data_bits/data_samples",
+        ylabel="(data_bits+model_bits)/data_samples",xscale=configs["xscale"],
+        extra={"topology": topology_metadata, "params":params_metadata,"quantization_bits":qbits_metadata},
+        linestyles={"MLP":"None"}, colors={"MLP":"k"}, markers={"MLP":"x"})
