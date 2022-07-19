@@ -1,3 +1,5 @@
+# %%
+
 import math
 import pandas as pd
 from sklearn.preprocessing import MinMaxScaler
@@ -61,4 +63,38 @@ def points_in_convex_hull(data,x_col,y_col,log_x=False):
     ax.set_xlabel(x_col)
     ax.set_ylabel(y_col)
 
-    return convex_hull(normalized_data.tolist())
+    return convex_hull(normalized_data.tolist()),fig
+
+
+# %%
+
+if __name__ == "__main__":
+
+    data0 = pd.read_csv(
+        "/home/lucas/Documents/perceptronac/results/exp_1656174158/exp_1656174158_train_values.csv")
+
+    selected_points_mask0,fig0 = points_in_convex_hull(data0,"complexity","MLP",log_x=True)
+    plt.show()
+
+    print(data0.set_index("topology").iloc[selected_points_mask0,:])
+
+    from perceptronac.loading_and_saving import plot_comparison
+
+    data1 = pd.read_csv("/home/lucas/Documents/perceptronac/results/exp_1658197214/exp_1658197214_valid_values.csv")
+    new_data1 = data1[np.logical_or(data1["quantization_bits"] > 4,data1["quantization_bits"] > 4)]
+    new_data1.columns = ["data_bits/data_samples" if cn == "MLP" else cn for cn in new_data1.columns.values.tolist()]
+
+    # fig1 = plot_comparison(new_data1["(data_bits+model_bits)/data_samples"].values,{"data_bits/data_samples":new_data1["data_bits/data_samples"].values},
+    #         "(data_bits+model_bits)/data_samples",ylabel="data_bits/data_samples",xscale="log",
+    #         linestyles={"data_bits/data_samples":"None"}, colors={"data_bits/data_samples":"k"}, markers={"data_bits/data_samples":"x"})
+
+    selected_points_mask1,fig1= points_in_convex_hull(new_data1,
+        "(data_bits+model_bits)/data_samples","data_bits/data_samples",log_x=True)
+    
+    plt.show()
+    
+    # fig1.savefig(f"/home/lucas/Desktop/output.png", dpi=300, facecolor='w', bbox_inches = "tight")
+
+    print(new_data1.set_index("topology").iloc[selected_points_mask1,:])
+
+# %%
