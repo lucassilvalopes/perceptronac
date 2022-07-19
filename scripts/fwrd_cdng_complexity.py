@@ -40,6 +40,7 @@ if __name__ == "__main__":
         "xscale": 'log',
         "reduction": 'min', # min, last
         "data_type": 'image', # image, pointcloud, table
+        "color_mode": 'binary', # binary,gray,rgb
         "percentage_of_uncles": 0.0, # must be specified if the data type is pointcloud
         "last_octree_level": 10, # must be specified if the data type is pointcloud
         "save_dir": "results",
