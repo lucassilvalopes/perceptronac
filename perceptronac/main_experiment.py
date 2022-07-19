@@ -26,6 +26,7 @@ from perceptronac.coders import get_bpov
 import random
 from scipy.sparse import save_npz
 from scipy.sparse import load_npz
+import time
 
 
 def get_prefix(configs, id_key = 'id', parent_id_index = None ):
@@ -681,6 +682,11 @@ class RatesQuantizedArbitraryMLP(RatesArbitraryMLP):
 # measured as the decrease in the rate to encode the data, or data_bits / data_samples. Then it is rate-including-the-model
 # vs rate-for-just-the-data. Or rate-data-model vs rate-data. And I can include the points for the original networks to compare.
 
+# When the script begins, start a background process using os. This background process should use nvidia-smi to store the 
+# power consumption and time of measurement. For each network, store the metadata : start time, end time . Then, in a 
+# post processing script, check the power consumption measurements during the time when the network was running. Given
+# the power consumption values, and the duration of the network processing, calculate the energy consumption in joules.
+
 def rate_vs_rate_experiment(configs):
 
     os.makedirs(f"{configs['save_dir'].rstrip('/')}/exp_{configs['id']}")
@@ -693,6 +699,8 @@ def rate_vs_rate_experiment(configs):
     params_metadata = []
     qbits_metadata = []
     topology_metadata = []
+    start_time_metadata = []
+    end_time_metadata = []
     for widths in configs["topologies"]:
 
         for qbits in configs["qbits_vec"]:
@@ -703,7 +711,9 @@ def rate_vs_rate_experiment(configs):
             topology_metadata.append('_'.join(map(str,widths)))
 
             quantizedMLP = RatesQuantizedArbitraryMLP(configs,widths,qbits)
+            start_time_metadata.append(time.time())
             quantized_mlp_results = quantizedMLP.get_rates(configs["training_set"],configs["validation_set"],output_n_samples=True)
+            end_time_metadata.append(time.time())
             data_rate = quantized_mlp_results[1][0]
             data_samples = quantized_mlp_results[3][0]
             model_bits,model_samples = quantizedMLP.quantization_info()
@@ -721,5 +731,6 @@ def rate_vs_rate_experiment(configs):
 
     save_data(f"{get_prefix(configs)}_valid",x_axis,{"data_bits/data_samples":y_axis},"(data_bits+model_bits)/data_samples",
         ylabel="data_bits/data_samples",xscale=configs["xscale"],
-        extra={"topology": topology_metadata, "params":params_metadata,"quantization_bits":qbits_metadata},
+        extra={"topology": topology_metadata, "params":params_metadata,"quantization_bits":qbits_metadata,
+        "start_time":start_time_metadata,"end_time":end_time_metadata},
         linestyles={"data_bits/data_samples":"None"}, colors={"data_bits/data_samples":"k"}, markers={"data_bits/data_samples":"x"})
