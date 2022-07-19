@@ -645,7 +645,7 @@ def rate_vs_complexity_experiment(configs):
 from perceptronac.mlp_quantization import estimate_midtread_uniform_quantization_delta
 from perceptronac.mlp_quantization import midtread_uniform_quantization
 from perceptronac.mlp_quantization import midtread_uniform_quantization_values
-from perceptronac.mlp_quantization import encode_network_integer_symbols_2
+from perceptronac.mlp_quantization import encode_network_integer_symbols
 
 class RatesQuantizedArbitraryMLP(RatesArbitraryMLP):
 
@@ -665,7 +665,7 @@ class RatesQuantizedArbitraryMLP(RatesArbitraryMLP):
         else:
             Delta = estimate_midtread_uniform_quantization_delta(model,self.quantization_bits)
             model = midtread_uniform_quantization(model,Delta)
-            bits,samples = encode_network_integer_symbols_2(midtread_uniform_quantization_values(model,Delta))
+            bits,samples = encode_network_integer_symbols(midtread_uniform_quantization_values(model,Delta))
         return model,bits,samples
 
     def load_model(self):
