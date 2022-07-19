@@ -719,7 +719,7 @@ def rate_vs_rate_experiment(configs):
 
     save_configs(f"{get_prefix(configs)}_conf",configs)
 
-    save_data(f"{get_prefix(configs)}_valid",x_axis,{"MLP":y_axis},"(data_bits+model_bits)/data_samples",
+    save_data(f"{get_prefix(configs)}_valid",x_axis,{"data_bits/data_samples":y_axis},"(data_bits+model_bits)/data_samples",
         ylabel="data_bits/data_samples",xscale=configs["xscale"],
         extra={"topology": topology_metadata, "params":params_metadata,"quantization_bits":qbits_metadata},
-        linestyles={"MLP":"None"}, colors={"MLP":"k"}, markers={"MLP":"x"})
+        linestyles={"data_bits/data_samples":"None"}, colors={"data_bits/data_samples":"k"}, markers={"data_bits/data_samples":"x"})
