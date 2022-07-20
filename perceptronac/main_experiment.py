@@ -27,6 +27,7 @@ import random
 from scipy.sparse import save_npz
 from scipy.sparse import load_npz
 import time
+import subprocess
 
 
 def get_prefix(configs, id_key = 'id', parent_id_index = None ):
@@ -689,6 +690,8 @@ class RatesQuantizedArbitraryMLP(RatesArbitraryMLP):
 
 def rate_vs_rate_experiment(configs):
 
+    p = subprocess.Popen(["./power_consumption.sh"])
+
     os.makedirs(f"{configs['save_dir'].rstrip('/')}/exp_{configs['id']}")
 
     assert configs["phases"] == ["valid"]
@@ -734,3 +737,5 @@ def rate_vs_rate_experiment(configs):
         extra={"topology": topology_metadata, "params":params_metadata,"quantization_bits":qbits_metadata,
         "start_time":start_time_metadata,"end_time":end_time_metadata},
         linestyles={"data_bits/data_samples":"None"}, colors={"data_bits/data_samples":"k"}, markers={"data_bits/data_samples":"x"})
+
+    p.kill()
