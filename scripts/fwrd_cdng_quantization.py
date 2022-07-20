@@ -22,7 +22,7 @@ if __name__ == "__main__":
     configs = {
         "id": str(int(time.time())),
         "topologies":topologies,
-        "qbits_vec":[32,16,8,4],
+        "qbits_vec":[32,16,8],
         "OptimizerClass":torch.optim.SGD,
         "training_set": [
             os.path.join('/home/lucas/Documents/data/SPL2020',f) for f in os.listdir('/home/lucas/Documents/data/SPL2020')
@@ -44,7 +44,7 @@ if __name__ == "__main__":
         "color_mode": 'binary', # binary,gray,rgb
         "percentage_of_uncles": 0.0, # must be specified if the data type is pointcloud
         "last_octree_level": 10, # must be specified if the data type is pointcloud
-        "save_dir": "results",
+        "save_dir": "/home/lucas/Documents/perceptronac/results",
         "dset_pieces": 1, # if not enough memory to hold all data at once, specify into how many pieces the data should be divided
     }
 

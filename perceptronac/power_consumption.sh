@@ -14,7 +14,7 @@ do
     else
         POWER=$(echo "00.00")
     fi
-    echo "${TIME} ${POWER}" >> test.txt
+    echo "${TIME} ${POWER}" >> "$1"
 
     current_epoch=$(date +%s)
 

@@ -690,7 +690,10 @@ class RatesQuantizedArbitraryMLP(RatesArbitraryMLP):
 
 def rate_vs_rate_experiment(configs):
 
-    p = subprocess.Popen(["./power_consumption.sh"])
+    p = subprocess.Popen([
+        os.path.join(os.path.dirname(os.path.abspath(__file__)),"power_consumption.sh"),
+        f"{get_prefix(configs)}_power_draw.csv"
+    ])
 
     os.makedirs(f"{configs['save_dir'].rstrip('/')}/exp_{configs['id']}")
 
