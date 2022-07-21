@@ -688,6 +688,66 @@ class RatesQuantizedArbitraryMLP(RatesArbitraryMLP):
 # post processing script, check the power consumption measurements during the time when the network was running. Given
 # the power consumption values, and the duration of the network processing, calculate the energy consumption in joules.
 
+# https://docs.scipy.org/doc/scipy/reference/generated/scipy.interpolate.interp1d.html
+# https://stackoverflow.com/questions/45429831/valueerror-a-value-in-x-new-is-above-the-interpolation-range-what-other-re
+
+import pandas as pd
+import numpy as np
+from scipy import interpolate
+import matplotlib.pyplot as plt
+from perceptronac.loading_and_saving import save_fig,save_values
+from perceptronac.convex_hull import points_in_convex_hull
+
+def rate_vs_power(prefix):
+
+    power_draw = np.loadtxt(f"{prefix}_power_draw.csv")
+    data = pd.read_csv(f"{prefix}_valid_values.csv")
+
+    x = power_draw[:,0]
+    y = power_draw[:,1]
+    f = interpolate.interp1d(x, y,fill_value="extrapolate")
+
+    # baseline = np.min(y) # this method to estimate the baseline does not always work. 
+    baseline = 0 # Maybe I should just leave every measurement biased by the same amount as they are
+    constant_power_estimate = (f((data["start_time"].values + data["end_time"].values)/2)-baseline)
+    duration = (data["end_time"].values - data["start_time"].values)
+    joules = constant_power_estimate * duration
+    data["joules"] = joules
+
+    selected_points_mask,fig = points_in_convex_hull(data,"(data_bits+model_bits)/data_samples","joules",log_x=True)
+    
+    save_fig(f"{prefix}_valid_rate_x_power_graph",fig)
+
+    save_values(
+        f"{prefix}_valid_rate_x_power_values",
+        data["(data_bits+model_bits)/data_samples"],
+        {"joules":data["joules"]},
+        "(data_bits+model_bits)/data_samples",
+        extra={
+            "topology": data["topology"], 
+            "params":data["params"],
+            "quantization_bits":data["quantization_bits"],
+            "start_time":data["start_time"],
+            "end_time":data["end_time"]
+        }
+    )
+
+    hull_data = data.iloc[selected_points_mask,:]
+
+    save_values(
+        f"{prefix}_valid_rate_x_power_hull_values",
+        hull_data["(data_bits+model_bits)/data_samples"],
+        {"joules":hull_data["joules"]},
+        "(data_bits+model_bits)/data_samples",
+        extra={
+            "topology": hull_data["topology"], 
+            "params":hull_data["params"],
+            "quantization_bits":hull_data["quantization_bits"],
+            "start_time":hull_data["start_time"],
+            "end_time":hull_data["end_time"]
+        }
+    )
+
 def rate_vs_rate_experiment(configs):
 
     p = subprocess.Popen([
@@ -742,3 +802,5 @@ def rate_vs_rate_experiment(configs):
         linestyles={"data_bits/data_samples":"None"}, colors={"data_bits/data_samples":"k"}, markers={"data_bits/data_samples":"x"})
 
     p.kill()
+
+    rate_vs_power(get_prefix(configs))
