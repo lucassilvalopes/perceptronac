@@ -698,10 +698,16 @@ import matplotlib.pyplot as plt
 from perceptronac.loading_and_saving import save_fig,save_values
 from perceptronac.convex_hull import points_in_convex_hull
 
-def rate_vs_power(prefix):
+def save_dataframe(fname,data,x_col,y_col):
+    save_values(
+        fname,
+        data[x_col],
+        {y_col:data[y_col]},
+        x_col,
+        extra={k:data[k] for k in data.columns if k not in [x_col,y_col]}
+    )
 
-    power_draw = np.loadtxt(f"{prefix}_power_draw.csv")
-    data = pd.read_csv(f"{prefix}_valid_values.csv")
+def estimate_joules(data,power_draw):
 
     x = power_draw[:,0]
     y = power_draw[:,1]
@@ -712,41 +718,7 @@ def rate_vs_power(prefix):
     constant_power_estimate = (f((data["start_time"].values + data["end_time"].values)/2)-baseline)
     duration = (data["end_time"].values - data["start_time"].values)
     joules = constant_power_estimate * duration
-    data["joules"] = joules
-
-    selected_points_mask,fig = points_in_convex_hull(data,"(data_bits+model_bits)/data_samples","joules",log_x=True)
-    
-    save_fig(f"{prefix}_valid_rate_x_power_graph",fig)
-
-    save_values(
-        f"{prefix}_valid_rate_x_power_values",
-        data["(data_bits+model_bits)/data_samples"],
-        {"joules":data["joules"]},
-        "(data_bits+model_bits)/data_samples",
-        extra={
-            "topology": data["topology"], 
-            "params":data["params"],
-            "quantization_bits":data["quantization_bits"],
-            "start_time":data["start_time"],
-            "end_time":data["end_time"]
-        }
-    )
-
-    hull_data = data.iloc[selected_points_mask,:]
-
-    save_values(
-        f"{prefix}_valid_rate_x_power_hull_values",
-        hull_data["(data_bits+model_bits)/data_samples"],
-        {"joules":hull_data["joules"]},
-        "(data_bits+model_bits)/data_samples",
-        extra={
-            "topology": hull_data["topology"], 
-            "params":hull_data["params"],
-            "quantization_bits":hull_data["quantization_bits"],
-            "start_time":hull_data["start_time"],
-            "end_time":hull_data["end_time"]
-        }
-    )
+    return joules
 
 def rate_vs_rate_experiment(configs):
 
@@ -795,12 +767,47 @@ def rate_vs_rate_experiment(configs):
 
     save_configs(f"{get_prefix(configs)}_conf",configs)
 
-    save_data(f"{get_prefix(configs)}_valid",x_axis,{"data_bits/data_samples":y_axis},"(data_bits+model_bits)/data_samples",
-        ylabel="data_bits/data_samples",xscale=configs["xscale"],
-        extra={"topology": topology_metadata, "params":params_metadata,"quantization_bits":qbits_metadata,
-        "start_time":start_time_metadata,"end_time":end_time_metadata},
-        linestyles={"data_bits/data_samples":"None"}, colors={"data_bits/data_samples":"k"}, markers={"data_bits/data_samples":"x"})
+    # save_data(f"{get_prefix(configs)}_valid",x_axis,{"data_bits/data_samples":y_axis},"(data_bits+model_bits)/data_samples",
+    #     ylabel="data_bits/data_samples",xscale=configs["xscale"],
+    #     extra={"topology": topology_metadata, "params":params_metadata,"quantization_bits":qbits_metadata,
+    #     "start_time":start_time_metadata,"end_time":end_time_metadata},
+    #     linestyles={"data_bits/data_samples":"None"}, colors={"data_bits/data_samples":"k"}, markers={"data_bits/data_samples":"x"})
+
+    data=pd.DataFrame({
+        "data_bits/data_samples":x_axis,
+        "(data_bits+model_bits)/data_samples":y_axis,
+        "topology": topology_metadata, "params":params_metadata,"quantization_bits":qbits_metadata,
+        "start_time":start_time_metadata,"end_time":end_time_metadata
+    }).set_index("(data_bits+model_bits)/data_samples")
+
+    selected_points_mask,fig = points_in_convex_hull(data,"(data_bits+model_bits)/data_samples",
+        "data_bits/data_samples",log_x=True)
+
+    save_fig(f"{get_prefix(configs)}_valid_graph",fig)
+
+    save_dataframe(f"{get_prefix(configs)}_valid_values",data,
+        "(data_bits+model_bits)/data_samples","data_bits/data_samples")
+
+    save_dataframe(f"{get_prefix(configs)}_valid_hull_values",
+        data.iloc[selected_points_mask,:],
+        "(data_bits+model_bits)/data_samples","data_bits/data_samples")
 
     p.kill()
 
-    rate_vs_power(get_prefix(configs))
+    power_draw = np.loadtxt(f"{get_prefix(configs)}_power_draw.csv")
+
+    joules = estimate_joules(data,power_draw)
+
+    data["joules"] = joules
+
+    selected_points_mask,fig = points_in_convex_hull(data,"(data_bits+model_bits)/data_samples",
+        "joules",log_x=True)
+    
+    save_fig(f"{get_prefix(configs)}_valid_rate_x_power_graph",fig)
+
+    save_dataframe(f"{get_prefix(configs)}_valid_rate_x_power_values",data,
+        "(data_bits+model_bits)/data_samples","joules")
+
+    save_dataframe(f"{get_prefix(configs)}_valid_rate_x_power_hull_values",
+        data.iloc[selected_points_mask,:],
+        "(data_bits+model_bits)/data_samples","joules")
