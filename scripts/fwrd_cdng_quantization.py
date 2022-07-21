@@ -28,7 +28,7 @@ if __name__ == "__main__":
             os.path.join('/home/lucas/Documents/data/SPL2020',f) for f in os.listdir('/home/lucas/Documents/data/SPL2020')
         ],
         "validation_set": [
-            os.path.join('/home/lucas/Documents/data/SPL2020V/pages',f) for f in sorted(os.listdir('/home/lucas/Documents/data/SPL2020V/pages'))[:5]
+            os.path.join('/home/lucas/Documents/data/SPL2021/pages',f) for f in sorted(os.listdir('/home/lucas/Documents/data/SPL2021/pages'))
         ],
         "epochs": 1,
         "learning_rate": 0.0001,
@@ -45,7 +45,7 @@ if __name__ == "__main__":
         "percentage_of_uncles": 0.0, # must be specified if the data type is pointcloud
         "last_octree_level": 10, # must be specified if the data type is pointcloud
         "save_dir": "/home/lucas/Documents/perceptronac/results",
-        "dset_pieces": 1, # if not enough memory to hold all data at once, specify into how many pieces the data should be divided
+        "dset_pieces": 20, # if not enough memory to hold all data at once, specify into how many pieces the data should be divided
     }
 
     rate_vs_rate_experiment(configs)
