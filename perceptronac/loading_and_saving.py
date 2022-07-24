@@ -117,8 +117,10 @@ def save_configs(csv_name,configs):
 
 
 def save_fig(fig_name,fig):
+    # https://stackoverflow.com/questions/45239261/matplotlib-savefig-text-chopped-off
+    # https://stackoverflow.com/questions/53727761/black-background-behind-a-figures-labels-and-ticks-only-after-saving-figure-bu
     fig_name = os.path.splitext(fig_name)[0]
-    fig.savefig(f"{fig_name}.png", dpi=300)
+    fig.savefig(f"{fig_name}.png", dpi=300, facecolor='w', bbox_inches = "tight")
     
     
 def save_model(file_name,model):
