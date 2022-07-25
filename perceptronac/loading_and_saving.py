@@ -107,6 +107,21 @@ def save_values(csv_name,xvalues,data,xlabel,extra=None):
     values.to_csv(f"{csv_name}.csv")
 
 
+def save_dataframe(csv_name:str,data:pd.DataFrame,x_col:str,y_col:str):
+    csv_name = os.path.splitext(csv_name)[0]
+    data.set_index(x_col).to_csv(f"{csv_name}.csv")
+
+
+# def save_dataframe(fname,data,x_col,y_col):
+#     save_values(
+#         fname,
+#         data[x_col],
+#         {y_col:data[y_col]},
+#         x_col,
+#         extra={k:data[k] for k in data.columns if k not in [x_col,y_col]}
+#     )
+
+
 def save_configs(csv_name,configs):
     csv_name = os.path.splitext(csv_name)[0]
     df=pd.DataFrame([{k:(v if isinstance(v,numbers.Number) else str(v)) for k,v in configs.items()}])

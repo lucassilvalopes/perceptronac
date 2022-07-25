@@ -40,6 +40,13 @@ def convex_hull(coord):
 
 
 def points_in_convex_hull(data,x_col,y_col,log_x=False):
+    """
+    https://stackoverflow.com/questions/12998430/remove-xticks-in-a-matplotlib-plot
+    https://stackoverflow.com/questions/6541123/improve-subplot-size-spacing-with-many-subplots-in-matplotlib
+    https://stackoverflow.com/questions/29188757/matplotlib-specify-format-of-floats-for-tick-labels
+    https://stackoverflow.com/questions/64183806/extracting-the-exponent-from-scientific-notation
+    """
+
 
     data = data[[x_col,y_col]]
     normalized_data = data.copy()

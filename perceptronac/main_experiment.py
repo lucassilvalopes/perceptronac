@@ -691,34 +691,11 @@ class RatesQuantizedArbitraryMLP(RatesArbitraryMLP):
 # https://docs.scipy.org/doc/scipy/reference/generated/scipy.interpolate.interp1d.html
 # https://stackoverflow.com/questions/45429831/valueerror-a-value-in-x-new-is-above-the-interpolation-range-what-other-re
 
-import pandas as pd
-import numpy as np
-from scipy import interpolate
-import matplotlib.pyplot as plt
-from perceptronac.loading_and_saving import save_fig,save_values
+
+from perceptronac.loading_and_saving import save_dataframe
+from perceptronac.power_consumption import estimate_joules
 from perceptronac.convex_hull import points_in_convex_hull
 
-def save_dataframe(fname,data,x_col,y_col):
-    save_values(
-        fname,
-        data[x_col],
-        {y_col:data[y_col]},
-        x_col,
-        extra={k:data[k] for k in data.columns if k not in [x_col,y_col]}
-    )
-
-def estimate_joules(data,power_draw):
-
-    x = power_draw[:,0]
-    y = power_draw[:,1]
-    f = interpolate.interp1d(x, y,fill_value="extrapolate")
-
-    # baseline = np.min(y) # this method to estimate the baseline does not always work. 
-    baseline = 0 # Maybe I should just leave every measurement biased by the same amount as they are
-    constant_power_estimate = (f((data["start_time"].values + data["end_time"].values)/2)-baseline)
-    duration = (data["end_time"].values - data["start_time"].values)
-    joules = constant_power_estimate * duration
-    return joules
 
 def rate_vs_rate_experiment(configs):
 
@@ -778,7 +755,7 @@ def rate_vs_rate_experiment(configs):
         "(data_bits+model_bits)/data_samples":y_axis,
         "topology": topology_metadata, "params":params_metadata,"quantization_bits":qbits_metadata,
         "start_time":start_time_metadata,"end_time":end_time_metadata
-    }).set_index("(data_bits+model_bits)/data_samples")
+    }) #.set_index("(data_bits+model_bits)/data_samples")
 
     selected_points_mask,fig = points_in_convex_hull(data,"(data_bits+model_bits)/data_samples",
         "data_bits/data_samples",log_x=True)
