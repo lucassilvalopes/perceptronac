@@ -28,6 +28,7 @@ from scipy.sparse import save_npz
 from scipy.sparse import load_npz
 import time
 import subprocess
+import pandas as pd
 
 
 def get_prefix(configs, id_key = 'id', parent_id_index = None ):
@@ -635,10 +636,27 @@ def rate_vs_complexity_experiment(configs):
 
     save_configs(f"{get_prefix(configs)}_conf",configs)
 
+    # for phase in configs["phases"]:
+    #     save_data(f"{get_prefix(configs)}_{phase}",actual_params,data[phase],"complexity",xscale=configs["xscale"],
+    #         extra={"topology": ['_'.join(map(str,widths)) for widths in configs["topologies"]] },
+    #         linestyles={"MLP":"None"}, colors={"MLP":"k"}, markers={"MLP":"x"})
+
     for phase in configs["phases"]:
-        save_data(f"{get_prefix(configs)}_{phase}",actual_params,data[phase],"complexity",xscale=configs["xscale"],
-            extra={"topology": ['_'.join(map(str,widths)) for widths in configs["topologies"]] },
-            linestyles={"MLP":"None"}, colors={"MLP":"k"}, markers={"MLP":"x"})
+        data0=pd.DataFrame({
+            "complexity": actual_params,
+            "topology": ['_'.join(map(str,widths)) for widths in configs["topologies"]],
+            "bits/sample": data[phase]["MLP"]
+        })
+
+        selected_points_mask0,fig0 = points_in_convex_hull(data0,"complexity","bits/sample",log_x=True)
+
+        save_fig(f"{get_prefix(configs)}_{phase}_graph",fig0)
+
+        save_dataframe(f"{get_prefix(configs)}_{phase}_values",data0,"complexity","bits/sample")
+
+        save_dataframe(f"{get_prefix(configs)}_{phase}_hull_values",
+            data0.iloc[selected_points_mask0,:],"complexity","bits/sample")
+
 
 # take pre-calculated weights, load, quantize with different numbers of bits, recalculate the train and validation rates
 # calculate the rate to compress the network, calculate the total number of bits needed to compress the network and the 
