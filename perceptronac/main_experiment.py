@@ -610,15 +610,11 @@ def rate_vs_complexity_experiment(configs):
 
     os.makedirs(f"{configs['save_dir'].rstrip('/')}/exp_{configs['id']}")
 
-    # trainset = CausalContextDataset(
-    #     configs["training_set"],"image",configs["N"], percentage_of_uncles=None,getXy_later=('train' not in configs["phases"]))
-    # validset = CausalContextDataset(
-    #     configs["validation_set"],"image",configs["N"], percentage_of_uncles=None,getXy_later=('valid' not in configs["phases"]))
+    # data = dict()
+    # for phase in configs["phases"]:
+    #     data[phase] = dict()
 
-    data = dict()
-    for phase in configs["phases"]:
-        data[phase] = dict()
-
+    mlp_data = []
     actual_params = []
     for widths in configs["topologies"]:
 
@@ -632,7 +628,8 @@ def rate_vs_complexity_experiment(configs):
             save_data(f"{get_prefix(configs)}_{'_'.join(map(str,widths))}_{phase}",np.arange(configs["epochs"]),{"MLP":rates_mlp},"epoch",
                 linestyles={"MLP":"None"}, colors={"MLP":"k"}, markers={"MLP":"x"})
             v = min(rates_mlp) if (configs['reduction'] == 'min') else rates_mlp[-1]
-            data[phase]["MLP"] = (data[phase]["MLP"] + [v]) if ("MLP" in data[phase].keys()) else [v]
+            # data[phase]["MLP"] = (data[phase]["MLP"] + [v]) if ("MLP" in data[phase].keys()) else [v]
+            mlp_data.append(v)
 
     save_configs(f"{get_prefix(configs)}_conf",configs)
 
@@ -645,7 +642,7 @@ def rate_vs_complexity_experiment(configs):
         data0=pd.DataFrame({
             "complexity": actual_params,
             "topology": ['_'.join(map(str,widths)) for widths in configs["topologies"]],
-            "bits/sample": data[phase]["MLP"]
+            "bits/sample": mlp_data
         })
 
         selected_points_mask0,fig0 = points_in_convex_hull(data0,"complexity","bits/sample",log_x=True)
