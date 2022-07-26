@@ -614,7 +614,7 @@ def rate_vs_complexity_experiment(configs):
     # for phase in configs["phases"]:
     #     data[phase] = dict()
 
-    mlp_data = []
+    mlp_data = dict()
     actual_params = []
     for widths in configs["topologies"]:
 
@@ -625,11 +625,13 @@ def rate_vs_complexity_experiment(configs):
 
         for phase in configs["phases"]:
             rates_mlp = rates_mlp_t if phase == 'train' else rates_mlp_c
-            save_data(f"{get_prefix(configs)}_{'_'.join(map(str,widths))}_{phase}",np.arange(configs["epochs"]),{"MLP":rates_mlp},"epoch",
-                linestyles={"MLP":"None"}, colors={"MLP":"k"}, markers={"MLP":"x"})
+            save_data(
+                f"{get_prefix(configs)}_{'_'.join(map(str,widths))}_{phase}",np.arange(configs["epochs"]),{"MLP":rates_mlp},"epoch"
+                # ,linestyles={"MLP":"None"}, colors={"MLP":"k"}, markers={"MLP":"x"}
+            )
             v = min(rates_mlp) if (configs['reduction'] == 'min') else rates_mlp[-1]
             # data[phase]["MLP"] = (data[phase]["MLP"] + [v]) if ("MLP" in data[phase].keys()) else [v]
-            mlp_data.append(v)
+            mlp_data[phase] = (mlp_data[phase] + [v]) if (phase in mlp_data.keys()) else [v]
 
     save_configs(f"{get_prefix(configs)}_conf",configs)
 
@@ -642,7 +644,7 @@ def rate_vs_complexity_experiment(configs):
         data0=pd.DataFrame({
             "complexity": actual_params,
             "topology": ['_'.join(map(str,widths)) for widths in configs["topologies"]],
-            "bits/sample": mlp_data
+            "bits/sample": mlp_data[phase]
         })
 
         selected_points_mask0,fig0 = points_in_convex_hull(data0,"complexity","bits/sample",log_x=True)
