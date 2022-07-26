@@ -712,7 +712,7 @@ class RatesQuantizedArbitraryMLP(RatesArbitraryMLP):
 
 from perceptronac.loading_and_saving import save_dataframe
 from perceptronac.power_consumption import estimate_joules
-from perceptronac.convex_hull import points_in_convex_hull
+from perceptronac.loading_and_saving import points_in_convex_hull
 
 
 def rate_vs_rate_experiment(configs):

@@ -5,6 +5,10 @@ import numbers
 import pandas as pd
 import os
 import matplotlib.pyplot as plt
+from sklearn.preprocessing import MinMaxScaler
+from matplotlib.ticker import FormatStrFormatter
+from math import log10, floor
+from perceptronac.convex_hull import convex_hull
 
 
 # https://matplotlib.org/3.5.0/gallery/lines_bars_and_markers/linestyles.html
@@ -26,6 +30,11 @@ linestyle_tuple = {
      'loosely dashdotdotted': (0, (3, 10, 1, 10, 1, 10)),
      'densely dashdotdotted': (0, (3, 1, 1, 1, 1, 1))
 }
+
+
+def find_exp(number) -> int:
+    base10 = log10(abs(number))
+    return abs(floor(base10))
 
 
 def change_aspect(ax,ratio=0.5):
@@ -150,3 +159,82 @@ def save_data(fn_prefix,xvalues,data,xlabel,ylabel='bits/sample',xscale="linear"
         fig.axes[0].set_xticklabels(xvalues)
     save_fig(f"{fn_prefix}_graph",fig)
     save_values(f"{fn_prefix}_values",xvalues,data,xlabel,extra)
+
+
+def points_in_convex_hull(data,x_col,y_col,log_x=False):
+    """
+    https://stackoverflow.com/questions/12998430/remove-xticks-in-a-matplotlib-plot
+    https://stackoverflow.com/questions/6541123/improve-subplot-size-spacing-with-many-subplots-in-matplotlib
+    https://stackoverflow.com/questions/29188757/matplotlib-specify-format-of-floats-for-tick-labels
+    https://stackoverflow.com/questions/64183806/extracting-the-exponent-from-scientific-notation
+    """
+
+
+    data = data[[x_col,y_col]]
+    normalized_data = data.copy()
+    if log_x:
+        normalized_data[x_col] = normalized_data[x_col].apply(lambda x : math.log10(x)) # complexity in logarithmic scale
+    
+    scaler = MinMaxScaler()
+    normalized_data = scaler.fit_transform(normalized_data.values) # make the coordinates in the range [0,1]
+
+    fig, ax = plt.subplots(nrows=1, ncols=2,figsize=(9.6,4.8), constrained_layout=True)
+
+    ax[0].plot(data.values[:,0],data.values[:,1],linestyle="",marker="x") # verify that everything is alright
+    ax[1].plot(data.values[:,0],data.values[:,1],linestyle="",marker="x") # verify that everything is alright
+
+    chull = data.values[convex_hull(normalized_data.tolist()),:]
+    ax[0].plot(data.values[:,0],data.values[:,1],linestyle="",marker="x")
+    ax[0].plot(chull[:,0],chull[:,1],linestyle="solid",color="red",marker=None)
+
+    ax[1].plot(data.values[:,0],data.values[:,1],linestyle="",marker="x")
+    ax[1].plot(chull[:,0],chull[:,1],linestyle="solid",color="red",marker=None)
+
+
+    if log_x:
+        ax[0].set_xscale("log")
+        xvalues = ax[0].get_xticks()
+        ub = np.min(xvalues[xvalues>=np.max(data[x_col])])
+        lb = np.max(xvalues[xvalues<=np.min(data[x_col])])
+        xvalues = xvalues[np.logical_and(xvalues>=lb,xvalues<=ub)]
+        ax[0].set_xticklabels([])
+        ax[0].set_xticklabels([], minor=True)
+        ax[0].set_xticks(xvalues)
+        ax[0].set_xticklabels(xvalues)
+
+    if np.any((np.max(chull,axis=0) - np.min(chull,axis=0)) == 0):
+        x_lb,x_ub = np.min(chull[:,0])-0.1*np.max(chull[:,0]),1.1*np.max(chull[:,0])
+        y_lb,y_ub = np.min(chull[:,1])-0.1*np.max(chull[:,1]),1.1*np.max(chull[:,1])            
+    else:
+        x_range = np.max(chull[:,0]) - np.min(chull[:,0])
+        y_range = np.max(chull[:,1]) - np.min(chull[:,1])
+        x_lb,x_ub = np.min(chull[:,0])-0.1*x_range,np.max(chull[:,0])+0.1*x_range
+        y_lb,y_ub = np.min(chull[:,1])-0.1*y_range,np.max(chull[:,1])+0.1*y_range
+
+    ax[1].set_xlim(x_lb,x_ub)
+    ax[1].set_ylim(y_lb,y_ub) 
+
+    # xvalues = ax[1].get_xticks()
+    # lb = np.min(xvalues[xvalues>=x_lb])
+    # ub = np.max(xvalues[xvalues<=x_ub])
+    # xvalues = xvalues[np.logical_and(xvalues>=lb,xvalues<=ub)]
+
+    xvalues = np.unique(
+        [np.min(chull[:,0]),(np.max(chull[:,0])+np.min(chull[:,0]))/2,np.max(chull[:,0])])
+
+    if len(xvalues) ==1 :
+        xvalues = [x_lb,xvalues[0],x_ub]
+
+    n_xticks = 3
+    ax[1].set_xticks(xvalues[0:len(xvalues):np.max([len(xvalues)//n_xticks,1])])
+    ax[1].set_xticklabels(xvalues[0:len(xvalues):np.max([len(xvalues)//n_xticks,1])])
+    d = find_exp(np.min(np.diff(xvalues)))
+    ax[1].xaxis.set_major_formatter(FormatStrFormatter(f'%.{d+1}f'))
+
+    ax[0].set_xlabel(x_col)
+    ax[0].set_ylabel(y_col)
+    ax[1].set_xlabel(x_col)
+    ax[1].set_ylabel(y_col)
+
+    return convex_hull(normalized_data.tolist()),fig
+
