@@ -82,28 +82,28 @@ class ColorHead(torch.nn.Module):
         return x
         
 
-# class MLP_N_64N_32N_1(torch.nn.Module):
-#     def __init__(self,N):
-#         super().__init__()
-#         self.layers = torch.nn.Sequential(
-#             torch.nn.Linear(N, 64*N),
-#             torch.nn.ReLU(),
-#             torch.nn.Linear(64*N, 32*N),
-#             torch.nn.ReLU(),
-#             torch.nn.Linear(32*N, 1),
-#             torch.nn.Sigmoid()
-#         )
-#     def forward(self, x):
-#         return self.layers(x)
-
-
 class MLP_N_64N_32N_1(torch.nn.Module):
-    """binary image or point cloud geometry"""
     def __init__(self,N):
         super().__init__()
-        self.mlp = ArbitraryMLP([N,64*N,32*N,1],intended_loss="BCELoss",head_x3=False)
+        self.layers = torch.nn.Sequential(
+            torch.nn.Linear(N, 64*N),
+            torch.nn.ReLU(),
+            torch.nn.Linear(64*N, 32*N),
+            torch.nn.ReLU(),
+            torch.nn.Linear(32*N, 1),
+            torch.nn.Sigmoid()
+        )
     def forward(self, x):
-        return self.mlp(x)
+        return self.layers(x)
+
+
+# class MLP_N_64N_32N_1(torch.nn.Module):
+#     """binary image or point cloud geometry"""
+#     def __init__(self,N):
+#         super().__init__()
+#         self.mlp = ArbitraryMLP([N,64*N,32*N,1],intended_loss="BCELoss",head_x3=False)
+#     def forward(self, x):
+#         return self.mlp(x)
 
 
 class MLP_N_64N_32N_256(torch.nn.Module):
