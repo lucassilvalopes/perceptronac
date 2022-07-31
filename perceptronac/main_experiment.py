@@ -109,6 +109,8 @@ class RatesStaticAC:
                 with open(f"{get_prefix(self.configs,'parent_id')}_{self.N:03d}_ps.npy", 'rb') as f:
                     ps = np.load(f)
                 staticac.load(ps=ps.reshape(1,n_symbols,n_channels))
+        else:
+            raise ValueError(f"We only support 1-channel binary data and N-channel 256-ary data")
         return staticac
 
     def save_N_model(self,staticac):
@@ -130,57 +132,61 @@ class RatesCAAC:
     def __init__(self,configs,N):
         self.configs = configs
         self.N = N
+        self.phases=self.configs["phases"]
+        self.max_context = self.configs["max_context"]
+        self.epochs=self.configs["epochs"]
+        self.geo_or_attr=self.configs["geo_or_attr"]
+        self.n_classes=self.configs["n_classes"]
+        self.channels=self.configs["channels"]
+        self.color_space=self.configs["color_space"]
+        self.data_type = self.configs["data_type"]
+        self.percentage_of_uncles = self.configs["percentage_of_uncles"]
+        self.binary = (self.geo_or_attr=="geometry" or (self.n_classes==2 and np.count_nonzero(self.channels)==1) )
         
     def get_rates(self,datatraining,datacoding):
-        phases=self.configs["phases"]
-        max_context = self.configs["max_context"]
-        epochs=self.configs["epochs"]
-        color_mode = self.configs["color_mode"]
-        data_type = self.configs["data_type"]
-        percentage_of_uncles = self.configs["percentage_of_uncles"]
-        if (self.N > max_context):
-            return epochs*[-1],epochs*[-1]
+        if (self.N > self.max_context):
+            return self.epochs*[-1],self.epochs*[-1]
         cabac = self.load_model()        
         train_loss, valid_loss = [], []
-        for phase in sorted(phases): # train first then valid
+        for phase in sorted(self.phases): # train first then valid
             if phase == 'train':
-                dataset = CausalContextDataset(datatraining, data_type, self.N, percentage_of_uncles, color_mode=color_mode)
+                dataset = CausalContextDataset(datatraining, self.data_type, self.N, self.percentage_of_uncles,
+                    geo_or_attr=self.geo_or_attr,n_classes=self.n_classes,channels=self.channels,color_space=self.color_space)
                 cabac.load(X=dataset.X,y=dataset.y)
             else:
-                dataset = CausalContextDataset(datacoding, data_type, self.N, percentage_of_uncles, color_mode=color_mode)
+                dataset = CausalContextDataset(datacoding, self.data_type, self.N, self.percentage_of_uncles,
+                    geo_or_attr=self.geo_or_attr,n_classes=self.n_classes,channels=self.channels,color_space=self.color_space)
             X,y = dataset.X,dataset.y
             cabac_pred = cabac(X)
-            final_loss = perfect_AC(y,cabac_pred,binary=(color_mode == "binary"))
+            final_loss = perfect_AC(y,cabac_pred,binary=self.binary)
             if phase=='train':
                 train_loss.append(final_loss)
             else:
                 valid_loss.append(final_loss)
         self.save_N_model(cabac)
-        return epochs*train_loss, epochs*valid_loss
+        return self.epochs*train_loss, self.epochs*valid_loss
 
     def load_model(self):
-        color_mode = self.configs["color_mode"]
-        max_context = self.configs["max_context"]
-        if color_mode == "binary":
-            cabac = CABAC(max_context)
+        if self.binary:
+            cabac = CABAC(self.max_context)
             if self.configs.get("parent_id"):
                 file_name = f"{get_prefix(self.configs,'parent_id')}_{self.N:03d}_lut.npy"
                 with open(file_name, 'rb') as f:
                     lut = np.load(f)
                 cabac.load(lut=lut.reshape(-1,1))
-        elif color_mode == "gray" or color_mode == "rgb":
+        elif self.n_classes==256:
             # https://docs.scipy.org/doc/scipy/reference/generated/scipy.sparse.csr_matrix.html
             # https://docs.scipy.org/doc/scipy/reference/generated/scipy.sparse.load_npz.html#scipy.sparse.load_npz
             cabac = CA256AC()
             if self.configs.get("parent_id"):
-                n_channels = 3 if color_mode == "rgb" else 1
+                n_channels = np.count_nonzero(self.channels)
                 lut = []
                 for i in range(n_channels):
                     with open(f"{get_prefix(self.configs,'parent_id')}_{self.N:03d}_lut_ch{i}.npy", 'rb') as f:
                         lut.append( load_npz(f).tolil() )
                 cabac.load(lut=lut)
         else:
-            raise ValueError(f"Color mode {color_mode} not supported. Options: binary, gray, rgb.")
+            raise ValueError(f"We only support 1-channel binary data and N-channel 256-ary data")
         return cabac
 
     def save_N_model(self,cabac):
@@ -201,7 +207,7 @@ class RatesCAAC:
 
 class RatesJBIG1:
     def __init__(self,configs,N):
-        if not (configs["color_mode"] == "binary" and configs["data_type"] == "image"):
+        if not (configs["n_classes"] == 2 and np.count_nonzero(configs["channels"])==1 and configs["data_type"] == "image"):
             raise ValueError("RatesJBIG1 currently supports only binary images")
         self.configs = configs
         self.N = N
