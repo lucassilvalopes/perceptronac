@@ -53,7 +53,7 @@ def parents_children(V, C, ordering):
         V_d : occupied voxels in the previous octree level
         V_nni : positions of the children of V_d, sorted according to input ordering
         C_nni : colors of the children of V_d, sorted according to input ordering
-        occupancy : 
+        occupancy : boolean mask indicating points of V_nni that are in V
     """
     if ordering == 1:
         v_sorting_indices = np.lexsort((V[:, 2], V[:, 1], V[:, 0]))
@@ -90,24 +90,49 @@ def parents_children(V, C, ordering):
     return V,C,V_nni,C_nni,occupancy
 
 
-def get_neighbors(query_V,V,nbhd):
+def get_neighbors(query_V,V,C,nbhd):
     """
     neighs : neighbors occupancy
     """
 
-    temp = []
-    for i in range(nbhd.shape[0]):
-        temp.append(ismember_xyz((query_V + nbhd[i:i+1,:]) ,V))
-    neighs = np.vstack(temp).T.reshape(-1)
+    if C is None:
+        temp = []
+        hash_V = mc.morton_code(V)
+        for i in range(nbhd.shape[0]):
+            temp.append(np.isin(mc.morton_code(query_V + nbhd[i:i+1,:]) ,hash_V))
+        neighs = np.vstack(temp).T.reshape(-1)
 
-    # # Faster but uses too much memory
-    # neighs = ismember_xyz(
-    # ( np.expand_dims(query_V,2) + np.expand_dims(nbhd.T,0) ).transpose([0,2,1]).reshape(-1,3),
-    # V)
+        # # Faster but uses too much memory
+        # neighs = ismember_xyz(
+        # ( np.expand_dims(query_V,2) + np.expand_dims(nbhd.T,0) ).transpose([0,2,1]).reshape(-1,3),
+        # V)
 
-    neighs = neighs.reshape(query_V.shape[0], nbhd.shape[0])
+        neighs = neighs.reshape(query_V.shape[0], nbhd.shape[0])
 
-    return neighs
+        neighs_C = None
+
+    else:
+
+        hash_V = mc.morton_code(V)
+        temp_neighs = []
+        temp_neighs_C = []
+        for i in range(query_V.shape[0]):
+            ith_point_neighs = (query_V[i:i+1,:] + nbhd)
+            hash_ith_point_neighs = mc.morton_code(ith_point_neighs)
+            ith_point_neighs_occupancy = np.isin(hash_ith_point_neighs,hash_V)
+            temp_neighs.append(ith_point_neighs_occupancy)
+
+            neighs_mask = np.isin(hash_V,hash_ith_point_neighs)
+
+            neighs_C = - np.ones((nbhd.shape[0],C.shape[1])) # unoccupied voxels marked with -1
+            neighs_C[ith_point_neighs_occupancy] = \
+                C[neighs_mask][np.argsort(np.linalg.norm(V[neighs_mask]-query_V[i:i+1,:],axis=1), kind='mergesort'),:]
+
+            temp_neighs_C.append(np.expand_dims(neighs_C,0))
+
+        neighs_C = np.concatenate(temp_neighs_C,axis=0)
+        
+    return neighs,neighs_C
 
 
 def voxels_in_raster_neighborhood(r,include=[1,1,1,0,0,0]):
