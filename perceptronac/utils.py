@@ -1,5 +1,6 @@
 
 import numpy as np
+import inspect
 from PIL import Image
 from netpbmfile import imwrite
 import os
@@ -61,15 +62,19 @@ def add_border(img,N):
     return new_img
 
 
-def causal_context_many_imgs(pths,N,color_mode="binary"):
-    if color_mode == "binary":
+def causal_context_many_imgs(pths,N,n_classes=2,channels=[1,0,0],color_space="YCbCr"):
+    if n_classes == 2 and channels==[1,0,0] and color_space == "YCbCr":
         return causal_context_many_imgs_binary(pths,N)
-    elif color_mode == "gray":
+    elif n_classes == 256 and channels==[1,0,0] and color_space == "YCbCr":
         return causal_context_many_imgs_gray(pths,N)
-    elif color_mode == "rgb":
+    elif n_classes == 256 and channels==[1,1,1] and color_space == "RGB":
         return causal_context_many_imgs_rgb(pths,N)
     else:
-        raise ValueError(f"Color mode {color_mode} not supported. Options: binary, gray, rgb.")
+        # https://stackoverflow.com/questions/582056/
+        frame = inspect.currentframe()
+        args, _, _, values = inspect.getargvalues(frame)
+        m =  "Unsupported combination "+" ".join([f"{i}={values[i]}" for i in args])
+        raise ValueError(m)
 
 
 def causal_context_many_imgs_binary(pths,N):

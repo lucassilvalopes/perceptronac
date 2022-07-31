@@ -165,12 +165,26 @@ class Log2CrossEntropyLoss(torch.nn.Module):
 
 
 class CausalContextDataset(torch.utils.data.Dataset):
-    def __init__(self,pths,data_type,N,percentage_of_uncles=None,getXy_later=False,color_mode="binary"):
+    def __init__(
+        self,pths,data_type,N,percentage_of_uncles=None,getXy_later=False,
+        geo_or_attr = None, n_classes=None, channels=None, color_space=None
+    ):
         self.pths = pths
         self.data_type = data_type
-        self.color_mode = color_mode
         self.N = N
-        self.percentage_of_uncles = percentage_of_uncles
+
+        if data_type == "pointcloud":
+            self.percentage_of_uncles = percentage_of_uncles
+            self.geo_or_attr = geo_or_attr if (geo_or_attr is not None) else "geometry"
+            if self.geo_or_attr == "attributes":
+                self.n_classes = n_classes if (n_classes is not None) else 256
+                self.channels = channels if (channels is not None) else [1,0,0]
+                self.color_space = color_space if (color_space is not None) else "YCbCr"
+        elif data_type == "image":
+            self.n_classes = n_classes if (n_classes is not None) else 2
+            self.channels = channels if (channels is not None) else [1,0,0]
+            self.color_space = color_space if (color_space is not None) else "YCbCr"
+
         if getXy_later:
             self.y,self.X = [],[]
         else:
@@ -178,8 +192,10 @@ class CausalContextDataset(torch.utils.data.Dataset):
 
     def getXy(self):
         if self.data_type == "image":
-            self.y,self.X = causal_context_many_imgs(self.pths, self.N,color_mode=self.color_mode)
-        elif self.data_type == "pointcloud" and self.color_mode == "binary":
+            self.y,self.X = causal_context_many_imgs(
+                self.pths, self.N, n_classes=self.n_classes,
+                channels=self.channels, color_space=self.color_space)
+        elif self.data_type == "pointcloud" and self.geo_or_attr == "geometry":
             if self.percentage_of_uncles is None:
                 m = f"Input percentage_of_uncles must be specified "+\
                     "for data type pointcloud."
@@ -188,17 +204,20 @@ class CausalContextDataset(torch.utils.data.Dataset):
                 self.pths, self.N, self.percentage_of_uncles)
         elif self.data_type == "table":
             Xy = np.vstack([self.load_table(pth) for pth in self.pths])
-            if self.color_mode in ["binary","gray"]:
+            if (self.channels is None) or np.count_nonzero(self.channels) == 1:
                 assert Xy.shape[1] - 1 == self.N
                 self.X = Xy[:,:self.N]
                 self.y = Xy[:,self.N:]
-            else: # rgb
+            elif np.count_nonzero(self.channels) == 3:
                 assert Xy.shape[1] - 3 == 3*self.N
                 self.X = Xy[:,:3*self.N]
-                self.y = Xy[:,3*self.N:]                
+                self.y = Xy[:,3*self.N:]
+            else:
+                m = f"Unsupported number of channels {np.count_nonzero(self.channels)}."
+                raise ValueError(m)
         else:
-            m = f"Data type {self.data_type} with color mode {self.color_mode} not supported.\n"+\
-                "Currently supported: image (binary,gray,rgb), pointcloud (binary), table (binary,gray,rgb)."
+            # https://stackoverflow.com/questions/12262463/print-out-the-class-parameters-on-python
+            m = "Unsupported combination "+ ' '.join([f"{k}={v}" for k,v in self.__dict__.items()])
             raise ValueError(m)
 
     @staticmethod
