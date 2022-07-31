@@ -289,7 +289,8 @@ class RatesMLP:
                 for shuffled_pths_i in range(0,len(shuffled_pths),pths_per_dset):
 
                     dset = CausalContextDataset(shuffled_pths[shuffled_pths_i:(shuffled_pths_i+pths_per_dset)], 
-                        self.configs["data_type"], self.N, self.configs["percentage_of_uncles"],color_mode=self.configs["color_mode"])
+                        self.configs["data_type"], self.N, self.configs["percentage_of_uncles"],geo_or_attr=self.configs["geo_or_attr"],
+                        n_classes=self.configs["n_classes"],channels=self.configs["channels"],color_space=self.configs["color_space"])
 
                     dataloader=torch.utils.data.DataLoader(dset,batch_size=batch_size,shuffle=True,num_workers=num_workers)
                     pbar = tqdm(total=np.ceil(len(dset)/batch_size))
@@ -299,8 +300,7 @@ class RatesMLP:
                         Xt_b = Xt_b.float().to(device)
                         yt_b = yt_b.float().to(device)
 
-                        if self.configs["color_mode"] != "binary":
-                            Xt_b = Xt_b/255 # input values in the range [0,1]
+                        Xt_b = Xt_b/(self.configs["n_classes"]-1) # input values in the range [0,1]
 
                         if phase == 'train':
                             optimizer.zero_grad()
@@ -351,7 +351,7 @@ class RatesMLP:
         return ModelClass(self.N)
 
     def load_criterion(self):
-        if self.configs["color_mode"] == "binary":
+        if self.configs["n_classes"] == 2:
             criterion = Log2BCELoss(reduction='sum')
         else: # "gray" or "rgb"
             criterion = Log2CrossEntropyLoss(reduction='sum')
@@ -428,7 +428,7 @@ def train_loop(configs,datatraining,datacoding,N):
     static_condition = (N == 0)
     cabac_condition = (N > 0)
     mlp_condition = (N > 0)
-    jbig1_condition = (configs["data_type"] == "image") and (configs["color_mode"] == "binary")
+    jbig1_condition = (configs["data_type"] == "image") and (configs["n_classes"] == 2) and (np.count_nonzero(configs["channels"])==1)
 
     rates_empty_t,rates_empty_c= epochs*[-1],epochs*[-1]
     if static_condition:
@@ -455,14 +455,14 @@ def coding_loop(configs,N):
 
     cond1 = (configs["data_type"] == "pointcloud")
     cond2 = (configs['ModelClass'] == MLP_N_64N_32N_1)
-    cond3 = (configs["color_mode"] == "binary")
+    cond3 = (configs["geo_or_attr"] == "geometry")
     ok = cond1 and cond2 and cond3
         
     if not ok:
         m = f"""
             coding currently supported only for the combination
             data_type : pointcloud
-            color_mode : binary
+            geo_or_attr : geometry
             ModelClass : MLP_N_64N_32N_1
             """
         raise ValueError(m)
