@@ -62,43 +62,49 @@ class RatesStaticAC:
     def __init__(self,configs,N):
         self.configs = configs
         self.N = N
-
+        self.phases=self.configs["phases"]
+        self.epochs=self.configs["epochs"]
+        self.geo_or_attr=self.configs["geo_or_attr"]
+        self.n_classes=self.configs["n_classes"]
+        self.channels=self.configs["channels"]
+        self.color_space=self.configs["color_space"]
+        self.data_type = self.configs["data_type"]
+        self.percentage_of_uncles = self.configs["percentage_of_uncles"]
+        self.binary = (self.geo_or_attr=="geometry" or (self.n_classes==2 and np.count_nonzero(self.channels)==1) )
+        
     def get_rates(self,datatraining,datacoding):
-        phases=self.configs["phases"]
-        epochs=self.configs["epochs"]
-        color_mode = self.configs["color_mode"]
-        data_type = self.configs["data_type"]
-        percentage_of_uncles = self.configs["percentage_of_uncles"]
-        staticac = self.load_model()        
+
+        staticac = self.load_model()
         train_loss, valid_loss = [], []
-        for phase in sorted(phases):
+        for phase in sorted(self.phases):
             if phase == 'train':
-                dataset = CausalContextDataset(datatraining, data_type, self.N, percentage_of_uncles, color_mode=color_mode)
+                dataset = CausalContextDataset(datatraining, self.data_type, self.N, self.percentage_of_uncles,
+                    geo_or_attr=self.geo_or_attr,n_classes=self.n_classes,channels=self.channels,color_space=self.color_space)
                 staticac.load(y=dataset.y)
             else:
-                dataset = CausalContextDataset(datacoding, data_type, self.N, percentage_of_uncles, color_mode=color_mode)
+                dataset = CausalContextDataset(datacoding, self.data_type, self.N, self.percentage_of_uncles,
+                    geo_or_attr=self.geo_or_attr,n_classes=self.n_classes,channels=self.channels,color_space=self.color_space)
             X,y = dataset.X,dataset.y
             static_pred = staticac(X)
-            final_loss = perfect_AC(y,static_pred,binary=(color_mode == "binary"))
+            final_loss = perfect_AC(y,static_pred,binary=self.binary)
             if phase=='train':
                 train_loss.append(final_loss)
             else:
                 valid_loss.append(final_loss)
         self.save_N_model(staticac)
-        return epochs*train_loss, epochs*valid_loss
+        return self.epochs*train_loss, self.epochs*valid_loss
 
     def load_model(self):
-        color_mode = self.configs["color_mode"]
-        if color_mode == "binary":
+        if self.binary:
             staticac = StaticAC()
             if self.configs.get("parent_id"):
                 with open(f"{get_prefix(self.configs,'parent_id')}_{self.N:03d}_p.npy", 'rb') as f:
                     p = np.load(f)
                 staticac.load(p=p[0])
-        elif color_mode == "gray" or color_mode == "rgb":
+        elif self.n_classes==256:
             staticac = S256AC()
             if self.configs.get("parent_id"):
-                n_channels = 3 if color_mode == "rgb" else 1
+                n_channels = np.count_nonzero(self.channels)
                 n_symbols = 256
                 with open(f"{get_prefix(self.configs,'parent_id')}_{self.N:03d}_ps.npy", 'rb') as f:
                     ps = np.load(f)
