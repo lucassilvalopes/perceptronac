@@ -41,7 +41,10 @@ if __name__ == "__main__":
         "xscale": "log", # 'linear',
         "reduction": 'min', # min, last
         "data_type": 'image', # image, pointcloud, table
-        "color_mode": 'binary', # binary,gray,rgb
+        "geo_or_attr": "attributes", # geometry, attributes
+        "n_classes": 2, # 2, 256
+        "channels": [1,0,0], # [1,1,1], [1,0,0]
+        "color_space": "YCbCr", # RGB, YCbCr
         "percentage_of_uncles": 0.0, # must be specified if the data type is pointcloud
         "last_octree_level": 10, # must be specified if the data type is pointcloud
         "save_dir": "/home/lucas/Documents/perceptronac/results",

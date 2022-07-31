@@ -28,7 +28,10 @@ if __name__ == "__main__":
         "xscale": 'symlog',
         "reduction": 'min', # min, last
         "data_type": 'image', # image, pointcloud
-        "color_mode": 'rgb', # binary,gray,rgb
+        "geo_or_attr": "attributes", # geometry, attributes
+        "n_classes": 256, # 2, 256
+        "channels": [1,1,1], # [1,1,1], [1,0,0]
+        "color_space": "RGB", # RGB, YCbCr
         "percentage_of_uncles": 0.0, # must be specified if the data types is pointcloud
         "last_octree_level": 10, # must be specified if the data types is pointcloud
         "save_dir": "results",
