@@ -40,30 +40,54 @@ def write_PC(filename,xyz):
     o3d.io.write_point_cloud(filename, pointcloud, write_ascii=True)
 
 
-def parents_children(V, ordering):
+def parents_children(V, C, ordering):
     """
-    V : input V sorted according to input ordering
-    V_d : parents
-    V_nni : parents' children sorted according to input ordering
+    Args:
+        V : positions (or geometry) 
+        C : colors (or attributes)
+        ordering : raster XYZ (1), raster YZX (2) , raster ZXY (3)
+
+    Returns:
+        V : positions sorted according to input ordering
+        C : colors sorted according to input ordering
+        V_d : occupied voxels in the previous octree level
+        V_nni : positions of the children of V_d, sorted according to input ordering
+        C_nni : colors of the children of V_d, sorted according to input ordering
+        occupancy : 
     """
     if ordering == 1:
-        V = V[np.lexsort((V[:, 2], V[:, 1], V[:, 0]))]
+        v_sorting_indices = np.lexsort((V[:, 2], V[:, 1], V[:, 0]))
     elif ordering == 2:
-        V = V[np.lexsort((V[:, 0], V[:, 2], V[:, 1]))]
+        v_sorting_indices = np.lexsort((V[:, 0], V[:, 2], V[:, 1]))
     elif ordering == 3:
-        V = V[np.lexsort((V[:, 1], V[:, 0], V[:, 2]))]
+        v_sorting_indices = np.lexsort((V[:, 1], V[:, 0], V[:, 2]))
+
+    V = V[v_sorting_indices]
+    if C is not None:
+        C = C[v_sorting_indices]
 
     V_d = np.unique(np.floor(V / 2), axis=0)
     V_nni = upsample_geometry(V_d, 2)
 
     if ordering == 1:
-        V_nni = V_nni[np.lexsort((V_nni[:, 2], V_nni[:, 1], V_nni[:, 0]))]
+        vnni_sorting_indices = np.lexsort((V_nni[:, 2], V_nni[:, 1], V_nni[:, 0]))
     elif ordering == 2:
-        V_nni = V_nni[np.lexsort((V_nni[:, 0], V_nni[:, 2], V_nni[:, 1]))]
+        vnni_sorting_indices = np.lexsort((V_nni[:, 0], V_nni[:, 2], V_nni[:, 1]))
     elif ordering == 3:
-        V_nni = V_nni[np.lexsort((V_nni[:, 1], V_nni[:, 0], V_nni[:, 2]))]  
+        vnni_sorting_indices = np.lexsort((V_nni[:, 1], V_nni[:, 0], V_nni[:, 2]))  
 
-    return V,V_nni
+    V_nni = V_nni[vnni_sorting_indices]
+
+    occupancy = ismember_xyz(V_nni, V)
+
+    if C is not None:
+        C_nni = - np.ones((V_nni.shape[0],C.shape[1])) # unoccupied voxels marked with -1
+
+        C_nni[occupancy] = C
+    else:
+        C_nni = None
+
+    return V,C,V_nni,C_nni,occupancy
 
 
 def get_neighbors(query_V,V,nbhd):
@@ -171,7 +195,7 @@ def raster_nbhd(nbhd,ordering,include=[1,1,1,0,0,0]):
 
 
 
-def pc_causal_context(V, N, M, ordering = 1, causal_half_space_only: bool = False):
+def pc_causal_context(V, N, M, ordering = 1, causal_half_space_only: bool = False, C = None):
     """
     Find causal contexts to help guess the occupancy of each voxel in V using
     its own causal neighbors in the current level and its parent neighborhood.
@@ -215,9 +239,7 @@ def pc_causal_context(V, N, M, ordering = 1, causal_half_space_only: bool = Fals
         m = f"""ordering must be 1,2 or 3"""
         raise ValueError(m)
 
-    V,V_nni = parents_children(V,ordering)
-
-    occupancy = ismember_xyz(V_nni, V)
+    V,C,V_nni,C_nni,occupancy = parents_children(V,C,ordering)
 
     causal_neighs,this_nbhd = causal_siblings(V,V_nni,N,ordering,causal_half_space_only)
 
