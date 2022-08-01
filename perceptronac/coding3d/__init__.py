@@ -3,6 +3,7 @@ from perceptronac.coding3d import mortoncode as mc
 import open3d as o3d
 from sklearn.neighbors import NearestNeighbors
 import warnings
+import pandas as pd
 
 
 def xyz_displacements(interval,ordering=1):
@@ -103,33 +104,33 @@ def get_neighbors(query_V,V,C,nbhd):
     """
 
     if C is None:
-        past_neighbors_occupancies = []
+        past_neighbor_occupancies = []
         V_hashes = mc.morton_code(V)
         for i in range(nbhd.shape[0]):
             ith_neighbor = query_V + nbhd[i:i+1,:]
             ith_neighbor_occupancy = np.isin(mc.morton_code(ith_neighbor) ,V_hashes)
-            past_neighbors_occupancies.append(np.expand_dims(ith_neighbor_occupancy,1))
-        neighs = np.concatenate(past_neighbors_occupancies,axis=1)
+            past_neighbor_occupancies.append(np.expand_dims(ith_neighbor_occupancy,1))
+        all_neighs = np.concatenate(past_neighbor_occupancies,axis=1)
 
         # # Faster but uses too much memory
         # neighs = ismember_xyz(
         # ( np.expand_dims(query_V,2) + np.expand_dims(nbhd.T,0) ).transpose([0,2,1]).reshape(-1,3),
         # V)
 
-        neighs = neighs.reshape(query_V.shape[0], nbhd.shape[0])
+        # neighs = neighs.reshape(query_V.shape[0], nbhd.shape[0])
 
-        neighs_colors = None
+        all_neighs_colors = None
 
     else:
 
         V_hashes = mc.morton_code(V)
-        past_nbhds_occupancies = []
-        past_nbhds_colors = []
+        past_nbhd_occupancies = []
+        past_nbhd_colors = []
         for i in range(query_V.shape[0]):
             ith_nbhd = (query_V[i:i+1,:] + nbhd)
             ith_nbhd_hashes = mc.morton_code(ith_nbhd)
             ith_nbhd_occupancy = np.isin(ith_nbhd_hashes,V_hashes)
-            past_nbhds_occupancies.append(np.expand_dims(0,ith_nbhd_occupancy))
+            past_nbhd_occupancies.append(np.expand_dims(0,ith_nbhd_occupancy))
 
             ith_nbhd_C = - np.ones((nbhd.shape[0],C.shape[1]))
 
@@ -138,12 +139,12 @@ def get_neighbors(query_V,V,C,nbhd):
                 np.linalg.norm(V[ith_nbhd_V_mask]-query_V[i:i+1,:],axis=1), kind='mergesort')
             ith_nbhd_C[ith_nbhd_occupancy] = C[ith_nbhd_V_mask][distance_based_sorting,:]
 
-            past_nbhds_colors.append(np.expand_dims(ith_nbhd_C,0))
+            past_nbhd_colors.append(np.expand_dims(ith_nbhd_C,0))
 
-        neighs = np.concatenate(past_nbhds_occupancies,axis=0)
-        neighs_colors = np.concatenate(past_nbhds_colors,axis=0)
+        all_neighs = np.concatenate(past_nbhd_occupancies,axis=0)
+        all_neighs_colors = np.concatenate(past_nbhd_colors,axis=0)
         
-    return neighs,neighs_colors
+    return all_neighs,all_neighs_colors
 
 
 def voxels_in_raster_neighborhood(r,include=[1,1,1,0,0,0]):
@@ -277,12 +278,16 @@ def pc_causal_context(V, N, M, ordering = 1, causal_half_space_only: bool = Fals
 
     V,C,V_nni,C_nni,occupancy = parents_children(V,C,ordering)
 
-    causal_neighs,this_nbhd = causal_siblings(V,V_nni,N,ordering,causal_half_space_only)
+    causal_neighs,causal_neighs_colors,this_nbhd =\
+        causal_siblings(V,C,V_nni,N,ordering,causal_half_space_only)
 
-    phi,prev_nbhd = uncles(V_nni,M,ordering)
+    phi,phi_colors,prev_nbhd = uncles(V_nni,C_nni,M,ordering)
 
-    contexts = np.column_stack((causal_neighs, phi))
-    return V_nni,contexts, occupancy, this_nbhd, prev_nbhd
+    contexts = np.concatenate([causal_neighs, phi],axis=1)
+
+    contexts_colors = np.concatenate([causal_neighs_colors, phi_colors],axis=1)
+
+    return V_nni,contexts,contexts_colors, occupancy, this_nbhd, prev_nbhd
 
 
 def determine_best_partition(N_plus_M,causal_half_space_only):
@@ -311,7 +316,7 @@ def determine_best_partition(N_plus_M,causal_half_space_only):
     return final_N, final_M
 
 
-def causal_siblings(V,V_nni,N,ordering,causal_half_space_only=False):
+def causal_siblings(V,C,V_nni,N,ordering,causal_half_space_only=False):
 
     include = ([1,0,0,0,0,0] if causal_half_space_only else [1,1,1,0,0,0])
 
@@ -325,14 +330,22 @@ def causal_siblings(V,V_nni,N,ordering,causal_half_space_only=False):
     this_nbhd = raster_nbhd(this_nbhd,ordering,include=include)
     this_nbhd = this_nbhd[np.argsort(np.linalg.norm(this_nbhd,axis=1), kind='mergesort'),:]
 
-    causal_neighs = get_neighbors(V_nni,V,this_nbhd)
+    causal_neighs,causal_neighs_colors = get_neighbors(V_nni,V,C,this_nbhd)
 
     causal_neighs = causal_neighs[:,:N]
+    causal_neighs_colors = causal_neighs_colors[:,:N,:] if (causal_neighs_colors is not None) else None
     this_nbhd = this_nbhd[:N,:]
-    return causal_neighs,this_nbhd
+    return causal_neighs,causal_neighs_colors,this_nbhd
 
 
-def uncles(V_nni,M,ordering):
+def get_parents_colors(C_nni,child_idx):
+    C_table = pd.DataFrame({"values":list(C_nni) , "parent_id": child_idx})
+    C_table = C_table[np.all(C_nni!=-1,axis=1)]
+    V_d_C = C_table.groupby("parent_id")["values"].apply(lambda x: np.mean(x,axis=0)).sort_index()
+    return V_d_C
+
+
+def uncles(V_nni,C_nni,M,ordering):
     """
     Returns the M occupancies of the M closest uncles (voxels in the previous octree level) of each point in V_nni.
     Uncles with all 8 children in the causal neighborhood are discarded.
@@ -353,16 +366,16 @@ def uncles(V_nni,M,ordering):
     while voxels_in_raster_neighborhood(previous_level_r,include=include) < M:
         previous_level_r += 1
 
-    prev_nbhd = xyz_displacements(np.arange(-previous_level_r, previous_level_r+1, 1))
+    prev_nbhd = xyz_displacements(np.arange(-previous_level_r, previous_level_r+1, 1),ordering=ordering)
     prev_nbhd = prev_nbhd[(np.linalg.norm(prev_nbhd, axis=1) <= previous_level_r), :]
     prev_nbhd = raster_nbhd(prev_nbhd,ordering,include=include)
     prev_nbhd = prev_nbhd[np.argsort(np.linalg.norm(prev_nbhd,axis=1), kind='mergesort'),:]
 
     V_d, child_idx = np.unique(np.floor(V_nni / 2), axis=0, return_inverse=True)
     # child_idx holds, in the order of V_nni, indices from V_d 
-    phi = get_neighbors(V_d,V_d,prev_nbhd)
-    phi = phi[child_idx, :]
-    
-    phi = phi[:,:M]
+    V_d_C = get_parents_colors(C_nni,child_idx) if (C_nni is not None) else None
+    phi,phi_colors = get_neighbors(V_d,V_d,V_d_C,prev_nbhd)
+    phi = phi[child_idx, :][:,:M]
+    phi_colors = phi_colors[child_idx,:,:][:,:M,:] if (phi_colors is not None) else None
     prev_nbhd = prev_nbhd[:M,:]
-    return phi,prev_nbhd
+    return phi,phi_colors,prev_nbhd
