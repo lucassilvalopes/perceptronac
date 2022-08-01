@@ -71,7 +71,7 @@ def parents_children(V, C, ordering):
         v_sorting_indices = np.lexsort((V[:, 1], V[:, 0], V[:, 2]))
 
     V = V[v_sorting_indices]
-    if C is not None:
+    if C.size > 0:
         C = C[v_sorting_indices]
 
     V_d = np.unique(np.floor(V / 2), axis=0)
@@ -86,16 +86,16 @@ def parents_children(V, C, ordering):
 
     V_nni = V_nni[vnni_sorting_indices]
 
-    occupancy = ismember_xyz(V_nni, V)
+    # occupancy = ismember_xyz(V_nni, V)
 
-    if C is not None:
-        C_nni = - np.ones((V_nni.shape[0],C.shape[1])) # unoccupied voxels marked with -1
+    # if C.size > 0:
+    #     C_nni = - np.ones((V_nni.shape[0],C.shape[1])) # unoccupied voxels marked with -1
 
-        C_nni[occupancy] = C
-    else:
-        C_nni = None
+    #     C_nni[occupancy] = C
+    # else:
+    #     C_nni = None
 
-    return V,C,V_nni,C_nni,occupancy
+    return V,C,V_nni #,C_nni,occupancy
 
 
 def get_neighbors(query_V,V,C,nbhd):
@@ -103,7 +103,7 @@ def get_neighbors(query_V,V,C,nbhd):
     neighs : neighbors occupancy
     """
 
-    if C is None:
+    if C.size == 0:
         past_neighbor_occupancies = []
         V_hashes = mc.morton_code(V)
         for i in range(nbhd.shape[0]):
@@ -119,7 +119,7 @@ def get_neighbors(query_V,V,C,nbhd):
 
         # neighs = neighs.reshape(query_V.shape[0], nbhd.shape[0])
 
-        all_neighs_colors = None
+        all_neighs_colors = np.array([[[]]])
 
     else:
 
@@ -232,7 +232,7 @@ def raster_nbhd(nbhd,ordering,include=[1,1,1,0,0,0]):
 
 
 
-def pc_causal_context(V, N, M, ordering = 1, causal_half_space_only: bool = False, C = None):
+def pc_causal_context(V, N, M, ordering = 1, causal_half_space_only: bool = False, C = np.array([[]]) ):
     """
     Find causal contexts to help guess the occupancy of each voxel in V using
     its own causal neighbors in the current level and its parent neighborhood.
@@ -276,16 +276,19 @@ def pc_causal_context(V, N, M, ordering = 1, causal_half_space_only: bool = Fals
         m = f"""ordering must be 1,2 or 3"""
         raise ValueError(m)
 
-    V,C,V_nni,C_nni,occupancy = parents_children(V,C,ordering)
+    V,C,V_nni = parents_children(V,C,ordering)
+    # V,C,V_nni,C_nni,occupancy = parents_children(V,C,ordering)
 
-    causal_neighs,causal_neighs_colors,this_nbhd =\
+    occupancy = ismember_xyz(V_nni, V)
+
+    this_contexts_V,this_contexts_C,this_nbhd =\
         causal_siblings(V,C,V_nni,N,ordering,causal_half_space_only)
 
-    phi,phi_colors,prev_nbhd = uncles(V_nni,C_nni,M,ordering)
+    prev_contexts_V,prev_contexts_C,prev_nbhd = uncles(V_nni,C,occupancy,M,ordering) # uncles(V_nni,C_nni,M,ordering)
 
-    contexts = np.concatenate([causal_neighs, phi],axis=1)
+    contexts = np.concatenate([this_contexts_V, prev_contexts_V],axis=1)
 
-    contexts_colors = np.concatenate([causal_neighs_colors, phi_colors],axis=1)
+    contexts_colors = np.concatenate([this_contexts_C, prev_contexts_C],axis=1)
 
     return V_nni,contexts,contexts_colors, occupancy, this_nbhd, prev_nbhd
 
@@ -330,22 +333,22 @@ def causal_siblings(V,C,V_nni,N,ordering,causal_half_space_only=False):
     this_nbhd = raster_nbhd(this_nbhd,ordering,include=include)
     this_nbhd = this_nbhd[np.argsort(np.linalg.norm(this_nbhd,axis=1), kind='mergesort'),:]
 
-    causal_neighs,causal_neighs_colors = get_neighbors(V_nni,V,C,this_nbhd)
+    this_contexts_V,this_contexts_C = get_neighbors(V_nni,V,C,this_nbhd)
 
-    causal_neighs = causal_neighs[:,:N]
-    causal_neighs_colors = causal_neighs_colors[:,:N,:] if (causal_neighs_colors is not None) else None
+    this_contexts_V = this_contexts_V[:,:N]
+    this_contexts_C = this_contexts_C[:,:N,:]
     this_nbhd = this_nbhd[:N,:]
-    return causal_neighs,causal_neighs_colors,this_nbhd
+    return this_contexts_V,this_contexts_C,this_nbhd
 
 
-def get_parents_colors(C_nni,child_idx):
-    C_table = pd.DataFrame({"values":list(C_nni) , "parent_id": child_idx})
-    C_table = C_table[np.all(C_nni!=-1,axis=1)]
-    V_d_C = C_table.groupby("parent_id")["values"].apply(lambda x: np.mean(x,axis=0)).sort_index()
-    return V_d_C
+# def get_parents_colors(C_nni,child_idx):
+#     C_table = pd.DataFrame({"values":list(C_nni) , "parent_id": child_idx})
+#     C_table = C_table[np.all(C_nni!=-1,axis=1)]
+#     V_d_C = C_table.groupby("parent_id")["values"].apply(lambda x: np.mean(x,axis=0)).sort_index()
+#     return V_d_C
 
 
-def uncles(V_nni,C_nni,M,ordering):
+def uncles(V_nni,C,occupancy,M,ordering):
     """
     Returns the M occupancies of the M closest uncles (voxels in the previous octree level) of each point in V_nni.
     Uncles with all 8 children in the causal neighborhood are discarded.
@@ -373,9 +376,11 @@ def uncles(V_nni,C_nni,M,ordering):
 
     V_d, child_idx = np.unique(np.floor(V_nni / 2), axis=0, return_inverse=True)
     # child_idx holds, in the order of V_nni, indices from V_d 
-    V_d_C = get_parents_colors(C_nni,child_idx) if (C_nni is not None) else None
-    phi,phi_colors = get_neighbors(V_d,V_d,V_d_C,prev_nbhd)
-    phi = phi[child_idx, :][:,:M]
-    phi_colors = phi_colors[child_idx,:,:][:,:M,:] if (phi_colors is not None) else None
+    # V_d_C = get_parents_colors(C_nni,child_idx)
+    V_d_C = pd.DataFrame({"values":list(C) , "parent_id": child_idx[occupancy]}).groupby("parent_id")["values"].apply(
+        lambda x: np.mean(x,axis=0)).sort_index() if (C.size > 0) else np.array([[]])
+    prev_contexts_V,prev_contexts_C = get_neighbors(V_d,V_d,V_d_C,prev_nbhd)
+    prev_contexts_V = prev_contexts_V[child_idx, :][:,:M]
+    prev_contexts_C = prev_contexts_C[child_idx,:,:][:,:M,:]
     prev_nbhd = prev_nbhd[:M,:]
-    return phi,phi_colors,prev_nbhd
+    return prev_contexts_V,prev_contexts_C,prev_nbhd
