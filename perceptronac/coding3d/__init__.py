@@ -5,11 +5,18 @@ from sklearn.neighbors import NearestNeighbors
 import warnings
 
 
-def xyz_displacements(interval):
+def xyz_displacements(interval,ordering=1):
     x, y, z = np.meshgrid(interval, interval, interval)
     deltas = np.array([x.flatten('F'), y.flatten('F'), z.flatten('F')]).T
 
-    return deltas[np.lexsort((deltas[:, 2], deltas[:, 1], deltas[:, 0]))]
+    if ordering == 1:
+        sorting_indices = np.lexsort((deltas[:, 2], deltas[:, 1], deltas[:, 0]))
+    elif ordering == 2:
+        sorting_indices = np.lexsort((deltas[:, 0], deltas[:, 2], deltas[:, 1]))
+    elif ordering == 3:
+        sorting_indices = np.lexsort((deltas[:, 1], deltas[:, 0], deltas[:, 2]))
+
+    return deltas[sorting_indices]
 
 
 def upsample_geometry(V, s):
@@ -96,11 +103,13 @@ def get_neighbors(query_V,V,C,nbhd):
     """
 
     if C is None:
-        temp = []
-        hash_V = mc.morton_code(V)
+        past_neighbors_occupancies = []
+        V_hashes = mc.morton_code(V)
         for i in range(nbhd.shape[0]):
-            temp.append(np.isin(mc.morton_code(query_V + nbhd[i:i+1,:]) ,hash_V))
-        neighs = np.vstack(temp).T.reshape(-1)
+            ith_neighbor = query_V + nbhd[i:i+1,:]
+            ith_neighbor_occupancy = np.isin(mc.morton_code(ith_neighbor) ,V_hashes)
+            past_neighbors_occupancies.append(np.expand_dims(ith_neighbor_occupancy,1))
+        neighs = np.concatenate(past_neighbors_occupancies,axis=1)
 
         # # Faster but uses too much memory
         # neighs = ismember_xyz(
@@ -109,30 +118,32 @@ def get_neighbors(query_V,V,C,nbhd):
 
         neighs = neighs.reshape(query_V.shape[0], nbhd.shape[0])
 
-        neighs_C = None
+        neighs_colors = None
 
     else:
 
-        hash_V = mc.morton_code(V)
-        temp_neighs = []
-        temp_neighs_C = []
+        V_hashes = mc.morton_code(V)
+        past_nbhds_occupancies = []
+        past_nbhds_colors = []
         for i in range(query_V.shape[0]):
-            ith_point_neighs = (query_V[i:i+1,:] + nbhd)
-            hash_ith_point_neighs = mc.morton_code(ith_point_neighs)
-            ith_point_neighs_occupancy = np.isin(hash_ith_point_neighs,hash_V)
-            temp_neighs.append(ith_point_neighs_occupancy)
+            ith_nbhd = (query_V[i:i+1,:] + nbhd)
+            ith_nbhd_hashes = mc.morton_code(ith_nbhd)
+            ith_nbhd_occupancy = np.isin(ith_nbhd_hashes,V_hashes)
+            past_nbhds_occupancies.append(np.expand_dims(0,ith_nbhd_occupancy))
 
-            neighs_mask = np.isin(hash_V,hash_ith_point_neighs)
+            ith_nbhd_C = - np.ones((nbhd.shape[0],C.shape[1]))
 
-            neighs_C = - np.ones((nbhd.shape[0],C.shape[1])) # unoccupied voxels marked with -1
-            neighs_C[ith_point_neighs_occupancy] = \
-                C[neighs_mask][np.argsort(np.linalg.norm(V[neighs_mask]-query_V[i:i+1,:],axis=1), kind='mergesort'),:]
+            ith_nbhd_V_mask = np.isin(V_hashes,ith_nbhd_hashes)
+            distance_based_sorting=np.argsort(
+                np.linalg.norm(V[ith_nbhd_V_mask]-query_V[i:i+1,:],axis=1), kind='mergesort')
+            ith_nbhd_C[ith_nbhd_occupancy] = C[ith_nbhd_V_mask][distance_based_sorting,:]
 
-            temp_neighs_C.append(np.expand_dims(neighs_C,0))
+            past_nbhds_colors.append(np.expand_dims(ith_nbhd_C,0))
 
-        neighs_C = np.concatenate(temp_neighs_C,axis=0)
+        neighs = np.concatenate(past_nbhds_occupancies,axis=0)
+        neighs_colors = np.concatenate(past_nbhds_colors,axis=0)
         
-    return neighs,neighs_C
+    return neighs,neighs_colors
 
 
 def voxels_in_raster_neighborhood(r,include=[1,1,1,0,0,0]):
@@ -309,7 +320,7 @@ def causal_siblings(V,V_nni,N,ordering,causal_half_space_only=False):
     while voxels_in_raster_neighborhood(current_level_r,include=include) < N:
         current_level_r += 1
 
-    this_nbhd = xyz_displacements(np.arange(-current_level_r, current_level_r+1, 1))
+    this_nbhd = xyz_displacements(np.arange(-current_level_r, current_level_r+1, 1),ordering=ordering)
     this_nbhd = this_nbhd[(np.linalg.norm(this_nbhd, axis=1) <= current_level_r), :]
     this_nbhd = raster_nbhd(this_nbhd,ordering,include=include)
     this_nbhd = this_nbhd[np.argsort(np.linalg.norm(this_nbhd,axis=1), kind='mergesort'),:]
