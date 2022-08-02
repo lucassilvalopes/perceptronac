@@ -795,8 +795,8 @@ def rate_vs_rate_experiment(configs):
     #     linestyles={"data_bits/data_samples":"None"}, colors={"data_bits/data_samples":"k"}, markers={"data_bits/data_samples":"x"})
 
     data=pd.DataFrame({
-        "data_bits/data_samples":x_axis,
-        "(data_bits+model_bits)/data_samples":y_axis,
+        "data_bits/data_samples":y_axis,
+        "(data_bits+model_bits)/data_samples":x_axis,
         "topology": topology_metadata, "params":params_metadata,"quantization_bits":qbits_metadata,
         "start_time":start_time_metadata,"end_time":end_time_metadata
     }) #.set_index("(data_bits+model_bits)/data_samples")
