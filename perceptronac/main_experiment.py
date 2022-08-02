@@ -247,78 +247,34 @@ class RatesMLP:
         self.N = N
 
     def get_rates(self,datatraining,datacoding,output_n_samples=False):
-
-        OptimizerClass=self.configs["OptimizerClass"]
-        epochs=self.configs["epochs"]
-        learning_rate=self.configs["learning_rate"]
-        batch_size=self.configs["batch_size"]
-        num_workers=self.configs["num_workers"]
-        device=self.configs["device"]
-        phases=self.configs["phases"]
         
-        device = torch.device(device)
+        device = torch.device(self.configs["device"])
         
         model = self.load_model()
         model.to(device)
         
         criterion = self.load_criterion()
-        optimizer = OptimizerClass(model.parameters(), lr=learning_rate)
+        OptimizerClass=self.configs["OptimizerClass"]
+        optimizer = OptimizerClass(model.parameters(), lr=self.configs["learning_rate"])
+
+        print("starting training")
+        print(f"len trainset : {len(datatraining)} {self.configs['data_type']}s, len validset : {len(datacoding)} {self.configs['data_type']}s")
 
         train_loss, valid_loss = [], []
         train_samples, valid_samples = [], []
-        print("starting training")
-        print(f"len trainset : {len(datatraining)} {self.configs['data_type']}s, len validset : {len(datacoding)} {self.configs['data_type']}s")
-        for epoch in range(epochs):
+        phases = self.configs["phases"]
+        prepend_start_valid_loss = ("train" in phases) and ("valid" in phases)
+        if prepend_start_valid_loss:
+            final_loss, n_samples = self.train_one_epoch(model,criterion,optimizer,datatraining,datacoding,"valid")
+            valid_loss.append(final_loss)
+            valid_samples.append(n_samples)
+            self.save_N_min_valid_loss_model(valid_loss,model)
+
+        for epoch in range(self.configs["epochs"]):
             
             for phase in phases:
+                final_loss, n_samples = self.train_one_epoch(model,criterion,optimizer,datatraining,datacoding,phase)
 
-                if phase == 'train':
-                    model.train(True)
-                    pths = datatraining
-                else:
-                    model.train(False)
-                    pths = datacoding 
-
-                running_loss = 0.0
-                n_samples = 0.0
-
-                shuffled_pths = random.sample(pths, len(pths))
-
-                pths_per_dset = max(1,len(shuffled_pths)//self.configs["dset_pieces"])
-
-                for shuffled_pths_i in range(0,len(shuffled_pths),pths_per_dset):
-
-                    dset = CausalContextDataset(shuffled_pths[shuffled_pths_i:(shuffled_pths_i+pths_per_dset)], 
-                        self.configs["data_type"], self.N, self.configs["percentage_of_uncles"],geo_or_attr=self.configs["geo_or_attr"],
-                        n_classes=self.configs["n_classes"],channels=self.configs["channels"],color_space=self.configs["color_space"])
-
-                    dataloader=torch.utils.data.DataLoader(dset,batch_size=batch_size,shuffle=True,num_workers=num_workers)
-                    pbar = tqdm(total=np.ceil(len(dset)/batch_size))
-                    for data in dataloader:
-
-                        Xt_b,yt_b= data
-                        Xt_b = Xt_b.float().to(device)
-                        yt_b = yt_b.float().to(device)
-
-                        Xt_b = Xt_b/(self.configs["n_classes"]-1) # input values in the range [0,1]
-
-                        if phase == 'train':
-                            optimizer.zero_grad()
-                            outputs = model(Xt_b)
-                            loss = criterion(outputs, yt_b)
-                            loss.backward()
-                            optimizer.step()
-                        else:
-                            with torch.no_grad():
-                                outputs = model(Xt_b)
-                                loss = criterion(outputs, yt_b)
-
-                        running_loss += loss.item()
-                        n_samples += yt_b.numel()
-                        pbar.update(1)
-                    pbar.close()
-                    
-                final_loss = running_loss / n_samples
                 if phase=='train':
                     train_loss.append(final_loss)
                     train_samples.append(n_samples)
@@ -331,12 +287,71 @@ class RatesMLP:
 
             self.save_N_min_valid_loss_model(valid_loss,model)
  
+        if prepend_start_valid_loss:
+            valid_loss.pop(0)
+            valid_samples.pop(0)
+
         # save final model
         self.save_N_model(model)
         if output_n_samples:
             return train_loss, valid_loss, train_samples, valid_samples
         else:
             return train_loss, valid_loss
+
+    def train_one_epoch(self,model,criterion,optimizer,datatraining,datacoding,phase):
+
+        device = torch.device(self.configs["device"])
+
+        if phase == 'train':
+            model.train(True)
+            pths = datatraining
+        else:
+            model.train(False)
+            pths = datacoding 
+
+        running_loss = 0.0
+        n_samples = 0.0
+
+        shuffled_pths = random.sample(pths, len(pths))
+
+        pths_per_dset = max(1,len(shuffled_pths)//self.configs["dset_pieces"])
+
+        for shuffled_pths_i in range(0,len(shuffled_pths),pths_per_dset):
+
+            dset = CausalContextDataset(shuffled_pths[shuffled_pths_i:(shuffled_pths_i+pths_per_dset)], 
+                self.configs["data_type"], self.N, self.configs["percentage_of_uncles"],geo_or_attr=self.configs["geo_or_attr"],
+                n_classes=self.configs["n_classes"],channels=self.configs["channels"],color_space=self.configs["color_space"])
+
+            dataloader=torch.utils.data.DataLoader(
+                dset,batch_size=self.configs["batch_size"],shuffle=True,num_workers=self.configs["num_workers"])
+            pbar = tqdm(total=np.ceil(len(dset)/self.configs["batch_size"]))
+            for data in dataloader:
+
+                Xt_b,yt_b= data
+                Xt_b = Xt_b.float().to(device)
+                yt_b = yt_b.float().to(device)
+
+                Xt_b = Xt_b/(self.configs["n_classes"]-1) # input values in the range [0,1]
+
+                if phase == 'train':
+                    optimizer.zero_grad()
+                    outputs = model(Xt_b)
+                    loss = criterion(outputs, yt_b)
+                    loss.backward()
+                    optimizer.step()
+                else:
+                    with torch.no_grad():
+                        outputs = model(Xt_b)
+                        loss = criterion(outputs, yt_b)
+
+                running_loss += loss.item()
+                n_samples += yt_b.numel()
+                pbar.update(1)
+            pbar.close()
+            
+        final_loss = running_loss / n_samples
+
+        return final_loss, n_samples
 
     def min_valid_loss_model_name(self, id_key = "id", parent_id_index = None):
         prefix = get_prefix(self.configs,id_key=id_key,parent_id_index=parent_id_index)
