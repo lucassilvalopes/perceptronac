@@ -149,38 +149,35 @@ def pc_causal_context(V, N, M, ordering = 1, causal_half_space_only: bool = Fals
 
         V_d = np.floor(V / 2)[np.sort(idx), :]
 
+    Args:
+        V: (L-by-3) Voxelized geometry to be coded (assuming that V_d
+            the previous level has already been encoded).
+        N: How many causal neighbors from the current level to use.
+        M: How many neighbors from the previous level to use.
+        ordering: Options for the encoding order:
+            1 - Raster XYZ;
+            2 - Raster YZX;
+            3 - Raster ZXY;
+        causal_half_space_only: If True, neighbors in the plane currently being 
+            scanned will no be used.
 
-    :param V: (L-by-3) Voxelized geometry to be coded (assuming that V_d
-              the previous level has already been encoded).
-    :param N: How many causal neighbors from the current level to use.
-    :param M: How many neighbors from the previous level to use.
-    :param ordering: Options for the encoding order:
-                          1 - Raster XYZ;
-                          2 - Raster YZX;
-                          3 - Raster ZXY;
-    
-    :param causal_half_space_only: If True, neighbors in the plane currently being 
-                                    scanned will no be used.
+    Returns: 
+        contexts (8*L'-by-n+m) : The causal nbhd neighbours found in V, plus 
+            m bits indicating the parent neighborhood. L' is the length of V_d, 
+            thus every 8 rows in contexts relates to one parent voxel in V_d.
+        occupancy (8*L'-by-1) : The occupancy of each of the 8 possible children of V_d.
+        this_nbhd (n-by-3) : Causal neighbors as displacements from the central voxel.
+        prev_nbhd (m-by-3) : Previous level neighbors also as displacements.
 
-    :return: contexts (8*L'-by-n+m) The causal nbhd neighbours found in V, plus
-                                     m bits indicating the parent neighborhood. L'
-                                     is the length of V_d, thus every 8 rows in
-                                     contexts relates to one parent voxel in V_d.
-
-             occupancy (8*L'-by-1)    The occupancy of each of the 8 possible children of V_d.
-
-             this_nbhd (n-by-3)      Causal neighbors as displacements from the central voxel.
-    
-             prev_nbhd (m-by-3)      Previous level neighbors also as displacements.
-
-
-    V_d (L'-by-3) : previous level points.
-    V_nni (8*L'-by-3) : all 8 children of each point in V_d.
-    prev_nbhd (M-by-3) : displacements from the central point to get the neighboring points in the previous level.
-    child_idx (8*L') : for each point in V_nni, child_idx points to the parent in V_d. 
-        That is V_d[child_idx[i],:] is the parent of V_nni[i,:] .
-    phi (8*L'-by-M) : for each point in V_nni, phi holds the occupancy of the uncles.
-        That is phi[i,:] holds the occupancy of the points in (V_d[child_idx[i],:] + prev_nbhd) .
+    Other variables:
+        V_d (L'-by-3) : previous level points.
+        V_nni (8*L'-by-3) : all 8 children of each point in V_d.
+        prev_nbhd (M-by-3) : displacements from the central point to get the 
+            neighboring points in the previous level.
+        child_idx (8*L') : for each point in V_nni, child_idx points to the parent in V_d. 
+            That is V_d[child_idx[i],:] is the parent of V_nni[i,:] .
+        phi (8*L'-by-M) : for each point in V_nni, phi holds the occupancy of the uncles.
+            That is phi[i,:] holds the occupancy of the points in (V_d[child_idx[i],:] + prev_nbhd) .
 
     OBS: 'mergesort' in np.argsort and 'F' in np.reshape or np.flatten is to be compliant with matlab.
     
@@ -199,13 +196,11 @@ def pc_causal_context(V, N, M, ordering = 1, causal_half_space_only: bool = Fals
     V_d = np.unique(np.floor(V / 2), axis=0)
     V_nni = upsample_geometry(V_d, 2)
 
-    vnni_sorting_indices = get_sorting_indices(V_nni,ordering)
- 
-    V_nni = V_nni[vnni_sorting_indices]
+    V_nni = V_nni[get_sorting_indices(V_nni,ordering)]
 
     occupancy = ismember_xyz(V_nni, V)
 
-    this_contexts_V,this_contexts_C,this_nbhd = siblings(
+    this_contexts_O,this_contexts_C,this_nbhd = siblings(
         V_nni,V,C,N,ordering,([1,0,0,0,0,0] if causal_half_space_only else [1,1,1,0,0,0]))
 
     V_d, child_idx = np.unique(np.floor(V_nni / 2), axis=0, return_inverse=True) # child_idx holds, in the order of V_nni, indices from V_d 
@@ -213,16 +208,25 @@ def pc_causal_context(V, N, M, ordering = 1, causal_half_space_only: bool = Fals
     V_d_C = pd.DataFrame({"values":list(C) , "parent_id": child_idx[occupancy]}).groupby("parent_id")["values"].apply(
         lambda x: np.mean(x,axis=0)).sort_index() if (C.size > 0) else np.array([[]])
 
-    prev_contexts_V,prev_contexts_C,prev_nbhd = siblings(V_d,V_d,V_d_C,M,ordering,[0,1,1,1,1,1])
+    prev_contexts_O,prev_contexts_C,prev_nbhd = siblings(V_d,V_d,V_d_C,M,ordering,[0,1,1,1,1,1])
 
-    prev_contexts_V = prev_contexts_V[child_idx, :]
+    prev_contexts_O = prev_contexts_O[child_idx, :]
     prev_contexts_C = prev_contexts_C[child_idx,:,:]
 
-    contexts = np.concatenate([this_contexts_V, prev_contexts_V],axis=1)
+    contexts_occupancy = np.concatenate([this_contexts_O, prev_contexts_O],axis=1)
 
-    contexts_colors = np.concatenate([this_contexts_C, prev_contexts_C],axis=1)
+    contexts_color = np.concatenate([this_contexts_C, prev_contexts_C],axis=1)
 
-    return V_nni,contexts,contexts_colors, occupancy, this_nbhd, prev_nbhd
+    if C.size > 0:
+        C_nni = np.zeros((V_nni.shape[0],C.shape[1]),dtype=np.uint8)
+        C_nni[occupancy] = C
+    else:
+        C_nni = np.array([[]])
+
+    if C.size > 0:
+        return V_nni, contexts_occupancy, occupancy, this_nbhd, prev_nbhd, C_nni, contexts_color
+    else:
+        return V_nni, contexts_occupancy, occupancy, this_nbhd, prev_nbhd
 
 
 def siblings(query_V,V,C,N,ordering,include):
@@ -244,7 +248,7 @@ def siblings(query_V,V,C,N,ordering,include):
             ith_neighbor = query_V + this_nbhd[i:i+1,:]
             ith_neighbor_occupancy = np.isin(mc.morton_code(ith_neighbor) ,V_hashes)
             past_neighbor_occupancies.append(np.expand_dims(ith_neighbor_occupancy,1))
-        this_contexts_V = np.concatenate(past_neighbor_occupancies,axis=1)
+        this_contexts_O = np.concatenate(past_neighbor_occupancies,axis=1)
 
         # # Faster but uses too much memory
         # neighs = ismember_xyz(
@@ -275,13 +279,13 @@ def siblings(query_V,V,C,N,ordering,include):
 
             past_nbhd_colors.append(np.expand_dims(ith_nbhd_C,0))
 
-        this_contexts_V = np.concatenate(past_nbhd_occupancies,axis=0)
+        this_contexts_O = np.concatenate(past_nbhd_occupancies,axis=0)
         this_contexts_C = np.concatenate(past_nbhd_colors,axis=0)
 
-    this_contexts_V = this_contexts_V[:,:N]
+    this_contexts_O = this_contexts_O[:,:N]
     this_contexts_C = this_contexts_C[:,:N,:]
     this_nbhd = this_nbhd[:N,:]
-    return this_contexts_V,this_contexts_C,this_nbhd
+    return this_contexts_O,this_contexts_C,this_nbhd
 
 
 def determine_best_partition(N_plus_M,causal_half_space_only):
