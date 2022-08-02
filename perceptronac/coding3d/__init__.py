@@ -135,6 +135,33 @@ def raster_nbhd(nbhd,ordering,include=[1,1,1,0,0,0]):
     return np.delete(nbhd, np.logical_not(mask), axis=0)
 
 
+def sort_V_C(V,C,ordering):
+    v_sorting_indices = get_sorting_indices(V,ordering)
+
+    V = V[v_sorting_indices]
+    if C.size > 0:
+        C = C[v_sorting_indices]
+    return V,C
+
+
+def interpolate_V(V,ordering):
+
+    V_d = np.unique(np.floor(V / 2), axis=0)
+    V_nni = upsample_geometry(V_d, 2)
+
+    V_nni = V_nni[get_sorting_indices(V_nni,ordering)]
+    return V_nni
+
+
+def interpolate_C(C,V_nni,occupancy):
+    if C.size > 0:
+        C_nni = np.zeros((V_nni.shape[0],C.shape[1]),dtype=np.uint8)
+        C_nni[occupancy] = C
+    else:
+        C_nni = np.array([[]])
+    return C_nni
+
+
 def pc_causal_context(V, N, M, ordering = 1, causal_half_space_only: bool = False, C = np.array([[]]) ):
     """
     Find causal contexts to help guess the occupancy of each voxel in V using
@@ -187,21 +214,34 @@ def pc_causal_context(V, N, M, ordering = 1, causal_half_space_only: bool = Fals
         m = f"""ordering must be 1,2 or 3"""
         raise ValueError(m)
 
-    v_sorting_indices = get_sorting_indices(V,ordering)
+    V,C = sort_V_C(V,C,ordering)
 
-    V = V[v_sorting_indices]
-    if C.size > 0:
-        C = C[v_sorting_indices]
-
-    V_d = np.unique(np.floor(V / 2), axis=0)
-    V_nni = upsample_geometry(V_d, 2)
-
-    V_nni = V_nni[get_sorting_indices(V_nni,ordering)]
+    V_nni = interpolate_V(V,ordering)
 
     occupancy = ismember_xyz(V_nni, V)
 
-    this_contexts_O,this_contexts_C,this_nbhd = siblings(
-        V_nni,V,C,N,ordering,([1,0,0,0,0,0] if causal_half_space_only else [1,1,1,0,0,0]))
+    this_contexts_O,this_contexts_C,this_nbhd = causal_siblings(V_nni,V,C,N,ordering,causal_half_space_only)
+
+    prev_contexts_O,prev_contexts_C,prev_nbhd = uncles(V_nni,C,occupancy,M,ordering)
+
+    contexts_occupancy = np.concatenate([this_contexts_O, prev_contexts_O],axis=1)
+
+    contexts_color = np.concatenate([this_contexts_C, prev_contexts_C],axis=1)
+
+    C_nni = interpolate_C(C,V_nni,occupancy)
+
+    if (C_nni.size > 0) and (contexts_color.size > 0):
+        return V_nni, contexts_occupancy, occupancy, this_nbhd, prev_nbhd, C_nni, contexts_color
+    else:
+        return V_nni, contexts_occupancy, occupancy, this_nbhd, prev_nbhd
+
+
+def causal_siblings(query_V,V,C,N,ordering,causal_half_space_only):
+    include = ([1,0,0,0,0,0] if causal_half_space_only else [1,1,1,0,0,0])
+    return siblings(query_V,V,C,N,ordering,include)
+
+
+def uncles(V_nni,C,occupancy,M,ordering):
 
     V_d, child_idx = np.unique(np.floor(V_nni / 2), axis=0, return_inverse=True) # child_idx holds, in the order of V_nni, indices from V_d 
     
@@ -213,20 +253,7 @@ def pc_causal_context(V, N, M, ordering = 1, causal_half_space_only: bool = Fals
     prev_contexts_O = prev_contexts_O[child_idx, :]
     prev_contexts_C = prev_contexts_C[child_idx,:,:]
 
-    contexts_occupancy = np.concatenate([this_contexts_O, prev_contexts_O],axis=1)
-
-    contexts_color = np.concatenate([this_contexts_C, prev_contexts_C],axis=1)
-
-    if C.size > 0:
-        C_nni = np.zeros((V_nni.shape[0],C.shape[1]),dtype=np.uint8)
-        C_nni[occupancy] = C
-    else:
-        C_nni = np.array([[]])
-
-    if C.size > 0:
-        return V_nni, contexts_occupancy, occupancy, this_nbhd, prev_nbhd, C_nni, contexts_color
-    else:
-        return V_nni, contexts_occupancy, occupancy, this_nbhd, prev_nbhd
+    return prev_contexts_O,prev_contexts_C,prev_nbhd
 
 
 def siblings(query_V,V,C,N,ordering,include):
