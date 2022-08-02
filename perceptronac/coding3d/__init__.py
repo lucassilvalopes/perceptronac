@@ -251,7 +251,8 @@ def uncles(V_nni,C,occupancy,M,ordering):
     prev_contexts_O,prev_contexts_C,prev_nbhd = siblings(V_d,V_d,V_d_C,M,ordering,[0,1,1,1,1,1])
 
     prev_contexts_O = prev_contexts_O[child_idx, :]
-    prev_contexts_C = prev_contexts_C[child_idx,:,:]
+    if prev_contexts_C.size > 0:
+        prev_contexts_C = prev_contexts_C[child_idx,:,:]
 
     return prev_contexts_O,prev_contexts_C,prev_nbhd
 
