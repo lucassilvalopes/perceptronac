@@ -303,7 +303,8 @@ def siblings(query_V,V,C,occupancy,N,ordering,include):
             ith_neighbor_C = - np.ones((query_V.shape[0],C.shape[1]))
             ith_neighbor_V_mask = np.isin(V_hashes,ith_neighbor_hashes)
             idx = np.arange(query_V.shape[0])
-            ith_neighbor_C[idx[occupancy][ith_neighbor_V_mask]] = C[ith_neighbor_V_mask]
+            direct_sort = get_sorting_indices(ith_neighbor,ordering)
+            ith_neighbor_C[idx[direct_sort][ith_neighbor_occupancy[direct_sort]]] = C[ith_neighbor_V_mask]
             past_neighbor_colors.append(np.expand_dims(ith_neighbor_C,1))
         
         this_contexts_O = np.concatenate(past_neighbor_occupancies,axis=1)

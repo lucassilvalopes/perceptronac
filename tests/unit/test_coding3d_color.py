@@ -72,6 +72,16 @@ class TestPcCausalContextRandomColoredPc(unittest.TestCase):
         in_V= set(map(str,supposed_to_not_exist.astype(int).tolist())).intersection( set(map(str,self.V.astype(int).tolist())) )
         self.assertEqual( len(in_V), 0 )
 
+
+    def test_colors_exist_if_and_only_if_points_are_occupied(self):
+        recovered_contexts_occupancy = np.logical_not( np.all(self.contexts_color == -1,axis=2) )
+        self.assertEqual(len(recovered_contexts_occupancy.shape),len(self.contexts.shape))
+        self.assertEqual(recovered_contexts_occupancy.shape[0],self.contexts.shape[0])
+        self.assertEqual(recovered_contexts_occupancy.shape[1],self.contexts.shape[1])
+        self.assertEqual( np.count_nonzero(recovered_contexts_occupancy) , np.count_nonzero(self.contexts) )
+        self.assertTrue(np.allclose(recovered_contexts_occupancy.astype(int),self.contexts.astype(int)))
+
+
     def test_colors_are_correct(self):
         all_points = np.transpose(np.expand_dims(self.V_nni,2) + np.expand_dims(self.this_nbhd.T,0), (0, 2, 1))
         point_color_combinations = np.concatenate([all_points,self.contexts_color[:,:self.N,:]],axis=2).reshape(-1,self.n_coordinates+self.n_channels)
