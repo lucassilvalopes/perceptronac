@@ -223,7 +223,7 @@ def pc_causal_context(V, N, M, ordering = 1, causal_half_space_only: bool = Fals
 
     occupancy = ismember_xyz(V_nni, V)
 
-    this_contexts_O,this_contexts_C,this_nbhd = causal_siblings(V_nni,V,C,N,ordering,causal_half_space_only)
+    this_contexts_O,this_contexts_C,this_nbhd = causal_siblings(V_nni,V,C,occupancy,N,ordering,causal_half_space_only)
 
     prev_contexts_O,prev_contexts_C,prev_nbhd = uncles(V_nni,C,occupancy,M,ordering)
 
@@ -239,9 +239,9 @@ def pc_causal_context(V, N, M, ordering = 1, causal_half_space_only: bool = Fals
         return V_nni, contexts_occupancy, occupancy, this_nbhd, prev_nbhd
 
 
-def causal_siblings(query_V,V,C,N,ordering,causal_half_space_only):
+def causal_siblings(query_V,V,C,occupancy,N,ordering,causal_half_space_only):
     include = ([1,0,0,0,0,0] if causal_half_space_only else [1,1,1,0,0,0])
-    return siblings(query_V,V,C,N,ordering,include)
+    return siblings(query_V,V,C,occupancy,N,ordering,include)
 
 
 def uncles(V_nni,C,occupancy,M,ordering):
@@ -251,7 +251,7 @@ def uncles(V_nni,C,occupancy,M,ordering):
     V_d_C = np.vstack(pd.DataFrame({"values":list(C) , "parent_id": child_idx[occupancy]}).groupby("parent_id")["values"].apply(
         lambda x: np.mean(x,axis=0)).sort_index().values) if (C.size > 0) else np.zeros( (V_d.shape[0],0) )
 
-    prev_contexts_O,prev_contexts_C,prev_nbhd = siblings(V_d,V_d,V_d_C,M,ordering,[0,1,1,1,1,1])
+    prev_contexts_O,prev_contexts_C,prev_nbhd = siblings(V_d,V_d,V_d_C,np.ones(V_d.shape[0],dtype=bool),M,ordering,[0,1,1,1,1,1])
 
     prev_contexts_O = prev_contexts_O[child_idx, :]
     prev_contexts_C = prev_contexts_C[child_idx,:,:]
@@ -259,7 +259,7 @@ def uncles(V_nni,C,occupancy,M,ordering):
     return prev_contexts_O,prev_contexts_C,prev_nbhd
 
 
-def siblings(query_V,V,C,N,ordering,include):
+def siblings(query_V,V,C,occupancy,N,ordering,include):
     
     current_level_r = 1
     while voxels_in_raster_neighborhood(current_level_r,include=include) < N:
@@ -291,26 +291,44 @@ def siblings(query_V,V,C,N,ordering,include):
 
     else:
 
+        past_neighbor_occupancies = []
         V_hashes = mc.morton_code(V)
-        past_nbhd_occupancies = []
-        past_nbhd_colors = []
-        for i in range(query_V.shape[0]):
-            ith_nbhd = (query_V[i:i+1,:] + this_nbhd)
-            ith_nbhd_hashes = mc.morton_code(ith_nbhd)
-            ith_nbhd_occupancy = np.isin(ith_nbhd_hashes,V_hashes)
-            past_nbhd_occupancies.append(np.expand_dims(ith_nbhd_occupancy,0))
+        past_neighbor_colors = []
+        for i in range(this_nbhd.shape[0]):
+            ith_neighbor = query_V + this_nbhd[i:i+1,:]
+            ith_neighbor_hashes = mc.morton_code(ith_neighbor)
+            ith_neighbor_occupancy = np.isin(ith_neighbor_hashes ,V_hashes)
+            past_neighbor_occupancies.append(np.expand_dims(ith_neighbor_occupancy,1))
 
-            ith_nbhd_C = - np.ones((this_nbhd.shape[0],C.shape[1]))
+            ith_neighbor_C = - np.ones((query_V.shape[0],C.shape[1]))
+            ith_neighbor_V_mask = np.isin(V_hashes,ith_neighbor_hashes)
+            idx = np.arange(query_V.shape[0])
+            ith_neighbor_C[idx[occupancy][ith_neighbor_V_mask]] = C[ith_neighbor_V_mask]
+            past_neighbor_colors.append(np.expand_dims(ith_neighbor_C,1))
+        
+        this_contexts_O = np.concatenate(past_neighbor_occupancies,axis=1)
+        this_contexts_C = np.concatenate(past_neighbor_colors,axis=1)
 
-            ith_nbhd_V_mask = np.isin(V_hashes,ith_nbhd_hashes)
-            distance_based_sorting=np.argsort(
-                np.linalg.norm(V[ith_nbhd_V_mask]-query_V[i:i+1,:],axis=1), kind='mergesort')
-            ith_nbhd_C[ith_nbhd_occupancy] = C[ith_nbhd_V_mask][distance_based_sorting,:]
+        # V_hashes = mc.morton_code(V)
+        # past_nbhd_occupancies = []
+        # past_nbhd_colors = []
+        # for i in range(query_V.shape[0]):
+        #     ith_nbhd = (query_V[i:i+1,:] + this_nbhd)
+        #     ith_nbhd_hashes = mc.morton_code(ith_nbhd)
+        #     ith_nbhd_occupancy = np.isin(ith_nbhd_hashes,V_hashes)
+        #     past_nbhd_occupancies.append(np.expand_dims(ith_nbhd_occupancy,0))
 
-            past_nbhd_colors.append(np.expand_dims(ith_nbhd_C,0))
+        #     ith_nbhd_C = - np.ones((this_nbhd.shape[0],C.shape[1]))
 
-        this_contexts_O = np.concatenate(past_nbhd_occupancies,axis=0)
-        this_contexts_C = np.concatenate(past_nbhd_colors,axis=0)
+        #     ith_nbhd_V_mask = np.isin(V_hashes,ith_nbhd_hashes)
+        #     distance_based_sorting=np.argsort(
+        #         np.linalg.norm(V[ith_nbhd_V_mask]-query_V[i:i+1,:],axis=1), kind='mergesort')
+        #     ith_nbhd_C[ith_nbhd_occupancy] = C[ith_nbhd_V_mask][distance_based_sorting,:]
+
+        #     past_nbhd_colors.append(np.expand_dims(ith_nbhd_C,0))
+
+        # this_contexts_O = np.concatenate(past_nbhd_occupancies,axis=0)
+        # this_contexts_C = np.concatenate(past_nbhd_colors,axis=0)
 
     this_contexts_O = this_contexts_O[:,:N]
     this_contexts_C = this_contexts_C[:,:N,:]
