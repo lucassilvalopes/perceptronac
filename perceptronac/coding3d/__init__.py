@@ -245,14 +245,13 @@ def uncles(V_nni,C,occupancy,M,ordering):
 
     V_d, child_idx = np.unique(np.floor(V_nni / 2), axis=0, return_inverse=True) # child_idx holds, in the order of V_nni, indices from V_d 
     
-    V_d_C = pd.DataFrame({"values":list(C) , "parent_id": child_idx[occupancy]}).groupby("parent_id")["values"].apply(
-        lambda x: np.mean(x,axis=0)).sort_index() if (C.size > 0) else np.array([[]])
+    V_d_C = np.vstack(pd.DataFrame({"values":list(C) , "parent_id": child_idx[occupancy]}).groupby("parent_id")["values"].apply(
+        lambda x: np.mean(x,axis=0)).sort_index().values) if (C.size > 0) else np.array([[]])
 
     prev_contexts_O,prev_contexts_C,prev_nbhd = siblings(V_d,V_d,V_d_C,M,ordering,[0,1,1,1,1,1])
 
     prev_contexts_O = prev_contexts_O[child_idx, :]
-    if prev_contexts_C.size > 0:
-        prev_contexts_C = prev_contexts_C[child_idx,:,:]
+    prev_contexts_C = prev_contexts_C[child_idx,:,:]
 
     return prev_contexts_O,prev_contexts_C,prev_nbhd
 
@@ -296,7 +295,7 @@ def siblings(query_V,V,C,N,ordering,include):
             ith_nbhd = (query_V[i:i+1,:] + this_nbhd)
             ith_nbhd_hashes = mc.morton_code(ith_nbhd)
             ith_nbhd_occupancy = np.isin(ith_nbhd_hashes,V_hashes)
-            past_nbhd_occupancies.append(np.expand_dims(0,ith_nbhd_occupancy))
+            past_nbhd_occupancies.append(np.expand_dims(ith_nbhd_occupancy,0))
 
             ith_nbhd_C = - np.ones((this_nbhd.shape[0],C.shape[1]))
 

@@ -16,13 +16,13 @@ if __name__ == "__main__":
         "validation_set": [
             os.path.join('/home/lucas/Documents/data/SPL2020V/pages',f) for f in sorted(os.listdir('/home/lucas/Documents/data/SPL2020V/pages'))[:5]
         ],
-        "epochs": 1,
+        "epochs": 100,
         "learning_rate": 0.0001,
         "batch_size": 1024,
         "num_workers":4,
         "device":"cuda:0", #"cpu"
-        "parent_id": ["1659198587","1659296384"],
-        "N": 32, # 10,
+        "parent_id": "",
+        "N": 4, # 10,
         "phases": ['train','valid'], # ['train', 'valid'],
         "xscale": 'log',
         "reduction": 'min', # min, last

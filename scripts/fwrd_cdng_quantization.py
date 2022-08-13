@@ -19,11 +19,11 @@ if __name__ == "__main__":
         ],
         "epochs": 1,
         "learning_rate": 0.0001,
-        "batch_size": 1024,
+        "batch_size": 8192,
         "num_workers":4,
         "device":"cuda:0", #"cpu"
-        "parent_id": "1659355125",
-        "N": 32,
+        "parent_id": "1659524399",
+        "N": 4,
         "phases": ['valid'], # ['train', 'valid'],
         "xscale": "log", # 'linear',
         "reduction": 'min', # min, last
