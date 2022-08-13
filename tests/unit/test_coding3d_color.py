@@ -114,7 +114,7 @@ class TestPcCausalContextHandcraftedPc(unittest.TestCase):
             [255,255,255]
         ])
         cls.ordering = 1
-        cls.N = 14
+        cls.N = 13
         cls.M = 0
         cls.V,cls.C = c3d.sort_V_C(cls.V,cls.C,ordering=cls.ordering)
         cls.V_nni,cls.contexts,cls.occupancy,cls.this_nbhd,cls.prev_nbhd,cls.C_nni,cls.contexts_color=\
@@ -134,5 +134,29 @@ class TestPcCausalContextHandcraftedPc(unittest.TestCase):
         ]) 
 
         self.assertTrue(np.allclose(expected_V_nni,self.V_nni))
+
+        expected_occupancy = np.array([True,False,False,False,True,False,True,True])
+
+        self.assertTrue(np.allclose(expected_occupancy,self.occupancy))
+
+        expected_this_nbhd = np.array([ # sort first in causal raster XYZ order, then by increasing distance
+            [-1,0,0],
+            [0,-1,0],
+            [0,0,-1],
+            [-1,-1,0],
+            [-1,0,-1],
+            [-1,0,1],
+            [-1,1,0],
+            [0,-1,-1],
+            [0,-1,1],
+            [-1,-1,-1],
+            [-1,-1,1],
+            [-1,1,-1],
+            [-1,1,1],
+        ])  
+
+
+        self.assertTrue(len( set(map(str,expected_this_nbhd.astype(int).tolist())) - set(map(str,self.this_nbhd.astype(int).tolist())) ) == 0)
+        assert np.allclose(expected_this_nbhd,self.this_nbhd) , f"{expected_this_nbhd} {self.this_nbhd}"
 
 
