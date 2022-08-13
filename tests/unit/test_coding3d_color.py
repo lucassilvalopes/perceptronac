@@ -90,7 +90,49 @@ class TestPcCausalContextRandomColoredPc(unittest.TestCase):
         not_in_V= set(map(str,point_color_combinations.astype(int).tolist())) - set(map(str,true_point_color_combinations.astype(int).tolist()))
         assert len(not_in_V) == 0, f"{point_color_combinations[:10]} {true_point_color_combinations[:10]}"
 
-# class TestPcCausalContextHandcraftedPc(unittest.TestCase):
 
-#     def test_handcrafted_pc():
+
+class TestPcCausalContextHandcraftedPc(unittest.TestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.n_coordinates = 3
+        cls.n_channels = 3
+        cls.n_points = 4
+        cp = [1,1,1] # center point
+        cls.V = np.array([
+            [0,0,0], # most distant
+            [1,0,0], # medium distance
+            [1,1,0], # closest
+            [1,1,1] # center point
+        ])
+        cls.C = np.array([
+            [255,0,0],
+            [0,255,0],
+            [0,0,255],
+            [255,255,255]
+        ])
+        cls.ordering = 1
+        cls.N = 14
+        cls.M = 0
+        cls.V,cls.C = c3d.sort_V_C(cls.V,cls.C,ordering=cls.ordering)
+        cls.V_nni,cls.contexts,cls.occupancy,cls.this_nbhd,cls.prev_nbhd,cls.C_nni,cls.contexts_color=\
+            c3d.pc_causal_context(cls.V, cls.N, cls.M,ordering=cls.ordering,C=cls.C)
+
+    def test_handcrafted_pc(self):
+
+        expected_V_nni = np.array([
+            [0,0,0],
+            [0,0,1],
+            [0,1,0],
+            [0,1,1],
+            [1,0,0],
+            [1,0,1],
+            [1,1,0],
+            [1,1,1],
+        ]) 
+
+        self.assertTrue(np.allclose(expected_V_nni,self.V_nni))
+
 
