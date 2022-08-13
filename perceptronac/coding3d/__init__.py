@@ -158,11 +158,11 @@ def interpolate_C(C,V_nni,occupancy):
         C_nni = np.zeros((V_nni.shape[0],C.shape[1]),dtype=np.uint8)
         C_nni[occupancy] = C
     else:
-        C_nni = np.array([[]])
+        C_nni = np.zeros((V_nni.shape[0],0))
     return C_nni
 
 
-def pc_causal_context(V, N, M, ordering = 1, causal_half_space_only: bool = False, C = np.array([[]]) ):
+def pc_causal_context(V, N, M, ordering = 1, causal_half_space_only: bool = False, C = None ):
     """
     Find causal contexts to help guess the occupancy of each voxel in V using
     its own causal neighbors in the current level and its parent neighborhood.
@@ -214,6 +214,9 @@ def pc_causal_context(V, N, M, ordering = 1, causal_half_space_only: bool = Fals
         m = f"""ordering must be 1,2 or 3"""
         raise ValueError(m)
 
+    if C is None:
+        C = np.zeros((V.shape[0],0))
+
     V,C = sort_V_C(V,C,ordering)
 
     V_nni = interpolate_V(V,ordering)
@@ -246,7 +249,7 @@ def uncles(V_nni,C,occupancy,M,ordering):
     V_d, child_idx = np.unique(np.floor(V_nni / 2), axis=0, return_inverse=True) # child_idx holds, in the order of V_nni, indices from V_d 
     
     V_d_C = np.vstack(pd.DataFrame({"values":list(C) , "parent_id": child_idx[occupancy]}).groupby("parent_id")["values"].apply(
-        lambda x: np.mean(x,axis=0)).sort_index().values) if (C.size > 0) else np.array([[]])
+        lambda x: np.mean(x,axis=0)).sort_index().values) if (C.size > 0) else np.zeros( (V_d.shape[0],0) )
 
     prev_contexts_O,prev_contexts_C,prev_nbhd = siblings(V_d,V_d,V_d_C,M,ordering,[0,1,1,1,1,1])
 
@@ -284,7 +287,7 @@ def siblings(query_V,V,C,N,ordering,include):
 
         # neighs = neighs.reshape(query_V.shape[0], nbhd.shape[0])
 
-        this_contexts_C = np.array([[[]]])
+        this_contexts_C = np.zeros( (query_V.shape[0],0,0) )
 
     else:
 
