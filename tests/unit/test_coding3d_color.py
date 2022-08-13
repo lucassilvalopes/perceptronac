@@ -60,17 +60,25 @@ class TestPcCausalContextRandomColoredPc(unittest.TestCase):
 
 
     def test_occupied_points_really_exist(self):
-        all_points = np.transpose(np.expand_dims(self.V_nni,2) + np.expand_dims(self.this_nbhd.T,0), (0, 2, 1)).reshape(-1,3)
+        all_points = np.transpose(np.expand_dims(self.V_nni,2) + np.expand_dims(self.this_nbhd.T,0), (0, 2, 1)).reshape(-1,self.n_coordinates)
         supposed_to_exist = np.unique(all_points[self.contexts[:,:self.N].reshape(-1)],axis=0)
         not_in_V= set(map(str,supposed_to_exist.astype(int).tolist())) - set(map(str,self.V.astype(int).tolist()))
         self.assertEqual( len(not_in_V), 0 )
 
 
     def test_not_occupied_points_really_do_not_exist(self):
-        all_points = np.transpose(np.expand_dims(self.V_nni,2) + np.expand_dims(self.this_nbhd.T,0), (0, 2, 1)).reshape(-1,3)
+        all_points = np.transpose(np.expand_dims(self.V_nni,2) + np.expand_dims(self.this_nbhd.T,0), (0, 2, 1)).reshape(-1,self.n_coordinates)
         supposed_to_not_exist = np.unique(all_points[np.logical_not(self.contexts[:,:self.N].reshape(-1))],axis=0)
         in_V= set(map(str,supposed_to_not_exist.astype(int).tolist())).intersection( set(map(str,self.V.astype(int).tolist())) )
         self.assertEqual( len(in_V), 0 )
+
+    def test_colors_are_correct(self):
+        all_points = np.transpose(np.expand_dims(self.V_nni,2) + np.expand_dims(self.this_nbhd.T,0), (0, 2, 1))
+        point_color_combinations = np.concatenate([all_points,self.contexts_color[:,:self.N,:]],axis=2).reshape(-1,self.n_coordinates+self.n_channels)
+        point_color_combinations = np.unique(point_color_combinations[self.contexts[:,:self.N].reshape(-1)],axis=0)
+        true_point_color_combinations = np.concatenate([self.V,self.C],axis=1)
+        not_in_V= set(map(str,point_color_combinations.astype(int).tolist())) - set(map(str,true_point_color_combinations.astype(int).tolist()))
+        assert len(not_in_V) == 0, f"{point_color_combinations[:10]} {true_point_color_combinations[:10]}"
 
 # class TestPcCausalContextHandcraftedPc(unittest.TestCase):
 
