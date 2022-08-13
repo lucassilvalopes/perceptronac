@@ -6,7 +6,7 @@ import abc
 import unittest
 
 
-class TestPcCausalContextColor(unittest.TestCase):
+class TestPcCausalContextRandomColoredPc(unittest.TestCase):
     
 
     # def setUp(self):
@@ -57,4 +57,22 @@ class TestPcCausalContextColor(unittest.TestCase):
     def test_reconstruct_C(self):
 
         self.assertTrue(np.allclose(self.C,self.C_nni[self.occupancy] ) )
+
+
+    def test_occupied_points_really_exist(self):
+        all_points = np.transpose(np.expand_dims(self.V_nni,2) + np.expand_dims(self.this_nbhd.T,0), (0, 2, 1)).reshape(-1,3)
+        supposed_to_exist = np.unique(all_points[self.contexts[:,:self.N].reshape(-1)],axis=0)
+        not_in_V= set(map(str,supposed_to_exist.astype(int).tolist())) - set(map(str,self.V.astype(int).tolist()))
+        self.assertEqual( len(not_in_V), 0 )
+
+
+    def test_not_occupied_points_really_do_not_exist(self):
+        all_points = np.transpose(np.expand_dims(self.V_nni,2) + np.expand_dims(self.this_nbhd.T,0), (0, 2, 1)).reshape(-1,3)
+        supposed_to_not_exist = np.unique(all_points[np.logical_not(self.contexts[:,:self.N].reshape(-1))],axis=0)
+        in_V= set(map(str,supposed_to_not_exist.astype(int).tolist())).intersection( set(map(str,self.V.astype(int).tolist())) )
+        self.assertEqual( len(in_V), 0 )
+
+# class TestPcCausalContextHandcraftedPc(unittest.TestCase):
+
+#     def test_handcrafted_pc():
 
