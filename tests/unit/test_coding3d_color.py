@@ -100,7 +100,7 @@ class TestPcCausalContextHandcraftedPc(unittest.TestCase):
         cls.n_coordinates = 3
         cls.n_channels = 3
         cls.n_points = 4
-        cp = [1,1,1] # center point
+
         cls.V = np.array([
             [0,0,0], # most distant
             [1,0,0], # medium distance
@@ -140,6 +140,25 @@ class TestPcCausalContextHandcraftedPc(unittest.TestCase):
         expected_occupancy = np.array([True,False,False,False,True,False,True,True])
 
         self.assertTrue(np.allclose(expected_occupancy,self.occupancy))
+
+
+    def test_C_nni(self):
+
+        expected_occupancy = np.array([True,False,False,False,True,False,True,True])
+
+        expected_C_nni = np.array([
+            [255,0,0],
+            [-1,-1,-1],
+            [-1,-1,-1],
+            [-1,-1,-1],
+            [0,255,0],
+            [-1,-1,-1],
+            [0,0,255],
+            [255,255,255],
+        ]) 
+
+        self.assertTrue(np.allclose(expected_C_nni[expected_occupancy],self.C_nni[self.occupancy]))
+
 
     def test_this_nbhd(self):
 
