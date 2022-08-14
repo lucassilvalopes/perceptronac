@@ -251,10 +251,15 @@ def uncles(V_nni,C,occupancy,M,ordering):
     V_d_C = np.vstack(pd.DataFrame({"values":list(C) , "parent_id": child_idx[occupancy]}).groupby("parent_id")["values"].apply(
         lambda x: np.mean(x,axis=0)).sort_index().values) if (C.size > 0) else np.zeros( (V_d.shape[0],0) )
 
-    prev_contexts_O,prev_contexts_C,prev_nbhd = siblings(V_d,V_d,V_d_C,np.ones(V_d.shape[0],dtype=bool),M,ordering,[0,1,1,1,1,1])
+    sort_V_d = get_sorting_indices(V_d,ordering)
+    prev_contexts_O,prev_contexts_C,prev_nbhd = siblings(V_d[sort_V_d],V_d[sort_V_d],V_d_C[sort_V_d],np.ones(V_d.shape[0],dtype=bool),M,ordering,[0,1,1,1,1,1])
 
-    prev_contexts_O = prev_contexts_O[child_idx, :]
-    prev_contexts_C = prev_contexts_C[child_idx,:,:]
+    # I need a mapping from original V_d index to sorted V_d index
+    # An array sorted as the original V_d with destinations as values
+    # https://stackoverflow.com/questions/2483696/undo-or-reverse-argsort-python
+    mapping = np.argsort(sort_V_d)
+    prev_contexts_O = prev_contexts_O[mapping[child_idx], :]
+    prev_contexts_C = prev_contexts_C[mapping[child_idx],:,:]
 
     return prev_contexts_O,prev_contexts_C,prev_nbhd
 

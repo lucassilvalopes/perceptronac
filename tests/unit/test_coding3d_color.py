@@ -26,7 +26,7 @@ class TestPcCausalContextRandomColoredPc(unittest.TestCase):
         cls.C = np.random.randint(0,2**cls.color_bits,size = (cls.n_points,cls.n_channels))
         cls.ordering = 1
         cls.N = 14
-        cls.M = 0
+        cls.M = 10
         cls.V,cls.C = c3d.sort_V_C(cls.V,cls.C,ordering=cls.ordering)
         cls.V_nni,cls.contexts,cls.occupancy,cls.this_nbhd,cls.prev_nbhd,cls.C_nni,cls.contexts_color=\
             c3d.pc_causal_context(cls.V, cls.N, cls.M,ordering=cls.ordering,C=cls.C)
@@ -90,9 +90,22 @@ class TestPcCausalContextRandomColoredPc(unittest.TestCase):
         not_in_V= set(map(str,point_color_combinations.astype(int).tolist())) - set(map(str,true_point_color_combinations.astype(int).tolist()))
         assert len(not_in_V) == 0, f"{point_color_combinations[:10]} {true_point_color_combinations[:10]}"
 
+    def test_occupied_uncles_really_exist(self):
+        V_d=np.floor(self.V_nni / 2)
+        all_uncles = np.transpose(np.expand_dims(V_d,2) + np.expand_dims(self.prev_nbhd.T,0), (0, 2, 1)).reshape(-1,self.n_coordinates)
+        supposed_to_exist = np.unique(all_uncles[self.contexts[:,-self.M:].reshape(-1)],axis=0)
+        not_in_V= set(map(str,supposed_to_exist.astype(int).tolist())) - set(map(str,np.floor(self.V / 2).astype(int).tolist()))
+        self.assertEqual( len(not_in_V), 0 )
+
+    def test_not_occupied_uncles_really_do_not_exist(self):
+        V_d=np.floor(self.V_nni / 2)
+        all_uncles = np.transpose(np.expand_dims(V_d,2) + np.expand_dims(self.prev_nbhd.T,0), (0, 2, 1)).reshape(-1,self.n_coordinates)
+        supposed_to_not_exist = np.unique(all_uncles[np.logical_not(self.contexts[:,-self.M:].reshape(-1))],axis=0)
+        in_V= set(map(str,supposed_to_not_exist.astype(int).tolist())).intersection( set(map(str,np.floor(self.V / 2).astype(int).tolist())) )
+        self.assertEqual( len(in_V), 0 )
 
 
-class TestPcCausalContextHandcraftedPc(unittest.TestCase):
+class TestPcCausalContextHandcraftedColoredPc(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
