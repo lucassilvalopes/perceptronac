@@ -115,7 +115,7 @@ class TestPcCausalContextHandcraftedPc(unittest.TestCase):
         ])
         cls.ordering = 1
         cls.N = 13
-        cls.M = 0
+        cls.M = 1
         cls.V,cls.C = c3d.sort_V_C(cls.V,cls.C,ordering=cls.ordering)
         cls.V_nni,cls.contexts,cls.occupancy,cls.this_nbhd,cls.prev_nbhd,cls.C_nni,cls.contexts_color=\
             c3d.pc_causal_context(cls.V, cls.N, cls.M,ordering=cls.ordering,C=cls.C)
@@ -178,13 +178,22 @@ class TestPcCausalContextHandcraftedPc(unittest.TestCase):
             [-1,1,1],
         ])  
 
-
+        self.assertEqual(expected_this_nbhd.shape[0],self.this_nbhd.shape[0])
         self.assertTrue(len( set(map(str,expected_this_nbhd.astype(int).tolist())) - set(map(str,self.this_nbhd.astype(int).tolist())) ) == 0)
         assert np.allclose(expected_this_nbhd,self.this_nbhd) , f"{expected_this_nbhd} {self.this_nbhd}"
 
+    def test_prev_nbhd(self):
+
+        expected_prev_nbhd = np.array([
+            [0,0,0],
+        ])
+        self.assertEqual(expected_prev_nbhd.shape[0],self.prev_nbhd.shape[0])
+        self.assertTrue(len( set(map(str,expected_prev_nbhd.astype(int).tolist())) - set(map(str,self.prev_nbhd.astype(int).tolist())) ) == 0)
+        assert np.allclose(expected_prev_nbhd,self.prev_nbhd) , f"{expected_prev_nbhd} {self.prev_nbhd}"
+
     def test_contexts(self):
 
-        expected_contexts = np.array([
+        expected_contexts_a = np.array([
             [False,False,False,False,False,False,False,False,False,False,False,False,False],
             [False,False,True,False,False,False,False,False,False,False,False,False,False],
             [False,True,False,False,False,False,False,False,False,False,False,False,False],
@@ -195,11 +204,24 @@ class TestPcCausalContextHandcraftedPc(unittest.TestCase):
             [False,False,True,False,False,False,False,True,False,True,False,False,False]
         ])
 
+        expected_contexts_b = np.array([
+            [True],
+            [True],
+            [True],
+            [True],
+            [True],
+            [True],
+            [True],
+            [True]
+        ])
+
+        expected_contexts = np.concatenate([expected_contexts_a,expected_contexts_b],axis=1)
+
         self.assertTrue(np.allclose(expected_contexts,self.contexts))
 
     def test_contexts_color(self):
 
-        expected_contexts_color = np.array([
+        expected_contexts_color_a = np.array([
             [[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1]],
             [[-1,-1,-1],[-1,-1,-1],[255,0,0],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1]],
             [[-1,-1,-1],[255,0,0],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1]],
@@ -209,5 +231,18 @@ class TestPcCausalContextHandcraftedPc(unittest.TestCase):
             [[-1,-1,-1],[0,255,0],[-1,-1,-1],[255,0,0],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1]],
             [[-1,-1,-1],[-1,-1,-1],[0,0,255],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[0,255,0],[-1,-1,-1],[255,0,0],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1]],
         ])
+
+        expected_contexts_color_b = np.array([
+            [[127.5,127.5,127.5]],
+            [[127.5,127.5,127.5]],
+            [[127.5,127.5,127.5]],
+            [[127.5,127.5,127.5]],
+            [[127.5,127.5,127.5]],
+            [[127.5,127.5,127.5]],
+            [[127.5,127.5,127.5]],
+            [[127.5,127.5,127.5]]
+        ])
+
+        expected_contexts_color = np.concatenate([expected_contexts_color_a,expected_contexts_color_b],axis=1)
 
         self.assertTrue(np.allclose(expected_contexts_color,self.contexts_color))
