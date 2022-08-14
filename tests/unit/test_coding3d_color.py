@@ -120,7 +120,7 @@ class TestPcCausalContextHandcraftedPc(unittest.TestCase):
         cls.V_nni,cls.contexts,cls.occupancy,cls.this_nbhd,cls.prev_nbhd,cls.C_nni,cls.contexts_color=\
             c3d.pc_causal_context(cls.V, cls.N, cls.M,ordering=cls.ordering,C=cls.C)
 
-    def test_handcrafted_pc(self):
+    def test_V_nni(self):
 
         expected_V_nni = np.array([
             [0,0,0],
@@ -135,9 +135,13 @@ class TestPcCausalContextHandcraftedPc(unittest.TestCase):
 
         self.assertTrue(np.allclose(expected_V_nni,self.V_nni))
 
+    def test_occupancy(self):
+
         expected_occupancy = np.array([True,False,False,False,True,False,True,True])
 
         self.assertTrue(np.allclose(expected_occupancy,self.occupancy))
+
+    def test_this_nbhd(self):
 
         expected_this_nbhd = np.array([ # sort first in causal raster XYZ order, then by increasing distance
             [-1,0,0],
@@ -159,4 +163,32 @@ class TestPcCausalContextHandcraftedPc(unittest.TestCase):
         self.assertTrue(len( set(map(str,expected_this_nbhd.astype(int).tolist())) - set(map(str,self.this_nbhd.astype(int).tolist())) ) == 0)
         assert np.allclose(expected_this_nbhd,self.this_nbhd) , f"{expected_this_nbhd} {self.this_nbhd}"
 
+    def test_contexts(self):
 
+        expected_contexts = np.array([
+            [False,False,False,False,False,False,False,False,False,False,False,False,False],
+            [False,False,True,False,False,False,False,False,False,False,False,False,False],
+            [False,True,False,False,False,False,False,False,False,False,False,False,False],
+            [False,False,False,False,False,False,False,True,False,False,False,False,False],
+            [True,False,False,False,False,False,False,False,False,False,False,False,False],
+            [False,False,True,False,True,False,False,False,False,False,False,False,False],
+            [False,True,False,True,False,False,False,False,False,False,False,False,False],
+            [False,False,True,False,False,False,False,True,False,True,False,False,False]
+        ])
+
+        self.assertTrue(np.allclose(expected_contexts,self.contexts))
+
+    def test_contexts_color(self):
+
+        expected_contexts_color = np.array([
+            [[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1]],
+            [[-1,-1,-1],[-1,-1,-1],[255,0,0],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1]],
+            [[-1,-1,-1],[255,0,0],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1]],
+            [[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[255,0,0],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1]],
+            [[255,0,0],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1]],
+            [[-1,-1,-1],[-1,-1,-1],[0,255,0],[-1,-1,-1],[255,0,0],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1]],
+            [[-1,-1,-1],[0,255,0],[-1,-1,-1],[255,0,0],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1]],
+            [[-1,-1,-1],[-1,-1,-1],[0,0,255],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[0,255,0],[-1,-1,-1],[255,0,0],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1]],
+        ])
+
+        self.assertTrue(np.allclose(expected_contexts_color,self.contexts_color))
