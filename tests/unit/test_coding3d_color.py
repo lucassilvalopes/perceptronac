@@ -4,6 +4,7 @@ from perceptronac.coding3d import mortoncode as mc
 import numpy as np
 import abc
 import unittest
+import pandas as pd
 
 
 class TestPcCausalContextRandomColoredPc(unittest.TestCase):
@@ -112,6 +113,20 @@ class TestPcCausalContextRandomColoredPc(unittest.TestCase):
         supposed_to_not_exist = np.unique(all_uncles[np.logical_not(self.contexts[:,-self.M:].reshape(-1))],axis=0)
         in_V= set(map(str,supposed_to_not_exist.astype(int).tolist())).intersection( set(map(str,np.floor(self.V / 2).astype(int).tolist())) )
         self.assertEqual( len(in_V), 0 )
+
+    def test_uncle_colors_are_correct(self):
+        all_uncles = np.transpose(np.expand_dims(np.floor(self.V_nni / 2),2) + np.expand_dims(self.prev_nbhd.T,0), (0, 2, 1))
+        point_color_combinations = np.concatenate([all_uncles,self.contexts_color[:,-self.M:,:]],axis=2).reshape(-1,self.n_coordinates+self.n_channels)
+        point_color_combinations = np.unique(point_color_combinations[self.contexts[:,-self.M:].reshape(-1)],axis=0)
+        group=np.unique(np.floor(self.V / 2), axis=0, return_inverse=True)[1]
+        true_point_color_combinations =[]
+        for i in range(np.max(group)+1):
+            mask = (group == i)
+            true_point_color_combinations.append( np.concatenate([np.floor(self.V[mask] / 2) , np.tile( np.mean(self.C[mask],axis=0), (np.count_nonzero(mask),1)) ],axis=1) )
+        true_point_color_combinations = np.concatenate(true_point_color_combinations,axis=0)
+        not_in_V= set(map(str,point_color_combinations.astype(int).tolist())) - set(map(str,true_point_color_combinations.astype(int).tolist()))
+        assert len(not_in_V) == 0, f"{point_color_combinations[:10]} {true_point_color_combinations[:10]}"
+
 
 
 class TestPcCausalContextHandcraftedColoredPc(unittest.TestCase):
