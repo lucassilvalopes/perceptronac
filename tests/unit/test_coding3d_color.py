@@ -102,20 +102,22 @@ class TestPcCausalContextHandcraftedPc(unittest.TestCase):
         cls.n_points = 4
 
         cls.V = np.array([
-            [0,0,0], # most distant
-            [1,0,0], # medium distance
-            [1,1,0], # closest
-            [1,1,1] # center point
+            [2,0,0], # distant
+            [3,0,0], # medium distance
+            [3,1,0], # closest
+            [3,1,1], # center point
+            [0,1,1] # far behind point
         ])
         cls.C = np.array([
             [255,0,0],
             [0,255,0],
             [0,0,255],
-            [255,255,255]
+            [255,255,255],
+            [127,127,127]
         ])
         cls.ordering = 1
         cls.N = 13
-        cls.M = 1
+        cls.M = 10
         cls.V,cls.C = c3d.sort_V_C(cls.V,cls.C,ordering=cls.ordering)
         cls.V_nni,cls.contexts,cls.occupancy,cls.this_nbhd,cls.prev_nbhd,cls.C_nni,cls.contexts_color=\
             c3d.pc_causal_context(cls.V, cls.N, cls.M,ordering=cls.ordering,C=cls.C)
@@ -131,22 +133,38 @@ class TestPcCausalContextHandcraftedPc(unittest.TestCase):
             [1,0,1],
             [1,1,0],
             [1,1,1],
+            [2,0,0],
+            [2,0,1],
+            [2,1,0],
+            [2,1,1],
+            [3,0,0],
+            [3,0,1],
+            [3,1,0],
+            [3,1,1],
         ]) 
 
         self.assertTrue(np.allclose(expected_V_nni,self.V_nni))
 
     def test_occupancy(self):
 
-        expected_occupancy = np.array([True,False,False,False,True,False,True,True])
+        expected_occupancy = np.array([False,False,False,True,False,False,False,False,True,False,False,False,True,False,True,True])
 
         self.assertTrue(np.allclose(expected_occupancy,self.occupancy))
 
 
     def test_C_nni(self):
 
-        expected_occupancy = np.array([True,False,False,False,True,False,True,True])
+        expected_occupancy = np.array([False,False,False,True,False,False,False,False,True,False,False,False,True,False,True,True])
 
         expected_C_nni = np.array([
+            [-1,-1,-1],
+            [-1,-1,-1],
+            [-1,-1,-1],
+            [127,127,127],
+            [-1,-1,-1],
+            [-1,-1,-1],
+            [-1,-1,-1],
+            [-1,-1,-1],
             [255,0,0],
             [-1,-1,-1],
             [-1,-1,-1],
@@ -186,6 +204,15 @@ class TestPcCausalContextHandcraftedPc(unittest.TestCase):
 
         expected_prev_nbhd = np.array([
             [0,0,0],
+            [0,-1,0],
+            [0,0,-1],
+            [0,0,1], 
+            [0,1,0],
+            [1,0,0],
+            [0,-1,-1],
+            [0,-1,1],
+            [0,1,-1],
+            [0,1,1],
         ])
         self.assertEqual(expected_prev_nbhd.shape[0],self.prev_nbhd.shape[0])
         self.assertTrue(len( set(map(str,expected_prev_nbhd.astype(int).tolist())) - set(map(str,self.prev_nbhd.astype(int).tolist())) ) == 0)
@@ -194,6 +221,15 @@ class TestPcCausalContextHandcraftedPc(unittest.TestCase):
     def test_contexts(self):
 
         expected_contexts_a = np.array([
+            [False,False,False,False,False,False,False,False,False,False,False,False,False],
+            [False,False,False,False,False,False,False,False,False,False,False,False,False],
+            [False,False,False,False,False,False,False,False,False,False,False,False,False],
+            [False,False,False,False,False,False,False,False,False,False,False,False,False],
+            [False,False,False,False,False,False,False,False,False,False,False,False,True],
+            [False,False,False,False,False,False,True,False,False,False,False,False,False],
+            [False,False,False,False,False,True,False,False,False,False,False,False,False],
+            [True,False,False,False,False,False,False,False,False,False,False,False,False],
+
             [False,False,False,False,False,False,False,False,False,False,False,False,False],
             [False,False,True,False,False,False,False,False,False,False,False,False,False],
             [False,True,False,False,False,False,False,False,False,False,False,False,False],
@@ -205,14 +241,23 @@ class TestPcCausalContextHandcraftedPc(unittest.TestCase):
         ])
 
         expected_contexts_b = np.array([
-            [True],
-            [True],
-            [True],
-            [True],
-            [True],
-            [True],
-            [True],
-            [True]
+            [True,False,False,False,False,True,False,False,False,False],
+            [True,False,False,False,False,True,False,False,False,False],
+            [True,False,False,False,False,True,False,False,False,False],
+            [True,False,False,False,False,True,False,False,False,False],
+            [True,False,False,False,False,True,False,False,False,False],
+            [True,False,False,False,False,True,False,False,False,False],
+            [True,False,False,False,False,True,False,False,False,False],
+            [True,False,False,False,False,True,False,False,False,False],
+
+            [True,False,False,False,False,False,False,False,False,False],
+            [True,False,False,False,False,False,False,False,False,False],
+            [True,False,False,False,False,False,False,False,False,False],
+            [True,False,False,False,False,False,False,False,False,False],
+            [True,False,False,False,False,False,False,False,False,False],
+            [True,False,False,False,False,False,False,False,False,False],
+            [True,False,False,False,False,False,False,False,False,False],
+            [True,False,False,False,False,False,False,False,False,False],
         ])
 
         expected_contexts = np.concatenate([expected_contexts_a,expected_contexts_b],axis=1)
@@ -222,6 +267,15 @@ class TestPcCausalContextHandcraftedPc(unittest.TestCase):
     def test_contexts_color(self):
 
         expected_contexts_color_a = np.array([
+            [[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1]],
+            [[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1]],
+            [[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1]],
+            [[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1]],
+            [[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[127,127,127]],
+            [[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[127,127,127],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1]],
+            [[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[127,127,127],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1]],
+            [[127,127,127],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1]],
+
             [[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1]],
             [[-1,-1,-1],[-1,-1,-1],[255,0,0],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1]],
             [[-1,-1,-1],[255,0,0],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1]],
@@ -233,14 +287,23 @@ class TestPcCausalContextHandcraftedPc(unittest.TestCase):
         ])
 
         expected_contexts_color_b = np.array([
-            [[127.5,127.5,127.5]],
-            [[127.5,127.5,127.5]],
-            [[127.5,127.5,127.5]],
-            [[127.5,127.5,127.5]],
-            [[127.5,127.5,127.5]],
-            [[127.5,127.5,127.5]],
-            [[127.5,127.5,127.5]],
-            [[127.5,127.5,127.5]]
+            [[127,127,127],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[127.5,127.5,127.5],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1]],
+            [[127,127,127],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[127.5,127.5,127.5],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1]],
+            [[127,127,127],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[127.5,127.5,127.5],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1]],
+            [[127,127,127],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[127.5,127.5,127.5],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1]],
+            [[127,127,127],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[127.5,127.5,127.5],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1]],
+            [[127,127,127],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[127.5,127.5,127.5],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1]],
+            [[127,127,127],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[127.5,127.5,127.5],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1]],
+            [[127,127,127],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[127.5,127.5,127.5],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1]],
+
+            [[127.5,127.5,127.5],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1]],
+            [[127.5,127.5,127.5],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1]],
+            [[127.5,127.5,127.5],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1]],
+            [[127.5,127.5,127.5],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1]],
+            [[127.5,127.5,127.5],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1]],
+            [[127.5,127.5,127.5],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1]],
+            [[127.5,127.5,127.5],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1]],
+            [[127.5,127.5,127.5],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1],[-1,-1,-1]],
         ])
 
         expected_contexts_color = np.concatenate([expected_contexts_color_a,expected_contexts_color_b],axis=1)
