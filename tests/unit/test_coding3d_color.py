@@ -74,15 +74,24 @@ class TestPcCausalContextRandomColoredPc(unittest.TestCase):
 
 
     def test_colors_exist_if_and_only_if_points_are_occupied(self):
-        recovered_contexts_occupancy = np.logical_not( np.all(self.contexts_color == -1,axis=2) )
-        self.assertEqual(len(recovered_contexts_occupancy.shape),len(self.contexts.shape))
-        self.assertEqual(recovered_contexts_occupancy.shape[0],self.contexts.shape[0])
-        self.assertEqual(recovered_contexts_occupancy.shape[1],self.contexts.shape[1])
-        self.assertEqual( np.count_nonzero(recovered_contexts_occupancy) , np.count_nonzero(self.contexts) )
-        self.assertTrue(np.allclose(recovered_contexts_occupancy.astype(int),self.contexts.astype(int)))
+        recovered_contexts_occupancy = np.logical_not( np.all(self.contexts_color[:,:self.N,:] == -1,axis=2) )
+        contexts_occupancy = self.contexts[:,:self.N]
+        self.assertEqual(len(recovered_contexts_occupancy.shape),len(contexts_occupancy.shape))
+        self.assertEqual(recovered_contexts_occupancy.shape[0],contexts_occupancy.shape[0])
+        self.assertEqual(recovered_contexts_occupancy.shape[1],contexts_occupancy.shape[1])
+        self.assertEqual( np.count_nonzero(recovered_contexts_occupancy) , np.count_nonzero(contexts_occupancy) )
+        self.assertTrue(np.allclose(recovered_contexts_occupancy.astype(int),contexts_occupancy.astype(int)))
 
+    def test_colors_exist_if_and_only_if_uncles_are_occupied(self):
+        recovered_contexts_occupancy = np.logical_not( np.all(self.contexts_color[:,-self.M:,:] == -1,axis=2) )
+        contexts_occupancy = self.contexts[:,-self.M:]
+        self.assertEqual(len(recovered_contexts_occupancy.shape),len(contexts_occupancy.shape))
+        self.assertEqual(recovered_contexts_occupancy.shape[0],contexts_occupancy.shape[0])
+        self.assertEqual(recovered_contexts_occupancy.shape[1],contexts_occupancy.shape[1])
+        self.assertEqual( np.count_nonzero(recovered_contexts_occupancy) , np.count_nonzero(contexts_occupancy) )
+        self.assertTrue(np.allclose(recovered_contexts_occupancy.astype(int),contexts_occupancy.astype(int)))
 
-    def test_colors_are_correct(self):
+    def test_point_colors_are_correct(self):
         all_points = np.transpose(np.expand_dims(self.V_nni,2) + np.expand_dims(self.this_nbhd.T,0), (0, 2, 1))
         point_color_combinations = np.concatenate([all_points,self.contexts_color[:,:self.N,:]],axis=2).reshape(-1,self.n_coordinates+self.n_channels)
         point_color_combinations = np.unique(point_color_combinations[self.contexts[:,:self.N].reshape(-1)],axis=0)
