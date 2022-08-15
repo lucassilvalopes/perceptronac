@@ -201,7 +201,8 @@ class CausalContextDataset(torch.utils.data.Dataset):
                     "for data type pointcloud."
                 raise ValueError(m)
             self.y,self.X = causal_context_many_pcs(
-                self.pths, self.N, self.percentage_of_uncles)
+                self.pths, self.N, self.percentage_of_uncles, geo_or_attr = self.geo_or_attr,
+                n_classes=self.n_classes, channels=self.channels, color_space=self.color_space)
         elif self.data_type == "table":
             Xy = np.vstack([self.load_table(pth) for pth in self.pths])
             if (self.channels is None) or np.count_nonzero(self.channels) == 1:

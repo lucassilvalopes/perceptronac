@@ -141,9 +141,39 @@ def causal_context_many_pcs(pths,N,percentage_of_uncles,geo_or_attr="geometry",n
         raise ValueError(f"Unknown option {geo_or_attr}. Known options: geometry, attributes.")
 
 
+def luma_transform(rgb,axis,keepdims):
+    """
+    https://pillow.readthedocs.io/en/stable/reference/Image.html#PIL.Image.Image.convert
+    https://en.wikipedia.org/wiki/YCbCr#ITU-R_BT.601_conversion
+    """
+
+    dimensions = list(rgb.shape)
+    assert dimensions[axis]==3
+    dimensions[axis]=1
+    L = np.sum( 
+        rgb * np.concatenate( 
+            [np.ones(dimensions) * 299/1000 , np.ones(dimensions) * 587/1000 , np.ones(dimensions) * 114/1000],
+            axis=axis 
+        ),
+        axis=axis, keepdims=keepdims
+    )
+    return L
 
 def causal_context_many_pcs_gray(pths,N,percentage_of_uncles):
-    return
+
+    y = []
+    X = []
+
+    M = int(percentage_of_uncles * N)
+    print(f"using {N-M} siblings and {M} uncles.")
+    for pth in pths:
+        V,C = c3d.read_PC(pth)[1:]
+        _,_,occupancy,_,_,partial_y,partial_X= c3d.pc_causal_context(V,N-M,M,C=C)
+        y.append(luma_transform(partial_y[occupancy,:],axis=1,keepdims=True).astype(int))
+        X.append(luma_transform(partial_X[occupancy,:,:],axis=2,keepdims=False).astype(int))
+    y = np.concatenate(y,axis=0)
+    X = np.concatenate(X,axis=0)
+    return y,X
 
 
 def causal_context_many_pcs_rgb(pths,N,percentage_of_uncles):
