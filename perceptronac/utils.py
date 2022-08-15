@@ -127,7 +127,42 @@ def causal_context_many_imgs_rgb(pths,N,interleaved=True):
     return y,X
 
 
-def causal_context_many_pcs(pths,N,percentage_of_uncles):
+def causal_context_many_pcs(pths,N,percentage_of_uncles,geo_or_attr="geometry",n_classes=256,channels=[1,0,0],color_space="YCbCr"):
+    if geo_or_attr == "geometry":
+        return causal_context_many_pcs_geometry(pths,N,percentage_of_uncles)
+    elif geo_or_attr == "attributes":
+        if n_classes == 256 and channels==[1,0,0] and color_space == "YCbCr":
+            return causal_context_many_pcs_gray(pths,N,percentage_of_uncles)
+        elif n_classes == 256 and channels==[1,1,1] and color_space == "RGB":
+            return causal_context_many_pcs_rgb(pths,N,percentage_of_uncles)
+        else:
+            raise ValueError("The specified combination of parameters for point cloud attributes is not supported yet.")
+    else:
+        raise ValueError(f"Unknown option {geo_or_attr}. Known options: geometry, attributes.")
+
+
+
+def causal_context_many_pcs_gray(pths,N,percentage_of_uncles):
+    return
+
+
+def causal_context_many_pcs_rgb(pths,N,percentage_of_uncles):
+    y = []
+    X = []
+
+    M = int(percentage_of_uncles * N)
+    print(f"using {N-M} siblings and {M} uncles.")
+    for pth in pths:
+        V,C = c3d.read_PC(pth)[1:]
+        _,_,occupancy,_,_,partial_y,partial_X= c3d.pc_causal_context(V,N-M,M,C=C)
+        y.append(partial_y[occupancy,:].astype(int))
+        X.append(partial_X[occupancy,:,:].astype(int))
+    y = np.concatenate(y,axis=0)
+    X = np.concatenate(X,axis=0)
+    return y,X
+
+
+def causal_context_many_pcs_geometry(pths,N,percentage_of_uncles):
     y = []
     X = []
 

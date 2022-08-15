@@ -195,7 +195,7 @@ class CausalContextDataset(torch.utils.data.Dataset):
             self.y,self.X = causal_context_many_imgs(
                 self.pths, self.N, n_classes=self.n_classes,
                 channels=self.channels, color_space=self.color_space)
-        elif self.data_type == "pointcloud" and self.geo_or_attr == "geometry":
+        elif self.data_type == "pointcloud":
             if self.percentage_of_uncles is None:
                 m = f"Input percentage_of_uncles must be specified "+\
                     "for data type pointcloud."
