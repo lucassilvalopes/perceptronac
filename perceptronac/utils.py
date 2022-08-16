@@ -186,7 +186,7 @@ def causal_context_many_pcs_rgb(pths,N,percentage_of_uncles):
         V,C = c3d.read_PC(pth)[1:]
         _,_,occupancy,_,_,partial_y,partial_X= c3d.pc_causal_context(V,N-M,M,C=C)
         y.append(partial_y[occupancy,:].astype(int))
-        X.append(partial_X[occupancy,:,:].astype(int))
+        X.append(partial_X[occupancy,:,:].reshape(-1,3*N).astype(int))
     y = np.concatenate(y,axis=0)
     X = np.concatenate(X,axis=0)
     return y,X
