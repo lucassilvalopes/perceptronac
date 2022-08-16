@@ -233,7 +233,7 @@ def pc_causal_context(V, N, M, ordering = 1, causal_half_space_only: bool = Fals
 
     C_nni = interpolate_C(C,V_nni,occupancy)
 
-    if (C_nni.size > 0) and (contexts_color.size > 0):
+    if (C.size > 0):
         return V_nni, contexts_occupancy, occupancy, this_nbhd, prev_nbhd, C_nni, contexts_color
     else:
         return V_nni, contexts_occupancy, occupancy, this_nbhd, prev_nbhd
@@ -292,7 +292,7 @@ def siblings(query_V,V,C,occupancy,N,ordering,include):
 
         # neighs = neighs.reshape(query_V.shape[0], nbhd.shape[0])
 
-        this_contexts_C = np.zeros( (query_V.shape[0],0,0) )
+        this_contexts_C = np.zeros( (query_V.shape[0],this_nbhd.shape[0],0) )
 
     else:
 

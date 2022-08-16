@@ -233,7 +233,13 @@ class CausalContextDataset(torch.utils.data.Dataset):
     def __len__(self):
         return len(self.y)
     def __getitem__(self,idx):
-        return self.X[idx,:],self.y[idx,:]
+        if (
+            (False if (self.n_classes is None) else (self.n_classes == 256)) and 
+            (False if (self.channels is None) else (np.count_nonzero(self.channels) == 1) )
+        ):
+            return self.X[idx,:],self.y[idx,0] # because of torch.nn.CrossEntropyLoss
+        else:
+            return self.X[idx,:],self.y[idx,:]
 
 
 #static binary arithmetic coder
