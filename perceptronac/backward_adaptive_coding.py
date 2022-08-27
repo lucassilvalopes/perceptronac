@@ -144,12 +144,29 @@ class RealTimeLUT:
         return pp
 
 
-def backward_adaptive_coding(pths,N,lr,central_tendencies,with_lut=False,with_mlp=True):
+def backward_adaptive_coding(pths,N,lr,central_tendencies,with_lut=False,with_mlp=True,parallel=False,batch_size=1):
     
 
-    trainset = CausalContextDataset(pths,"image",N)
-    y,X = trainset.y,trainset.X
-    dataloader = torch.utils.data.DataLoader(trainset,batch_size=1,shuffle=False,num_workers=6)
+    if parallel:
+        y = []
+        X = []
+        for pth in pths:
+            partial_y,partial_X = causal_context_many_imgs([pth], N)
+            y.append(partial_y)
+            X.append(partial_X)
+        y = np.concatenate(y,axis=1).reshape(-1,1)
+        X = np.concatenate(X,axis=1).reshape(-1,N)
+    else:
+        y,X = causal_context_many_imgs(pths, N)
+
+    trainset = torch.utils.data.TensorDataset(torch.tensor(X),torch.tensor(y))
+
+
+    # trainset = CausalContextDataset(pths,"image",N)
+    # y,X = trainset.y,trainset.X
+
+
+    dataloader = torch.utils.data.DataLoader(trainset,batch_size=batch_size,shuffle=False,num_workers=6)
 
     if N == 0:
         with_mlp = False
@@ -212,7 +229,7 @@ def backward_adaptive_coding(pths,N,lr,central_tendencies,with_lut=False,with_ml
             optimizer.step()
 
             mlp_running_loss += loss.item()
-            mlp_avg_code_length_history.append( mlp_running_loss / (iteration + 1) )
+            mlp_avg_code_length_history.append( mlp_running_loss / ((iteration + 1) * batch_size) )
 
         assert y_b.item() == y[iteration,0]
         assert np.allclose(X_b.cpu().numpy().reshape(-1) , X[iteration,:].reshape(-1))
