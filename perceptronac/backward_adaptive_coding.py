@@ -237,19 +237,19 @@ def backward_adaptive_coding(pths,N,lr,central_tendencies,with_lut=False,with_ml
             mlp_running_loss += loss.item()
             mlp_avg_code_length_history.append( mlp_running_loss / ((iteration + 1) * batch_size) )
 
-        assert y_b.item() == y[iteration,0]
-        assert np.allclose(X_b.cpu().numpy().reshape(-1) , X[iteration,:].reshape(-1))
+        assert np.allclose(y_b.cpu().numpy() , y[iteration:iteration+batch_size,:])
+        assert np.allclose(X_b.cpu().numpy() , X[iteration:iteration+batch_size,:])
 
         if with_lut:
             for central_tendency in central_tendencies:
 
-                lut_pred_t = luts[central_tendency].predict(X[iteration:iteration+1,:])
-                luts[central_tendency].update(X[iteration:iteration+1,:],y[iteration:iteration+1,:])
+                lut_pred_t = luts[central_tendency].predict(X[iteration:iteration+batch_size,:])
+                luts[central_tendency].update(X[iteration:iteration+batch_size,:],y[iteration:iteration+batch_size,:])
 
-                lut_loss = perfect_AC(y[iteration:iteration+1,:],lut_pred_t)
+                lut_loss = batch_size * perfect_AC(y[iteration:iteration+batch_size,:],lut_pred_t)
 
                 lut_running_losses[central_tendency] += lut_loss
-                lut_avg_code_length_histories[central_tendency].append( lut_running_losses[central_tendency] / (iteration + 1) )
+                lut_avg_code_length_histories[central_tendency].append(lut_running_losses[central_tendency]/((iteration+1)*batch_size))
 
 
         iteration += 1
