@@ -150,10 +150,11 @@ class RealTimeLUT:
         return pp
 
 
-def backward_adaptive_coding(pths,N,lr,central_tendencies,with_lut=False,with_mlp=True,parallel=False,batch_size=1):
+def backward_adaptive_coding(pths,N,lr,central_tendencies,with_lut=False,with_mlp=True,parallel=False):
     
 
     if parallel:
+        batch_size=len(pths)
         y = []
         X = []
         for pth in pths:
@@ -163,6 +164,7 @@ def backward_adaptive_coding(pths,N,lr,central_tendencies,with_lut=False,with_ml
         y = np.concatenate(y,axis=1).reshape(-1,1)
         X = np.concatenate(X,axis=1).reshape(-1,N)
     else:
+        batch_size=1
         y,X = causal_context_many_imgs(pths, N)
 
     trainset = torch.utils.data.TensorDataset(torch.tensor(X),torch.tensor(y))
@@ -266,7 +268,7 @@ def backward_adaptive_coding(pths,N,lr,central_tendencies,with_lut=False,with_ml
 
 
 def backward_adaptive_coding_experiment(exp_name,docs,Ns,learning_rates,central_tendencies,colors,linestyles,
-    labels,legend_ncol,ylim):
+    labels,legend_ncol,ylim,parallel=False):
 
     max_N = 26
 
