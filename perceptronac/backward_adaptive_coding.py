@@ -290,12 +290,13 @@ def backward_adaptive_coding_experiment(exp_name,docs,Ns,learning_rates,central_
             if N > 0:
                 for i_lr,lr in enumerate(learning_rates):
                     with_lut = ((i_lr == len(learning_rates)-1) and (N<=max_N))
-                    partial_data = backward_adaptive_coding(doc,N,lr,central_tendencies,with_lut=with_lut)
+                    partial_data = backward_adaptive_coding(doc,N,lr,central_tendencies,with_lut=with_lut,parallel=parallel)
                     k = "MLPlr={:.0e}".format(lr)
                     data[k] = data[k] + np.array(partial_data[k])
             if (N<=max_N):
                 if not all([f"LUT{central_tendency}" in partial_data.keys() for central_tendency in central_tendencies]):
-                    partial_data = backward_adaptive_coding(doc,N,0,central_tendencies,with_lut=True,with_mlp=False)
+                    partial_data = backward_adaptive_coding(doc,N,0,central_tendencies,with_lut=True,with_mlp=False,
+                        parallel=parallel)
                 for central_tendency in central_tendencies:
                     k = f"LUT{central_tendency}"
                     data[k] = data[k] + np.array(partial_data[k])
