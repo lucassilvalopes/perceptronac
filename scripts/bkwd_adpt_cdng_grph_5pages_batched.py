@@ -4,7 +4,7 @@ from perceptronac.backward_adaptive_coding import backward_adaptive_coding_exper
 
 if __name__ == "__main__":
 
-    exp_name = "Adaptive_Detection_of_Dim_5pages_lut_mean_lr1e-2"
+    exp_name = "Adaptive_Detection_of_Dim_5pages_lut_mean_lr1e-2_batchsize5"
 
     docs = [ # docs[i,j] = the path to the j'th page from the i'th document
         [
@@ -41,4 +41,7 @@ if __name__ == "__main__":
 
     ylim = [0.0, 0.5]
 
-    backward_adaptive_coding_experiment(exp_name,docs,Ns,learning_rates,central_tendencies,colors,linestyles,labels,legend_ncol,ylim)
+    samples_per_time = 5
+
+    backward_adaptive_coding_experiment(exp_name,docs,Ns,learning_rates,central_tendencies,colors,linestyles,labels,legend_ncol,ylim,
+        samples_per_time=samples_per_time)

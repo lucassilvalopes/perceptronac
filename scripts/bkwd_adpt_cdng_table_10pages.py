@@ -16,7 +16,7 @@ if __name__ == "__main__":
     central_tendencies = ["mean"]#["mean","mode"]
 
     labels = [
-        'B LUT', # LUTmean
+        'ALUT', # LUTmean
         r'APC $\lambda=10^{-2}$', # MLPlr=1e-02
     ]
 
