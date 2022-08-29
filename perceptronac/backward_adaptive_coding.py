@@ -18,6 +18,7 @@
 # the learning rate will affect the convergence
 
 import os
+import time
 import math
 import torch
 import numpy as np
@@ -336,7 +337,10 @@ def backward_adaptive_coding_experiment(exp_name,docs,Ns,learning_rates,central_
 
         change_aspect(ax)
 
-        save_dir = "results"
+        exp_id = str(int(time.time()))
+        save_dir = f"results/exp_{exp_id}"
+
+        os.makedirs(save_dir)
 
         fname = f"{save_dir.rstrip('/')}/backward_adaptive_coding_{exp_name}_N{N}"
 
