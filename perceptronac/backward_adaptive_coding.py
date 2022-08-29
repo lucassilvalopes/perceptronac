@@ -150,11 +150,11 @@ class RealTimeLUT:
         return pp
 
 
-def backward_adaptive_coding(pths,N,lr,central_tendencies,with_lut=False,with_mlp=True,parallel=False,inner_batch_size=1):
+def backward_adaptive_coding(pths,N,lr,central_tendencies,with_lut=False,with_mlp=True,parallel=False,samples_per_time=1):
     
 
     if parallel:
-        if inner_batch_size != 1:
+        if samples_per_time != 1:
             raise ValueError("parallel processing with more than one sample per page at a time is not supported yet")
 
         batch_size=len(pths)
@@ -170,7 +170,7 @@ def backward_adaptive_coding(pths,N,lr,central_tendencies,with_lut=False,with_ml
         else:
             X = np.zeros((y.shape[0],0),dtype=int)
     else:
-        batch_size=inner_batch_size
+        batch_size=samples_per_time
         y,X = causal_context_many_imgs(pths, N)
 
     # trainset = torch.utils.data.TensorDataset(torch.tensor(X),torch.tensor(y))
@@ -273,17 +273,17 @@ def backward_adaptive_coding(pths,N,lr,central_tendencies,with_lut=False,with_ml
 
 
 def backward_adaptive_coding_experiment(exp_name,docs,Ns,learning_rates,central_tendencies,colors,linestyles,
-    labels,legend_ncol,ylim,parallel=False,inner_batch_size=1):
+    labels,legend_ncol,ylim,parallel=False,samples_per_time=1):
 
     max_N = 26
 
     for N in Ns:
         if parallel:
-            if inner_batch_size != 1:
+            if samples_per_time != 1:
                 raise ValueError("parallel processing with more than one sample per page at a time is not supported yet")
             len_data = 1024*768
         else:
-            len_data = (len(docs[0]) * 1024*768) // inner_batch_size
+            len_data = (len(docs[0]) * 1024*768) // samples_per_time
 
         data = dict()
         if N > 0:
@@ -300,13 +300,13 @@ def backward_adaptive_coding_experiment(exp_name,docs,Ns,learning_rates,central_
                 for i_lr,lr in enumerate(learning_rates):
                     with_lut = ((i_lr == len(learning_rates)-1) and (N<=max_N))
                     partial_data = backward_adaptive_coding(doc,N,lr,central_tendencies,with_lut=with_lut,
-                        parallel=parallel,inner_batch_size=inner_batch_size)
+                        parallel=parallel,samples_per_time=samples_per_time)
                     k = "MLPlr={:.0e}".format(lr)
                     data[k] = data[k] + np.array(partial_data[k])
             if (N<=max_N):
                 if not all([f"LUT{central_tendency}" in partial_data.keys() for central_tendency in central_tendencies]):
                     partial_data = backward_adaptive_coding(doc,N,0,central_tendencies,with_lut=True,with_mlp=False,
-                        parallel=parallel,inner_batch_size=inner_batch_size)
+                        parallel=parallel,samples_per_time=samples_per_time)
                 for central_tendency in central_tendencies:
                     k = f"LUT{central_tendency}"
                     data[k] = data[k] + np.array(partial_data[k])
