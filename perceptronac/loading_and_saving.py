@@ -85,7 +85,7 @@ def plot_comparison(xvalues,data,xlabel,ylabel='bits/sample',xscale="linear",lin
     fig, ax = plt.subplots(nrows=1, ncols=1,figsize=(4.8,4.8))    
 
     handles = []
-    for k in data.keys():
+    for k in sorted(data.keys()):
         if isinstance(xvalues,dict):
             handle = plot_single_curve(ax,data[k],xvalues[k],linestyles[k],colors[k],labels[k],markers[k])
         else:

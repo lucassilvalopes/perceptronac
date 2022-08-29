@@ -173,8 +173,8 @@ def backward_adaptive_coding(pths,N,lr,central_tendencies,with_lut=False,with_ml
         batch_size=samples_per_time
         y,X = causal_context_many_imgs(pths, N)
 
-    # trainset = torch.utils.data.TensorDataset(torch.tensor(X),torch.tensor(y))
-    # dataloader = torch.utils.data.DataLoader(trainset,batch_size=batch_size,shuffle=False)
+    trainset = torch.utils.data.TensorDataset(torch.tensor(X),torch.tensor(y))
+    dataloader = torch.utils.data.DataLoader(trainset,batch_size=batch_size,shuffle=False)
 
     if N == 0:
         with_mlp = False
@@ -222,14 +222,16 @@ def backward_adaptive_coding(pths,N,lr,central_tendencies,with_lut=False,with_ml
     n_batches = len(y)//batch_size
     pbar = tqdm(total=n_batches)
 
-    # iteration = 0
-    # for data in dataloader:
-    #     X_b,y_b=data
+    # for iteration in range(n_batches):
     #     ...
-    #     iteration+=1
-    for iteration in range(n_batches):
+    #     X_b,y_b= torch.tensor(X[start:stop,:]),torch.tensor(y[start:stop,:])
 
-        X_b,y_b= torch.tensor(X[iteration:(iteration+batch_size),:]),torch.tensor(y[iteration:(iteration+batch_size),:])
+    iteration = 0
+    for data in dataloader:
+        X_b,y_b=data
+
+        start = iteration * batch_size
+        stop = (iteration+1)* batch_size
 
         if with_mlp:
 
@@ -245,20 +247,21 @@ def backward_adaptive_coding(pths,N,lr,central_tendencies,with_lut=False,with_ml
             mlp_running_loss += loss.item()
             mlp_avg_code_length_history.append( mlp_running_loss / ((iteration + 1) * batch_size) )
 
-        assert np.allclose(y_b.detach().cpu().numpy().astype(int) , y[iteration:(iteration+batch_size),:].astype(int))
-        assert np.allclose(X_b.detach().cpu().numpy().astype(int) , X[iteration:(iteration+batch_size),:].astype(int))
+        assert np.allclose(y_b.detach().cpu().numpy().astype(int) , y[start:stop,:].astype(int))
+        assert np.allclose(X_b.detach().cpu().numpy().astype(int) , X[start:stop,:].astype(int))
 
         if with_lut:
             for central_tendency in central_tendencies:
 
-                lut_pred_t = luts[central_tendency].predict(X[iteration:(iteration+batch_size),:])
-                luts[central_tendency].update(X[iteration:(iteration+batch_size),:],y[iteration:(iteration+batch_size),:])
+                lut_pred_t = luts[central_tendency].predict(X[start:stop,:])
+                luts[central_tendency].update(X[start:stop,:],y[start:stop,:])
 
-                lut_loss = batch_size * perfect_AC(y[iteration:(iteration+batch_size),:],lut_pred_t)
+                lut_loss = batch_size * perfect_AC(y[start:stop,:],lut_pred_t)
 
                 lut_running_losses[central_tendency] += lut_loss
                 lut_avg_code_length_histories[central_tendency].append(lut_running_losses[central_tendency]/((iteration+1)*batch_size))
 
+        iteration+=1
         pbar.update(1)
     pbar.close()            
 
@@ -333,7 +336,9 @@ def backward_adaptive_coding_experiment(exp_name,docs,Ns,learning_rates,central_
 
         change_aspect(ax)
 
-        fname = f"backward_adaptive_coding_{exp_name}_N{N}"
+        save_dir = "results"
+
+        fname = f"{save_dir.rstrip('/')}/backward_adaptive_coding_{exp_name}_N{N}"
 
         fig.savefig(fname+".png", dpi=300)
 
