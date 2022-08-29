@@ -213,7 +213,7 @@ def backward_adaptive_coding(pths,N,lr,central_tendencies,with_lut=False,with_ml
             lut_avg_code_length_histories[central_tendency] = []
             lut_running_losses[central_tendency] = 0.0 
 
-    n_batches = len(y)//len(pths)
+    n_batches = len(y)//batch_size
     pbar = tqdm(total=n_batches)
 
     # iteration = 0
