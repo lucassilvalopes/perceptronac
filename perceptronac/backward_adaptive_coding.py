@@ -162,7 +162,10 @@ def backward_adaptive_coding(pths,N,lr,central_tendencies,with_lut=False,with_ml
             y.append(partial_y)
             X.append(partial_X)
         y = np.concatenate(y,axis=1).reshape(-1,1)
-        X = np.concatenate(X,axis=1).reshape(-1,N)
+        if N > 0:
+            X = np.concatenate(X,axis=1).reshape(-1,N)
+        else:
+            X = np.zeros((y.shape[0],0),dtype=int)
     else:
         batch_size=1
         y,X = causal_context_many_imgs(pths, N)
