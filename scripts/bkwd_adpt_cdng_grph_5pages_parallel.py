@@ -4,7 +4,9 @@ from perceptronac.backward_adaptive_coding import backward_adaptive_coding_exper
 
 if __name__ == "__main__":
 
-    exp_name = "Adaptive_Detection_of_Dim_5pages_parallel_lut_mean_lr1e-2"
+    lr = 0.01 # powers of 10
+
+    exp_name = f"Adaptive_Detection_of_Dim_5pages_parallel_lut_mean_lr1e{str(int(np.log10(lr)))}"
 
     docs = [ # docs[i,j] = the path to the j'th page from the i'th document
         [
@@ -18,28 +20,28 @@ if __name__ == "__main__":
 
     Ns = [26] # [0,2,4,10,26,67,170] # [26,33,42,53,67,84,107,135,170]
     
-    learning_rates = [0.01] #(3.162277659**np.array([-2,-4,-6,-8]))
+    learning_rates = [lr] #(3.162277659**np.array([-2,-4,-6,-8]))
 
     central_tendencies = ["mean"] #["mean","mode"]
 
     labels = [
         'ALUT', # LUTmean
-        r'APC $\lambda=10^{-2}$', # MLPlr=1e-02
+        'APC $\lambda=10^{'+ str(int(np.log10(lr))) + '}$' # MLPlr=1e-0?
     ]
 
     linestyles = [
         "solid", # "LUTmean"
-        "dashed", # MLPlr=1e-02
+        "dashed", # MLPlr=1e-0?
     ]
 
     colors = [
         "g", # "LUTmean"
-        "b", # MLPlr=1e-02
+        "b", # MLPlr=1e-0?
     ]
 
     legend_ncol = 1
 
-    ylim = [0.0, 1]
+    ylim = [0.0, 0.5]
 
     backward_adaptive_coding_experiment(
         exp_name,docs,Ns,learning_rates,central_tendencies,colors,linestyles,labels,legend_ncol,ylim,parallel=True)
