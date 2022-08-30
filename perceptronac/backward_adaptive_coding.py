@@ -201,9 +201,10 @@ def backward_adaptive_coding(pths,N,lr,central_tendencies,with_lut=False,with_ml
     # (1024*768) must be divisible by n_pieces
     # ((1024*768) * len(pths)) // n_pieces must be divisible by batch_size
     piece_len = (1024*768) // n_pieces
-    print("piece len :",piece_len)
+
+    iteration = 0
     for piece in range(n_pieces):
-        print("piece",piece)
+
         if parallel:
             if samples_per_time != 1:
                 raise ValueError("parallel processing with more than one sample per page at a time is not supported yet")
@@ -216,7 +217,7 @@ def backward_adaptive_coding(pths,N,lr,central_tendencies,with_lut=False,with_ml
                 y.append(partial_y[(piece*piece_len):((piece+1)*piece_len),:].copy())
                 X.append(partial_X[(piece*piece_len):((piece+1)*piece_len),:].copy())
                 del partial_y,partial_X
-                print(len(y),len(X))
+
             y = np.concatenate(y,axis=1).reshape(-1,1)
             if N > 0:
                 X = np.concatenate(X,axis=1).reshape(-1,N)
@@ -224,9 +225,34 @@ def backward_adaptive_coding(pths,N,lr,central_tendencies,with_lut=False,with_ml
                 X = np.zeros((y.shape[0],0),dtype=int)
         else:
             batch_size=samples_per_time
-            y,X = causal_context_many_imgs(pths, N)
-            y = y[(piece*piece_len*len(pths)):((piece+1)*piece_len*len(pths)),:]
-            X = X[(piece*piece_len*len(pths)):((piece+1)*piece_len*len(pths)),:]
+
+            lower_lim = (piece*piece_len*len(pths))
+            upper_lim = ((piece+1)*piece_len*len(pths))
+
+            page_len = (piece_len * n_pieces)
+
+            start_page_upper_lim = page_len
+            start_page_lower_lim = 0
+            start_page = 0
+            while lower_lim >= start_page_upper_lim:
+                start_page += 1
+                start_page_lower_lim = start_page*page_len
+                start_page_upper_lim = (start_page+1)*page_len
+
+            end_page_upper_lim = page_len
+            end_page_lower_lim = 0
+            end_page = 0
+            while upper_lim > end_page_upper_lim:
+                end_page += 1
+                end_page_lower_lim = end_page*page_len
+                end_page_upper_lim = (end_page+1)*page_len
+
+            y = []
+            X = []
+            for pth in np.array(pths)[start_page:end_page+1]:
+                partial_y,partial_X = causal_context_many_imgs([pth], N)
+                y.append( partial_y[lower_lim-start_page_lower_lim:upper_lim-start_page_lower_lim,:] )
+                X.append( partial_X[lower_lim-start_page_lower_lim:upper_lim-start_page_lower_lim,:] )
 
         trainset = torch.utils.data.TensorDataset(torch.tensor(X),torch.tensor(y))
         dataloader = torch.utils.data.DataLoader(trainset,batch_size=batch_size,shuffle=False)
@@ -239,12 +265,12 @@ def backward_adaptive_coding(pths,N,lr,central_tendencies,with_lut=False,with_ml
         #     ...
         #     X_b,y_b= torch.tensor(X[start:stop,:]),torch.tensor(y[start:stop,:])
 
-        iteration = 0
+        
         for data in dataloader:
             X_b,y_b=data
 
-            start = iteration * batch_size
-            stop = (iteration+1)* batch_size
+            start = iteration * batch_size - (piece*piece_len*len(pths))
+            stop = (iteration+1)* batch_size - (piece*piece_len*len(pths))
 
             if with_mlp:
 
