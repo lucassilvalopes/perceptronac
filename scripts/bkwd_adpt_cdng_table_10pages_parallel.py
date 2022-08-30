@@ -7,13 +7,13 @@ if __name__ == "__main__":
 
     lr = 0.001
 
-    n_pages = 15
+    n_pages = 40
 
     exp_name = f"SPL2021_last_{n_pages}_sorted_pages_parallel_lut_mean_lr1e{str(int(np.log10(lr)))}"
 
     docs = [[os.path.join('/home/lucas/Documents/data/SPL2021/pages',f) for f in sorted(os.listdir('/home/lucas/Documents/data/SPL2021/pages'))[-n_pages:]]]
 
-    Ns = [10] #[0,2,4,10,26,67,170] # [26,33,42,53,67,84,107,135,170]
+    Ns = [26] #[0,2,4,10,26,67,170] # [26,33,42,53,67,84,107,135,170]
     
     learning_rates = [lr] # (3.162277659**np.array([-2,-4,-6,-8]))
 
@@ -38,4 +38,8 @@ if __name__ == "__main__":
 
     ylim = [0.0, 0.5]
 
-    backward_adaptive_coding_experiment(exp_name,docs,Ns,learning_rates,central_tendencies,colors,linestyles,labels,legend_ncol,ylim,parallel=True)
+    n_pieces = 4
+
+    backward_adaptive_coding_experiment(
+        exp_name,docs,Ns,learning_rates,central_tendencies,colors,linestyles,labels,legend_ncol,ylim,
+        parallel=True,n_pieces=n_pieces)

@@ -201,8 +201,9 @@ def backward_adaptive_coding(pths,N,lr,central_tendencies,with_lut=False,with_ml
     # (1024*768) must be divisible by n_pieces
     # ((1024*768) * len(pths)) // n_pieces must be divisible by batch_size
     piece_len = (1024*768) // n_pieces
+    print("piece len :",piece_len)
     for piece in range(n_pieces):
-
+        print("piece",piece)
         if parallel:
             if samples_per_time != 1:
                 raise ValueError("parallel processing with more than one sample per page at a time is not supported yet")
@@ -212,8 +213,10 @@ def backward_adaptive_coding(pths,N,lr,central_tendencies,with_lut=False,with_ml
             X = []
             for pth in pths:
                 partial_y,partial_X = causal_context_many_imgs([pth], N)
-                y.append(partial_y[(piece*piece_len):((piece+1)*piece_len),:])
-                X.append(partial_X[(piece*piece_len):((piece+1)*piece_len),:])
+                y.append(partial_y[(piece*piece_len):((piece+1)*piece_len),:].copy())
+                X.append(partial_X[(piece*piece_len):((piece+1)*piece_len),:].copy())
+                del partial_y,partial_X
+                print(len(y),len(X))
             y = np.concatenate(y,axis=1).reshape(-1,1)
             if N > 0:
                 X = np.concatenate(X,axis=1).reshape(-1,N)
