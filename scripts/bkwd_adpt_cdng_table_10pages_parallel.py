@@ -7,7 +7,9 @@ if __name__ == "__main__":
 
     lr = 0.001
 
-    n_pages = 40
+    n_pages = 80
+
+    n_pieces = 8
 
     exp_name = f"SPL2021_last_{n_pages}_sorted_pages_parallel_lut_mean_lr1e{str(int(np.log10(lr)))}"
 
@@ -37,8 +39,6 @@ if __name__ == "__main__":
     legend_ncol = 1
 
     ylim = [0.0, 0.5]
-
-    n_pieces = 4
 
     backward_adaptive_coding_experiment(
         exp_name,docs,Ns,learning_rates,central_tendencies,colors,linestyles,labels,legend_ncol,ylim,

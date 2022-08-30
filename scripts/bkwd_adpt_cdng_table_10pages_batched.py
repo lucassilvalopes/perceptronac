@@ -7,9 +7,11 @@ if __name__ == "__main__":
 
     lr = 0.001
 
-    n_pages = 10
+    n_pages = 80
 
-    samples_per_time = 40 #n_pages
+    n_pieces = 8
+
+    samples_per_time = n_pages
 
     exp_name = f"SPL2021_last_{n_pages}_sorted_pages_lut_mean_lr1e{str(int(np.log10(lr)))}_batchsize{samples_per_time}"
 
@@ -40,7 +42,5 @@ if __name__ == "__main__":
 
     ylim = [0.0, 0.5]
 
-
-
     backward_adaptive_coding_experiment(exp_name,docs,Ns,learning_rates,central_tendencies,colors,linestyles,labels,legend_ncol,ylim,
-        parallel=False,samples_per_time=samples_per_time)
+        parallel=False,samples_per_time=samples_per_time,n_pieces=n_pieces)
