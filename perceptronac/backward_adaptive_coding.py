@@ -247,12 +247,10 @@ def backward_adaptive_coding(pths,N,lr,central_tendencies,with_lut=False,with_ml
                 end_page_lower_lim = end_page*page_len
                 end_page_upper_lim = (end_page+1)*page_len
 
-            y = []
-            X = []
-            for pth in np.array(pths)[start_page:end_page+1]:
-                partial_y,partial_X = causal_context_many_imgs([pth], N)
-                y.append( partial_y[lower_lim-start_page_lower_lim:upper_lim-start_page_lower_lim,:] )
-                X.append( partial_X[lower_lim-start_page_lower_lim:upper_lim-start_page_lower_lim,:] )
+            y,X = causal_context_many_imgs(np.array(pths)[start_page:end_page+1].tolist(), N)
+            y = y[lower_lim-start_page_lower_lim:upper_lim-start_page_lower_lim,:]
+            X = X[lower_lim-start_page_lower_lim:upper_lim-start_page_lower_lim,:]
+
 
         trainset = torch.utils.data.TensorDataset(torch.tensor(X),torch.tensor(y))
         dataloader = torch.utils.data.DataLoader(trainset,batch_size=batch_size,shuffle=False)
