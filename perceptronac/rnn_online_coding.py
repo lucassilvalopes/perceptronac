@@ -73,21 +73,25 @@ def train(rnn,hidden,criterion,learning_rate,category_tensor, line_tensor):
     """
     rnn.zero_grad()
 
-    losses = []
+    losses = 0.0
 
-    for i in range(line_tensor.size()[0]):
-        output, hidden = rnn(line_tensor[i], hidden)
+    output, hidden = rnn(line_tensor[0], hidden)
+
+    for i in range(category_tensor.size()[0]):
+
+        output, hidden = rnn(line_tensor[i+1], hidden)
 
         loss = criterion(output, category_tensor[i])
         loss.backward()
 
-        losses.append(loss.item())
+        losses += loss.item()
 
     # Add parameters' gradients to their values, multiplied by learning rate
     for p in rnn.parameters():
+        # print(p.data.shape,p.requires_grad,p.name,p.grad)
         p.data.add_(p.grad.data, alpha=-learning_rate)
 
-    return hidden.detach().clone(),sum(losses)
+    return hidden.detach().clone() ,losses
 
 
 
@@ -115,8 +119,8 @@ def rnn_online_coding(pths,lr,samples_per_time=1,n_pieces=1):
 
     iteration = 0
 
-    hidden = torch.zeros(1,model.hidden_size).to(device)
-    last_target = torch.ones([[1]]).to(device)
+    hidden = torch.zeros(1,model.hidden_size,device=device)
+    previous_targets = torch.ones(2,1,device=device)
 
     for piece in range(n_pieces):
 
@@ -154,14 +158,15 @@ def rnn_online_coding(pths,lr,samples_per_time=1,n_pieces=1):
             start = iteration * samples_per_time - (piece*piece_len*len(pths))
             stop = (iteration+1)* samples_per_time - (piece*piece_len*len(pths))
 
-            y_b= torch.tensor(y[start:stop,:])
+            y_b= torch.tensor(y[start:stop,:],dtype=torch.float32,device=device)
 
-            y_b = y_b.float().to(device)
+            # y_b = y_b.float().to(device)
 
-            inpt = onehot(torch.cat( [last_target,y_b[:-1,:]],axis=0 ))
+            inpt = onehot(torch.cat([previous_targets,y_b[:-1,:]],axis=0) )
 
             hidden,loss = train(model,hidden,criterion,lr,y_b, inpt)
-            last_target = y_b[-1:,:]
+
+            previous_targets = torch.cat([previous_targets,y_b],axis=0)[-2:,:]
 
             running_loss += loss
             avg_code_length_history.append( running_loss / ((iteration + 1) * samples_per_time) )
