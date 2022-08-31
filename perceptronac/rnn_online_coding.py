@@ -34,13 +34,13 @@ class RNN(nn.Module):
         self.hidden_size = hidden_size
 
         self.i2h = nn.Linear(input_size + hidden_size, hidden_size)
-        self.i2o = nn.Linear(input_size + hidden_size, output_size)
+        self.i2o = nn.Linear(hidden_size, output_size)
         self.softmax = nn.LogSoftmax(dim=1)
 
     def forward(self, input, hidden):
         combined = torch.cat((input, hidden), 1)
         hidden = self.i2h(combined)
-        output = self.i2o(combined)
+        output = self.i2o(hidden)
         output = self.softmax(output)
         return output, hidden
 
@@ -99,7 +99,7 @@ def rnn_online_coding(pths,lr,samples_per_time=1,n_pieces=1):
 
     device=torch.device("cuda:0")
 
-    model = RNN(2, 128, 2)
+    model = RNN(2, 500, 2)
     initialize_rnn(model)
 
     model.to(device)

@@ -6,7 +6,7 @@ if __name__ == "__main__":
 
     lr = 0.001
 
-    exp_name = f"Adaptive_Detection_of_Dim_page1_lr1e{str(int(np.log10(lr)))}"
+    exp_name = f"Adaptive_Detection_of_Dim_page1_mikolov500_lr1e{str(int(np.log10(lr)))}"
 
     docs = [ # docs[i,j] = the path to the j'th page from the i'th document
         [
