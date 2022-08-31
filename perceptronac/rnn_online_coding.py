@@ -10,7 +10,7 @@ import torch
 import torch.nn as nn
 import numpy as np
 import math
-import tqdm
+from tqdm import tqdm
 import time 
 import os
 from perceptronac.backward_adaptive_coding import RNG
