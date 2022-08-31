@@ -11,10 +11,15 @@ import torch.nn as nn
 import numpy as np
 import math
 import tqdm
+import time 
+import os
 from perceptronac.backward_adaptive_coding import RNG
 from perceptronac.backward_adaptive_coding import randperm
 from perceptronac.models import Log2NLLLoss
 from perceptronac.utils import causal_context_many_imgs
+from perceptronac.loading_and_saving import plot_comparison
+from perceptronac.loading_and_saving import save_values
+from perceptronac.loading_and_saving import change_aspect
 
 
 def onehot(y):
@@ -168,3 +173,59 @@ def rnn_online_coding(pths,lr,samples_per_time=1,n_pieces=1):
 
 
     return data
+
+
+def rnn_online_coding_experiment(exp_name,docs,learning_rates,colors,linestyles,
+    labels,legend_ncol,ylim,samples_per_time=1,n_pieces=1):
+
+
+    len_data = (len(docs[0]) * 1024*768) // samples_per_time
+
+    data = dict()
+
+    for lr in learning_rates:
+        data["RNNlr={:.0e}".format(lr)] = np.zeros((len_data))
+
+    for doc in docs:
+        partial_data = dict()
+
+        for lr in learning_rates:
+            partial_data = rnn_online_coding(doc,lr,samples_per_time=samples_per_time,n_pieces=n_pieces)
+            k = "RNNlr={:.0e}".format(lr)
+            data[k] = data[k] + np.array(partial_data[k])
+
+
+    for k in data.keys():
+        data[k] = data[k]/len(docs)
+        
+    xvalues = np.arange( len_data )
+        
+    fig = plot_comparison(xvalues,data,"iteration",
+        linestyles={k:ls for k,ls in zip(sorted(data.keys()),linestyles)},
+        colors={k:c for k,c in zip(sorted(data.keys()),colors)},
+        markers={k:"" for k in sorted(data.keys())},
+        labels={k:lb for k,lb in zip(sorted(data.keys()),labels)},
+        legend_ncol=legend_ncol)
+
+    xticks = np.round(np.linspace(0,len_data-1,5)).astype(int)
+
+    fig.axes[0].set_xticks( xticks)
+    fig.axes[0].set_xticklabels( xticks)
+
+    ax, = fig.axes
+    ax.set_ylim(ylim)
+
+    change_aspect(ax)
+
+    exp_id = str(int(time.time()))
+    save_dir = f"results/exp_{exp_id}"
+
+    os.makedirs(save_dir)
+
+    fname = f"{save_dir.rstrip('/')}/rnn_online_coding_{exp_name}"
+
+    fig.savefig(fname+".png", dpi=300)
+
+    # save_values(fname,[xvalues[-1]],{k:[v[-1]] for k,v in data.items()},"iteration")
+
+    save_values(fname,xvalues,data,"iteration")
