@@ -63,11 +63,11 @@ def initialize_rnn(model):
 
 def train(rnn,hidden,criterion,learning_rate,category_tensor, line_tensor):
     """
-    line_tensor: [sequence_len x samples_per_time x alphabet_size]
-    category_tensor: [samples_per_time]
-    input: [samples_per_time x alphabet_size]
-    hidden: [samples_per_time x hidden_size]
-    output: [samples_per_time x n_categories]
+    line_tensor: [sequence_len x batch_size x alphabet_size]
+    category_tensor: [sequence_len x batch_size]
+    input: [batch_size x alphabet_size]
+    hidden: [batch_size x hidden_size]
+    output: [batch_size x n_categories]
 
     https://stackoverflow.com/questions/55266154/pytorch-preferred-way-to-copy-a-tensor
     """
@@ -78,7 +78,7 @@ def train(rnn,hidden,criterion,learning_rate,category_tensor, line_tensor):
     for i in range(line_tensor.size()[0]):
         output, hidden = rnn(line_tensor[i], hidden)
 
-        loss = criterion(output, category_tensor)
+        loss = criterion(output, category_tensor[i])
         loss.backward()
 
         losses.append(loss.item())
@@ -115,7 +115,8 @@ def rnn_online_coding(pths,lr,samples_per_time=1,n_pieces=1):
 
     iteration = 0
 
-    hidden = model.initHidden()
+    hidden = torch.zeros(1,model.hidden_size).to(device)
+    last_target = torch.ones([[1]]).to(device)
 
     for piece in range(n_pieces):
 
@@ -157,7 +158,10 @@ def rnn_online_coding(pths,lr,samples_per_time=1,n_pieces=1):
 
             y_b = y_b.float().to(device)
 
-            hidden,loss = train(model,hidden,criterion,lr,y_b, onehot(y_b))
+            inpt = onehot(torch.cat( [last_target,y_b[:-1,:]],axis=0 ))
+
+            hidden,loss = train(model,hidden,criterion,lr,y_b, inpt)
+            last_target = y_b[-1:,:]
 
             running_loss += loss
             avg_code_length_history.append( running_loss / ((iteration + 1) * samples_per_time) )
