@@ -17,7 +17,7 @@ from perceptronac.models import Log2NLLLoss
 from perceptronac.utils import causal_context_many_imgs
 
 
-def lineToTensor(y):
+def onehot(y):
     return torch.cat([torch.logical_not(y,out=torch.empty(y.size(), dtype=y.dtype, device=y.device)),y],axis=1).unsqueeze(1)
 
 
@@ -58,11 +58,13 @@ def initialize_rnn(model):
 
 def train(rnn,hidden,criterion,learning_rate,category_tensor, line_tensor):
     """
-    line_tensor: [sequence_len x batch_size x alphabet_size]
-    category_tensor: [batch_size]
-    input: [batch_size x alphabet_size]
-    hidden: [batch_size x hidden_size]
-    output: [batch_size x n_categories]
+    line_tensor: [sequence_len x samples_per_time x alphabet_size]
+    category_tensor: [samples_per_time]
+    input: [samples_per_time x alphabet_size]
+    hidden: [samples_per_time x hidden_size]
+    output: [samples_per_time x n_categories]
+
+    https://stackoverflow.com/questions/55266154/pytorch-preferred-way-to-copy-a-tensor
     """
     rnn.zero_grad()
 
@@ -80,7 +82,7 @@ def train(rnn,hidden,criterion,learning_rate,category_tensor, line_tensor):
     for p in rnn.parameters():
         p.data.add_(p.grad.data, alpha=-learning_rate)
 
-    return hidden,sum(losses)
+    return hidden.detach().clone(),sum(losses)
 
 
 
@@ -101,9 +103,9 @@ def rnn_online_coding(pths,lr,samples_per_time=1,n_pieces=1):
     running_loss = 0.0
     
 
-    # (1024*768) * len(pths) must be divisible by n_pieces*batch_size
+    # (1024*768) * len(pths) must be divisible by n_pieces*samples_per_time
     # (1024*768) must be divisible by n_pieces
-    # ((1024*768) * len(pths)) // n_pieces must be divisible by batch_size
+    # ((1024*768) * len(pths)) // n_pieces must be divisible by samples_per_time
     piece_len = (1024*768) // n_pieces
 
     iteration = 0
@@ -111,9 +113,6 @@ def rnn_online_coding(pths,lr,samples_per_time=1,n_pieces=1):
     hidden = model.initHidden()
 
     for piece in range(n_pieces):
-
-
-        batch_size=samples_per_time
 
         lower_lim = (piece*piece_len*len(pths))
         upper_lim = ((piece+1)*piece_len*len(pths))
@@ -140,23 +139,23 @@ def rnn_online_coding(pths,lr,samples_per_time=1,n_pieces=1):
         y = y[lower_lim-start_page_lower_lim:upper_lim-start_page_lower_lim,:]
 
 
-        n_batches = len(y)//batch_size
-        pbar = tqdm(total=n_batches)
+        n_iterations = len(y)//samples_per_time
+        pbar = tqdm(total=n_iterations)
 
         
-        for iteration in range(n_batches):
+        for iteration in range(n_iterations):
 
-            start = iteration * batch_size - (piece*piece_len*len(pths))
-            stop = (iteration+1)* batch_size - (piece*piece_len*len(pths))
+            start = iteration * samples_per_time - (piece*piece_len*len(pths))
+            stop = (iteration+1)* samples_per_time - (piece*piece_len*len(pths))
 
             y_b= torch.tensor(y[start:stop,:])
 
             y_b = y_b.float().to(device)
 
-            hidden,loss = train(model,hidden,criterion,lr,y_b, lineToTensor(y_b))
+            hidden,loss = train(model,hidden,criterion,lr,y_b, onehot(y_b))
 
             running_loss += loss
-            avg_code_length_history.append( running_loss / ((iteration + 1) * batch_size) )
+            avg_code_length_history.append( running_loss / ((iteration + 1) * samples_per_time) )
 
 
             iteration+=1
