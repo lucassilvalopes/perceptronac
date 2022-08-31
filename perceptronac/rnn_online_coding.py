@@ -18,7 +18,7 @@ from perceptronac.utils import causal_context_many_imgs
 
 
 def lineToTensor(y):
-    return torch.cat([torch.logical_not(y,out=torch.empty(y.size(), dtype=y.dtype)),y],axis=1).unsqueeze(1)
+    return torch.cat([torch.logical_not(y,out=torch.empty(y.size(), dtype=y.dtype, device=y.device)),y],axis=1).unsqueeze(1)
 
 
 
