@@ -164,6 +164,15 @@ class Log2CrossEntropyLoss(torch.nn.Module):
         return self.cross_entropy_loss(pred, target.long())/torch.log(torch.tensor(2,dtype=target.dtype,device=target.device))
 
 
+class Log2NLLLoss(torch.nn.Module):
+    def __init__(self,*args,**kwargs):
+        super().__init__()
+        self.nll_loss = torch.nn.NLLLoss(*args,**kwargs)
+
+    def forward(self, pred, target):
+        return self.nll_loss(pred, target.long())/torch.log(torch.tensor(2,dtype=target.dtype,device=target.device))
+
+
 class CausalContextDataset(torch.utils.data.Dataset):
     def __init__(
         self,pths,data_type,N,percentage_of_uncles=None,getXy_later=False,
