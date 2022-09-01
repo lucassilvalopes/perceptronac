@@ -59,11 +59,11 @@ def train(rnn,hidden,criterion,learning_rate,category_tensor, line_tensor):
 
 
 
-def rnn_online_coding(pths,lr,which_model,hidden_units,samples_per_time=1,n_pieces=1):
+def rnn_online_coding(pths,lr,which_model,hidden_units,n_layers,samples_per_time=1,n_pieces=1):
 
     device=torch.device("cuda:0")
 
-    model = create_rnn(which_model,hidden_units)
+    model = create_rnn(which_model,hidden_units,n_layers)
 
     model.to(device)
     model.train(True)
@@ -148,7 +148,7 @@ def rnn_online_coding(pths,lr,which_model,hidden_units,samples_per_time=1,n_piec
 
 
 def rnn_online_coding_experiment(exp_name,docs,learning_rates,colors,linestyles,
-    labels,legend_ncol,ylim,which_model,hidden_units,samples_per_time=1,n_pieces=1):
+    labels,legend_ncol,ylim,which_model,hidden_units,n_layers=1,samples_per_time=1,n_pieces=1):
 
     exp_id = str(int(time.time()))
     save_dir = f"results/exp_{exp_id}"
@@ -168,7 +168,7 @@ def rnn_online_coding_experiment(exp_name,docs,learning_rates,colors,linestyles,
         partial_data = dict()
 
         for lr in learning_rates:
-            partial_data = rnn_online_coding(doc,lr,which_model,hidden_units,
+            partial_data = rnn_online_coding(doc,lr,which_model,hidden_units,n_layers,
                 samples_per_time=samples_per_time,n_pieces=n_pieces)
             k = "RNNlr={:.0e}".format(lr)
             data[k] = data[k] + np.array(partial_data[k])

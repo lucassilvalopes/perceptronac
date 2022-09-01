@@ -87,20 +87,24 @@ class GRURNN(nn.Module):
         return torch.zeros(self.n_layers, 1, self.hidden_size,device=device)
 
 
-def create_rnn(which,hidden_units):
+def create_rnn(which,hidden_units,n_layers):
     """https://pytorch.org/docs/stable/notes/randomness.html"""
 
     if which == "LinearRNN":
+        if n_layers !=1:
+            raise ValueError("n_layers != 1 not implemented for LinearRNN")
         model = LinearRNN(2, hidden_units, 2)
         initialize_rnn(model)
     elif which == "ElmanRNN":
+        if n_layers !=1:
+            raise ValueError("n_layers != 1 not implemented for ElmanRNN")
         model = ElmanRNN(2, hidden_units, 2)
         initialize_rnn(model)
     elif which == "GRURNN":
         torch.manual_seed(0)
         random.seed(0)
         np.random.seed(0)
-        model = GRURNN(2, hidden_units, 2)
+        model = GRURNN(2, hidden_units, 2, n_layers=n_layers)
     else:
         raise ValueError(f"{which}")
     

@@ -8,9 +8,11 @@ if __name__ == "__main__":
 
     which_model = "GRURNN" # "ElmanRNN"
 
-    hidden_units = 500
+    hidden_units = 650
 
-    samples_per_time = 64
+    samples_per_time = 64 # 1
+
+    n_layers = 2
 
     exp_name = f"Adaptive_Detection_of_Dim_page1_{which_model}{hidden_units}_lr{lr:.0e}_batchsize{samples_per_time}"
 
@@ -28,7 +30,7 @@ if __name__ == "__main__":
 
     labels = [
         'ARNN $\lambda='+str(re.search(r'(?<=^).*(?=e-)',f"{lr:.0e}").group())+\
-            '\cdot10^{'+ str(int(re.search(r'(?<=e-).*(?=$)',f"{lr:.0e}").group())) + '}$',
+            '\cdot10^{-'+ str(int(re.search(r'(?<=e-).*(?=$)',f"{lr:.0e}").group())) + '}$',
     ]
 
     linestyles = [
@@ -43,6 +45,6 @@ if __name__ == "__main__":
 
     ylim = [0.0, 1.0]
 
-    rnn_online_coding_experiment(exp_name,docs,learning_rates,colors,linestyles,
-        labels,legend_ncol,ylim,which_model,hidden_units,samples_per_time=samples_per_time,n_pieces=1)
+    rnn_online_coding_experiment(exp_name,docs,learning_rates,colors,linestyles,labels,legend_ncol,ylim,
+        which_model,hidden_units,n_layers=n_layers,samples_per_time=samples_per_time,n_pieces=1)
 
