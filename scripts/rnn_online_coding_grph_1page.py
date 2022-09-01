@@ -1,14 +1,14 @@
 import numpy as np
-
+import re
 from perceptronac.rnn_online_coding import rnn_online_coding_experiment
 
 if __name__ == "__main__":
 
-    lr = 0.005
+    lr = 0.0005
 
     hidden_units = 500
 
-    exp_name = f"Adaptive_Detection_of_Dim_page1_mikolov{hidden_units}_lr1e{str(int(np.log10(lr)))}"
+    exp_name = f"Adaptive_Detection_of_Dim_page1_mikolov{hidden_units}_lr{lr:.0e}"
 
     docs = [ # docs[i,j] = the path to the j'th page from the i'th document
         [
@@ -23,7 +23,8 @@ if __name__ == "__main__":
     learning_rates = [lr]
 
     labels = [
-        'ARNN $\lambda=10^{'+ str(int(np.log10(lr))) + '}$',
+        'ARNN $\lambda='+str(re.search(r'(?<=^).*(?=e-)',f"{lr:.0e}").group())+\
+            '\cdot10^{'+ str(int(re.search(r'(?<=e-).*(?=$)',f"{lr:.0e}").group())) + '}$',
     ]
 
     linestyles = [
