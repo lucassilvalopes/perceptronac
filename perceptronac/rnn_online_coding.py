@@ -95,11 +95,11 @@ def train(rnn,hidden,criterion,learning_rate,category_tensor, line_tensor):
 
 
 
-def rnn_online_coding(pths,lr,samples_per_time=1,n_pieces=1):
+def rnn_online_coding(pths,lr,hidden_units,samples_per_time=1,n_pieces=1):
 
     device=torch.device("cuda:0")
 
-    model = RNN(2, 500, 2)
+    model = RNN(2, hidden_units, 2)
     initialize_rnn(model)
 
     model.to(device)
@@ -185,8 +185,14 @@ def rnn_online_coding(pths,lr,samples_per_time=1,n_pieces=1):
 
 
 def rnn_online_coding_experiment(exp_name,docs,learning_rates,colors,linestyles,
-    labels,legend_ncol,ylim,samples_per_time=1,n_pieces=1):
+    labels,legend_ncol,ylim,hidden_units,samples_per_time=1,n_pieces=1):
 
+    exp_id = str(int(time.time()))
+    save_dir = f"results/exp_{exp_id}"
+
+    os.makedirs(save_dir)
+
+    fname = f"{save_dir.rstrip('/')}/rnn_online_coding_{exp_name}"
 
     len_data = (len(docs[0]) * 1024*768) // samples_per_time
 
@@ -199,7 +205,8 @@ def rnn_online_coding_experiment(exp_name,docs,learning_rates,colors,linestyles,
         partial_data = dict()
 
         for lr in learning_rates:
-            partial_data = rnn_online_coding(doc,lr,samples_per_time=samples_per_time,n_pieces=n_pieces)
+            partial_data = rnn_online_coding(doc,lr,hidden_units,
+                samples_per_time=samples_per_time,n_pieces=n_pieces)
             k = "RNNlr={:.0e}".format(lr)
             data[k] = data[k] + np.array(partial_data[k])
 
@@ -208,6 +215,8 @@ def rnn_online_coding_experiment(exp_name,docs,learning_rates,colors,linestyles,
         data[k] = data[k]/len(docs)
         
     xvalues = np.arange( len_data )
+
+    save_values(fname,xvalues,data,"iteration")
         
     fig = plot_comparison(xvalues,data,"iteration",
         linestyles={k:ls for k,ls in zip(sorted(data.keys()),linestyles)},
@@ -226,15 +235,4 @@ def rnn_online_coding_experiment(exp_name,docs,learning_rates,colors,linestyles,
 
     change_aspect(ax)
 
-    exp_id = str(int(time.time()))
-    save_dir = f"results/exp_{exp_id}"
-
-    os.makedirs(save_dir)
-
-    fname = f"{save_dir.rstrip('/')}/rnn_online_coding_{exp_name}"
-
     fig.savefig(fname+".png", dpi=300)
-
-    # save_values(fname,[xvalues[-1]],{k:[v[-1]] for k,v in data.items()},"iteration")
-
-    save_values(fname,xvalues,data,"iteration")

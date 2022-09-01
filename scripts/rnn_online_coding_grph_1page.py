@@ -4,9 +4,11 @@ from perceptronac.rnn_online_coding import rnn_online_coding_experiment
 
 if __name__ == "__main__":
 
-    lr = 0.001
+    lr = 0.005
 
-    exp_name = f"Adaptive_Detection_of_Dim_page1_mikolov500_lr1e{str(int(np.log10(lr)))}"
+    hidden_units = 500
+
+    exp_name = f"Adaptive_Detection_of_Dim_page1_mikolov{hidden_units}_lr1e{str(int(np.log10(lr)))}"
 
     docs = [ # docs[i,j] = the path to the j'th page from the i'th document
         [
@@ -37,5 +39,5 @@ if __name__ == "__main__":
     ylim = [0.0, 1.0]
 
     rnn_online_coding_experiment(exp_name,docs,learning_rates,colors,linestyles,
-        labels,legend_ncol,ylim,samples_per_time=1,n_pieces=1)
+        labels,legend_ncol,ylim,hidden_units,samples_per_time=1,n_pieces=1)
 
