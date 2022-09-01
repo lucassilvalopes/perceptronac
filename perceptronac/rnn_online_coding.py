@@ -7,58 +7,20 @@ https://pytorch.org/tutorials/intermediate/char_rnn_classification_tutorial.html
 """
 
 import torch
-import torch.nn as nn
 import numpy as np
-import math
 from tqdm import tqdm
 import time 
 import os
-from perceptronac.backward_adaptive_coding import RNG
-from perceptronac.backward_adaptive_coding import randperm
 from perceptronac.models import Log2NLLLoss
 from perceptronac.utils import causal_context_many_imgs
 from perceptronac.loading_and_saving import plot_comparison
 from perceptronac.loading_and_saving import save_values
 from perceptronac.loading_and_saving import change_aspect
+from perceptronac.rnn_models import ElmanRNN, initialize_rnn
 
 
 def onehot(y):
     return torch.cat([torch.logical_not(y,out=torch.empty(y.size(), dtype=y.dtype, device=y.device)),y],axis=1).unsqueeze(1)
-
-
-
-class RNN(nn.Module):
-    def __init__(self, input_size, hidden_size, output_size):
-        super(RNN, self).__init__()
-
-        self.hidden_size = hidden_size
-
-        self.i2h = nn.Linear(input_size + hidden_size, hidden_size)
-        self.i2o = nn.Linear(hidden_size, output_size)
-        self.softmax = nn.LogSoftmax(dim=1)
-
-    def forward(self, input, hidden):
-        combined = torch.cat((input, hidden), 1)
-        hidden = self.i2h(combined)
-        output = self.i2o(hidden)
-        output = self.softmax(output)
-        return output, hidden
-
-    def initHidden(self):
-        return torch.zeros(1, self.hidden_size)
-
-
-def initialize_rnn(model):
-    rng = RNG()
-    for layer in [model.i2h,model.i2o]:
-        fan_in = layer.weight.size(1)
-        fan_out = layer.weight.size(0)
-        stdv = 1. / math.sqrt(fan_in)
-        with torch.no_grad():
-            layer.weight.data = \
-                torch.linspace(-stdv,stdv,fan_in*fan_out)[randperm(rng,fan_in*fan_out)].reshape(fan_out,fan_in)
-            layer.bias.data = \
-                torch.linspace(-stdv,stdv,fan_out)[randperm(rng,fan_out)]
 
 
 def train(rnn,hidden,criterion,learning_rate,category_tensor, line_tensor):
@@ -99,7 +61,7 @@ def rnn_online_coding(pths,lr,hidden_units,samples_per_time=1,n_pieces=1):
 
     device=torch.device("cuda:0")
 
-    model = RNN(2, hidden_units, 2)
+    model = ElmanRNN(2, hidden_units, 2)
     initialize_rnn(model)
 
     model.to(device)
