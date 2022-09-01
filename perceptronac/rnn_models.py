@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 import numpy as np
+import random
 import math
 from perceptronac.backward_adaptive_coding import RNG
 from perceptronac.backward_adaptive_coding import randperm
@@ -24,8 +25,8 @@ class LinearRNN(nn.Module):
         output = self.softmax(output)
         return output, hidden
 
-    def initHidden(self):
-        return torch.zeros(1, self.hidden_size)
+    def initHidden(self,device):
+        return torch.zeros(1, self.hidden_size, device=device)
 
 
 class ElmanRNN(nn.Module):
@@ -45,8 +46,8 @@ class ElmanRNN(nn.Module):
         output = self.softmax(output)
         return output, hidden
 
-    def initHidden(self):
-        return torch.zeros(1, self.hidden_size)
+    def initHidden(self,device):
+        return torch.zeros(1, self.hidden_size, device=device)
 
 
 def initialize_rnn(model):
@@ -61,3 +62,46 @@ def initialize_rnn(model):
                 torch.linspace(-stdv,stdv,fan_in*fan_out)[randperm(rng,fan_in*fan_out)].reshape(fan_out,fan_in)
             layer.bias.data = \
                 torch.linspace(-stdv,stdv,fan_out)[randperm(rng,fan_out)]
+
+
+class GRURNN(nn.Module):
+
+    def __init__(self, input_size, hidden_size, output_size, n_layers = 1):
+        super(GRURNN, self).__init__()
+
+        self.hidden_size = hidden_size
+        self.n_layers = n_layers
+
+        self.i2h = nn.GRU(input_size, hidden_size, n_layers)
+        self.i2o = nn.Linear(hidden_size, output_size)
+        self.softmax = nn.LogSoftmax(dim=1)
+
+    def forward(self, input, hidden):
+        
+        gru_output,hidden = self.i2h(input.unsqueeze(0), hidden)
+        output = self.i2o(gru_output.squeeze(0))
+        output = self.softmax(output)
+        return output, hidden
+
+    def initHidden(self,device):
+        return torch.zeros(self.n_layers, 1, self.hidden_size,device=device)
+
+
+def create_rnn(which,hidden_units):
+    """https://pytorch.org/docs/stable/notes/randomness.html"""
+
+    if which == "LinearRNN":
+        model = LinearRNN(2, hidden_units, 2)
+        initialize_rnn(model)
+    elif which == "ElmanRNN":
+        model = ElmanRNN(2, hidden_units, 2)
+        initialize_rnn(model)
+    elif which == "GRURNN":
+        torch.manual_seed(0)
+        random.seed(0)
+        np.random.seed(0)
+        model = GRURNN(2, hidden_units, 2)
+    else:
+        raise ValueError(f"{which}")
+    
+    return model

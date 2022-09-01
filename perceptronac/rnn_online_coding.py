@@ -16,7 +16,7 @@ from perceptronac.utils import causal_context_many_imgs
 from perceptronac.loading_and_saving import plot_comparison
 from perceptronac.loading_and_saving import save_values
 from perceptronac.loading_and_saving import change_aspect
-from perceptronac.rnn_models import ElmanRNN, initialize_rnn
+from perceptronac.rnn_models import create_rnn
 
 
 def onehot(y):
@@ -57,12 +57,11 @@ def train(rnn,hidden,criterion,learning_rate,category_tensor, line_tensor):
 
 
 
-def rnn_online_coding(pths,lr,hidden_units,samples_per_time=1,n_pieces=1):
+def rnn_online_coding(pths,lr,which_model,hidden_units,samples_per_time=1,n_pieces=1):
 
     device=torch.device("cuda:0")
 
-    model = ElmanRNN(2, hidden_units, 2)
-    initialize_rnn(model)
+    model = create_rnn(which_model,hidden_units)
 
     model.to(device)
     model.train(True)
@@ -81,7 +80,7 @@ def rnn_online_coding(pths,lr,hidden_units,samples_per_time=1,n_pieces=1):
 
     iteration = 0
 
-    hidden = torch.zeros(1,model.hidden_size,device=device)
+    hidden = model.initHidden(device)
     previous_targets = torch.ones(2,1,device=device)
 
     for piece in range(n_pieces):
@@ -147,7 +146,7 @@ def rnn_online_coding(pths,lr,hidden_units,samples_per_time=1,n_pieces=1):
 
 
 def rnn_online_coding_experiment(exp_name,docs,learning_rates,colors,linestyles,
-    labels,legend_ncol,ylim,hidden_units,samples_per_time=1,n_pieces=1):
+    labels,legend_ncol,ylim,which_model,hidden_units,samples_per_time=1,n_pieces=1):
 
     exp_id = str(int(time.time()))
     save_dir = f"results/exp_{exp_id}"
@@ -167,7 +166,7 @@ def rnn_online_coding_experiment(exp_name,docs,learning_rates,colors,linestyles,
         partial_data = dict()
 
         for lr in learning_rates:
-            partial_data = rnn_online_coding(doc,lr,hidden_units,
+            partial_data = rnn_online_coding(doc,lr,which_model,hidden_units,
                 samples_per_time=samples_per_time,n_pieces=n_pieces)
             k = "RNNlr={:.0e}".format(lr)
             data[k] = data[k] + np.array(partial_data[k])
