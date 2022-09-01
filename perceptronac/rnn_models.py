@@ -65,7 +65,7 @@ def initialize_rnn(model):
 
 
 class GRURNN(nn.Module):
-
+    """https://blog.floydhub.com/gru-with-pytorch/"""
     def __init__(self, input_size, hidden_size, output_size, n_layers = 1):
         super(GRURNN, self).__init__()
 

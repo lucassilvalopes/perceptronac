@@ -35,7 +35,7 @@ def train(rnn,hidden,criterion,learning_rate,category_tensor, line_tensor):
     """
     rnn.zero_grad()
 
-    losses = 0.0
+    losses = []
 
     output, hidden = rnn(line_tensor[0], hidden)
 
@@ -44,16 +44,18 @@ def train(rnn,hidden,criterion,learning_rate,category_tensor, line_tensor):
         output, hidden = rnn(line_tensor[i+1], hidden)
 
         loss = criterion(output, category_tensor[i])
-        loss.backward()
 
-        losses += loss.item()
+        losses.append( loss )
+
+    losses = torch.sum(torch.stack(losses))
+    losses.backward()
 
     # Add parameters' gradients to their values, multiplied by learning rate
     for p in rnn.parameters():
         # print(p.data.shape,p.requires_grad,p.name,p.grad)
         p.data.add_(p.grad.data, alpha=-learning_rate)
 
-    return hidden.detach().clone() ,losses
+    return hidden.detach().clone() ,losses.item()
 
 
 
