@@ -32,6 +32,7 @@ def train(rnn,hidden,criterion,learning_rate,category_tensor, line_tensor):
     output: [batch_size x n_categories]
 
     https://stackoverflow.com/questions/55266154/pytorch-preferred-way-to-copy-a-tensor
+    https://pytorch.org/tutorials/intermediate/char_rnn_classification_tutorial.html
     """
     rnn.zero_grad()
 
@@ -43,19 +44,16 @@ def train(rnn,hidden,criterion,learning_rate,category_tensor, line_tensor):
 
         output, hidden = rnn(line_tensor[i+1], hidden)
 
-        loss = criterion(output, category_tensor[i])
+        losses.append( criterion(output, category_tensor[i]) )
 
-        losses.append( loss )
+    # losses = torch.sum(torch.stack(losses))
+    # losses.backward()
+    torch.sum(torch.stack(losses)).backward()
 
-    losses = torch.sum(torch.stack(losses))
-    losses.backward()
-
-    # Add parameters' gradients to their values, multiplied by learning rate
     for p in rnn.parameters():
-        # print(p.data.shape,p.requires_grad,p.name,p.grad)
         p.data.add_(p.grad.data, alpha=-learning_rate)
 
-    return hidden.detach().clone() ,losses.item()
+    return hidden.detach().clone() , [loss.item() for loss in losses] # losses.item()
 
 
 
@@ -75,9 +73,6 @@ def rnn_online_coding(pths,lr,which_model,hidden_units,n_layers,samples_per_time
     running_loss = 0.0
     
 
-    # (1024*768) * len(pths) must be divisible by n_pieces*samples_per_time
-    # (1024*768) must be divisible by n_pieces
-    # ((1024*768) * len(pths)) // n_pieces must be divisible by samples_per_time
     piece_len = (1024*768) // n_pieces
 
     iteration = 0
@@ -123,16 +118,19 @@ def rnn_online_coding(pths,lr,which_model,hidden_units,n_layers,samples_per_time
 
             y_b= torch.tensor(y[start:stop,:],dtype=torch.float32,device=device)
 
-            # y_b = y_b.float().to(device)
-
             inpt = onehot(torch.cat([previous_targets,y_b[:-1,:]],axis=0) )
 
-            hidden,loss = train(model,hidden,criterion,lr,y_b, inpt)
+            hidden,losses = train(model,hidden,criterion,lr,y_b, inpt)
+            # hidden,loss = train(model,hidden,criterion,lr,y_b, inpt)
 
             previous_targets = torch.cat([previous_targets,y_b],axis=0)[-2:,:]
 
-            running_loss += loss
-            avg_code_length_history.append( running_loss / ((iteration + 1) * samples_per_time) )
+            for i,loss in enumerate(losses):
+                running_loss += loss
+                avg_code_length_history.append( running_loss / ((iteration * samples_per_time) + (i+1)) )
+
+            # running_loss += loss
+            # avg_code_length_history.append( running_loss / ((iteration + 1) * samples_per_time) )
 
 
             iteration+=1
@@ -157,7 +155,7 @@ def rnn_online_coding_experiment(exp_name,docs,learning_rates,colors,linestyles,
 
     fname = f"{save_dir.rstrip('/')}/rnn_online_coding_{exp_name}"
 
-    len_data = (len(docs[0]) * 1024*768) // samples_per_time
+    len_data = (len(docs[0]) * 1024*768) # // samples_per_time
 
     data = dict()
 
