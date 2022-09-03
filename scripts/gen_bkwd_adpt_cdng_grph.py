@@ -7,15 +7,20 @@ import numpy as np
 import matplotlib.pyplot as plt
 from perceptronac.loading_and_saving import plot_comparison
 from perceptronac.loading_and_saving import change_aspect
+from perceptronac.loading_and_saving import linestyle_tuple
 
 
 def label_map(orig_lbl):
     label_map_dict = {
         "LUTmean": 'ALUT',
+        "MLP": "APC",
+        "RNN": "ARNN"
     }
-    if "MLP" in orig_lbl:
-        exponent = re.search(r'(?<=MLPlr=1e-).*(?=$)',orig_lbl).group()
-        return 'APC $\lambda=10^{-'+ str(int(exponent)) + '}$'
+    if "MLP" in orig_lbl or "RNN" in orig_lbl:
+        ky = "MLP" if "MLP" in orig_lbl else "RNN"
+        coefficient = re.search(r'(?<==).*(?=e-)',orig_lbl).group()
+        exponent = re.search(r'(?<=e-).*(?=$)',orig_lbl).group()
+        return label_map_dict[ky] + ' $\lambda='+str(coefficient)+'\cdot10^{-'+ str(int(exponent)) + '}$'
     else:
         return label_map_dict[orig_lbl]
 
@@ -26,6 +31,8 @@ def linestyle_map(orig_lbl):
     }
     if "MLP" in orig_lbl:
         return "dashed"
+    elif "RNN" in orig_lbl:
+        return linestyle_tuple['densely dotted']
     else:
         return linestyle_map_dict[orig_lbl]
 
@@ -36,6 +43,8 @@ def color_map(orig_lbl):
     }
     if "MLP" in orig_lbl:
         return "b"
+    elif "RNN" in orig_lbl:
+        return "m"
     else:
         return color_map_dict[orig_lbl]
 
