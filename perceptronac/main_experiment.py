@@ -709,8 +709,8 @@ class RatesQuantizedArbitraryMLP(RatesArbitraryMLP):
             bits = self.params * self.quantization_bits
             samples = self.params
         else:
-            Delta = estimate_midtread_uniform_quantization_delta(model,self.quantization_bits)
-            model,all_parameters = midtread_uniform_quantization(model,Delta)
+            Delta,shift = estimate_midtread_uniform_quantization_delta(model,self.quantization_bits)
+            model,all_parameters = midtread_uniform_quantization(model,Delta,shift)
             bits,samples = encode_network_integer_symbols(all_parameters)
         return model,bits,samples
 

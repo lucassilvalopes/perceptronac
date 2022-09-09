@@ -29,25 +29,25 @@ def estimate_midtread_uniform_quantization_delta(model,n_bits):
 
     all_parameters = get_model_parameters_values(model)
 
-    max_abs_value = np.max(np.abs(all_parameters))
+    values_range = np.max(all_parameters) - np.min(all_parameters)
 
-    # Delta = (max_abs_value - (-max_abs_value))/(2**n_bits) # midrise
+    Delta = values_range / (2**n_bits)
 
-    Delta = max_abs_value /(2**(n_bits-1)+(1/2)) # midtread
+    shift = np.min(all_parameters)
 
-    return Delta
+    return Delta,shift
 
 
-def midtread_uniform_quantization(model,Delta):
+def midtread_uniform_quantization(model,Delta,shift):
     all_parameters = []
     for i in range(len(model.layers)):
         if isinstance(model.layers[i], torch.nn.Linear):
             with torch.no_grad():
-                quantized_weight_data = torch.round(model.layers[i].weight.data/Delta)
+                quantized_weight_data = torch.round((model.layers[i].weight.data-shift)/Delta)
                 all_parameters.append( quantized_weight_data.detach().numpy().reshape(-1) )
                 model.layers[i].weight.data = Delta * quantized_weight_data
                 
-                quantized_bias_data = torch.round(model.layers[i].bias.data/Delta)
+                quantized_bias_data = torch.round((model.layers[i].bias.data-shift)/Delta)
                 all_parameters.append( quantized_bias_data.detach().numpy().reshape(-1) )
                 model.layers[i].bias.data = Delta * quantized_bias_data
                 
