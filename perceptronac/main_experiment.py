@@ -690,7 +690,6 @@ def rate_vs_complexity_experiment(configs):
 
 from perceptronac.mlp_quantization import estimate_midtread_uniform_quantization_delta
 from perceptronac.mlp_quantization import midtread_uniform_quantization
-from perceptronac.mlp_quantization import midtread_uniform_quantization_values
 from perceptronac.mlp_quantization import encode_network_integer_symbols
 
 class RatesQuantizedArbitraryMLP(RatesArbitraryMLP):
@@ -760,30 +759,36 @@ def rate_vs_rate_experiment(configs):
     topology_metadata = []
     start_time_metadata = []
     end_time_metadata = []
-    for widths in configs["topologies"]:
 
-        for qbits in configs["qbits_vec"]:
+    energy_measurement_iteration = []
+    for e_iter in range(configs["energy_measurement_iteration"]):
 
-            params = MLPTopologyCalculator.mlp_parameters(widths)
-            params_metadata.append(params)
-            qbits_metadata.append(qbits)
-            topology_metadata.append('_'.join(map(str,widths)))
+        for widths in configs["topologies"]:
 
-            quantizedMLP = RatesQuantizedArbitraryMLP(configs,widths,qbits)
-            start_time_metadata.append(time.time())
-            quantized_mlp_results = quantizedMLP.get_rates(configs["training_set"],configs["validation_set"],output_n_samples=True)
-            end_time_metadata.append(time.time())
-            data_rate = quantized_mlp_results[1][0]
-            data_samples = quantized_mlp_results[3][0]
-            model_bits,model_samples = quantizedMLP.quantization_info()
-            data_bits = data_rate * data_samples
+            for qbits in configs["qbits_vec"]:
 
-            x_value = (data_bits + model_bits)/data_samples
+                params = MLPTopologyCalculator.mlp_parameters(widths)
+                params_metadata.append(params)
+                qbits_metadata.append(qbits)
+                topology_metadata.append('_'.join(map(str,widths)))
 
-            y_value = data_rate
+                quantizedMLP = RatesQuantizedArbitraryMLP(configs,widths,qbits)
+                start_time_metadata.append(time.time())
+                quantized_mlp_results = quantizedMLP.get_rates(configs["training_set"],configs["validation_set"],output_n_samples=True)
+                end_time_metadata.append(time.time())
+                data_rate = quantized_mlp_results[1][0]
+                data_samples = quantized_mlp_results[3][0]
+                model_bits,model_samples = quantizedMLP.quantization_info()
+                data_bits = data_rate * data_samples
 
-            x_axis.append(x_value)
-            y_axis.append(y_value)
+                x_value = (data_bits + model_bits)/data_samples
+
+                y_value = data_rate
+
+                x_axis.append(x_value)
+                y_axis.append(y_value)
+
+                energy_measurement_iteration.append(e_iter)
 
 
     save_configs(f"{get_prefix(configs)}_conf",configs)
@@ -798,11 +803,15 @@ def rate_vs_rate_experiment(configs):
         "data_bits/data_samples":y_axis,
         "(data_bits+model_bits)/data_samples":x_axis,
         "topology": topology_metadata, "params":params_metadata,"quantization_bits":qbits_metadata,
-        "start_time":start_time_metadata,"end_time":end_time_metadata
+        "start_time":start_time_metadata,"end_time":end_time_metadata,
+        "energy_measurement_iteration": energy_measurement_iteration
     }) #.set_index("(data_bits+model_bits)/data_samples")
 
-    selected_points_mask,fig = points_in_convex_hull(data,"(data_bits+model_bits)/data_samples",
-        "data_bits/data_samples",log_x=True)
+    first_cycle_data = data.iloc[data["energy_measurement_iteration"]==0,:].drop(
+        ["start_time", "end_time", "energy_measurement_iteration"], axis=1)
+
+    selected_points_mask,fig = points_in_convex_hull(first_cycle_data,
+        "(data_bits+model_bits)/data_samples","data_bits/data_samples",log_x=True)
 
     save_fig(f"{get_prefix(configs)}_valid_graph",fig)
 
@@ -810,7 +819,7 @@ def rate_vs_rate_experiment(configs):
         "(data_bits+model_bits)/data_samples","data_bits/data_samples")
 
     save_dataframe(f"{get_prefix(configs)}_valid_hull_values",
-        data.iloc[selected_points_mask,:],
+        first_cycle_data.iloc[selected_points_mask,:],
         "(data_bits+model_bits)/data_samples","data_bits/data_samples")
 
     p.kill()
@@ -820,6 +829,23 @@ def rate_vs_rate_experiment(configs):
     joules = estimate_joules(data,power_draw)
 
     data["joules"] = joules
+
+    data = data.groupby(["topology","quantization_bits"]).apply(
+        lambda x: pd.Series({
+            "data_bits/data_samples":x["data_bits/data_samples"].iloc[0],
+            "(data_bits+model_bits)/data_samples":x["(data_bits+model_bits)/data_samples"].iloc[0],
+            "topology": x["topology"].iloc[0], 
+            "params": x["params"].iloc[0],
+            "quantization_bits": x["quantization_bits"].iloc[0],
+            "joules": x["joules"].mean()
+        },index=[
+            "data_bits/data_samples",
+            "(data_bits+model_bits)/data_samples",
+            "topology",
+            "params",
+            "quantization_bits",
+            "joules"
+        ]))
 
     selected_points_mask,fig = points_in_convex_hull(data,"(data_bits+model_bits)/data_samples",
         "joules",log_x=True)
