@@ -815,7 +815,7 @@ def rate_vs_rate_experiment(configs):
 
     save_fig(f"{get_prefix(configs)}_valid_graph",fig)
 
-    save_dataframe(f"{get_prefix(configs)}_valid_values",data,
+    save_dataframe(f"{get_prefix(configs)}_valid_values",first_cycle_data,
         "(data_bits+model_bits)/data_samples","data_bits/data_samples")
 
     save_dataframe(f"{get_prefix(configs)}_valid_hull_values",
@@ -845,7 +845,7 @@ def rate_vs_rate_experiment(configs):
             "params",
             "quantization_bits",
             "joules"
-        ]))
+        ])).sort_values("params")
 
     selected_points_mask,fig = points_in_convex_hull(data,"(data_bits+model_bits)/data_samples",
         "joules",log_x=True)
