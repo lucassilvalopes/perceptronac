@@ -73,3 +73,19 @@ def encode_network_integer_symbols(quantized):
 
     return rate * n_samples, n_samples
 
+
+if __name__ == "__main__":
+
+    from perceptronac.models import ArbitraryMLP
+
+    model = ArbitraryMLP([10, 10, 10, 1])
+
+    n_bits = 8
+
+    Delta,shift = estimate_midtread_uniform_quantization_delta(model,n_bits)
+
+    model2,quantized_values = midtread_uniform_quantization(model,Delta,shift)
+
+    assert np.min(quantized_values) == 0
+    assert np.max(quantized_values) == (2**n_bits) - 1
+
