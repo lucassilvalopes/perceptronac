@@ -807,7 +807,7 @@ def rate_vs_rate_experiment(configs):
         "energy_measurement_iteration": energy_measurement_iteration
     }) #.set_index("(data_bits+model_bits)/data_samples")
 
-    first_cycle_data = data.iloc[data["energy_measurement_iteration"]==0,:].drop(
+    first_cycle_data = data.loc[data["energy_measurement_iteration"]==0,:].drop(
         ["start_time", "end_time", "energy_measurement_iteration"], axis=1)
 
     selected_points_mask,fig = points_in_convex_hull(first_cycle_data,
