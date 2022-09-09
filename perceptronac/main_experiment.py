@@ -710,8 +710,8 @@ class RatesQuantizedArbitraryMLP(RatesArbitraryMLP):
             samples = self.params
         else:
             Delta = estimate_midtread_uniform_quantization_delta(model,self.quantization_bits)
-            model = midtread_uniform_quantization(model,Delta)
-            bits,samples = encode_network_integer_symbols(midtread_uniform_quantization_values(model,Delta))
+            model,all_parameters = midtread_uniform_quantization(model,Delta)
+            bits,samples = encode_network_integer_symbols(all_parameters)
         return model,bits,samples
 
     def load_model(self):

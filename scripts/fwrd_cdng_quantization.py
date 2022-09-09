@@ -15,18 +15,18 @@ if __name__ == "__main__":
             os.path.join('/home/lucas/Documents/data/SPL2020',f) for f in os.listdir('/home/lucas/Documents/data/SPL2020')
         ],
         "validation_set": [
-            os.path.join('/home/lucas/Documents/data/SPL2021/pages',f) for f in sorted(os.listdir('/home/lucas/Documents/data/SPL2021/pages'))
+            os.path.join('/home/lucas/Documents/data/SPL2020',f) for f in os.listdir('/home/lucas/Documents/data/SPL2020')
         ],
         "epochs": 1,
         "learning_rate": 0.0001,
         "batch_size": 8192,
         "num_workers":4,
         "device":"cuda:0", #"cpu"
-        "parent_id": "1659524399",
-        "N": 4,
+        "parent_id": "1659355125",
+        "N": 32,
         "phases": ['valid'], # ['train', 'valid'],
         "xscale": "log", # 'linear',
-        "reduction": 'min', # min, last
+        "reduction": 'last', # min, last
         "data_type": 'image', # image, pointcloud, table
         "geo_or_attr": "attributes", # geometry, attributes
         "n_classes": 2, # 2, 256
@@ -35,7 +35,7 @@ if __name__ == "__main__":
         "percentage_of_uncles": 0.0, # must be specified if the data type is pointcloud
         "last_octree_level": 10, # must be specified if the data type is pointcloud
         "save_dir": "/home/lucas/Documents/perceptronac/results",
-        "dset_pieces": 20, # if not enough memory to hold all data at once, specify into how many pieces the data should be divided
+        "dset_pieces": 2, # if not enough memory to hold all data at once, specify into how many pieces the data should be divided
     }
 
     configs["topologies"] = [
