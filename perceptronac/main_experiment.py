@@ -847,14 +847,28 @@ def rate_vs_rate_experiment(configs):
             "joules"
         ])).sort_values("params")
 
+
+    selected_points_mask,fig = points_in_convex_hull(data,"data_bits/data_samples",
+        "joules",log_x=True)
+    
+    save_fig(f"{get_prefix(configs)}_static_valid_rate_x_power_graph",fig)
+
+    save_dataframe(f"{get_prefix(configs)}_static_valid_rate_x_power_values",data,
+        "data_bits/data_samples","joules")
+
+    save_dataframe(f"{get_prefix(configs)}_static_valid_rate_x_power_hull_values",
+        data.iloc[selected_points_mask,:],
+        "data_bits/data_samples","joules")
+
+
     selected_points_mask,fig = points_in_convex_hull(data,"(data_bits+model_bits)/data_samples",
         "joules",log_x=True)
     
-    save_fig(f"{get_prefix(configs)}_valid_rate_x_power_graph",fig)
+    save_fig(f"{get_prefix(configs)}_semi_adaptive_valid_rate_x_power_graph",fig)
 
-    save_dataframe(f"{get_prefix(configs)}_valid_rate_x_power_values",data,
+    save_dataframe(f"{get_prefix(configs)}_semi_adaptive_valid_rate_x_power_values",data,
         "(data_bits+model_bits)/data_samples","joules")
 
-    save_dataframe(f"{get_prefix(configs)}_valid_rate_x_power_hull_values",
+    save_dataframe(f"{get_prefix(configs)}_semi_adaptive_valid_rate_x_power_hull_values",
         data.iloc[selected_points_mask,:],
         "(data_bits+model_bits)/data_samples","joules")
