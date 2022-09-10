@@ -763,7 +763,7 @@ def rate_vs_rate_experiment(configs):
     energy_measurement_iteration = []
     for e_iter in range(configs["energy_measurement_iteration"]):
 
-        for widths in configs["topologies"]:
+        for widths in random.sample(configs["topologies"], len(configs["topologies"])):
 
             for qbits in configs["qbits_vec"]:
 
@@ -805,7 +805,7 @@ def rate_vs_rate_experiment(configs):
         "topology": topology_metadata, "params":params_metadata,"quantization_bits":qbits_metadata,
         "start_time":start_time_metadata,"end_time":end_time_metadata,
         "energy_measurement_iteration": energy_measurement_iteration
-    }) #.set_index("(data_bits+model_bits)/data_samples")
+    }).sort_values("params") #.set_index("(data_bits+model_bits)/data_samples")
 
     first_cycle_data = data.loc[data["energy_measurement_iteration"]==0,:].drop(
         ["start_time", "end_time", "energy_measurement_iteration"], axis=1)
@@ -837,14 +837,16 @@ def rate_vs_rate_experiment(configs):
             "topology": x["topology"].iloc[0], 
             "params": x["params"].iloc[0],
             "quantization_bits": x["quantization_bits"].iloc[0],
-            "joules": x["joules"].mean()
+            "joules": x["joules"].mean(),
+            "joules_std": x["joules"].std()
         },index=[
             "data_bits/data_samples",
             "(data_bits+model_bits)/data_samples",
             "topology",
             "params",
             "quantization_bits",
-            "joules"
+            "joules",
+            "joules_std"
         ])).sort_values("params")
 
 

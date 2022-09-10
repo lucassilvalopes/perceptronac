@@ -27,7 +27,7 @@ if __name__ == "__main__":
         "N": 32,
         "phases": ['valid'], # ['train', 'valid'],
         "xscale": "log", # 'linear',
-        "reduction": 'last', # min, last
+        "reduction": 'min', # min, last
         "data_type": 'image', # image, pointcloud, table
         "geo_or_attr": "attributes", # geometry, attributes
         "n_classes": 2, # 2, 256
@@ -36,8 +36,8 @@ if __name__ == "__main__":
         "percentage_of_uncles": 0.0, # must be specified if the data type is pointcloud
         "last_octree_level": 10, # must be specified if the data type is pointcloud
         "save_dir": "/home/lucas/Documents/perceptronac/results",
-        "dset_pieces": 2, # if not enough memory to hold all data at once, specify into how many pieces the data should be divided
-        "energy_measurement_iteration": 8 # number of repetitions for better energy consumtion estimate
+        "dset_pieces": 1, # if not enough memory to hold all data at once, specify into how many pieces the data should be divided
+        "energy_measurement_iteration": 20 # number of repetitions for better energy consumtion estimate
     }
 
     configs["topologies"] = [
