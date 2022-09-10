@@ -2,7 +2,7 @@
 import torch
 import time
 import os
-from perceptronac.main_experiment import rate_vs_rate_experiment
+from perceptronac.main_experiment import rate_vs_power_experiment
 from perceptronac.main_experiment import MLPTopologyCalculator
 
 if __name__ == "__main__":
@@ -44,4 +44,4 @@ if __name__ == "__main__":
         [configs["N"],h1,h2,1] for h1 in [10,20,40,80,160,320,640] for h2 in [10,20,40,80,160,320,640]
     ]
 
-    rate_vs_rate_experiment(configs)
+    rate_vs_power_experiment(configs)

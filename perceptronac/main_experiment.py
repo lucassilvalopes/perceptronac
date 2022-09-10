@@ -740,7 +740,7 @@ from perceptronac.power_consumption import estimate_joules
 from perceptronac.loading_and_saving import points_in_convex_hull
 
 
-def rate_vs_rate_experiment(configs):
+def rate_vs_power_experiment(configs):
 
     p = subprocess.Popen([
         os.path.join(os.path.dirname(os.path.abspath(__file__)),"power_consumption.sh"),
