@@ -752,75 +752,76 @@ def rate_vs_rate_experiment(configs):
     assert configs["phases"] == ["valid"]
     assert configs["epochs"] == 1
 
-    x_axis = []
-    y_axis = []
-    params_metadata = []
-    qbits_metadata = []
-    topology_metadata = []
-    start_time_metadata = []
-    end_time_metadata = []
-
+    data_bits_plus_model_bits_per_sample_vec = []
+    model_bits_per_sample_vec = []
+    data_bits_per_sample_vec = []
+    params_vec = []
+    qbits_vec = []
+    topology_vec = []
+    start_time_vec = []
+    end_time_vec = []
+    data_samples_vec = []
     energy_measurement_iteration = []
     for e_iter in range(configs["energy_measurement_iteration"]):
 
-        for widths in random.sample(configs["topologies"], len(configs["topologies"])):
+        wq_comb = [(w,q) for w in configs["topologies"] for q in configs["qbits_vec"]]
 
-            for qbits in configs["qbits_vec"]:
+        for widths,qbits in random.sample(wq_comb, len(wq_comb)):
 
-                params = MLPTopologyCalculator.mlp_parameters(widths)
-                params_metadata.append(params)
-                qbits_metadata.append(qbits)
-                topology_metadata.append('_'.join(map(str,widths)))
+            params = MLPTopologyCalculator.mlp_parameters(widths)
+            params_vec.append(params)
+            qbits_vec.append(qbits)
+            topology_vec.append('_'.join(map(str,widths)))
 
-                quantizedMLP = RatesQuantizedArbitraryMLP(configs,widths,qbits)
-                start_time_metadata.append(time.time())
-                quantized_mlp_results = quantizedMLP.get_rates(configs["training_set"],configs["validation_set"],output_n_samples=True)
-                end_time_metadata.append(time.time())
-                data_rate = quantized_mlp_results[1][0]
-                data_samples = quantized_mlp_results[3][0]
-                model_bits,model_samples = quantizedMLP.quantization_info()
-                data_bits = data_rate * data_samples
+            quantizedMLP = RatesQuantizedArbitraryMLP(configs,widths,qbits)
+            start_time_vec.append(time.time())
+            quantized_mlp_results = quantizedMLP.get_rates(configs["training_set"],configs["validation_set"],output_n_samples=True)
+            end_time_vec.append(time.time())
+            data_rate = quantized_mlp_results[1][0]
+            data_samples = quantized_mlp_results[3][0]
+            model_bits,model_samples = quantizedMLP.quantization_info()
+            data_bits = data_rate * data_samples
 
-                x_value = (data_bits + model_bits)/data_samples
+            data_bits_plus_model_bits_per_sample = (data_bits + model_bits)/data_samples
 
-                y_value = data_rate
+            model_bits_per_sample = model_bits/data_samples
 
-                x_axis.append(x_value)
-                y_axis.append(y_value)
+            model_bits_per_sample_vec.append(model_bits_per_sample)
+            data_bits_plus_model_bits_per_sample_vec.append(data_bits_plus_model_bits_per_sample)
+            data_bits_per_sample_vec.append(data_rate)
 
-                energy_measurement_iteration.append(e_iter)
+            data_samples_vec.append(data_samples)
+
+            energy_measurement_iteration.append(e_iter)
 
 
     save_configs(f"{get_prefix(configs)}_conf",configs)
 
-    # save_data(f"{get_prefix(configs)}_valid",x_axis,{"data_bits/data_samples":y_axis},"(data_bits+model_bits)/data_samples",
-    #     ylabel="data_bits/data_samples",xscale=configs["xscale"],
-    #     extra={"topology": topology_metadata, "params":params_metadata,"quantization_bits":qbits_metadata,
-    #     "start_time":start_time_metadata,"end_time":end_time_metadata},
-    #     linestyles={"data_bits/data_samples":"None"}, colors={"data_bits/data_samples":"k"}, markers={"data_bits/data_samples":"x"})
 
     data=pd.DataFrame({
-        "data_bits/data_samples":y_axis,
-        "(data_bits+model_bits)/data_samples":x_axis,
-        "topology": topology_metadata, "params":params_metadata,"quantization_bits":qbits_metadata,
-        "start_time":start_time_metadata,"end_time":end_time_metadata,
+        "data_bits/data_samples":data_bits_per_sample_vec,
+        "(data_bits+model_bits)/data_samples":data_bits_plus_model_bits_per_sample_vec,
+        "model_bits/data_samples":model_bits_per_sample_vec,
+        "data_samples":data_samples_vec,
+        "topology": topology_vec, "params":params_vec,"quantization_bits":qbits_vec,
+        "start_time":start_time_vec,"end_time":end_time_vec,
         "energy_measurement_iteration": energy_measurement_iteration
-    }).sort_values("params") #.set_index("(data_bits+model_bits)/data_samples")
+    }).sort_values("params")
 
     first_cycle_data = data.loc[data["energy_measurement_iteration"]==0,:].drop(
         ["start_time", "end_time", "energy_measurement_iteration"], axis=1)
 
     selected_points_mask,fig = points_in_convex_hull(first_cycle_data,
-        "(data_bits+model_bits)/data_samples","data_bits/data_samples",log_x=True)
+        "model_bits/data_samples","data_bits/data_samples",log_x=True)
 
     save_fig(f"{get_prefix(configs)}_valid_graph",fig)
 
     save_dataframe(f"{get_prefix(configs)}_valid_values",first_cycle_data,
-        "(data_bits+model_bits)/data_samples","data_bits/data_samples")
+        "model_bits/data_samples","data_bits/data_samples")
 
     save_dataframe(f"{get_prefix(configs)}_valid_hull_values",
         first_cycle_data.iloc[selected_points_mask,:],
-        "(data_bits+model_bits)/data_samples","data_bits/data_samples")
+        "model_bits/data_samples","data_bits/data_samples")
 
     p.kill()
 
@@ -850,20 +851,24 @@ def rate_vs_rate_experiment(configs):
         ])).sort_values("params")
 
 
-    selected_points_mask,fig = points_in_convex_hull(data,"data_bits/data_samples",
+
+    static_data = data.loc[data["quantization_bits"]==32,:].drop(
+        ["model_bits/data_samples","(data_bits+model_bits)/data_samples", "quantization_bits"], axis=1)
+
+    static_selected_points,fig = points_in_convex_hull(static_data,"data_bits/data_samples",
         "joules",log_x=True)
     
     save_fig(f"{get_prefix(configs)}_static_valid_rate_x_power_graph",fig)
 
-    save_dataframe(f"{get_prefix(configs)}_static_valid_rate_x_power_values",data,
+    save_dataframe(f"{get_prefix(configs)}_static_valid_rate_x_power_values",static_data,
         "data_bits/data_samples","joules")
 
     save_dataframe(f"{get_prefix(configs)}_static_valid_rate_x_power_hull_values",
-        data.iloc[selected_points_mask,:],
+        static_data.iloc[static_selected_points,:],
         "data_bits/data_samples","joules")
 
 
-    selected_points_mask,fig = points_in_convex_hull(data,"(data_bits+model_bits)/data_samples",
+    semi_adaptive_selected_points,fig = points_in_convex_hull(data,"(data_bits+model_bits)/data_samples",
         "joules",log_x=True)
     
     save_fig(f"{get_prefix(configs)}_semi_adaptive_valid_rate_x_power_graph",fig)
@@ -872,5 +877,5 @@ def rate_vs_rate_experiment(configs):
         "(data_bits+model_bits)/data_samples","joules")
 
     save_dataframe(f"{get_prefix(configs)}_semi_adaptive_valid_rate_x_power_hull_values",
-        data.iloc[selected_points_mask,:],
+        data.iloc[semi_adaptive_selected_points,:],
         "(data_bits+model_bits)/data_samples","joules")
