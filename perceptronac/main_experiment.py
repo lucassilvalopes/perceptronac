@@ -700,6 +700,10 @@ class RatesQuantizedArbitraryMLP(RatesArbitraryMLP):
         self.quantization_bits = quantization_bits
         assert configs["phases"] == ["valid"]
         assert len(self.get_available_models()) > 0
+        self.pre_load_model()
+
+    def pre_load_model(self):
+        self.model,self.bits,self.samples = self.quantize_model()
 
     def quantize_model(self):
         model = super().load_model()
@@ -714,11 +718,14 @@ class RatesQuantizedArbitraryMLP(RatesArbitraryMLP):
         return model,bits,samples
 
     def load_model(self):
-        model = self.quantize_model()[0]
+        # model = self.quantize_model()[0]
+        model = self.model
         return model 
 
     def quantization_info(self):
-        _,bits,samples = self.quantize_model()
+        # _,bits,samples = self.quantize_model()
+        bits = self.bits
+        samples = self.samples
         return bits,samples
 
 # next step : create an experiment similar to the rate_vs_complexity_experiment , but instead of plotting rate vs complexity,
