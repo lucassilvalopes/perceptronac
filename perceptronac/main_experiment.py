@@ -808,8 +808,10 @@ def rate_vs_power_experiment(configs):
         "energy_measurement_iteration": energy_measurement_iteration
     }).sort_values("params")
 
-    first_cycle_data = data.loc[data["energy_measurement_iteration"]==0,:].drop(
-        ["start_time", "end_time", "energy_measurement_iteration"], axis=1)
+    # first_cycle_data = data.loc[data["energy_measurement_iteration"]==0,:].drop(
+    #     ["start_time", "end_time", "energy_measurement_iteration"], axis=1)
+
+    first_cycle_data = data
 
     selected_points_mask,fig = points_in_convex_hull(first_cycle_data,
         "model_bits/data_samples","data_bits/data_samples",log_x=True)
@@ -835,6 +837,8 @@ def rate_vs_power_experiment(configs):
         lambda x: pd.Series({
             "data_bits/data_samples":x["data_bits/data_samples"].iloc[0],
             "(data_bits+model_bits)/data_samples":x["(data_bits+model_bits)/data_samples"].iloc[0],
+            "model_bits/data_samples":x["model_bits/data_samples"].iloc[0],
+            "data_samples":x["data_samples"].iloc[0],
             "topology": x["topology"].iloc[0], 
             "params": x["params"].iloc[0],
             "quantization_bits": x["quantization_bits"].iloc[0],
@@ -843,6 +847,8 @@ def rate_vs_power_experiment(configs):
         },index=[
             "data_bits/data_samples",
             "(data_bits+model_bits)/data_samples",
+            "model_bits/data_samples",
+            "data_samples",
             "topology",
             "params",
             "quantization_bits",
