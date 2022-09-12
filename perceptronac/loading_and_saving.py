@@ -34,7 +34,10 @@ linestyle_tuple = {
 
 
 def find_n_decimal_places(number) -> int:
-    base10 = log10(abs(number)-int(abs(number)))
+    fractional_part = abs(number)-int(abs(number))
+    if fractional_part == 0:
+        return 0
+    base10 = log10(fractional_part)
     return abs(floor(base10))
 
 
