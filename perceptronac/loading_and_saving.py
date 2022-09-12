@@ -33,8 +33,8 @@ linestyle_tuple = {
 }
 
 
-def find_exp(number) -> int:
-    base10 = log10(abs(number))
+def find_n_decimal_places(number) -> int:
+    base10 = log10(abs(number)-int(abs(number)))
     return abs(floor(base10))
 
 
@@ -117,8 +117,10 @@ def save_values(csv_name,xvalues,data,xlabel,extra=None):
     values.to_csv(f"{csv_name}.csv")
 
 
-def save_dataframe(csv_name:str,data:pd.DataFrame,x_col:str,y_col:str):
+def save_dataframe(csv_name:str,data:pd.DataFrame,x_col:str,y_col:str,sort_by_x_col:bool = False):
     csv_name = os.path.splitext(csv_name)[0]
+    if sort_by_x_col:
+        data = data.sort_values(x_col)
     data.set_index(x_col).to_csv(f"{csv_name}.csv")
 
 
@@ -228,7 +230,7 @@ def points_in_convex_hull(data,x_col,y_col,log_x=False):
     n_xticks = 3
     ax[1].set_xticks(xvalues[0:len(xvalues):np.max([len(xvalues)//n_xticks,1])])
     ax[1].set_xticklabels(xvalues[0:len(xvalues):np.max([len(xvalues)//n_xticks,1])])
-    d = find_exp(np.min(np.diff(xvalues)))
+    d = find_n_decimal_places(np.min(np.diff(xvalues)))
     ax[1].xaxis.set_major_formatter(FormatStrFormatter(f'%.{d+1}f'))
 
     ax[0].set_xlabel(x_col)

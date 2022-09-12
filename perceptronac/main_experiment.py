@@ -827,7 +827,7 @@ def rate_vs_power_experiment(configs):
     save_fig(f"{get_prefix(configs)}_model_bits_x_data_bits_graph",fig)
 
     save_dataframe(f"{get_prefix(configs)}_model_bits_x_data_bits_values",model_bits_x_data_bits_data,
-        "model_bits/data_samples","data_bits/data_samples")
+        "model_bits/data_samples","data_bits/data_samples",sort_by_x_col=True)
 
     save_dataframe(f"{get_prefix(configs)}_model_bits_x_data_bits_hull_values",
         model_bits_x_data_bits_data.iloc[model_bits_x_data_bits_selected_points,:],
@@ -845,7 +845,7 @@ def rate_vs_power_experiment(configs):
     save_fig(f"{get_prefix(configs)}_params_x_rate_graph",fig)
 
     save_dataframe(f"{get_prefix(configs)}_params_x_rate_values",params_x_rate_data,
-        "params","data_bits/data_samples")
+        "params","data_bits/data_samples",sort_by_x_col=True)
 
     save_dataframe(f"{get_prefix(configs)}_params_x_rate_hull_values",
         params_x_rate_data.iloc[params_x_rate_selected_points,:],
@@ -881,7 +881,7 @@ def rate_vs_power_experiment(configs):
             "quantization_bits",
             "joules",
             "joules_std"
-        ])).sort_values("params")
+        ]))
 
 
 
@@ -894,7 +894,7 @@ def rate_vs_power_experiment(configs):
     save_fig(f"{get_prefix(configs)}_static_rate_x_power_graph",fig)
 
     save_dataframe(f"{get_prefix(configs)}_static_rate_x_power_values",static_data,
-        "data_bits/data_samples","joules")
+        "data_bits/data_samples","joules",sort_by_x_col=True)
 
     save_dataframe(f"{get_prefix(configs)}_static_rate_x_power_hull_values",
         static_data.iloc[static_selected_points,:],
@@ -907,7 +907,7 @@ def rate_vs_power_experiment(configs):
     save_fig(f"{get_prefix(configs)}_semi_adaptive_rate_x_power_graph",fig)
 
     save_dataframe(f"{get_prefix(configs)}_semi_adaptive_rate_x_power_values",data,
-        "(data_bits+model_bits)/data_samples","joules")
+        "(data_bits+model_bits)/data_samples","joules",sort_by_x_col=True)
 
     save_dataframe(f"{get_prefix(configs)}_semi_adaptive_rate_x_power_hull_values",
         data.iloc[semi_adaptive_selected_points,:],
