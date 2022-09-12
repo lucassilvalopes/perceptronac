@@ -192,16 +192,15 @@ def points_in_convex_hull(data,x_col,y_col,log_x=False):
     ax[1].plot(chull[:,0],chull[:,1],linestyle="solid",color="red",marker=None)
 
 
-    if log_x:
-        ax[0].set_xscale("log")
-        xvalues = ax[0].get_xticks()
-        ub = np.min(xvalues[xvalues>=np.max(data[x_col])])
-        lb = np.max(xvalues[xvalues<=np.min(data[x_col])])
-        xvalues = xvalues[np.logical_and(xvalues>=lb,xvalues<=ub)]
-        ax[0].set_xticklabels([])
-        ax[0].set_xticklabels([], minor=True)
-        ax[0].set_xticks(xvalues)
-        ax[0].set_xticklabels(xvalues)
+    ax[0].set_xscale("log")
+    xvalues = ax[0].get_xticks()
+    ub = np.min(xvalues[xvalues>=np.max(data[x_col])])
+    lb = np.max(xvalues[xvalues<=np.min(data[x_col])])
+    xvalues = xvalues[np.logical_and(xvalues>=lb,xvalues<=ub)]
+    ax[0].set_xticklabels([])
+    ax[0].set_xticklabels([], minor=True)
+    ax[0].set_xticks(xvalues)
+    ax[0].set_xticklabels(xvalues)
 
     if np.any((np.max(chull,axis=0) - np.min(chull,axis=0)) == 0):
         x_lb,x_ub = np.min(chull[:,0])-0.1*np.max(chull[:,0]),1.1*np.max(chull[:,0])
