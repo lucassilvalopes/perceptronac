@@ -56,12 +56,14 @@ def build_tree(data):
         coord = [data.loc[str(node),["joules","data_bits/data_samples"]].values.tolist()] + coord
         chull = convex_hull(coord)
 
-        if len(chull) > 1:
-            nodes.pop(0)
-            coord.pop(0)
-            if 0 in chull:
-                chull.pop(chull.index(0))
-            chull = [e-1 for e in chull]
+        nodes = nodes[1:]
+        coord = coord[1:]
+        if 0 in chull:
+            chull.pop(chull.index(0))
+        chull = [e-1 for e in chull]
+
+        if len(chull) == 0:
+            chull.append(0)
 
         chosen_node_index = chull[0]
         chosen_node = nodes[chosen_node_index]
@@ -143,7 +145,7 @@ def hulls_figure(data,r):
         estimated_hull_points["joules"],estimated_hull_points["data_bits/data_samples"],linestyle="solid",color="blue",marker=None)
     ax.set_xlabel("joules")
     ax.set_ylabel("data_bits/data_samples")
-    return fig
+    return fig,true_hull_points,estimated_hull_points
 
 # %%
 if __name__ == "__main__":
@@ -154,12 +156,18 @@ if __name__ == "__main__":
 
     r = build_tree(data)
 
-    # print_tree(r)
+    print_tree(r)
 
-    # tree_fig = tree_figure(data,r)
-    # tree_fig.savefig(f"tree_fig.png", dpi=300, facecolor='w', bbox_inches = "tight")
+    tree_fig = tree_figure(data,r)
+    tree_fig.savefig(f"tree_fig.png", dpi=300, facecolor='w', bbox_inches = "tight")
 
-    # hulls_fig = hulls_figure(data,r)
-    # hulls_fig.savefig(f"hulls_fig.png", dpi=300, facecolor='w', bbox_inches = "tight")
+    hulls_fig,true_hull_points,estimated_hull_points = hulls_figure(data,r)
+    hulls_fig.savefig(f"hulls_fig.png", dpi=300, facecolor='w', bbox_inches = "tight")
+
+    print(true_hull_points)
+    print(estimated_hull_points)
+
+# %%
+
 
 
