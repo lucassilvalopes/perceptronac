@@ -67,9 +67,10 @@ def build_tree(data):
 
         chosen_node_index = chull[0]
         chosen_node = nodes[chosen_node_index]
+
+        node.children = nodes
         if str(chosen_node) == str(node):
             break
-        node.children = nodes
         node.chosen_child_index = chosen_node_index
         node = chosen_node
 
