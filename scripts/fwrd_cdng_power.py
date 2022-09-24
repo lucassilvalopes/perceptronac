@@ -15,8 +15,8 @@ if __name__ == "__main__":
             os.path.join('/home/lucas/Documents/data/SPL2020',f) for f in os.listdir('/home/lucas/Documents/data/SPL2020')
         ],
         "validation_set": [
-            # os.path.join('/home/lucas/Documents/data/SPL2020V/pages',f) for f in sorted(os.listdir('/home/lucas/Documents/data/SPL2020V/pages'))[:5]
-            os.path.join('/home/lucas/Documents/data/SPL2020',f) for f in os.listdir('/home/lucas/Documents/data/SPL2020')
+            os.path.join('/home/lucas/Documents/data/SPL2020V/pages',f) for f in sorted(os.listdir('/home/lucas/Documents/data/SPL2020V/pages'))[:5]
+            # os.path.join('/home/lucas/Documents/data/SPL2020',f) for f in os.listdir('/home/lucas/Documents/data/SPL2020')
         ],
         "epochs": 1,
         "learning_rate": 0.0001,
@@ -27,7 +27,7 @@ if __name__ == "__main__":
         "N": 32,
         "phases": ['valid'], # ['train', 'valid'],
         "xscale": "log", # 'linear',
-        "reduction": 'last', # min, last
+        "reduction": 'min', # min, last
         "data_type": 'image', # image, pointcloud, table
         "geo_or_attr": "attributes", # geometry, attributes
         "n_classes": 2, # 2, 256
@@ -37,7 +37,7 @@ if __name__ == "__main__":
         "last_octree_level": 10, # must be specified if the data type is pointcloud
         "save_dir": "/home/lucas/Documents/perceptronac/results",
         "dset_pieces": 1, # if not enough memory to hold all data at once, specify into how many pieces the data should be divided
-        "energy_measurement_iteration": 1 # number of repetitions for better energy consumtion estimate
+        "energy_measurement_iteration": 10 # number of repetitions for better energy consumtion estimate
     }
 
     configs["topologies"] = [
