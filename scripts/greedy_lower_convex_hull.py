@@ -149,11 +149,70 @@ def hulls_figure(data,r):
     return fig,true_hull_points,estimated_hull_points
 
 # %%
+from scipy.sparse.csgraph import connected_components
+
+
+def labaled_points_figure(data):
+
+    fig, ax = plt.subplots(nrows=1, ncols=1)
+    fig.set_size_inches(27.9,21.6)
+    ax.plot(data.loc[:,"joules"].values,data.loc[:,"data_bits/data_samples"].values,linestyle="",marker="x")
+    ax.set_xlabel("joules")
+    ax.set_ylabel("data_bits/data_samples")
+
+    X = data.loc[:,["joules","data_bits/data_samples"]].values
+    adj_mtx = np.logical_and(
+        np.sum((np.expand_dims(X,1) - np.expand_dims(X,0))**2,axis=2) > 0,
+        np.logical_and(
+            np.abs(np.expand_dims(X[:,0],1) - np.expand_dims(X[:,0],0)) < 0.5,
+            np.abs(np.expand_dims(X[:,1],1) - np.expand_dims(X[:,1],0)) < 0.0003,
+        )
+    )
+
+    n_conn_comp, conn_comp_mask = connected_components(adj_mtx)
+
+    points_to_merge =[]
+    for cc in range(n_conn_comp):
+        if np.sum(conn_comp_mask == cc) > 1:
+            points_to_merge.append(data.index.values[conn_comp_mask == cc].tolist())
+
+    for top,row in data.loc[:,["joules","data_bits/data_samples"]].iterrows():
+        normal_point = True
+        for g in points_to_merge:
+            if top in g:
+                normal_point = False
+        if normal_point:
+            ax.text(
+                x=row["joules"], #+0.5,
+                y=row["data_bits/data_samples"]-0.0003,
+                s=",".join(list(map(lambda x: str(int(x)),top.split("_")[1:3]))), 
+                # fontdict=dict(color='black',size=8),
+                # bbox=dict(facecolor='yellow',alpha=0.5)
+            )
+
+    for g in points_to_merge:
+        sorted_i = np.argsort(data.loc[g,"joules"].values)
+        ax.text(
+            x=data.loc[g[sorted_i[0]],"joules"], #+0.5,
+            y=data.loc[g[sorted_i[0]],"data_bits/data_samples"]-0.0003,
+            s="/".join(list(map(lambda y: ",".join(list(map(lambda x: str(int(x)),y.split("_")[1:3]))) , np.array(g)[sorted_i].tolist()))), 
+            # fontdict=dict(color='black',size=8),
+            # bbox=dict(facecolor='yellow',alpha=0.5)
+        )
+
+    # fig.savefig('test2png.png', dpi=300, facecolor='w', bbox_inches = "tight")
+
+    return fig
+
+# %%
 if __name__ == "__main__":
 
     data = pd.read_csv(
         "/home/lucas/Documents/perceptronac/results/exp_1663073558/exp_1663073558_static_rate_x_power_values.csv"
     ).set_index("topology")
+
+    labeled_points_fig = labaled_points_figure(data)
+    labeled_points_fig.savefig('labeled_points_fig.png', dpi=300, facecolor='w', bbox_inches = "tight")
 
     r = build_tree(data)
 
