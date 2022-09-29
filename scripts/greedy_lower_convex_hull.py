@@ -143,7 +143,7 @@ def hulls_figure(data,r):
     probe = data.loc[new_points,:]
     estimated_hull_points = probe.iloc[convex_hull(probe.loc[:,["joules","data_bits/data_samples"]].values.tolist()),:]
     ax.plot(
-        estimated_hull_points["joules"],estimated_hull_points["data_bits/data_samples"],linestyle="solid",color="blue",marker=None)
+        estimated_hull_points["joules"],estimated_hull_points["data_bits/data_samples"],linestyle="dotted",color="blue",marker=None)
     ax.set_xlabel("joules")
     ax.set_ylabel("data_bits/data_samples")
     return fig,true_hull_points,estimated_hull_points
@@ -205,29 +205,55 @@ def labaled_points_figure(data):
     return fig
 
 # %%
+from decimal import Decimal
+
+# https://stackoverflow.com/questions/45332056/decompose-a-float-into-mantissa-and-exponent-in-base-10-without-strings
+
+def fexp(number):
+    (sign, digits, exponent) = Decimal(number).as_tuple()
+    return len(digits) + exponent - 1
+
+def fman(number):
+    return Decimal(number).scaleb(-fexp(number)).normalize()
+
+def limit_significant_digits(value,last_significant_digit_position):
+    factor = 10**last_significant_digit_position
+    return np.round(value/factor) * factor
+
+def limit_energy_significant_digits(data):
+    data[["joules","joules_std"]] = data[["joules","joules_std"]].apply(lambda x: pd.Series({
+        "joules":limit_significant_digits(x["joules"],fexp(x["joules_std"])),
+        "joules_std":limit_significant_digits(x["joules_std"],fexp(x["joules_std"]))
+    },index=["joules","joules_std"]), axis=1)
+    return data
+
+# %%
 if __name__ == "__main__":
 
     data = pd.read_csv(
-        "/home/lucas/Documents/perceptronac/results/exp_1663073558/exp_1663073558_static_rate_x_power_values.csv"
+        "/home/lucas/Documents/perceptronac/results/exp_1664366985/exp_1664366985_static_rate_x_power_values.csv"
     ).set_index("topology")
 
+    limit_energy_significant_digits(data)
+
     labeled_points_fig = labaled_points_figure(data)
-    labeled_points_fig.savefig('labeled_points_fig.png', dpi=300, facecolor='w', bbox_inches = "tight")
+    # labeled_points_fig.savefig('labeled_points_fig.png', dpi=300, facecolor='w', bbox_inches = "tight")
 
     r = build_tree(data)
 
     print_tree(r)
 
     tree_fig = tree_figure(data,r)
-    tree_fig.savefig(f"tree_fig.png", dpi=300, facecolor='w', bbox_inches = "tight")
+    # tree_fig.savefig(f"tree_fig.png", dpi=300, facecolor='w', bbox_inches = "tight")
 
     hulls_fig,true_hull_points,estimated_hull_points = hulls_figure(data,r)
-    hulls_fig.savefig(f"hulls_fig.png", dpi=300, facecolor='w', bbox_inches = "tight")
+    # hulls_fig.savefig(f"hulls_fig.png", dpi=300, facecolor='w', bbox_inches = "tight")
 
     print(true_hull_points)
     print(estimated_hull_points)
 
 # %%
+
 
 
 

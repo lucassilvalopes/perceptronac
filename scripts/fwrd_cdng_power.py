@@ -9,7 +9,7 @@ if __name__ == "__main__":
 
     configs = {
         "id": str(int(time.time())),
-        "qbits_vec":[32,16,8],
+        "qbits_vec":[32],
         "OptimizerClass":torch.optim.SGD,
         "training_set": [
             os.path.join('/home/lucas/Documents/data/SPL2020',f) for f in os.listdir('/home/lucas/Documents/data/SPL2020')
@@ -37,7 +37,7 @@ if __name__ == "__main__":
         "last_octree_level": 10, # must be specified if the data type is pointcloud
         "save_dir": "/home/lucas/Documents/perceptronac/results",
         "dset_pieces": 1, # if not enough memory to hold all data at once, specify into how many pieces the data should be divided
-        "energy_measurement_iteration": 10 # number of repetitions for better energy consumtion estimate
+        "energy_measurement_iteration": 200 # number of repetitions for better energy consumtion estimate
     }
 
     configs["topologies"] = [
