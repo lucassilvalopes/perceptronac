@@ -78,13 +78,14 @@ def build_tree(data):
 
 # %%
 def print_tree(node):
-    print("parent", node)
+    # print("parent", node)
 
     children_str = ""
     for i,c in enumerate(node.children):
         prefix = "!" if i == node.chosen_child_index else ""
         children_str += f"{prefix}{c} "
-    print("children",children_str)
+    # print("children",children_str)
+    print(node,children_str)
 
     print("\n")
     if node.chosen_child_index != -1:
@@ -138,12 +139,12 @@ def hulls_figure(data,r):
     fig, ax = plt.subplots(nrows=1, ncols=1)
     ax.plot(data.loc[:,"joules"].values,data.loc[:,"data_bits/data_samples"].values,linestyle="",marker="x")
     true_hull_points = data.iloc[convex_hull(data.loc[:,["joules","data_bits/data_samples"]].values.tolist()),:]
-    ax.plot(true_hull_points["joules"],true_hull_points["data_bits/data_samples"],linestyle="solid",color="red",marker=None)
+    ax.plot(true_hull_points["joules"],true_hull_points["data_bits/data_samples"],linestyle=(0, (5, 5)),color="red",marker=None)
     new_points = chosen_nodes(r)
     probe = data.loc[new_points,:]
     estimated_hull_points = probe.iloc[convex_hull(probe.loc[:,["joules","data_bits/data_samples"]].values.tolist()),:]
     ax.plot(
-        estimated_hull_points["joules"],estimated_hull_points["data_bits/data_samples"],linestyle="dotted",color="blue",marker=None)
+        estimated_hull_points["joules"],estimated_hull_points["data_bits/data_samples"],linestyle="dotted",color="green",marker=None)
     ax.set_xlabel("joules")
     ax.set_ylabel("data_bits/data_samples")
     return fig,true_hull_points,estimated_hull_points
@@ -237,23 +238,29 @@ if __name__ == "__main__":
     limit_energy_significant_digits(data)
 
     labeled_points_fig = labaled_points_figure(data)
-    # labeled_points_fig.savefig('labeled_points_fig.png', dpi=300, facecolor='w', bbox_inches = "tight")
+    labeled_points_fig.savefig('labeled_points_fig.png', dpi=300, facecolor='w', bbox_inches = "tight")
 
     r = build_tree(data)
 
     print_tree(r)
 
     tree_fig = tree_figure(data,r)
-    # tree_fig.savefig(f"tree_fig.png", dpi=300, facecolor='w', bbox_inches = "tight")
+    tree_fig.savefig(f"tree_fig.png", dpi=300, facecolor='w', bbox_inches = "tight")
 
     hulls_fig,true_hull_points,estimated_hull_points = hulls_figure(data,r)
-    # hulls_fig.savefig(f"hulls_fig.png", dpi=300, facecolor='w', bbox_inches = "tight")
+    hulls_fig.savefig(f"hulls_fig.png", dpi=300, facecolor='w', bbox_inches = "tight")
 
     print(true_hull_points)
     print(estimated_hull_points)
 
 # %%
 
+
+
+# %%
+
+
+# %%
 
 
 
