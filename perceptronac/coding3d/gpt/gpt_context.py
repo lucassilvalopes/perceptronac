@@ -33,13 +33,19 @@ def gpt_context(V,max_octree_level,block_side,C=None):
                     np.logical_and(V[:,2]>=z, V[:,2]<z+block_side)
                 )
 
-                block_geo,block_attr = V[block_mask,:],C[block_mask,:]
+                if np.all(np.logical_not(block_mask)):
+                    block_geo = [] 
+                    block_attr = []
+                    block_geo_dense = np.zeros(3*[block_side],dtype=int)
+                    block_attr_dense = np.zeros(3*[block_side],dtype=int)
+                else:
+                    block_geo,block_attr = V[block_mask,:],C[block_mask,:]
 
-                block_geo[:,0] = block_geo[:,0] - x
-                block_geo[:,1] = block_geo[:,1] - y
-                block_geo[:,2] = block_geo[:,2] - z
+                    block_geo[:,0] = block_geo[:,0] - x
+                    block_geo[:,1] = block_geo[:,1] - y
+                    block_geo[:,2] = block_geo[:,2] - z
 
-                block_attr_dense = points2volume(block_geo,3*[block_side],block_attr.reshape(-1))
-                block_geo_dense = points2volume(block_geo,3*[block_side])
+                    block_attr_dense = points2volume(block_geo,3*[block_side],block_attr.reshape(-1))
+                    block_geo_dense = points2volume(block_geo,3*[block_side])
                 
                 yield block_geo, block_attr, block_geo_dense, block_attr_dense, [x,y,z]
