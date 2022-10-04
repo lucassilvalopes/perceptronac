@@ -6,17 +6,39 @@ matlab_round = np.vectorize(round)
 
 
 
-def ac_lapl_rate(y, sd, Q=40):
+# def ac_lapl_rate(y, sd, Q=40):
 
-    sinh = lambda x : ( 1/2 * (np.exp(x) - np.exp(-x)) )
+#     sinh = lambda x : ( 1/2 * (np.exp(x) - np.exp(-x)) )
 
-    gt0 = np.exp( - (np.abs(y) * Q * np.sqrt(2)) / sd ) * sinh( Q / (np.sqrt(2) * sd ) )
+#     gt0 = np.exp( - (np.abs(y) * Q * np.sqrt(2)) / sd ) * sinh( Q / (np.sqrt(2) * sd ) )
 
-    eq0 = 1 - np.exp( - Q / (np.sqrt(2) * sd ) )
+#     eq0 = 1 - np.exp( - Q / (np.sqrt(2) * sd ) )
 
-    p = (y == 0).astype(int) * eq0 + (y != 0).astype(int) * gt0
+#     p = (y == 0).astype(int) * eq0 + (y != 0).astype(int) * gt0
 
-    return -np.mean(np.log2(p))
+#     return -np.mean(np.log2(p))
+
+
+def ac_lapl_rate(xq, sd):
+    """
+    
+    """
+
+    nz = sd > 1e-6 
+    
+    xqa = np.abs(xq[nz])
+    
+    sdnz = sd[nz]
+
+    rgt0 = (1/np.log(2)) * ( (np.sqrt(2) * xqa) / sdnz) - np.log2( np.sinh(1/(np.sqrt(2) * sdnz) ) )
+    
+    r0 = -np.log2(1-np.exp(-1/(np.sqrt(2) * sdnz)))
+    
+    r = rgt0 * (xqa > 0).astype(int) + r0 * (xqa == 0).astype(int)
+    
+    rateac = np.sum(r)
+    
+    return rateac
 
 
 
@@ -95,6 +117,8 @@ def gptencode(V,C,Q=40,block_side=8,rho=0.95):
         sdsum[lambdaq[n]-1,:] = sdsum[lambdaq[n]-1,:] + S[n,:3]*S[n,:3]
         sdcount[lambdaq[n]-1] = sdcount[lambdaq[n]-1] + 1
 
+    sdcount[sdcount==0] = 1
+    sdsum[sdsum==0] = 1
     sdbin = np.sqrt(sdsum / np.tile(sdcount,(1,3)) )
 
 
