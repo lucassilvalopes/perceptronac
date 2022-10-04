@@ -36,7 +36,21 @@ def segment_pc(V, block_side):
 
 
 
-def gptencode(V,C,Q,block_side,rho=0.95):
+def ac_lapl_rate(y, sd, Q=40):
+
+    sinh = lambda x : ( 1/2 * (np.exp(x) - np.exp(-x)) )
+
+    gt0 = np.exp( - (np.abs(y) * Q * np.sqrt(2)) / sd ) * sinh( Q / (np.sqrt(2) * sd ) )
+
+    eq0 = 1 - np.exp( - Q / (np.sqrt(2) * sd ) )
+
+    p = (y == 0).astype(int) * eq0 + (y != 0).astype(int) * gt0
+
+    return -np.mean(np.log2(p))
+
+
+
+def gptencode(V,C,Q=40,block_side=8,rho=0.95):
 
     # loop and encode blocks
     Nvox = C.shape[0]
@@ -135,3 +149,6 @@ def gptencode(V,C,Q,block_side,rho=0.95):
     rate = ratet / Nvox
 
     return rate,dist
+
+
+
