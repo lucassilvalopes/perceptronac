@@ -1,5 +1,5 @@
 import numpy as np
-
+from tqdm import tqdm
 
 # https://stackoverflow.com/questions/18982650/differences-between-matlab-and-numpy-and-pythons-round-function
 matlab_round = np.vectorize(round)
@@ -33,6 +33,7 @@ def gptencode(V,C,Q=40,block_side=8,rho=0.95):
     mse = 0
     S = np.zeros((Nvox,4))
     
+    pbar = tqdm(total=ncubes)
     for n in range(ncubes):
 
         # get the voxels in the cube
@@ -42,7 +43,7 @@ def gptencode(V,C,Q=40,block_side=8,rho=0.95):
         infx = supx-block_side
         infy = supy-block_side
         infz = supz-block_side
-        vi = (V[:,0]<=supx)*(V[:,1]<=supy)*(V[:,2]<=supz)*(V[:,0]>=infx)*(V[:,1]>=infy)*(V[:,2]>=infz)
+        vi = (V[:,0]<supx)*(V[:,1]<supy)*(V[:,2]<supz)*(V[:,0]>=infx)*(V[:,1]>=infy)*(V[:,2]>=infz)
         
         Vb = V[vi,:]
         Cb = C[vi,:]-128
@@ -52,9 +53,9 @@ def gptencode(V,C,Q=40,block_side=8,rho=0.95):
 
         dij = np.sqrt(np.sum((np.expand_dims(Vb,1) - np.expand_dims(Vb,0))**2,axis=2))
         Rxx = rho**dij
-        L, W = np.linalg.eig(Rxx)
-        W = -W.real.T
-        lambdas = np.expand_dims(L.real,1)
+        _, s, vh = np.linalg.svd(Rxx, full_matrices=True)
+        W = -vh.real
+        lambdas = np.expand_dims(s.real,1)
 
         # transform and quantize
         # Q is a quantizer step (10 or 40 for example)
@@ -72,14 +73,15 @@ def gptencode(V,C,Q=40,block_side=8,rho=0.95):
         Crec[p:p+N,:] = Cbr+128
         p = p + N
 
-
+        pbar.update(1)
+    pbar.close()
 
     NBINS = 70
     BITSPERMAXLAMBDA = 5
     BITSPERBIN = 60
 
     # create eigenvalue bins 
-    lambdas = S[:,4]
+    lambdas = S[:,3]
     maxlambda = np.ceil(np.max(lambdas)) # we convey this to the decoder
     lambdastep = maxlambda / NBINS
     lambdaq = matlab_round(lambdas / lambdastep)
@@ -115,9 +117,9 @@ def gptencode(V,C,Q=40,block_side=8,rho=0.95):
 
 
     # rate for encoding coefficients 
-    rateY = ac_lapl_rate(S[:,1], sv[:,1])
-    rateU = ac_lapl_rate(S[:,2], sv[:,2])
-    rateV = ac_lapl_rate(S[:,3], sv[:,3])
+    rateY = ac_lapl_rate(S[:,0], sv[:,0])
+    rateU = ac_lapl_rate(S[:,1], sv[:,1])
+    rateV = ac_lapl_rate(S[:,2], sv[:,2])
     ratet = ratet + rateY + rateU + rateV
 
 
