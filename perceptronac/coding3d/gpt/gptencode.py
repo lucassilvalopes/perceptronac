@@ -5,36 +5,6 @@ import numpy as np
 matlab_round = np.vectorize(round)
 
 
-def segment_pc(V, block_side):
-
-    max_octree_level = np.ceil(np.log2(np.max(V.reshape(-1))+1))
-
-    side = 2**max_octree_level
-
-    secn = np.zeros(V.shape[0],1)
-
-    i = 0
-    for x in range(0,side,block_side):
-        for y in range(0,side,block_side):
-            for z in range(0,side,block_side):
-
-                block_mask = np.logical_and(
-                    np.logical_and(
-                        np.logical_and(V[:,0]>=x, V[:,0]<x+block_side),
-                        np.logical_and(V[:,1]>=y, V[:,1]<y+block_side)
-                    ),
-                    np.logical_and(V[:,2]>=z, V[:,2]<z+block_side)
-                )
-
-                if not np.all(np.logical_not(block_mask)):
-
-                    secn[block_mask,:] = i
-
-                    i=i+1
-
-    return secn
-
-
 
 def ac_lapl_rate(y, sd, Q=40):
 
@@ -52,30 +22,39 @@ def ac_lapl_rate(y, sd, Q=40):
 
 def gptencode(V,C,Q=40,block_side=8,rho=0.95):
 
+    # see how many blocks are there
+    cubes = np.unique(np.floor(V/block_side),axis=0)
+    ncubes = cubes.shape[0]
+
     # loop and encode blocks
     Nvox = C.shape[0]
     Crec = np.zeros((Nvox,3))
     p = 0
     mse = 0
     S = np.zeros((Nvox,4))
-
-
-    secn = segment_pc(V, block_side)
-    ncubes = max(secn)+1
     
     for n in range(ncubes):
 
-        # get the voxels in the section
-        Vb = V[secn == n, :]
-        Cb = C[secn == n, :] - 128
+        # get the voxels in the cube
+        supx = (cubes[n,0] + 1) * block_side
+        supy = (cubes[n,1] + 1) * block_side
+        supz = (cubes[n,2] + 1) * block_side
+        infx = supx-block_side
+        infy = supy-block_side
+        infz = supz-block_side
+        vi = (V[:,0]<=supx)*(V[:,1]<=supy)*(V[:,2]<=supz)*(V[:,0]>=infx)*(V[:,1]>=infy)*(V[:,2]>=infz)
+        
+        Vb = V[vi,:]
+        Cb = C[vi,:]-128
 
         # calculate distances among all voxels
         N = Vb.shape[0]
 
         dij = np.sqrt(np.sum((np.expand_dims(Vb,1) - np.expand_dims(Vb,0))**2,axis=2))
         Rxx = rho**dij
-        lambdas, W = np.linalg.eig(Rxx)
-        W = -W.T
+        L, W = np.linalg.eig(Rxx)
+        W = -W.real.T
+        lambdas = np.expand_dims(L.real,1)
 
         # transform and quantize
         # Q is a quantizer step (10 or 40 for example)
@@ -152,3 +131,12 @@ def gptencode(V,C,Q=40,block_side=8,rho=0.95):
 
 
 
+if __name__ == "__main__":
+
+    from perceptronac.coding3d import read_PC
+
+    _,V,C = read_PC("/home/lucas/Documents/data/frame0039.ply")
+
+    rate,dist = gptencode(V,C)
+
+    print(rate,dist)
