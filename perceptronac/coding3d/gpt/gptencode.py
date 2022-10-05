@@ -5,23 +5,15 @@ from tqdm import tqdm
 matlab_round = np.vectorize(round)
 
 
-
-# def ac_lapl_rate(y, sd, Q=40):
-
-#     sinh = lambda x : ( 1/2 * (np.exp(x) - np.exp(-x)) )
-
-#     gt0 = np.exp( - (np.abs(y) * Q * np.sqrt(2)) / sd ) * sinh( Q / (np.sqrt(2) * sd ) )
-
-#     eq0 = 1 - np.exp( - Q / (np.sqrt(2) * sd ) )
-
-#     p = (y == 0).astype(int) * eq0 + (y != 0).astype(int) * gt0
-
-#     return -np.mean(np.log2(p))
-
-
 def ac_lapl_rate(xq, sd):
     """
-    
+    In the paper there was a Q in the exponent of the exponentials, 
+    because the standard deviation was of dequantized coefficients.
+    Here the standard deviation is of quantized coefficients. 
+    If the standard deviation of quantized coefficients is sd, 
+    then the standard deviation of dequantized coefficients is Q*sd. 
+    Replacing the standard deviation of dequantized coefficients by Q*sd
+    in the paper, gives the formulas used here.
     """
 
     nz = sd > 1e-6 
