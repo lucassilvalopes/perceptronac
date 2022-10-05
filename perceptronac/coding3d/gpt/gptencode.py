@@ -157,12 +157,30 @@ def gptencode(V,C,Q=40,block_side=8,rho=0.95):
 
 
 
+def rgb2yuv(rgb):
+    """
+    https://github.com/python-pillow/Pillow/issues/4668
+    https://en.wikipedia.org/wiki/YCbCr#ITU-R_BT.601_conversion
+    """
+    yuv = np.zeros(rgb.shape)
+    yuv[:,0] = rgb[:,0] *  0.29900 + rgb[:,1] *  0.58700 + rgb[:,2] *  0.11400 
+    yuv[:,1] = rgb[:,0] * -0.16874 + rgb[:,1] * -0.33126 + rgb[:,2] *  0.50000 + 128 
+    yuv[:,2] = rgb[:,0] *  0.50000 + rgb[:,1] * -0.41869 + rgb[:,2] * -0.08131 + 128 
+    return yuv
+
+
+
 if __name__ == "__main__":
 
     from perceptronac.coding3d import read_PC
 
     _,V,C = read_PC("/home/lucas/Documents/data/frame0039.ply")
 
+    C = rgb2yuv(C)
+
     rate,dist = gptencode(V,C)
 
     print(rate,dist)
+
+    # import scipy.io
+    # scipy.io.savemat('ricardo_frame0039_yuv.mat', dict(V=V, C=C))
