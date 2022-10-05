@@ -5,7 +5,7 @@ from tqdm import tqdm
 matlab_round = np.vectorize(round)
 
 
-def ac_lapl_rate(xq, sd):
+def ac_lapl_rate(xq, sdnz): # sd):
     """
     In the paper there was a Q in the exponent of the exponentials, 
     because the standard deviation was of dequantized coefficients.
@@ -16,11 +16,13 @@ def ac_lapl_rate(xq, sd):
     in the paper, gives the formulas used here.
     """
 
-    nz = sd > 1e-6 
+    # nz = sd > 1e-6 
     
-    xqa = np.abs(xq[nz])
+    # xqa = np.abs(xq[nz])
     
-    sdnz = sd[nz]
+    # sdnz = sd[nz]
+    
+    xqa = np.abs(xq)
 
     rgt0 = (1/np.log(2)) * ( (np.sqrt(2) * xqa) / sdnz) - np.log2( np.sinh(1/(np.sqrt(2) * sdnz) ) )
     
