@@ -174,7 +174,7 @@ if __name__ == "__main__":
 
     from perceptronac.coding3d import read_PC
 
-    _,V,C = read_PC("/home/lucas/Documents/data/frame0039.ply")
+    _,V,C = read_PC("/home/lucas/Documents/data/ricardo9_frame0039.ply")
 
     C = rgb2yuv(C)
 
@@ -183,4 +183,4 @@ if __name__ == "__main__":
     print(rate,dist)
 
     # import scipy.io
-    # scipy.io.savemat('ricardo_frame0039_yuv.mat', dict(V=V, C=C))
+    # scipy.io.savemat('ricardo9_frame0039_yuv.mat', dict(V=V+1, C=C))
