@@ -37,12 +37,24 @@ def ac_lapl_rate(xq, sd):
     return rateac
 
 
-from perceptronac.coding3d import xyz_displacements
+def order_points_colors(Vb,Cb,block_side):
+    ny,nx,nz = block_side,block_side,block_side
+    ordered_Vb = np.zeros((ny*nx*nz,Vb.shape[1]),dtype=int)
+    ordered_Vb[[y*nx*nz+x*nz+z for x,y,z in Vb]] = Vb
+    ordered_Cb = np.zeros((ny*nx*nz,Cb.shape[1]),dtype=int)
+    ordered_Cb[[y*nx*nz+x*nz+z for x,y,z in Vb]] = Cb
+    return ordered_Vb,ordered_Cb
+
 
 def block_covariance_matrix(block_side,rho):
 
     Npts = 2**block_side
-    pts = xyz_displacements(np.arange(0, block_side, 1))
+
+    interval = np.arange(0, block_side, 1)
+    x, y, z = np.meshgrid(interval, interval, interval)
+    pts = np.array([x.reshape(-1), y.reshape(-1), z.reshape(-1)]).T
+    pts = pts[np.lexsort((pts[:, 2], pts[:, 0], pts[:, 1]))] # y slowest, then x, then z ('C' order)
+
     dij = np.sqrt(np.sum((np.expand_dims(pts,1) - np.expand_dims(pts,0))**2,axis=2))
     Rxx = rho**dij
     _, s, vh = np.linalg.svd(Rxx, full_matrices=True)

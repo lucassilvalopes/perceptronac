@@ -4,9 +4,11 @@ import numpy as np
 
 def points2volume(points,voxelgridshape,values=None):
     ny,nx,nz = voxelgridshape
-    volume = np.zeros(voxelgridshape,dtype=int)
-    volume.reshape(-1,order='C')[[y*nx*nz+x*nz+z for x,y,z in points]] = 1 if (values is None) else values
-    return volume
+    volume = np.zeros((ny,nx,nz) if (values is None) else (ny,nx,nz,values.shape[1]),dtype=int)
+    volume.reshape(
+        (-1 if (values is None) else (-1,values.shape[1])),order='C')[[y*nx*nz+x*nz+z for x,y,z in points]] = \
+            (1 if (values is None) else values)
+    return (volume[:,:,:,0] if (volume.shape[-1] == 1) else volume)
 
 
 def gpt_context(V,max_octree_level,block_side,C=None):
@@ -45,7 +47,7 @@ def gpt_context(V,max_octree_level,block_side,C=None):
                     block_geo[:,1] = block_geo[:,1] - y
                     block_geo[:,2] = block_geo[:,2] - z
 
-                    block_attr_dense = points2volume(block_geo,3*[block_side],block_attr.reshape(-1))
+                    block_attr_dense = points2volume(block_geo,3*[block_side],block_attr)
                     block_geo_dense = points2volume(block_geo,3*[block_side])
                 
                 yield block_geo, block_attr, block_geo_dense, block_attr_dense, [x,y,z]
