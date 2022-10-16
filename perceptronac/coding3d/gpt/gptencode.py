@@ -43,7 +43,11 @@ def order_points_colors(Vb,Cb,block_side):
     ordered_Vb[[y*nx*nz+x*nz+z for x,y,z in Vb]] = Vb
     ordered_Cb = np.zeros((ny*nx*nz,Cb.shape[1]),dtype=int)
     ordered_Cb[[y*nx*nz+x*nz+z for x,y,z in Vb]] = Cb
-    return ordered_Vb,ordered_Cb
+    mask = np.zeros((ny*nx*nz),dtype=int)
+    mask[[y*nx*nz+x*nz+z for x,y,z in Vb]] = 1
+    Pb = np.eye(ny*nx*nz)
+    Pb = Pb[mask.astype(bool)]
+    return ordered_Vb,ordered_Cb,Pb
 
 
 def block_covariance_matrix(block_side,rho):
@@ -76,6 +80,8 @@ def gptencode(V,C,Q=40,block_side=8,rho=0.95):
     p = 0
     mse = 0
     S = np.zeros((Nvox,4))
+
+    W, lambdas = block_covariance_matrix(block_side,rho)
     
     pbar = tqdm(total=ncubes)
     for n in range(ncubes):
@@ -92,14 +98,16 @@ def gptencode(V,C,Q=40,block_side=8,rho=0.95):
         Vb = V[vi,:]
         Cb = C[vi,:]-128
 
+        Vb,Cb,Pb = order_points_colors(Vb,Cb,block_side)
+
         # calculate distances among all voxels
         N = Vb.shape[0]
 
-        dij = np.sqrt(np.sum((np.expand_dims(Vb,1) - np.expand_dims(Vb,0))**2,axis=2))
-        Rxx = rho**dij
-        _, s, vh = np.linalg.svd(Rxx, full_matrices=True)
-        W = -vh.real
-        lambdas = np.expand_dims(s.real,1)
+        # dij = np.sqrt(np.sum((np.expand_dims(Vb,1) - np.expand_dims(Vb,0))**2,axis=2))
+        # Rxx = rho**dij
+        # _, s, vh = np.linalg.svd(Rxx, full_matrices=True)
+        # W = -vh.real
+        # lambdas = np.expand_dims(s.real,1)
 
         # transform and quantize
         # Q is a quantizer step (10 or 40 for example)
