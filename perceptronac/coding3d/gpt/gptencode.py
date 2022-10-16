@@ -37,6 +37,20 @@ def ac_lapl_rate(xq, sd):
     return rateac
 
 
+from perceptronac.coding3d import xyz_displacements
+
+def block_covariance_matrix(block_side,rho):
+
+    Npts = 2**block_side
+    pts = xyz_displacements(np.arange(0, block_side, 1))
+    dij = np.sqrt(np.sum((np.expand_dims(pts,1) - np.expand_dims(pts,0))**2,axis=2))
+    Rxx = rho**dij
+    _, s, vh = np.linalg.svd(Rxx, full_matrices=True)
+    W = -vh.real
+    lambdas = np.expand_dims(s.real,1)
+
+    return W, lambdas
+
 
 def gptencode(V,C,Q=40,block_side=8,rho=0.95):
 
