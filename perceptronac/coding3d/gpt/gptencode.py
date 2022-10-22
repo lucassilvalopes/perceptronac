@@ -18,6 +18,88 @@ class Model(torch.nn.Module):
 
 
 
+class LaplacianRate(torch.nn.Module):
+    def forward(self, pred, target):
+        """
+        target xq, S[:,0]
+        pred sdnz
+        """
+
+        two = torch.tensor(2,dtype=target.dtype,device=target.device)
+        
+        rgt0 = (1/torch.log(two)) * ( (torch.sqrt(two) * torch.abs(target)) / pred) - torch.log2( torch.sinh(1/(torch.sqrt(two) * pred) ) )
+        
+        r0 = -torch.log2(1-torch.exp(-1/(torch.sqrt(two) * pred)))
+
+        rgt0_mask = torch.abs(target) > 0
+
+        r0_mask = torch.abs(target) == 0
+        
+        rateac = torch.sum(rgt0[rgt0_mask]) + torch.sum(r0[r0_mask])
+        
+        return rateac
+
+
+class NNModel:
+
+    def __init__(self):
+        self.model = Model()
+
+    def train(self,S):
+        return self._apply(S,"train")
+
+    def validate(self,S):
+        return self._apply(S,"valid")
+
+    def _apply(self,S, phase):
+
+        model = self.model
+
+        device = torch.device("cuda:0")
+        criterion = LaplacianRate()
+        OptimizerClass=torch.optim.SGD
+        optimizer = OptimizerClass(model.parameters(), lr=0.0001)
+
+        batch_size = 1024
+
+        dset = torch.utils.data.TensorDataset(torch.tensor(S[:,3:4]),torch.tensor(S[:,0:1]))
+        dataloader = torch.utils.data.DataLoader(dset,batch_size=batch_size,shuffle=False)
+
+        if phase == 'train':
+            model.train(True)
+        else:
+            model.train(False) 
+
+        running_loss = 0.0
+        n_samples = 0.0
+
+        pbar = tqdm(total=np.ceil(len(dset)/batch_size))
+        for data in dataloader:
+
+            Xt_b,yt_b= data
+            Xt_b = Xt_b.float().to(device)
+            yt_b = yt_b.float().to(device)
+
+            if phase == 'train':
+                optimizer.zero_grad()
+                outputs = model(Xt_b)
+                loss = criterion(outputs, yt_b)
+                loss.backward()
+                optimizer.step()
+            else:
+                with torch.no_grad():
+                    outputs = model(Xt_b)
+                    loss = criterion(outputs, yt_b)
+
+            running_loss += loss.item()
+            n_samples += yt_b.numel()
+            pbar.update(1)
+            pbar.set_description(f"loss: {running_loss / n_samples}")
+        pbar.close()
+
+        return running_loss / n_samples
+
+
 # https://stackoverflow.com/questions/18982650/differences-between-matlab-and-numpy-and-pythons-round-function
 matlab_round = np.vectorize(round)
 
