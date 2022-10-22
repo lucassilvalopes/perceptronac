@@ -1,5 +1,22 @@
 import numpy as np
 from tqdm import tqdm
+import torch
+
+
+class Model(torch.nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.layers = torch.nn.Sequential(
+            torch.nn.Linear(1, 64),
+            torch.nn.ReLU(),
+            torch.nn.Linear(64, 32),
+            torch.nn.ReLU(),
+            torch.nn.Linear(32, 1)
+        )
+    def forward(self, x):
+        return self.layers(x)
+
+
 
 # https://stackoverflow.com/questions/18982650/differences-between-matlab-and-numpy-and-pythons-round-function
 matlab_round = np.vectorize(round)
@@ -37,6 +54,24 @@ def ac_lapl_rate(xq, sd):
     return rateac
 
 
+
+def permutation_selection_matrices(Vb,block_side,infx,infy,infz):
+    
+    Nvox = Vb.shape[0]
+    v_sorting_indices = np.lexsort((Vb[:, 2]-infz, Vb[:, 1]-infy, Vb[:, 0]-infx))
+    Pb1 = np.eye(Nvox)
+    Pb1 = Pb1[v_sorting_indices]
+
+    ny,nx,nz = block_side,block_side,block_side
+    infxyz = np.array([[infx,infy,infz]])
+    mask = np.zeros((ny*nx*nz),dtype=int)
+    mask[[int(y*nx*nz+x*nz+z) for x,y,z in Pb1 @ (Vb-infxyz)]] = 1
+    Pb2 = np.eye(ny*nx*nz)
+    Pb2 = Pb2[mask.astype(bool)]
+
+    return Pb1,Pb2
+
+
 def gptencode(V,C,Q=40,block_side=8,rho=0.95):
 
     # see how many blocks are there
@@ -64,6 +99,14 @@ def gptencode(V,C,Q=40,block_side=8,rho=0.95):
         
         Vb = V[vi,:]
         Cb = C[vi,:]-128
+
+        Pb1,Pb2 = permutation_selection_matrices(Vb,block_side,infx,infy,infz)
+
+        # Vb = Pb1.T @ (Pb2 @ (Pb2.T @ (Pb1 @ Vb)))
+        # Cb = Pb1.T @ (Pb2 @ (Pb2.T @ (Pb1 @ Cb)))
+        Vb = Pb1 @ Vb
+        Cb = Pb1 @ Cb
+
 
         # calculate distances among all voxels
         N = Vb.shape[0]
