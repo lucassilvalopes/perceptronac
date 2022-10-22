@@ -25,15 +25,21 @@ class LaplacianRate(torch.nn.Module):
         pred sdnz
         """
 
+        nz = pred > 1e-6 
+        
+        xqa = torch.abs(target[nz])
+        
+        sdnz = pred[nz]
+
         two = torch.tensor(2,dtype=target.dtype,device=target.device)
         
-        rgt0 = (1/torch.log(two)) * ( (torch.sqrt(two) * torch.abs(target)) / pred) - torch.log2( torch.sinh(1/(torch.sqrt(two) * pred) ) )
+        rgt0 = (1/torch.log(two)) * ( (torch.sqrt(two) * xqa) / sdnz) - torch.log2( torch.sinh(1/(torch.sqrt(two) * sdnz) ) )
         
-        r0 = -torch.log2(1-torch.exp(-1/(torch.sqrt(two) * pred)))
+        r0 = -torch.log2(1-torch.exp(-1/(torch.sqrt(two) * sdnz)))
 
-        rgt0_mask = torch.abs(target) > 0
+        rgt0_mask = xqa > 0
 
-        r0_mask = torch.abs(target) == 0
+        r0_mask = xqa == 0
         
         rateac = torch.sum(rgt0[rgt0_mask]) + torch.sum(r0[r0_mask])
         
@@ -53,9 +59,11 @@ class NNModel:
 
     def _apply(self,S, phase):
 
-        model = self.model
-
         device = torch.device("cuda:0")
+
+        model = self.model
+        model.to(device)
+
         criterion = LaplacianRate()
         OptimizerClass=torch.optim.SGD
         optimizer = OptimizerClass(model.parameters(), lr=0.0001)
@@ -218,13 +226,11 @@ def gptencode(V,C,Q=40,block_side=8,rho=0.95):
         pbar.update(1)
     pbar.close()
 
-    rate = lut(S)
-
     # final Rate Distortion numbers
     mse = mse / Nvox; 
     dist = 10 * np.log10(255*255/mse)
 
-    return rate,dist
+    return S,dist
 
 
 def lut(S):
@@ -309,7 +315,13 @@ if __name__ == "__main__":
 
     C = rgb2yuv(C)
 
-    rate,dist = gptencode(V,C)
+    S,dist = gptencode(V,C)
+    # rate = lut(S)
+
+    nnmodel = NNModel()
+    epochs = 10
+    for epoch in range(epochs):
+        rate = nnmodel.train(S)
 
     print(rate,dist)
 
