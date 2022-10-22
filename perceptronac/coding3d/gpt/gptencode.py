@@ -324,19 +324,33 @@ if __name__ == "__main__":
 
     from perceptronac.coding3d import read_PC
 
-    _,V,C = read_PC("/home/lucas/Documents/data/ricardo9_frame0039.ply")
+    ################ NN - train using david ################
+
+    _,V,C = read_PC("/home/lucas/Documents/data/david9_frame0115.ply")
 
     C = rgb2yuv(C)
 
     S,dist = gptencode(V,C)
-    rate = lut(S)
-
-    print(rate,dist)
 
     nnmodel = NNModel()
     epochs = 10
     for epoch in range(epochs):
         rate = nnmodel.train(S)
+
+    ################ NN - validate using ricardo ################
+    ################ LUT - train and validate using ricardo ################
+
+    _,V,C = read_PC("/home/lucas/Documents/data/ricardo9_frame0039.ply")
+
+    C = rgb2yuv(C)
+
+    S,dist = gptencode(V,C)
+
+    rate = lut(S)
+
+    print(rate,dist)
+
+    rate = nnmodel.validate(S)
 
     print(rate,dist)
 
