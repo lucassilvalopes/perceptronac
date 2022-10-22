@@ -4,19 +4,34 @@ import torch
 
 
 class Model(torch.nn.Module):
-    def __init__(self):
-        N=1
+    def __init__(self,N): 
         super().__init__()
-        self.layers = torch.nn.Sequential(
-            torch.nn.Linear(N, 64*N),
-            torch.nn.ReLU(),
-            torch.nn.Linear(64*N, 32*N),
-            torch.nn.ReLU(),
-            torch.nn.Linear(32*N, 1),
-            torch.nn.Sigmoid()
-        )
+        self.a1 = torch.nn.Linear(N, 64*N)
+        self.a1_act = torch.nn.ReLU()
+        self.a2 = torch.nn.Linear(64*N, 32*N)
+        self.a2_act = torch.nn.ReLU()
+        self.a3 = torch.nn.Linear(32*N, 1)
+        self.a3_act = torch.nn.Sigmoid()
+
+        self.b1 = torch.nn.Linear(N, 32*N)
+        self.b1_act = torch.nn.ReLU()
+        self.b2 = torch.nn.Linear(32*N, 1)
+        self.b2_act = torch.nn.ReLU()
+
     def forward(self, x):
-        return self.layers(x)
+        xa = self.a1(x)
+        xa = self.a1_act(xa)
+        xa = self.a2(xa)
+        xa = self.a2_act(xa)
+        xa = self.a3(xa)
+        xa = self.a3_act(xa)
+
+        xb = self.b1(x)
+        xb = self.b1_act(xb)
+        xb = self.b2(xb)
+        xb = self.b2_act(xb)
+
+        return xa * (1 + xb)
 
 
 class LaplacianRate(torch.nn.Module):
@@ -46,7 +61,7 @@ class LaplacianRate(torch.nn.Module):
 class NNModel:
 
     def __init__(self):
-        self.model = Model()
+        self.model = Model(1)
 
     def train(self,S):
         return self._apply(S,"train")
