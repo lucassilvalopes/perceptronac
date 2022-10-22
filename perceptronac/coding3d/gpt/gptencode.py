@@ -1,6 +1,7 @@
 import numpy as np
 from tqdm import tqdm
 import torch
+import random
 
 
 class Model(torch.nn.Module):
@@ -83,7 +84,7 @@ class NNModel:
         batch_size = 1024
 
         dset = torch.utils.data.TensorDataset(torch.tensor(S[:,3:4]),torch.tensor(S[:,0:1]))
-        dataloader = torch.utils.data.DataLoader(dset,batch_size=batch_size,shuffle=False)
+        dataloader = torch.utils.data.DataLoader(dset,batch_size=batch_size,shuffle=True)
 
         if phase == 'train':
             model.train(True)
@@ -242,7 +243,7 @@ def gptencode(V,C,Q=40,block_side=8,rho=0.95):
     mse = mse / Nvox; 
     dist = 10 * np.log10(255*255/mse)
 
-    return S,dist
+    return S,dist.item()
 
 
 def lut(S):
@@ -325,34 +326,66 @@ if __name__ == "__main__":
     from perceptronac.coding3d import read_PC
 
     ################ NN - train using david ################
-
-    _,V,C = read_PC("/home/lucas/Documents/data/david9_frame0115.ply")
-
-    C = rgb2yuv(C)
-
-    S,dist = gptencode(V,C)
-
-    nnmodel = NNModel()
-    epochs = 10
-    for epoch in range(epochs):
-        rate = nnmodel.train(S)
-
     ################ NN - validate using ricardo ################
     ################ LUT - train and validate using ricardo ################
 
-    _,V,C = read_PC("/home/lucas/Documents/data/ricardo9_frame0039.ply")
+    rates_nn = []
+    rates_lut = []
+    distortions = [] 
+    for Q in [10,20,30,40]:
 
-    C = rgb2yuv(C)
+        _,V,C = read_PC("/home/lucas/Documents/data/david9_frame0115.ply")
 
-    S,dist = gptencode(V,C)
+        C = rgb2yuv(C)
 
-    rate = lut(S)
+        S,_ = gptencode(V,C,Q=Q)
 
-    print(rate,dist)
+        seed = 7
+        torch.manual_seed(seed)
+        random.seed(seed)
+        np.random.seed(seed)
+        nnmodel = NNModel()
+        epochs = 10
+        for epoch in range(epochs):
+            _ = nnmodel.train(S)
 
-    rate = nnmodel.validate(S)
+        _,V,C = read_PC("/home/lucas/Documents/data/ricardo9_frame0039.ply")
 
-    print(rate,dist)
+        C = rgb2yuv(C)
+
+        S,dist = gptencode(V,C,Q=Q)
+
+        distortions.append(dist)
+
+        rate = lut(S)
+
+        rates_lut.append(rate)
+
+        # print(rate,dist)
+
+        rate = nnmodel.validate(S)
+
+        rates_nn.append(rate)
+
+        # print(rate,dist)
+
+    import matplotlib.pyplot as plt
+
+    fig, ax = plt.subplots(nrows=1, ncols=1)
+    try:
+        handle1,= ax.plot(rates_lut,distortions,linestyle="dotted",marker="^",color="green",label="LUT")
+        handle2,= ax.plot(rates_nn,distortions,linestyle="solid",marker="o",color="blue",label="NN")
+    except:
+        handle1,handle2 = None,None
+        ax.plot(rates_lut,distortions,linestyle="dotted",marker="^",color="green")
+        ax.plot(rates_nn,distortions,linestyle="solid",marker="o",color="blue")
+    ax.set_xlabel("Rate Y (bpv)")
+    ax.set_ylabel("PSNR Y (db)")
+    try:
+        ax.legend(handles=[handle1,handle2])
+    except:
+        pass
+    fig.savefig(f"gpt_nn.png", dpi=300, facecolor='w', bbox_inches = "tight")
 
     # import scipy.io
     # scipy.io.savemat('ricardo9_frame0039_yuv.mat', dict(V=V+1, C=C))
