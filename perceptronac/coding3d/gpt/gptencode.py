@@ -1,7 +1,22 @@
 import numpy as np
 from tqdm import tqdm
 import torch
-from perceptronac.models import MLP_N_64N_32N_1
+
+
+class Model(torch.nn.Module):
+    def __init__(self):
+        N=1
+        super().__init__()
+        self.layers = torch.nn.Sequential(
+            torch.nn.Linear(N, 64*N),
+            torch.nn.ReLU(),
+            torch.nn.Linear(64*N, 32*N),
+            torch.nn.ReLU(),
+            torch.nn.Linear(32*N, 1),
+            torch.nn.Sigmoid()
+        )
+    def forward(self, x):
+        return self.layers(x)
 
 
 class LaplacianRate(torch.nn.Module):
@@ -9,23 +24,19 @@ class LaplacianRate(torch.nn.Module):
         """
         target xq, S[:,0]
         pred sdnz
-        """
 
-        nz = pred > 0
-        
-        xqa = torch.abs(target[nz])
-        
-        sdnz = pred[nz]
+        obs: negative standard deviation makes no sense
+        """
 
         two = torch.tensor(2,dtype=target.dtype,device=target.device)
         
-        rgt0 = (1/torch.log(two)) * ( (torch.sqrt(two) * xqa) / sdnz) - torch.log2( torch.sinh(1/(torch.sqrt(two) * sdnz) ) )
+        rgt0 = (1/torch.log(two)) * ( (torch.sqrt(two) * torch.abs(target)) / pred) - torch.log2( torch.sinh(1/(torch.sqrt(two) * pred) ) )
         
-        r0 = -torch.log2(1-torch.exp(-1/(torch.sqrt(two) * sdnz)))
+        r0 = -torch.log2(1-torch.exp(-1/(torch.sqrt(two) * pred)))
 
-        rgt0_mask = xqa > 0
+        rgt0_mask = torch.abs(target) > 0
 
-        r0_mask = xqa == 0
+        r0_mask = torch.abs(target) == 0
         
         rateac = torch.sum(rgt0[rgt0_mask]) + torch.sum(r0[r0_mask])
         
@@ -35,7 +46,7 @@ class LaplacianRate(torch.nn.Module):
 class NNModel:
 
     def __init__(self):
-        self.model =MLP_N_64N_32N_1(1)
+        self.model = Model()
 
     def train(self,S):
         return self._apply(S,"train")
