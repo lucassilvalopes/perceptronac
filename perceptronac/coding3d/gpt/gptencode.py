@@ -298,7 +298,8 @@ def lut(S):
     rateY = ac_lapl_rate(S[:,0], sv[:,0])
     rateU = ac_lapl_rate(S[:,1], sv[:,1])
     rateV = ac_lapl_rate(S[:,2], sv[:,2])
-    ratet = ratet + rateY + rateU + rateV
+    # ratet = ratet + rateY + rateU + rateV
+    ratet = rateY
 
     # final Rate Distortion numbers
     rate = ratet / Nvox
@@ -328,7 +329,9 @@ if __name__ == "__main__":
     C = rgb2yuv(C)
 
     S,dist = gptencode(V,C)
-    # rate = lut(S)
+    rate = lut(S)
+
+    print(rate,dist)
 
     nnmodel = NNModel()
     epochs = 10
