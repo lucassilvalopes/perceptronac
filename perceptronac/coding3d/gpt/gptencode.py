@@ -1,21 +1,7 @@
 import numpy as np
 from tqdm import tqdm
 import torch
-
-
-class Model(torch.nn.Module):
-    def __init__(self):
-        super().__init__()
-        self.layers = torch.nn.Sequential(
-            torch.nn.Linear(1, 64),
-            torch.nn.ReLU(),
-            torch.nn.Linear(64, 32),
-            torch.nn.ReLU(),
-            torch.nn.Linear(32, 1)
-        )
-    def forward(self, x):
-        return self.layers(x)
-
+from perceptronac.models import MLP_N_64N_32N_1
 
 
 class LaplacianRate(torch.nn.Module):
@@ -25,7 +11,7 @@ class LaplacianRate(torch.nn.Module):
         pred sdnz
         """
 
-        nz = pred > 1e-6 
+        nz = pred > 0
         
         xqa = torch.abs(target[nz])
         
@@ -49,7 +35,7 @@ class LaplacianRate(torch.nn.Module):
 class NNModel:
 
     def __init__(self):
-        self.model = Model()
+        self.model =MLP_N_64N_32N_1(1)
 
     def train(self,S):
         return self._apply(S,"train")
