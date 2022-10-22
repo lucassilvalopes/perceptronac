@@ -93,6 +93,22 @@ def gptencode(V,C,Q=40,block_side=8,rho=0.95):
         pbar.update(1)
     pbar.close()
 
+    rate = lut(S)
+
+    # final Rate Distortion numbers
+    mse = mse / Nvox; 
+    dist = 10 * np.log10(255*255/mse)
+
+    return rate,dist
+
+
+def lut(S):
+    """
+    S: Nvox-by-4, with the YUV coefficients in first 3 columns and lambdas in the last column 
+    """
+
+    Nvox = S.shape[0]
+
     NBINS = 70
     BITSPERMAXLAMBDA = 5
     BITSPERBIN = 60
@@ -141,15 +157,10 @@ def gptencode(V,C,Q=40,block_side=8,rho=0.95):
     rateV = ac_lapl_rate(S[:,2], sv[:,2])
     ratet = ratet + rateY + rateU + rateV
 
-
-
     # final Rate Distortion numbers
-    mse = mse / Nvox; 
-    dist = 10 * np.log10(255*255/mse)
     rate = ratet / Nvox
 
-    return rate,dist
-
+    return rate
 
 
 def rgb2yuv(rgb):
