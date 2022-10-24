@@ -7,16 +7,16 @@ import random
 class Model(torch.nn.Module):
     def __init__(self,N): 
         super().__init__()
-        self.a1 = torch.nn.Linear(N, 64*N)
+        self.a1 = torch.nn.Linear(N, 2048)
         self.a1_act = torch.nn.ReLU()
-        self.a2 = torch.nn.Linear(64*N, 32*N)
+        self.a2 = torch.nn.Linear(2048, 1024)
         self.a2_act = torch.nn.ReLU()
-        self.a3 = torch.nn.Linear(32*N, 1)
+        self.a3 = torch.nn.Linear(1024, 1)
         self.a3_act = torch.nn.Sigmoid()
 
-        self.b1 = torch.nn.Linear(N, 32*N)
+        self.b1 = torch.nn.Linear(N, 1024)
         self.b1_act = torch.nn.ReLU()
-        self.b2 = torch.nn.Linear(32*N, 1)
+        self.b2 = torch.nn.Linear(1024, 1)
         self.b2_act = torch.nn.ReLU()
 
     def forward(self, x):
@@ -61,8 +61,8 @@ class LaplacianRate(torch.nn.Module):
 
 class NNModel:
 
-    def __init__(self):
-        self.model = Model(1)
+    def __init__(self,N):
+        self.model = Model(N)
 
     def train(self,S):
         return self._apply(S,"train")
@@ -83,7 +83,7 @@ class NNModel:
 
         batch_size = 1024
 
-        dset = torch.utils.data.TensorDataset(torch.tensor(S[:,3:4]),torch.tensor(S[:,0:1]))
+        dset = torch.utils.data.TensorDataset(torch.tensor(S[:,3:]),torch.tensor(S[:,0:1]))
         dataloader = torch.utils.data.DataLoader(dset,batch_size=batch_size,shuffle=True)
 
         if phase == 'train':
@@ -187,6 +187,7 @@ def gptencode(V,C,Q=40,block_side=8,rho=0.95):
     p = 0
     mse = 0
     S = np.zeros((Nvox,4))
+    Evec = np.zeros((Nvox,block_side**3))
     
     pbar = tqdm(total=ncubes)
     for n in range(ncubes):
@@ -229,6 +230,8 @@ def gptencode(V,C,Q=40,block_side=8,rho=0.95):
         # yq is Nx3, lambdas is Nx1
         S[p:p+N,:] = np.concatenate([yq , np.sqrt(lambdas)],axis=1) 
 
+        Evec[p:p+N,:] = W @ Pb2 # (Pb2.T @ W.T).T
+
         # inverse quantize and inverse transform
         Cbr = W.T @ (yq * Q)
         e = Cb[:,0:1]-Cbr[:,0:1] # Y channel
@@ -243,7 +246,7 @@ def gptencode(V,C,Q=40,block_side=8,rho=0.95):
     mse = mse / Nvox; 
     dist = 10 * np.log10(255*255/mse)
 
-    return S,dist.item()
+    return S,dist.item(),Evec
 
 
 def lut(S):
@@ -332,28 +335,30 @@ if __name__ == "__main__":
     rates_nn = []
     rates_lut = []
     distortions = [] 
-    for Q in [10,20,30,40]:
+    for Q in [40]: # [10,20,30,40]:
 
+        # _,V,C = read_PC("/home/lucas/Documents/data/david10_frame0115.ply")
         _,V,C = read_PC("/home/lucas/Documents/data/david9_frame0115.ply")
 
         C = rgb2yuv(C)
 
-        S,_ = gptencode(V,C,Q=Q)
+        S,_,Evec = gptencode(V,C,Q=Q)
 
         seed = 7
         torch.manual_seed(seed)
         random.seed(seed)
         np.random.seed(seed)
-        nnmodel = NNModel()
-        epochs = 10
+        nnmodel = NNModel(513)
+        epochs = 100
         for epoch in range(epochs):
-            _ = nnmodel.train(S)
+            _ = nnmodel.train(np.concatenate([S,Evec],axis=1))
 
-        _,V,C = read_PC("/home/lucas/Documents/data/ricardo9_frame0039.ply")
+        # _,V,C = read_PC("/home/lucas/Documents/data/ricardo10_frame0000.ply")
+        _,V,C = read_PC("/home/lucas/Documents/data/ricardo9_frame0000.ply")
 
         C = rgb2yuv(C)
 
-        S,dist = gptencode(V,C,Q=Q)
+        S,dist,Evec = gptencode(V,C,Q=Q)
 
         distortions.append(dist)
 
@@ -363,7 +368,7 @@ if __name__ == "__main__":
 
         # print(rate,dist)
 
-        rate = nnmodel.validate(S)
+        rate = nnmodel.validate(np.concatenate([S,Evec],axis=1))
 
         rates_nn.append(rate)
 
