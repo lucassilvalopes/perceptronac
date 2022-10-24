@@ -7,16 +7,16 @@ import random
 class Model(torch.nn.Module):
     def __init__(self,N): 
         super().__init__()
-        self.a1 = torch.nn.Linear(N, 2048)
+        self.a1 = torch.nn.Linear(N, min(2048,64*N) )
         self.a1_act = torch.nn.ReLU()
-        self.a2 = torch.nn.Linear(2048, 1024)
+        self.a2 = torch.nn.Linear( min(2048,64*N) , min(1024,32*N) )
         self.a2_act = torch.nn.ReLU()
-        self.a3 = torch.nn.Linear(1024, 1)
+        self.a3 = torch.nn.Linear( min(1024,32*N) , 1)
         self.a3_act = torch.nn.Sigmoid()
 
-        self.b1 = torch.nn.Linear(N, 1024)
+        self.b1 = torch.nn.Linear(N, min(1024,32*N) )
         self.b1_act = torch.nn.ReLU()
-        self.b2 = torch.nn.Linear(1024, 1)
+        self.b2 = torch.nn.Linear( min(1024,32*N), 1)
         self.b2_act = torch.nn.ReLU()
 
     def forward(self, x):
@@ -348,9 +348,11 @@ if __name__ == "__main__":
         torch.manual_seed(seed)
         random.seed(seed)
         np.random.seed(seed)
+        # nnmodel = NNModel(1)
         nnmodel = NNModel(513)
-        epochs = 100
+        epochs = 90
         for epoch in range(epochs):
+            # _ = nnmodel.train(S)
             _ = nnmodel.train(np.concatenate([S,Evec],axis=1))
 
         # _,V,C = read_PC("/home/lucas/Documents/data/ricardo10_frame0000.ply")
@@ -366,13 +368,10 @@ if __name__ == "__main__":
 
         rates_lut.append(rate)
 
-        # print(rate,dist)
-
+        # rate = nnmodel.validate(S)
         rate = nnmodel.validate(np.concatenate([S,Evec],axis=1))
 
         rates_nn.append(rate)
-
-        # print(rate,dist)
 
     import matplotlib.pyplot as plt
 
