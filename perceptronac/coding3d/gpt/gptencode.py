@@ -2,6 +2,10 @@ import numpy as np
 from tqdm import tqdm
 import torch
 import random
+import sys
+import scipy.io
+from perceptronac.coding3d import read_PC
+import matplotlib.pyplot as plt
 
 
 class Model(torch.nn.Module):
@@ -32,7 +36,7 @@ class Model(torch.nn.Module):
         xb = self.b2(xb)
         xb = self.b2_act(xb)
 
-        return xa * (1 + xb)
+        return 0.01 + xa * (1 + xb)
 
 
 class LaplacianRate(torch.nn.Module):
@@ -308,7 +312,7 @@ def lut(S):
     # final Rate Distortion numbers
     rate = ratet / Nvox
 
-    return rate
+    return rate,sv
 
 
 def rgb2yuv(rgb):
@@ -326,7 +330,30 @@ def rgb2yuv(rgb):
 
 if __name__ == "__main__":
 
-    from perceptronac.coding3d import read_PC
+    if len(sys.argv) > 1 and sys.argv[1] == "0":
+
+        _,V,C = read_PC("/home/lucas/Documents/data/ricardo9_frame0039.ply")
+        C = rgb2yuv(C)
+        scipy.io.savemat('ricardo9_frame0039_yuv.mat', dict(V=V+1, C=C))
+        sys.exit()
+
+    elif len(sys.argv) > 1 and sys.argv[1] == "1":
+        _,V,C = read_PC("/home/lucas/Documents/data/ricardo9_frame0039.ply")
+        C = rgb2yuv(C)
+        S,dist,Evec = gptencode(V,C)
+        rate,sv = lut(S)
+        print(np.min(S[:,:3]),np.max(S[:,:3]))
+        print(np.min(sv),np.max(sv))
+
+        criterion = LaplacianRate()
+        x_axis = np.linspace(0,1e+10,10)
+        x_axis = np.concatenate([np.array([0.000001,0.00001,0.0001,0.001,0.01,0.1,1]),x_axis],axis=0)
+        y_axis = []
+        for pred in x_axis:
+            y_axis.append( criterion( torch.tensor(pred),torch.tensor(1) ).item() )
+        print(y_axis)
+        sys.exit()
+
 
     ################ NN - train using david ################
     ################ NN - validate using ricardo ################
@@ -348,12 +375,12 @@ if __name__ == "__main__":
         torch.manual_seed(seed)
         random.seed(seed)
         np.random.seed(seed)
-        # nnmodel = NNModel(1)
-        nnmodel = NNModel(513)
-        epochs = 90
+        nnmodel = NNModel(1)
+        # nnmodel = NNModel(513)
+        epochs = 10
         for epoch in range(epochs):
-            # _ = nnmodel.train(S)
-            _ = nnmodel.train(np.concatenate([S,Evec],axis=1))
+            _ = nnmodel.train(S)
+            # _ = nnmodel.train(np.concatenate([S,Evec],axis=1))
 
         # _,V,C = read_PC("/home/lucas/Documents/data/ricardo10_frame0000.ply")
         _,V,C = read_PC("/home/lucas/Documents/data/ricardo9_frame0000.ply")
@@ -364,32 +391,24 @@ if __name__ == "__main__":
 
         distortions.append(dist)
 
-        rate = lut(S)
+        rate,_ = lut(S)
 
         rates_lut.append(rate)
 
-        # rate = nnmodel.validate(S)
-        rate = nnmodel.validate(np.concatenate([S,Evec],axis=1))
+        rate = nnmodel.validate(S)
+        # rate = nnmodel.validate(np.concatenate([S,Evec],axis=1))
 
         rates_nn.append(rate)
 
-    import matplotlib.pyplot as plt
-
     fig, ax = plt.subplots(nrows=1, ncols=1)
-    try:
-        handle1,= ax.plot(rates_lut,distortions,linestyle="dotted",marker="^",color="green",label="LUT")
-        handle2,= ax.plot(rates_nn,distortions,linestyle="solid",marker="o",color="blue",label="NN")
-    except:
-        handle1,handle2 = None,None
-        ax.plot(rates_lut,distortions,linestyle="dotted",marker="^",color="green")
-        ax.plot(rates_nn,distortions,linestyle="solid",marker="o",color="blue")
+
+    handle1,= ax.plot(rates_lut,distortions,linestyle="dotted",marker="^",color="green",label="LUT")
+    handle2,= ax.plot(rates_nn,distortions,linestyle="solid",marker="o",color="blue",label="NN")
+
     ax.set_xlabel("Rate Y (bpv)")
     ax.set_ylabel("PSNR Y (db)")
-    try:
-        ax.legend(handles=[handle1,handle2])
-    except:
-        pass
+
+    ax.legend(handles=[handle1,handle2])
+
     fig.savefig(f"gpt_nn.png", dpi=300, facecolor='w', bbox_inches = "tight")
 
-    # import scipy.io
-    # scipy.io.savemat('ricardo9_frame0039_yuv.mat', dict(V=V+1, C=C))
