@@ -3,6 +3,7 @@ from tqdm import tqdm
 import torch
 import random
 import sys
+import os
 import scipy.io
 from perceptronac.coding3d import read_PC
 import matplotlib.pyplot as plt
@@ -69,6 +70,10 @@ class LaplacianRate(torch.nn.Module):
 class NNModel:
 
     def __init__(self,N,max_sd):
+        # seed = 7
+        # torch.manual_seed(seed)
+        # random.seed(seed)
+        # np.random.seed(seed)
         self.model = Model(N,max_sd)
 
     def train(self,S):
@@ -182,7 +187,28 @@ def permutation_selection_matrices(Vb,block_side,infx,infy,infz):
     return Pb1,Pb2
 
 
-def gptencode(V,C,Q=40,block_side=8,rho=0.95):
+def gpt(pth,Q=40,block_side=8,rho=0.95):
+    """
+    Applies gaussian process transform to point cloud blocks,
+    using the Ornstein-Uhlenbeck model to estimate the covariance matrix,
+    then uniformly quantize the coefficients.
+
+    Args:
+        pth : path to .ply file containing a voxelized point cloud with rgb attributes 
+        Q : step-size for the uniform quantization of the coefficients
+        block_side : block side
+        rho : parameter of the Ornstein-Uhlenbeck model
+
+    Returns:
+        S : Nvox-by-4 matrix where the first 3 columns contain the coefficients of the gpt applied to the Y,U,V 
+            channels, and the last column contains the eigenvalues
+        dist : peak signal to noise ratio in dB
+        Evec : Nvox-by-block_side**3 matrix of eigenvectors zero-filled at unoccupied positions to size block_side**3
+    """
+
+    _,V,C = read_PC(pth)
+
+    C = rgb2yuv(C)
 
     # see how many blocks are there
     cubes = np.unique(np.floor(V/block_side),axis=0)
@@ -331,7 +357,26 @@ def rgb2yuv(rgb):
 
 
 
+def rd_curve(rates_lut,rates_nn,distortions):
+
+    fig, ax = plt.subplots(nrows=1, ncols=1)
+
+    handle1,= ax.plot(rates_lut,distortions,linestyle="dotted",marker="^",color="green",label="LUT")
+    handle2,= ax.plot(rates_nn,distortions,linestyle="solid",marker="o",color="blue",label="NN")
+
+    ax.set_xlabel("Rate Y (bpv)")
+    ax.set_ylabel("PSNR Y (db)")
+
+    ax.legend(handles=[handle1,handle2])
+
+    fig.savefig(f"gpt_nn.png", dpi=300, facecolor='w', bbox_inches = "tight")
+
+
+
+
 if __name__ == "__main__":
+
+    ################ I used these lines of code for some tests (remove later) ################
 
     if len(sys.argv) > 1 and sys.argv[1] == "0":
 
@@ -341,9 +386,8 @@ if __name__ == "__main__":
         sys.exit()
 
     elif len(sys.argv) > 1 and sys.argv[1] == "1":
-        _,V,C = read_PC("/home/lucas/Documents/data/ricardo9_frame0039.ply")
-        C = rgb2yuv(C)
-        S,dist,Evec = gptencode(V,C)
+
+        S,dist,Evec = gpt("/home/lucas/Documents/data/ricardo9_frame0039.ply")
         rate,sv = lut(S)
         print(np.min(S[:,:3]),np.max(S[:,:3]))
         print(np.min(sv),np.max(sv))
@@ -357,61 +401,72 @@ if __name__ == "__main__":
         print(y_axis)
         sys.exit()
 
+    ##########################################################################################
 
-    ################ NN - train using david ################
-    ################ NN - validate using ricardo ################
-    ################ LUT - train and validate using ricardo ################
+
+    configs = {
+        "training_set": [
+            # "/home/lucas/Documents/data/david10_frame0115.ply"
+            "/home/lucas/Documents/data/david9_frame0115.ply"
+            
+        ],
+        "validation_set": [
+            # "/home/lucas/Documents/data/ricardo10_frame0000.ply"
+            "/home/lucas/Documents/data/ricardo9_frame0000.ply"
+        ],
+        "outer_loop_epochs": 1,
+        "inner_loop_epochs": 10,
+        "phases": ['train', 'valid'],
+        "dset_pieces": 1,
+    }
+
+
 
     rates_nn = []
     rates_lut = []
     distortions = [] 
     for Q in [40]: # [10,20,30,40]:
 
-        # _,V,C = read_PC("/home/lucas/Documents/data/david10_frame0115.ply")
-        _,V,C = read_PC("/home/lucas/Documents/data/david9_frame0115.ply")
-
-        C = rgb2yuv(C)
-
-        S,_,Evec = gptencode(V,C,Q=Q)
-
-        # seed = 7
-        # torch.manual_seed(seed)
-        # random.seed(seed)
-        # np.random.seed(seed)
         nnmodel = NNModel(1,np.max(np.abs(S[:,:3])))
         # nnmodel = NNModel(513)
-        epochs = 10
-        for epoch in range(epochs):
-            _ = nnmodel.train(S)
-            # _ = nnmodel.train(np.concatenate([S,Evec],axis=1))
+        
+        for phase in configs["phases"]:
 
-        # _,V,C = read_PC("/home/lucas/Documents/data/ricardo10_frame0000.ply")
-        _,V,C = read_PC("/home/lucas/Documents/data/ricardo9_frame0000.ply")
+            outer_loop_epochs = configs["outer_loop_epochs"] if phase == "train" else 1
 
-        C = rgb2yuv(C)
+            for _ in range(outer_loop_epochs):
 
-        S,dist,Evec = gptencode(V,C,Q=Q)
+                pths = configs["training_set"] if phase == "train" else configs["validation_set"]
 
-        distortions.append(dist)
+                shuffled_pths = random.sample(pths, len(pths))
 
-        rate,_ = lut(S)
+                pths_per_dset = max(1,len(shuffled_pths)//configs["dset_pieces"])
 
-        rates_lut.append(rate)
+                for shuffled_pths_i in range(0,len(shuffled_pths),pths_per_dset):
 
-        rate = nnmodel.validate(S)
-        # rate = nnmodel.validate(np.concatenate([S,Evec],axis=1))
+                    piece_pths = shuffled_pths[shuffled_pths_i:(shuffled_pths_i+pths_per_dset)]
 
-        rates_nn.append(rate)
+                    full_S = []
+                    for pth in piece_pths:
 
-    fig, ax = plt.subplots(nrows=1, ncols=1)
+                        S,dist,Evec = gpt(pth,Q=Q)
+                        # full_S.append( S )
+                        full_S.append( np.concatenate([S,Evec],axis=1) )
 
-    handle1,= ax.plot(rates_lut,distortions,linestyle="dotted",marker="^",color="green",label="LUT")
-    handle2,= ax.plot(rates_nn,distortions,linestyle="solid",marker="o",color="blue",label="NN")
+                    full_S = np.concatenate(full_S,axis=0)
 
-    ax.set_xlabel("Rate Y (bpv)")
-    ax.set_ylabel("PSNR Y (db)")
+                    if phase == "train":
+                        for _ in range(configs["inner_loop_epochs"]):
+                            _ = nnmodel.train(full_S)
+                    else:
 
-    ax.legend(handles=[handle1,handle2])
+                        distortions.append(dist)
 
-    fig.savefig(f"gpt_nn.png", dpi=300, facecolor='w', bbox_inches = "tight")
+                        rates_lut.append( lut(full_S)[0] )
+
+                        rates_nn.append( nnmodel.validate(full_S) )
+
+    rd_curve(rates_lut,rates_nn,distortions)
+
+
 
