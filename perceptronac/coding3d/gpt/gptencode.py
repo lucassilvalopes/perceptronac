@@ -9,8 +9,9 @@ import matplotlib.pyplot as plt
 
 
 class Model(torch.nn.Module):
-    def __init__(self,N): 
+    def __init__(self,N,max_sd): 
         super().__init__()
+        self.max_sd = max_sd
         self.a1 = torch.nn.Linear(N, min(2048,64*N) )
         self.a1_act = torch.nn.ReLU()
         self.a2 = torch.nn.Linear( min(2048,64*N) , min(1024,32*N) )
@@ -18,10 +19,10 @@ class Model(torch.nn.Module):
         self.a3 = torch.nn.Linear( min(1024,32*N) , 1)
         self.a3_act = torch.nn.Sigmoid()
 
-        self.b1 = torch.nn.Linear(N, min(1024,32*N) )
-        self.b1_act = torch.nn.ReLU()
-        self.b2 = torch.nn.Linear( min(1024,32*N), 1)
-        self.b2_act = torch.nn.ReLU()
+        # self.b1 = torch.nn.Linear(N, min(1024,32*N) )
+        # self.b1_act = torch.nn.ReLU()
+        # self.b2 = torch.nn.Linear( min(1024,32*N), 1)
+        # self.b2_act = torch.nn.ReLU()
 
     def forward(self, x):
         xa = self.a1(x)
@@ -31,12 +32,14 @@ class Model(torch.nn.Module):
         xa = self.a3(xa)
         xa = self.a3_act(xa)
 
-        xb = self.b1(x)
-        xb = self.b1_act(xb)
-        xb = self.b2(xb)
-        xb = self.b2_act(xb)
+        # xb = self.b1(x)
+        # xb = self.b1_act(xb)
+        # xb = self.b2(xb)
+        # xb = self.b2_act(xb)
 
-        return 0.01 + xa * (1 + xb)
+        # return 0.01 + xa * (1 + xb )
+
+        return 0.01 + self.max_sd * xa
 
 
 class LaplacianRate(torch.nn.Module):
@@ -65,8 +68,8 @@ class LaplacianRate(torch.nn.Module):
 
 class NNModel:
 
-    def __init__(self,N):
-        self.model = Model(N)
+    def __init__(self,N,max_sd):
+        self.model = Model(N,max_sd)
 
     def train(self,S):
         return self._apply(S,"train")
@@ -192,7 +195,7 @@ def gptencode(V,C,Q=40,block_side=8,rho=0.95):
     mse = 0
     S = np.zeros((Nvox,4))
     Evec = np.zeros((Nvox,block_side**3))
-    
+
     pbar = tqdm(total=ncubes)
     for n in range(ncubes):
 
@@ -346,7 +349,7 @@ if __name__ == "__main__":
         print(np.min(sv),np.max(sv))
 
         criterion = LaplacianRate()
-        x_axis = np.linspace(0,1e+10,10)
+        x_axis = np.linspace(0,100,10)
         x_axis = np.concatenate([np.array([0.000001,0.00001,0.0001,0.001,0.01,0.1,1]),x_axis],axis=0)
         y_axis = []
         for pred in x_axis:
@@ -371,11 +374,11 @@ if __name__ == "__main__":
 
         S,_,Evec = gptencode(V,C,Q=Q)
 
-        seed = 7
-        torch.manual_seed(seed)
-        random.seed(seed)
-        np.random.seed(seed)
-        nnmodel = NNModel(1)
+        # seed = 7
+        # torch.manual_seed(seed)
+        # random.seed(seed)
+        # np.random.seed(seed)
+        nnmodel = NNModel(1,np.max(np.abs(S[:,:3])))
         # nnmodel = NNModel(513)
         epochs = 10
         for epoch in range(epochs):
