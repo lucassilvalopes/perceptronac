@@ -430,8 +430,8 @@ if __name__ == "__main__":
     distortions = [] 
     for Q in [40]: # [10,20,30,40]:
 
-        nnmodel = NNModel(1)
-        # nnmodel = NNModel(513)
+        # nnmodel = NNModel(1)
+        nnmodel = NNModel(513)
         
         for phase in configs["phases"]:
 
@@ -453,8 +453,8 @@ if __name__ == "__main__":
                     for pth in piece_pths:
 
                         S,dist,Evec = gpt(pth,Q=Q)
-                        full_S.append( S )
-                        # full_S.append( np.concatenate([S,Evec],axis=1) )
+                        # full_S.append( S )
+                        full_S.append( np.concatenate([S,Evec],axis=1) )
 
                     full_S = np.concatenate(full_S,axis=0)
 
