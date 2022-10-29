@@ -69,12 +69,14 @@ class LaplacianRate(torch.nn.Module):
 
 class NNModel:
 
-    def __init__(self,N):
+    def __init__(self,configs,N):
         # seed = 7
         # torch.manual_seed(seed)
         # random.seed(seed)
         # np.random.seed(seed)
         self.model = Model(N)
+        self.lr = configs["learning_rate"]
+        self.batch_size = configs["batch_size"]
 
     def train(self,S):
         self.model.train()
@@ -93,12 +95,10 @@ class NNModel:
 
         criterion = LaplacianRate()
         OptimizerClass=torch.optim.SGD
-        optimizer = OptimizerClass(model.parameters(), lr=0.0001)
-
-        batch_size = 1024
+        optimizer = OptimizerClass(model.parameters(), lr=self.lr)
 
         dset = torch.utils.data.TensorDataset(torch.tensor(S[:,3:]),torch.tensor(S[:,0:1]))
-        dataloader = torch.utils.data.DataLoader(dset,batch_size=batch_size,shuffle=True)
+        dataloader = torch.utils.data.DataLoader(dset,batch_size=self.batch_size,shuffle=True)
 
         if phase == 'train':
             model.train(True)
@@ -108,7 +108,7 @@ class NNModel:
         running_loss = 0.0
         n_samples = 0.0
 
-        pbar = tqdm(total=np.ceil(len(dset)/batch_size))
+        pbar = tqdm(total=np.ceil(len(dset)/self.batch_size))
         for data in dataloader:
 
             Xt_b,yt_b= data
@@ -410,17 +410,20 @@ if __name__ == "__main__":
     configs = {
         "training_set": [
             # "/home/lucas/Documents/data/david10_frame0115.ply"
-            "/home/lucas/Documents/data/david9_frame0115.ply"
+            # "/home/lucas/Documents/data/david9_frame0115.ply"
+            os.path.join(r,f) for r,ds,fs in os.walk("/home/lucaslopes/perceptronac/GPT/training") for f in fs if f.endswith(".ply")
             
         ],
         "validation_set": [
             # "/home/lucas/Documents/data/ricardo10_frame0000.ply"
             "/home/lucas/Documents/data/ricardo9_frame0000.ply"
         ],
-        "outer_loop_epochs": 1,
-        "inner_loop_epochs": 10,
+        "outer_loop_epochs": 2,
+        "inner_loop_epochs": 50,
+        "learning_rate": 0.00001,
+        "batch_size": 30000,
         "phases": ['train', 'valid'],
-        "dset_pieces": 1,
+        "dset_pieces": 6,
     }
 
 
@@ -430,8 +433,8 @@ if __name__ == "__main__":
     distortions = [] 
     for Q in [40]: # [10,20,30,40]:
 
-        # nnmodel = NNModel(1)
-        nnmodel = NNModel(513)
+        # nnmodel = NNModel(configs,1)
+        nnmodel = NNModel(configs,513)
         
         for phase in configs["phases"]:
 
