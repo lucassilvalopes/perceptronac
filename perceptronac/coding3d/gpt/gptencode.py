@@ -10,9 +10,9 @@ import matplotlib.pyplot as plt
 
 
 class Model(torch.nn.Module):
-    def __init__(self,N,max_sd): 
+    def __init__(self,N): 
         super().__init__()
-        self.max_sd = max_sd
+        self.max_sd = 0
         self.a1 = torch.nn.Linear(N, min(2048,64*N) )
         self.a1_act = torch.nn.ReLU()
         self.a2 = torch.nn.Linear( min(2048,64*N) , min(1024,32*N) )
@@ -69,17 +69,19 @@ class LaplacianRate(torch.nn.Module):
 
 class NNModel:
 
-    def __init__(self,N,max_sd):
+    def __init__(self,N):
         # seed = 7
         # torch.manual_seed(seed)
         # random.seed(seed)
         # np.random.seed(seed)
-        self.model = Model(N,max_sd)
+        self.model = Model(N)
 
     def train(self,S):
+        self.model.train()
         return self._apply(S,"train")
 
     def validate(self,S):
+        self.model.eval()
         return self._apply(S,"valid")
 
     def _apply(self,S, phase):
@@ -115,6 +117,7 @@ class NNModel:
 
             if phase == 'train':
                 optimizer.zero_grad()
+                model.max_sd = max([model.max_sd,torch.max(torch.abs(yt_b.detach())).item()])
                 outputs = model(Xt_b)
                 loss = criterion(outputs, yt_b)
                 loss.backward()
@@ -127,7 +130,7 @@ class NNModel:
             running_loss += loss.item()
             n_samples += yt_b.numel()
             pbar.update(1)
-            pbar.set_description(f"loss: {running_loss / n_samples}")
+            pbar.set_description(f"loss: {running_loss / n_samples} max_sd: {model.max_sd}")
         pbar.close()
 
         return running_loss / n_samples
@@ -427,7 +430,7 @@ if __name__ == "__main__":
     distortions = [] 
     for Q in [40]: # [10,20,30,40]:
 
-        nnmodel = NNModel(1,np.max(np.abs(S[:,:3])))
+        nnmodel = NNModel(1)
         # nnmodel = NNModel(513)
         
         for phase in configs["phases"]:
@@ -450,8 +453,8 @@ if __name__ == "__main__":
                     for pth in piece_pths:
 
                         S,dist,Evec = gpt(pth,Q=Q)
-                        # full_S.append( S )
-                        full_S.append( np.concatenate([S,Evec],axis=1) )
+                        full_S.append( S )
+                        # full_S.append( np.concatenate([S,Evec],axis=1) )
 
                     full_S = np.concatenate(full_S,axis=0)
 
