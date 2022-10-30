@@ -443,7 +443,7 @@ if __name__ == "__main__":
         ],
         "outer_loop_epochs": 100,
         "inner_loop_epochs": 1,
-        "learning_rate": 1e-5,
+        "learning_rate": 1e-6,
         "batch_size": 4096,
         "phases": ['train', 'valid'],
         "dset_pieces": 18,
@@ -516,7 +516,7 @@ if __name__ == "__main__":
                 print("epoch :" , outer_loop_epoch, ", phase :", phase, ", loss :", final_loss)
 
 
-        torch.save(NNModel.model.eval().state_dict(), f"checkpoint_Q{Q}.pt")
+        torch.save(nnmodel.model.eval().state_dict(), f"checkpoint_Q{Q}.pt")
 
 
 
