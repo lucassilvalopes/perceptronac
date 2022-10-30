@@ -441,8 +441,8 @@ if __name__ == "__main__":
             # "/home/lucas/Documents/data/ricardo10_frame0000.ply"
             "/home/lucas/Documents/data/ricardo9_frame0000.ply"
         ],
-        "outer_loop_epochs": 10,
-        "inner_loop_epochs": 10,
+        "outer_loop_epochs": 100,
+        "inner_loop_epochs": 1,
         "learning_rate": 1e-5,
         "batch_size": 4096,
         "phases": ['train', 'valid'],
@@ -456,21 +456,18 @@ if __name__ == "__main__":
     if not all([ f.endswith(".ply") for f in configs["validation_set"]]):
         raise Exception("Please use .ply in validation stage")
 
-    valid_rates_nn = []
-    valid_rates_lut = []
-    valid_distortions = [] 
     for Q in [40]: # [10,20,30,40]:
 
         nnmodel = NNModel(configs,configs["N"])
         
-        for phase in configs["phases"]:
+        for outer_loop_epoch in range(configs["outer_loop_epochs"]):
 
-            outer_loop_epochs = configs["outer_loop_epochs"] if phase == "train" else 1
+            valid_rates = []
+            valid_samples = []
+            train_rates = []
+            train_samples = []
 
-            for outer_loop_epoch in range(outer_loop_epochs):
-
-                train_rates = []
-                train_samples = []
+            for phase in sorted(configs["phases"]):
 
                 pths = configs["training_set"] if phase == "train" else configs["validation_set"]
 
@@ -507,17 +504,20 @@ if __name__ == "__main__":
                         train_samples.append(t_samples)
                     else:
 
-                        valid_distortions.append(dist)
+                        v_rate,v_samples = nnmodel.validate(full_S)
 
-                        valid_rates_lut.append( lut(full_S)[0] )
-
-                        valid_rates_nn.append( nnmodel.validate(full_S)[0] )
+                        valid_rates.append(v_rate)
+                        valid_samples.append(v_samples)
 
                 if phase == "train":
                     final_loss = np.sum( np.array(train_rates) * np.array(train_samples) ) / np.sum(train_samples) 
-                    print("epoch :" , outer_loop_epoch, ", phase :", phase, ", loss :", final_loss)
+                else:
+                    final_loss = np.sum( np.array(valid_rates) * np.array(valid_samples) ) / np.sum(valid_samples) 
+                print("epoch :" , outer_loop_epoch, ", phase :", phase, ", loss :", final_loss)
 
-    rd_curve(valid_rates_lut,valid_rates_nn,valid_distortions)
+
+        torch.save(NNModel.model.eval().state_dict(), f"checkpoint_Q{Q}.pt")
+
 
 
 
