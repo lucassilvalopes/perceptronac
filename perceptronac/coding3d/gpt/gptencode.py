@@ -13,11 +13,17 @@ class Model(torch.nn.Module):
     def __init__(self,N): 
         super().__init__()
         self.max_sd = 0
-        self.a1 = torch.nn.Linear(N, min(2048,64*N) )
+
+        a1_i = N
+        a1_o = a2_i = min(8192,64*N) # min(2048,64*N)
+        a2_o = a3_i = min(4096,32*N) # min(1024,32*N)
+        a3_o = 1
+
+        self.a1 = torch.nn.Linear( a1_i, a1_o )
         self.a1_act = torch.nn.ReLU()
-        self.a2 = torch.nn.Linear( min(2048,64*N) , min(1024,32*N) )
+        self.a2 = torch.nn.Linear( a2_i , a2_o )
         self.a2_act = torch.nn.ReLU()
-        self.a3 = torch.nn.Linear( min(1024,32*N) , 1)
+        self.a3 = torch.nn.Linear( a3_i , a3_o )
         self.a3_act = torch.nn.Sigmoid()
 
         # self.b1 = torch.nn.Linear(N, min(1024,32*N) )
@@ -133,7 +139,7 @@ class NNModel:
             pbar.set_description(f"loss: {running_loss / n_samples} max_sd: {model.max_sd}")
         pbar.close()
 
-        return running_loss / n_samples
+        return running_loss / n_samples , n_samples
 
 
 # https://stackoverflow.com/questions/18982650/differences-between-matlab-and-numpy-and-pythons-round-function
@@ -450,9 +456,9 @@ if __name__ == "__main__":
     if not all([ f.endswith(".ply") for f in configs["validation_set"]]):
         raise Exception("Please use .ply in validation stage")
 
-    rates_nn = []
-    rates_lut = []
-    distortions = [] 
+    valid_rates_nn = []
+    valid_rates_lut = []
+    valid_distortions = [] 
     for Q in [40]: # [10,20,30,40]:
 
         nnmodel = NNModel(configs,configs["N"])
@@ -461,7 +467,9 @@ if __name__ == "__main__":
 
             outer_loop_epochs = configs["outer_loop_epochs"] if phase == "train" else 1
 
-            for _ in range(outer_loop_epochs):
+            train_rates = []
+            train_samples = []
+            for outer_loop_epoch in range(outer_loop_epochs):
 
                 pths = configs["training_set"] if phase == "train" else configs["validation_set"]
 
@@ -492,16 +500,21 @@ if __name__ == "__main__":
 
                     if phase == "train":
                         for _ in range(configs["inner_loop_epochs"]):
-                            _ = nnmodel.train(full_S)
+                            t_rate,t_samples = nnmodel.train(full_S)
+                        train_rates.append(t_rate)
+                        train_samples.append(t_samples)
                     else:
 
-                        distortions.append(dist)
+                        valid_distortions.append(dist)
 
-                        rates_lut.append( lut(full_S)[0] )
+                        valid_rates_lut.append( lut(full_S)[0] )
 
-                        rates_nn.append( nnmodel.validate(full_S) )
+                        valid_rates_nn.append( nnmodel.validate(full_S)[0] )
 
-    rd_curve(rates_lut,rates_nn,distortions)
+            final_loss = np.sum( np.array(train_rates) * np.array(train_samples) ) / np.sum(train_samples) 
+            print("epoch :" , outer_loop_epoch, ", phase :", phase, ", loss :", final_loss)
+
+    rd_curve(valid_rates_lut,valid_rates_nn,valid_distortions)
 
 
 
