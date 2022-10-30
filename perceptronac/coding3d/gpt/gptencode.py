@@ -404,6 +404,23 @@ if __name__ == "__main__":
         print(y_axis)
         sys.exit()
 
+    elif len(sys.argv) > 1 and sys.argv[1] == "2":
+
+        Q = 40
+        
+        for r,ds,fs in os.walk("/home/lucas/Documents/data/GPT/training"):
+            for f in fs: 
+                if f.endswith(".ply"):
+                    pth = os.path.join(r,f) 
+
+                    S,dist,Evec = gpt(pth,Q=Q)
+
+                    npz_pth = f"{pth.rstrip('.ply')}_Q{Q}_blocksize8_rho95e-2_contexts.npz"
+
+                    np.savez_compressed(npz_pth,np.concatenate([S,Evec],axis=1))
+
+        sys.exit()
+
     ##########################################################################################
 
 
@@ -411,7 +428,7 @@ if __name__ == "__main__":
         "training_set": [
             # "/home/lucas/Documents/data/david10_frame0115.ply"
             # "/home/lucas/Documents/data/david9_frame0115.ply"
-            os.path.join(r,f) for r,ds,fs in os.walk("/home/lucas/Documents/data/GPT/training") for f in fs if f.endswith(".ply")
+            os.path.join(r,f) for r,ds,fs in os.walk("/home/lucas/Documents/data/GPT/training") for f in fs if f.endswith("Q40_blocksize8_rho95e-2_contexts.npz")
             
         ],
         "validation_set": [
@@ -455,9 +472,11 @@ if __name__ == "__main__":
                     full_S = []
                     for pth in piece_pths:
 
-                        S,dist,Evec = gpt(pth,Q=Q)
-                        # full_S.append( S )
-                        full_S.append( np.concatenate([S,Evec],axis=1) )
+                        # S,dist,Evec = gpt(pth,Q=Q)
+                        # # full_S.append( S )
+                        # full_S.append( np.concatenate([S,Evec],axis=1) )
+
+                        full_S.append(np.load(pth)["arr_0"])
 
                     full_S = np.concatenate(full_S,axis=0)
 
