@@ -411,19 +411,19 @@ if __name__ == "__main__":
         "training_set": [
             # "/home/lucas/Documents/data/david10_frame0115.ply"
             # "/home/lucas/Documents/data/david9_frame0115.ply"
-            os.path.join(r,f) for r,ds,fs in os.walk("/home/lucaslopes/perceptronac/GPT/training") for f in fs if f.endswith(".ply")
+            os.path.join(r,f) for r,ds,fs in os.walk("/home/lucas/Documents/data/GPT/training") for f in fs if f.endswith(".ply")
             
         ],
         "validation_set": [
             # "/home/lucas/Documents/data/ricardo10_frame0000.ply"
             "/home/lucas/Documents/data/ricardo9_frame0000.ply"
         ],
-        "outer_loop_epochs": 2,
+        "outer_loop_epochs": 5,
         "inner_loop_epochs": 50,
         "learning_rate": 0.00001,
-        "batch_size": 30000,
+        "batch_size": 4096,
         "phases": ['train', 'valid'],
-        "dset_pieces": 6,
+        "dset_pieces": 18,
     }
 
 
