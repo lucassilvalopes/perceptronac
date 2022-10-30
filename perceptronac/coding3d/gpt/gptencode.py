@@ -435,23 +435,27 @@ if __name__ == "__main__":
             # "/home/lucas/Documents/data/ricardo10_frame0000.ply"
             "/home/lucas/Documents/data/ricardo9_frame0000.ply"
         ],
-        "outer_loop_epochs": 5,
-        "inner_loop_epochs": 50,
+        "outer_loop_epochs": 10,
+        "inner_loop_epochs": 1,
         "learning_rate": 0.00001,
         "batch_size": 4096,
         "phases": ['train', 'valid'],
         "dset_pieces": 18,
+        "N": 513
     }
 
+    if configs["N"] not in [1,513]:
+        raise Exception(f'Option N={configs["N"]} not available')
 
+    if not all([ f.endswith(".ply") for f in configs["validation_set"]]):
+        raise Exception("Please use .ply in validation stage")
 
     rates_nn = []
     rates_lut = []
     distortions = [] 
     for Q in [40]: # [10,20,30,40]:
 
-        # nnmodel = NNModel(configs,1)
-        nnmodel = NNModel(configs,513)
+        nnmodel = NNModel(configs,configs["N"])
         
         for phase in configs["phases"]:
 
@@ -472,11 +476,17 @@ if __name__ == "__main__":
                     full_S = []
                     for pth in piece_pths:
 
-                        # S,dist,Evec = gpt(pth,Q=Q)
-                        # # full_S.append( S )
-                        # full_S.append( np.concatenate([S,Evec],axis=1) )
-
-                        full_S.append(np.load(pth)["arr_0"])
+                        if pth.endswith(".npz"):
+                            dist = np.nan
+                            full_S.append(np.load(pth)["arr_0"])
+                        else:
+                            S,dist,Evec = gpt(pth,Q=Q)
+                            if configs["N"] == 1:
+                                full_S.append( S )
+                            elif configs["N"] == 513:
+                                full_S.append( np.concatenate([S,Evec],axis=1) )
+                            else:
+                                raise Exception(f'Option N={configs["N"]} not available')
 
                     full_S = np.concatenate(full_S,axis=0)
 
