@@ -442,8 +442,8 @@ if __name__ == "__main__":
             "/home/lucas/Documents/data/ricardo9_frame0000.ply"
         ],
         "outer_loop_epochs": 10,
-        "inner_loop_epochs": 1,
-        "learning_rate": 0.00001,
+        "inner_loop_epochs": 10,
+        "learning_rate": 1e-5,
         "batch_size": 4096,
         "phases": ['train', 'valid'],
         "dset_pieces": 18,
@@ -467,9 +467,10 @@ if __name__ == "__main__":
 
             outer_loop_epochs = configs["outer_loop_epochs"] if phase == "train" else 1
 
-            train_rates = []
-            train_samples = []
             for outer_loop_epoch in range(outer_loop_epochs):
+
+                train_rates = []
+                train_samples = []
 
                 pths = configs["training_set"] if phase == "train" else configs["validation_set"]
 
@@ -486,15 +487,16 @@ if __name__ == "__main__":
 
                         if pth.endswith(".npz"):
                             dist = np.nan
-                            full_S.append(np.load(pth)["arr_0"])
+                            if configs["N"] == 1:
+                                full_S.append(np.load(pth)["arr_0"][:,:4])
+                            elif configs["N"] == 513:
+                                full_S.append(np.load(pth)["arr_0"])
                         else:
                             S,dist,Evec = gpt(pth,Q=Q)
                             if configs["N"] == 1:
                                 full_S.append( S )
                             elif configs["N"] == 513:
                                 full_S.append( np.concatenate([S,Evec],axis=1) )
-                            else:
-                                raise Exception(f'Option N={configs["N"]} not available')
 
                     full_S = np.concatenate(full_S,axis=0)
 
@@ -511,8 +513,9 @@ if __name__ == "__main__":
 
                         valid_rates_nn.append( nnmodel.validate(full_S)[0] )
 
-            final_loss = np.sum( np.array(train_rates) * np.array(train_samples) ) / np.sum(train_samples) 
-            print("epoch :" , outer_loop_epoch, ", phase :", phase, ", loss :", final_loss)
+                if phase == "train":
+                    final_loss = np.sum( np.array(train_rates) * np.array(train_samples) ) / np.sum(train_samples) 
+                    print("epoch :" , outer_loop_epoch, ", phase :", phase, ", loss :", final_loss)
 
     rd_curve(valid_rates_lut,valid_rates_nn,valid_distortions)
 
