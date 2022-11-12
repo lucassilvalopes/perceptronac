@@ -288,7 +288,11 @@ def gpt(pth,Q=40,block_side=8,rho=0.95):
     mse = mse / Nvox; 
     dist = 10 * np.log10(255*255/mse)
 
-    return S,dist.item(),Evec
+    return {
+        "S":S,
+        "dist":dist.item(),
+        "Evec": Evec
+    }
 
 
 def lut(S):
@@ -350,7 +354,10 @@ def lut(S):
     # final Rate Distortion numbers
     rate = ratet / Nvox
 
-    return rate,sv
+    return {
+        "rate":rate,
+        "sv":sv
+    }
 
 
 def rgb2yuv(rgb):
@@ -396,8 +403,10 @@ if __name__ == "__main__":
 
     elif len(sys.argv) > 1 and sys.argv[1] == "1":
 
-        S,dist,Evec = gpt("/home/lucas/Documents/data/ricardo9_frame0039.ply")
-        rate,sv = lut(S)
+        gpt_return = gpt("/home/lucas/Documents/data/ricardo9_frame0039.ply")
+        S,dist,Evec = gpt_return["S"],gpt_return["dist"],gpt_return["Evec"]
+        lut_return = lut(S)
+        rate,sv = gpt_return["rate"],gpt_return["sv"] 
         print(np.min(S[:,:3]),np.max(S[:,:3]))
         print(np.min(sv),np.max(sv))
 
@@ -419,7 +428,8 @@ if __name__ == "__main__":
                 if f.endswith(".ply"):
                     pth = os.path.join(r,f) 
 
-                    S,dist,Evec = gpt(pth,Q=Q)
+                    gpt_return = gpt(pth,Q=Q)
+                    S,dist,Evec = gpt_return["S"],gpt_return["dist"],gpt_return["Evec"]
 
                     npz_pth = f"{pth.rstrip('.ply')}_Q{Q}_blocksize8_rho95e-2_contexts.npz"
 
@@ -492,7 +502,8 @@ if __name__ == "__main__":
                             elif configs["N"] == 513:
                                 full_S.append(np.load(pth)["arr_0"])
                         else:
-                            S,dist,Evec = gpt(pth,Q=Q)
+                            gpt_return = gpt(pth,Q=Q)
+                            S,dist,Evec = gpt_return["S"],gpt_return["dist"],gpt_return["Evec"]
                             if configs["N"] == 1:
                                 full_S.append( S )
                             elif configs["N"] == 513:
