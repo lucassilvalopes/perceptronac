@@ -275,7 +275,7 @@ def gpt(pth,Q=40,block_side=8,rho=0.95):
 
         Evec[p:p+N,:] = W @ Pb2 # (Pb2.T @ W.T).T
 
-        pos[p:p+N,:] = np.arange(0,N+1).reshape(-1,1)
+        pos[p:p+N,:] = np.arange(0,N).reshape(-1,1)
 
         # inverse quantize and inverse transform
         Cbr = W.T @ (yq * Q)
@@ -366,7 +366,7 @@ def lut(gpt_return):
     bits_u_per_coef_idx = []
     bits_v_per_coef_idx = []
     samples_per_coef_idx = []
-    for i in range(np.max(pos)+1):
+    for i in range(int(np.max(pos))+1):
         mask_i = (pos == i).reshape(-1)
         bits_y_per_coef_idx.append( ac_lapl_rate(S[mask_i,0],sv[mask_i,0]) )
         bits_u_per_coef_idx.append( ac_lapl_rate(S[mask_i,1],sv[mask_i,1]) )
@@ -492,6 +492,9 @@ if __name__ == "__main__":
         ax[2].set_title("V")
 
         fig.savefig(f"rate_per_coef_idx.png", dpi=300, facecolor='w', bbox_inches = "tight")
+
+        print(gpt_return["dist"])
+        print(lut_return["rate"])
 
         sys.exit()
 
