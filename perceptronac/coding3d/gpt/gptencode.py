@@ -434,27 +434,30 @@ if __name__ == "__main__":
         "training_set": [
             # "/home/lucas/Documents/data/david10_frame0115.ply"
             # "/home/lucas/Documents/data/david9_frame0115.ply"
-            os.path.join(r,f) for r,ds,fs in os.walk("/home/lucas/Documents/data/GPT/training") for f in fs if f.endswith("Q40_blocksize8_rho95e-2_contexts.npz")
+            "/home/lucas/Documents/data/GPT/training/sarah9/frame0180_Q40_blocksize8_rho95e-2_contexts.npz",
+            "/home/lucas/Documents/data/GPT/training/phil9/frame0050_Q40_blocksize8_rho95e-2_contexts.npz",
+            "/home/lucas/Documents/data/GPT/training/andrew9/frame0240_Q40_blocksize8_rho95e-2_contexts.npz",
+            "/home/lucas/Documents/data/GPT/training/david9/frame0120_Q40_blocksize8_rho95e-2_contexts.npz",
+            # os.path.join(r,f) for r,ds,fs in os.walk("/home/lucas/Documents/data/GPT/training") for f in fs if f.endswith("Q40_blocksize8_rho95e-2_contexts.npz")
             
         ],
         "validation_set": [
             # "/home/lucas/Documents/data/ricardo10_frame0000.ply"
-            "/home/lucas/Documents/data/ricardo9_frame0000.ply"
+            # "/home/lucas/Documents/data/ricardo9_frame0000.ply"
+            "/home/lucas/Documents/data/GPT/validation/ricardo9/ricardo9_frame0000_Q40_blocksize8_rho95e-2_contexts.npz"
         ],
-        "outer_loop_epochs": 100,
-        "inner_loop_epochs": 1,
-        "learning_rate": 1e-6,
-        "batch_size": 4096,
+        "outer_loop_epochs": 80,
+        "inner_loop_epochs": 10,
+        "learning_rate": 1e-5,
+        "batch_size": 1024,
         "phases": ['train', 'valid'],
-        "dset_pieces": 18,
+        "dset_pieces": 1,
         "N": 513
     }
 
     if configs["N"] not in [1,513]:
         raise Exception(f'Option N={configs["N"]} not available')
 
-    if not all([ f.endswith(".ply") for f in configs["validation_set"]]):
-        raise Exception("Please use .ply in validation stage")
 
     for Q in [40]: # [10,20,30,40]:
 
