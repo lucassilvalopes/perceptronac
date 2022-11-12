@@ -5,7 +5,7 @@ import random
 import sys
 import os
 import scipy.io
-from perceptronac.coding3d import read_PC
+from perceptronac.coding3d import read_PC, write_PC
 import matplotlib.pyplot as plt
 
 
@@ -231,6 +231,7 @@ def gpt(pth,Q=40,block_side=8,rho=0.95):
     S = np.zeros((Nvox,4))
     Evec = np.zeros((Nvox,block_side**3))
     pos = np.zeros((Nvox,1))
+    points = np.zeros((Nvox,3))
 
     pbar = tqdm(total=ncubes)
     for n in range(ncubes):
@@ -277,6 +278,8 @@ def gpt(pth,Q=40,block_side=8,rho=0.95):
 
         pos[p:p+N,:] = np.arange(0,N).reshape(-1,1)
 
+        points[p:p+N,:] = Vb
+
         # inverse quantize and inverse transform
         Cbr = W.T @ (yq * Q)
         e = Cb[:,0:1]-Cbr[:,0:1] # Y channel
@@ -295,7 +298,8 @@ def gpt(pth,Q=40,block_side=8,rho=0.95):
         "S":S,
         "dist":dist.item(),
         "Evec": Evec,
-        "pos": pos
+        "pos": pos,
+        "points": points
     }
 
 
@@ -500,6 +504,16 @@ if __name__ == "__main__":
 
         print(gpt_return["dist"])
         print(lut_return["rate"])
+
+
+        points = gpt_return["points"]
+        pos = gpt_return["pos"]
+        S = gpt_return["S"]
+        mask_0 = (pos == 0).reshape(-1)
+        colors = S[mask_0,:]
+
+        write_PC("/home/lucas/Documents/data/ricardo9_frame0039_GPT_Q40_blocksize8_rho95e-2_DC.ply",xyz=points,colors=colors)
+
 
         sys.exit()
 

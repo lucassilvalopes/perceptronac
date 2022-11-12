@@ -35,9 +35,11 @@ def read_PC(path):
     return pc, V, C
 
 
-def write_PC(filename,xyz):
+def write_PC(filename,xyz,colors=None):
     pointcloud = o3d.geometry.PointCloud()
     pointcloud.points = o3d.utility.Vector3dVector(xyz)
+    if colors is not None:
+        pointcloud.colors = o3d.utility.Vector3dVector(colors)
     o3d.io.write_point_cloud(filename, pointcloud, write_ascii=True)
 
 
