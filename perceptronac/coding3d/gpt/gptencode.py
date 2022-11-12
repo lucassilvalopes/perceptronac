@@ -523,18 +523,17 @@ if __name__ == "__main__":
         print(gpt_return["dist"])
         print(lut_return["rate"])
 
-
-        points = gpt_return["points"]
         pos = gpt_return["pos"]
-        colors = gpt_return["colors"]
         mask_0 = (pos == 0).reshape(-1)
-        points = points[mask_0,:]
+        points = gpt_return["points"][mask_0,:]
 
-        colors = yuv2rgb(colors[mask_0,:])
-        write_PC("ricardo9_frame0039_GPT_Q40_blocksize8_rho95e-2_DC_YUV2RGB.ply",xyz=points,colors=colors)
+        colors = yuv2rgb(gpt_return["colors"][mask_0,:])
+        print(np.min(colors),np.max(colors))
+        write_PC("ricardo9_frame0039_GPT_Q40_blocksize8_rho95e-2_DC_YUV2RGB.ply",xyz=points,colors=normalize_colors(colors))
 
-        colors = np.tile(colors[mask_0,0:1],(1,3))
-        write_PC("ricardo9_frame0039_GPT_Q40_blocksize8_rho95e-2_DC_Y2RGB.ply",xyz=points,colors=colors)
+        colors = np.tile(gpt_return["colors"][mask_0,0:1],(1,3))
+        print(np.min(colors),np.max(colors))
+        write_PC("ricardo9_frame0039_GPT_Q40_blocksize8_rho95e-2_DC_Y2RGB.ply",xyz=points,colors=normalize_colors(colors))
 
 
         sys.exit()
