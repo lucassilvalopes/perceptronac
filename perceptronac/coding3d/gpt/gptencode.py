@@ -402,6 +402,17 @@ def rgb2yuv(rgb):
     return yuv
 
 
+def yuv2rgb(yuv):
+    """
+    https://stackoverflow.com/questions/7041172/pils-colour-space-conversion-ycbcr-rgb
+    """
+
+    rgb = np.zeros(yuv.shape)
+    rgb[:,0] = yuv[:,0] +                             + (yuv[:,2] - 128) *  1.40200
+    rgb[:,1] = yuv[:,0] + (yuv[:,1] - 128) * -0.34414 + (yuv[:,2] - 128) * -0.71414
+    rgb[:,2] = yuv[:,0] + (yuv[:,1] - 128) *  1.77200
+    return rgb
+
 
 def rd_curve(rates_lut,rates_nn,distortions):
 
