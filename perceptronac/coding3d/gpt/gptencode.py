@@ -477,9 +477,14 @@ if __name__ == "__main__":
 
         x_axis = np.arange(samples_per_coef_idx.shape[0])
 
-        ax[0].plot(x_axis,bits_y_per_coef_idx/samples_per_coef_idx)
-        ax[1].plot(x_axis,bits_u_per_coef_idx/samples_per_coef_idx)
-        ax[2].plot(x_axis,bits_v_per_coef_idx/samples_per_coef_idx)
+
+        ax[0].plot(x_axis,bits_y_per_coef_idx/np.sum(bits_y_per_coef_idx))
+        ax[1].plot(x_axis,bits_u_per_coef_idx/np.sum(bits_u_per_coef_idx))
+        ax[2].plot(x_axis,bits_v_per_coef_idx/np.sum(bits_v_per_coef_idx))
+
+        # ax[0].plot(x_axis,bits_y_per_coef_idx/samples_per_coef_idx)
+        # ax[1].plot(x_axis,bits_u_per_coef_idx/samples_per_coef_idx)
+        # ax[2].plot(x_axis,bits_v_per_coef_idx/samples_per_coef_idx)
 
         ax[0].set_xlabel("Coefficient index")
         ax[0].set_ylabel("Rate (bpv)")
