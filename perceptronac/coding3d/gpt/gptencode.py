@@ -418,6 +418,10 @@ def rd_curve(rates_lut,rates_nn,distortions):
     fig.savefig(f"gpt_nn.png", dpi=300, facecolor='w', bbox_inches = "tight")
 
 
+def normalize_colors(colors):
+    colors = colors - np.min(colors)
+    colors = (colors/np.max(colors)).astype(np.float)
+    return colors
 
 
 if __name__ == "__main__":
@@ -510,16 +514,13 @@ if __name__ == "__main__":
         pos = gpt_return["pos"]
         S = gpt_return["S"]
         mask_0 = (pos == 0).reshape(-1)
-        colors = S[mask_0,:3]
         points = points[mask_0,:]
 
-        # print(np.min(points),np.max(points),points.dtype,points.shape)
-        # print(np.min(colors),np.max(colors),colors.dtype,colors.shape)
+        colors = normalize_colors(S[mask_0,:3])
+        write_PC("ricardo9_frame0039_GPT_Q40_blocksize8_rho95e-2_DC_YUV.ply",xyz=points,colors=colors)
 
-        colors = colors - np.min(colors)
-        colors = (colors/np.max(colors)).astype(np.float)
-
-        write_PC("/home/lucas/Documents/data/ricardo9_frame0039_GPT_Q40_blocksize8_rho95e-2_DC.ply",xyz=points,colors=colors)
+        colors = normalize_colors(np.tile(S[mask_0,0:1],(1,3)))
+        write_PC("ricardo9_frame0039_GPT_Q40_blocksize8_rho95e-2_DC_Y.ply",xyz=points,colors=colors)
 
 
         sys.exit()
