@@ -230,6 +230,7 @@ def gpt(pth,Q=40,block_side=8,rho=0.95):
     mse = 0
     S = np.zeros((Nvox,4))
     Evec = np.zeros((Nvox,block_side**3))
+    pos = np.zeros((Nvox,1))
 
     pbar = tqdm(total=ncubes)
     for n in range(ncubes):
@@ -274,6 +275,8 @@ def gpt(pth,Q=40,block_side=8,rho=0.95):
 
         Evec[p:p+N,:] = W @ Pb2 # (Pb2.T @ W.T).T
 
+        pos[p:p+N,:] = np.arange(0,N+1).reshape(-1,1)
+
         # inverse quantize and inverse transform
         Cbr = W.T @ (yq * Q)
         e = Cb[:,0:1]-Cbr[:,0:1] # Y channel
@@ -291,14 +294,17 @@ def gpt(pth,Q=40,block_side=8,rho=0.95):
     return {
         "S":S,
         "dist":dist.item(),
-        "Evec": Evec
+        "Evec": Evec,
+        "pos": pos
     }
 
 
-def lut(S):
+def lut(gpt_return):
     """
     S: Nvox-by-4, with the YUV coefficients in first 3 columns and lambdas in the last column 
     """
+
+    S = gpt_return["S"]
 
     Nvox = S.shape[0]
 
@@ -405,7 +411,7 @@ if __name__ == "__main__":
 
         gpt_return = gpt("/home/lucas/Documents/data/ricardo9_frame0039.ply")
         S,dist,Evec = gpt_return["S"],gpt_return["dist"],gpt_return["Evec"]
-        lut_return = lut(S)
+        lut_return = lut(gpt_return)
         rate,sv = gpt_return["rate"],gpt_return["sv"] 
         print(np.min(S[:,:3]),np.max(S[:,:3]))
         print(np.min(sv),np.max(sv))
