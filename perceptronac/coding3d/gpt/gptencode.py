@@ -362,15 +362,15 @@ def lut(gpt_return):
 
 
     pos = gpt_return["pos"]
-    rate_y_per_coef_idx = []
-    rate_u_per_coef_idx = []
-    rate_v_per_coef_idx = []
+    bits_y_per_coef_idx = []
+    bits_u_per_coef_idx = []
+    bits_v_per_coef_idx = []
     samples_per_coef_idx = []
     for i in range(np.max(pos)+1):
         mask_i = (pos == i).reshape(-1)
-        rate_y_per_coef_idx.append( ac_lapl_rate(S[mask_i,0],sv[mask_i,0]) )
-        rate_u_per_coef_idx.append( ac_lapl_rate(S[mask_i,1],sv[mask_i,1]) )
-        rate_v_per_coef_idx.append( ac_lapl_rate(S[mask_i,2],sv[mask_i,2]) )
+        bits_y_per_coef_idx.append( ac_lapl_rate(S[mask_i,0],sv[mask_i,0]) )
+        bits_u_per_coef_idx.append( ac_lapl_rate(S[mask_i,1],sv[mask_i,1]) )
+        bits_v_per_coef_idx.append( ac_lapl_rate(S[mask_i,2],sv[mask_i,2]) )
         samples_per_coef_idx.append( np.sum(mask_i) )
 
 
@@ -378,9 +378,9 @@ def lut(gpt_return):
     return {
         "rate":rate,
         "sv":sv,
-        "rate_y_per_coef_idx":rate_y_per_coef_idx,
-        "rate_u_per_coef_idx":rate_u_per_coef_idx,
-        "rate_v_per_coef_idx":rate_v_per_coef_idx,
+        "bits_y_per_coef_idx":bits_y_per_coef_idx,
+        "bits_u_per_coef_idx":bits_u_per_coef_idx,
+        "bits_v_per_coef_idx":bits_v_per_coef_idx,
         "samples_per_coef_idx":samples_per_coef_idx
 
     }
