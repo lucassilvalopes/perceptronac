@@ -278,7 +278,7 @@ def gpt(pth,Q=40,block_side=8,rho=0.95):
 
         pos[p:p+N,:] = np.arange(0,N).reshape(-1,1)
 
-        points[p:p+N,:] = Vb
+        points[p:p+N,:] = cubes[n:n+1,:]
 
         # inverse quantize and inverse transform
         Cbr = W.T @ (yq * Q)
@@ -510,7 +510,14 @@ if __name__ == "__main__":
         pos = gpt_return["pos"]
         S = gpt_return["S"]
         mask_0 = (pos == 0).reshape(-1)
-        colors = S[mask_0,:]
+        colors = S[mask_0,:3]
+        points = points[mask_0,:]
+
+        # print(np.min(points),np.max(points),points.dtype,points.shape)
+        # print(np.min(colors),np.max(colors),colors.dtype,colors.shape)
+
+        colors = colors - np.min(colors)
+        colors = (colors/np.max(colors)).astype(np.float)
 
         write_PC("/home/lucas/Documents/data/ricardo9_frame0039_GPT_Q40_blocksize8_rho95e-2_DC.ply",xyz=points,colors=colors)
 
