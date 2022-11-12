@@ -488,13 +488,13 @@ if __name__ == "__main__":
 
         ax[0].set_xlabel("Coefficient index")
         ax[0].set_ylabel("Rate (bpv)")
-        ax[0].set_title("Y")
+        ax[0].set_title(f"Y (DC: {bits_y_per_coef_idx[0]/np.sum(bits_y_per_coef_idx):.2f})")
         ax[1].set_xlabel("Coefficient index")
         ax[1].set_ylabel("Rate (bpv)")
-        ax[1].set_title("U")
+        ax[1].set_title(f"U (DC: {bits_u_per_coef_idx[0]/np.sum(bits_u_per_coef_idx):.2f})")
         ax[2].set_xlabel("Coefficient index")
         ax[2].set_ylabel("Rate (bpv)")
-        ax[2].set_title("V")
+        ax[2].set_title(f"V (DC: {bits_v_per_coef_idx[0]/np.sum(bits_v_per_coef_idx):.2f})")
 
         fig.savefig(f"rate_per_coef_idx.png", dpi=300, facecolor='w', bbox_inches = "tight")
 
