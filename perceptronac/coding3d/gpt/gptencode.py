@@ -463,6 +463,38 @@ if __name__ == "__main__":
 
         sys.exit()
 
+    elif len(sys.argv) > 1 and sys.argv[1] == "3":
+
+        gpt_return = gpt("/home/lucas/Documents/data/ricardo9_frame0039.ply")
+        lut_return = lut(gpt_return)
+
+        bits_y_per_coef_idx = np.array(lut_return["bits_y_per_coef_idx"])
+        bits_u_per_coef_idx = np.array(lut_return["bits_u_per_coef_idx"])
+        bits_v_per_coef_idx = np.array(lut_return["bits_v_per_coef_idx"])
+        samples_per_coef_idx = np.array(lut_return["samples_per_coef_idx"])
+
+        fig, ax = plt.subplots(nrows=1, ncols=3)
+
+        x_axis = np.arange(samples_per_coef_idx.shape[0])
+
+        ax[0].plot(x_axis,bits_y_per_coef_idx/samples_per_coef_idx)
+        ax[1].plot(x_axis,bits_u_per_coef_idx/samples_per_coef_idx)
+        ax[2].plot(x_axis,bits_v_per_coef_idx/samples_per_coef_idx)
+
+        ax[0].set_xlabel("Coefficient index")
+        ax[0].set_ylabel("Rate (bpv)")
+        ax[0].set_title("Y")
+        ax[1].set_xlabel("Coefficient index")
+        ax[1].set_ylabel("Rate (bpv)")
+        ax[1].set_title("U")
+        ax[2].set_xlabel("Coefficient index")
+        ax[2].set_ylabel("Rate (bpv)")
+        ax[2].set_title("V")
+
+        fig.savefig(f"rate_per_coef_idx.png", dpi=300, facecolor='w', bbox_inches = "tight")
+
+        sys.exit()
+
     ##########################################################################################
 
 
