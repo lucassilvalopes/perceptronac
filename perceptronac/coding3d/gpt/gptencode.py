@@ -499,6 +499,11 @@ if __name__ == "__main__":
 
         x_axis = np.arange(samples_per_coef_idx.shape[0])
 
+        import pandas as pd
+        pd.DataFrame({"x_axis":x_axis,"y_axis":bits_y_per_coef_idx/np.sum(bits_y_per_coef_idx)}).to_csv("y.csv")
+        pd.DataFrame({"x_axis":x_axis,"y_axis":bits_u_per_coef_idx/np.sum(bits_u_per_coef_idx)}).to_csv("u.csv")
+        pd.DataFrame({"x_axis":x_axis,"y_axis":bits_v_per_coef_idx/np.sum(bits_v_per_coef_idx)}).to_csv("v.csv")
+
 
         ax[0].plot(x_axis,bits_y_per_coef_idx/np.sum(bits_y_per_coef_idx))
         ax[1].plot(x_axis,bits_u_per_coef_idx/np.sum(bits_u_per_coef_idx))
