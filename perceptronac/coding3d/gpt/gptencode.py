@@ -496,33 +496,50 @@ if __name__ == "__main__":
         bits_v_per_coef_idx = np.array(lut_return["bits_v_per_coef_idx"])
         samples_per_coef_idx = np.array(lut_return["samples_per_coef_idx"])
 
-        fig, ax = plt.subplots(nrows=1, ncols=3)
+        fig, ax = plt.subplots(nrows=2, ncols=3)
 
         x_axis = np.arange(samples_per_coef_idx.shape[0])
 
         import pandas as pd
-        pd.DataFrame({"x_axis":x_axis,"y_axis":bits_y_per_coef_idx/np.sum(bits_y_per_coef_idx)}).to_csv("y.csv")
-        pd.DataFrame({"x_axis":x_axis,"y_axis":bits_u_per_coef_idx/np.sum(bits_u_per_coef_idx)}).to_csv("u.csv")
-        pd.DataFrame({"x_axis":x_axis,"y_axis":bits_v_per_coef_idx/np.sum(bits_v_per_coef_idx)}).to_csv("v.csv")
+        pd.DataFrame({
+            "x_axis":x_axis,"fraction of bits":bits_y_per_coef_idx/np.sum(bits_y_per_coef_idx),
+            "bits_y_per_coef_idx":bits_y_per_coef_idx,"samples_per_coef_idx":samples_per_coef_idx}).to_csv("y.csv")
+        pd.DataFrame({
+            "x_axis":x_axis,"fraction of bits":bits_u_per_coef_idx/np.sum(bits_u_per_coef_idx),
+            "bits_u_per_coef_idx":bits_u_per_coef_idx,"samples_per_coef_idx":samples_per_coef_idx}).to_csv("u.csv")
+        pd.DataFrame({
+            "x_axis":x_axis,"fraction of bits":bits_v_per_coef_idx/np.sum(bits_v_per_coef_idx),
+            "bits_v_per_coef_idx":bits_v_per_coef_idx,"samples_per_coef_idx":samples_per_coef_idx}).to_csv("v.csv")
 
 
-        ax[0].plot(x_axis,bits_y_per_coef_idx/np.sum(bits_y_per_coef_idx))
-        ax[1].plot(x_axis,bits_u_per_coef_idx/np.sum(bits_u_per_coef_idx))
-        ax[2].plot(x_axis,bits_v_per_coef_idx/np.sum(bits_v_per_coef_idx))
+        ax[0,0].plot(x_axis,bits_y_per_coef_idx/np.sum(bits_y_per_coef_idx))
+        ax[0,1].plot(x_axis,bits_u_per_coef_idx/np.sum(bits_u_per_coef_idx))
+        ax[0,2].plot(x_axis,bits_v_per_coef_idx/np.sum(bits_v_per_coef_idx))
 
-        # ax[0].plot(x_axis,bits_y_per_coef_idx/samples_per_coef_idx)
-        # ax[1].plot(x_axis,bits_u_per_coef_idx/samples_per_coef_idx)
-        # ax[2].plot(x_axis,bits_v_per_coef_idx/samples_per_coef_idx)
+        ax[1,0].plot(x_axis,bits_y_per_coef_idx/samples_per_coef_idx)
+        ax[1,1].plot(x_axis,bits_u_per_coef_idx/samples_per_coef_idx)
+        ax[1,2].plot(x_axis,bits_v_per_coef_idx/samples_per_coef_idx)
 
-        ax[0].set_xlabel("Coefficient index")
-        ax[0].set_ylabel("Rate (bpv)")
-        ax[0].set_title(f"Y (DC: {bits_y_per_coef_idx[0]/np.sum(bits_y_per_coef_idx):.2f})")
-        ax[1].set_xlabel("Coefficient index")
-        ax[1].set_ylabel("Rate (bpv)")
-        ax[1].set_title(f"U (DC: {bits_u_per_coef_idx[0]/np.sum(bits_u_per_coef_idx):.2f})")
-        ax[2].set_xlabel("Coefficient index")
-        ax[2].set_ylabel("Rate (bpv)")
-        ax[2].set_title(f"V (DC: {bits_v_per_coef_idx[0]/np.sum(bits_v_per_coef_idx):.2f})")
+        ax[0,0].set_xlabel("Coefficient index")
+        ax[0,0].set_ylabel("fraction of bits (%)")
+        ax[0,0].set_title(f"Y (DC: {bits_y_per_coef_idx[0]/np.sum(bits_y_per_coef_idx):.2f})")
+        ax[0,1].set_xlabel("Coefficient index")
+        ax[0,1].set_ylabel("fraction of bits (%)")
+        ax[0,1].set_title(f"U (DC: {bits_u_per_coef_idx[0]/np.sum(bits_u_per_coef_idx):.2f})")
+        ax[0,2].set_xlabel("Coefficient index")
+        ax[0,2].set_ylabel("fraction of bits (%)")
+        ax[0,2].set_title(f"V (DC: {bits_v_per_coef_idx[0]/np.sum(bits_v_per_coef_idx):.2f})")
+
+        ax[1,0].set_xlabel("Coefficient index")
+        ax[1,0].set_ylabel("Rate (bpv)")
+        ax[1,0].set_title(f"Y (DC: {bits_y_per_coef_idx[0]/samples_per_coef_idx[0]:.2f})")
+        ax[1,1].set_xlabel("Coefficient index")
+        ax[1,1].set_ylabel("Rate (bpv)")
+        ax[1,1].set_title(f"U (DC: {bits_u_per_coef_idx[0]/samples_per_coef_idx[0]:.2f})")
+        ax[1,2].set_xlabel("Coefficient index")
+        ax[1,2].set_ylabel("Rate (bpv)")
+        ax[1,2].set_title(f"V (DC: {bits_v_per_coef_idx[0]/samples_per_coef_idx[0]:.2f})")
+
 
         fig.savefig(f"rate_per_coef_idx.png", dpi=300, facecolor='w', bbox_inches = "tight")
 
