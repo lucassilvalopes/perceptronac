@@ -433,12 +433,17 @@ def rd_curve(rates_lut,rates_nn,distortions):
 
 
 def normalize_colors(colors, no_clip = False):
+    """
+    https://numpy.org/doc/stable/reference/generated/numpy.clip.html
+    http://www.open3d.org/docs/release/python_api/open3d.io.write_point_cloud.html
+    https://stackoverflow.com/questions/16963956/difference-between-python-float-and-numpy-float32
+    """
     if no_clip:
         colors = colors - np.min(colors)
-        colors = (colors/np.max(colors)).astype(np.float)
+        colors = (colors/np.max(colors)).astype(np.float32)
     else:
         colors = np.clip(colors, 0, 255)
-        colors = (colors/255).astype(np.float)
+        colors = (colors/255).astype(np.float32)
     return colors
 
 
