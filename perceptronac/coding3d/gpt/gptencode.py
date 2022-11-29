@@ -432,9 +432,13 @@ def rd_curve(rates_lut,rates_nn,distortions):
     fig.savefig(f"gpt_nn.png", dpi=300, facecolor='w', bbox_inches = "tight")
 
 
-def normalize_colors(colors):
-    colors = colors - np.min(colors)
-    colors = (colors/np.max(colors)).astype(np.float)
+def normalize_colors(colors, no_clip = False):
+    if no_clip:
+        colors = colors - np.min(colors)
+        colors = (colors/np.max(colors)).astype(np.float)
+    else:
+        colors = np.clip(colors, 0, 255)
+        colors = (colors/255).astype(np.float)
     return colors
 
 
@@ -487,8 +491,11 @@ if __name__ == "__main__":
 
     elif len(sys.argv) > 1 and sys.argv[1] == "3":
 
-        # gpt_return = gpt("/home/lucas/Documents/data/ricardo9_frame0039.ply")
-        gpt_return = gpt("/home/lucas/Documents/data/NNOC/validation/longdress/longdress_vox10_1300.ply")
+        filepath = "/home/lucas/Documents/data/NNOC/validation/longdress/longdress_vox10_1300.ply"
+        # filepath = "/home/lucas/Documents/data/ricardo9_frame0039.ply"
+
+        gpt_return = gpt(filepath)
+        filename = os.path.basename(filepath)
         lut_return = lut(gpt_return)
 
         bits_y_per_coef_idx = np.array(lut_return["bits_y_per_coef_idx"])
@@ -552,11 +559,16 @@ if __name__ == "__main__":
 
         colors = yuv2rgb(gpt_return["colors"][mask_0,:])
         print(np.min(colors),np.max(colors))
-        write_PC("longdress_vox10_1300_GPT_Q40_blocksize8_rho95e-2_DC_YUV2RGB.ply",xyz=points,colors=normalize_colors(colors))
+        write_PC(f"{filename}_GPT_Q40_blocksize8_rho95e-2_DC_YUV2RGB.ply",xyz=points,colors=normalize_colors(colors))
 
         colors = np.tile(gpt_return["colors"][mask_0,0:1],(1,3))
         print(np.min(colors),np.max(colors))
-        write_PC("longdress_vox10_1300_GPT_Q40_blocksize8_rho95e-2_DC_Y2RGB.ply",xyz=points,colors=normalize_colors(colors))
+        write_PC(f"{filename}_GPT_Q40_blocksize8_rho95e-2_DC_Y2RGB.ply",xyz=points,colors=normalize_colors(colors))
+
+        points = gpt_return["points"]
+        colors = yuv2rgb(gpt_return["colors"])
+        print(np.min(colors),np.max(colors))
+        write_PC(f"{filename}_GPT_Q40_blocksize8_rho95e-2_DC_YUV2RGB_orig_geo.ply",xyz=points,colors=normalize_colors(colors))
 
 
         sys.exit()
