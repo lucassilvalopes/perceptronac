@@ -361,11 +361,12 @@ def lut(gpt_return):
     rateY = ac_lapl_rate(S[:,0], sv[:,0])
     rateU = ac_lapl_rate(S[:,1], sv[:,1])
     rateV = ac_lapl_rate(S[:,2], sv[:,2])
-    # ratet = ratet + rateY + rateU + rateV
+    ratet_yuv = ratet + rateY + rateU + rateV
     ratet = rateY
 
     # final Rate Distortion numbers
     rate = ratet / Nvox
+    rate_yuv = ratet_yuv / Nvox
 
 
     pos = gpt_return["pos"]
@@ -384,6 +385,7 @@ def lut(gpt_return):
 
     return {
         "rate":rate,
+        "rate_yuv": rate_yuv,
         "sv":sv,
         "bits_y_per_coef_idx":bits_y_per_coef_idx,
         "bits_u_per_coef_idx":bits_u_per_coef_idx,
@@ -500,7 +502,7 @@ if __name__ == "__main__":
         # filepath = "/home/lucas/Documents/data/ricardo9_frame0039.ply"
 
         gpt_return = gpt(filepath)
-        filename = os.path.basename(filepath)
+        filename = os.path.splitext(os.path.basename(filepath))[0]
         lut_return = lut(gpt_return)
 
         bits_y_per_coef_idx = np.array(lut_return["bits_y_per_coef_idx"])
@@ -515,14 +517,22 @@ if __name__ == "__main__":
         import pandas as pd
         pd.DataFrame({
             "x_axis":x_axis,"fraction of bits":bits_y_per_coef_idx/np.sum(bits_y_per_coef_idx),
-            "bits_y_per_coef_idx":bits_y_per_coef_idx,"samples_per_coef_idx":samples_per_coef_idx}).to_csv("y.csv")
+            "bits_y_per_coef_idx":bits_y_per_coef_idx,"samples_per_coef_idx":samples_per_coef_idx}).to_csv(f"{filename}_y.csv")
         pd.DataFrame({
             "x_axis":x_axis,"fraction of bits":bits_u_per_coef_idx/np.sum(bits_u_per_coef_idx),
-            "bits_u_per_coef_idx":bits_u_per_coef_idx,"samples_per_coef_idx":samples_per_coef_idx}).to_csv("u.csv")
+            "bits_u_per_coef_idx":bits_u_per_coef_idx,"samples_per_coef_idx":samples_per_coef_idx}).to_csv(f"{filename}_u.csv")
         pd.DataFrame({
             "x_axis":x_axis,"fraction of bits":bits_v_per_coef_idx/np.sum(bits_v_per_coef_idx),
-            "bits_v_per_coef_idx":bits_v_per_coef_idx,"samples_per_coef_idx":samples_per_coef_idx}).to_csv("v.csv")
-
+            "bits_v_per_coef_idx":bits_v_per_coef_idx,"samples_per_coef_idx":samples_per_coef_idx}).to_csv(f"{filename}_v.csv")
+        pd.DataFrame({
+            "component": ["DC","AC","total_rate","distortion"],
+            "bpp": [
+                (bits_y_per_coef_idx[0] + bits_u_per_coef_idx[0] + bits_v_per_coef_idx[0]) / gpt_return["points"].shape[0],
+                (np.sum(bits_y_per_coef_idx[1:]) + np.sum(bits_u_per_coef_idx[1:]) + np.sum(bits_v_per_coef_idx[1:])) / gpt_return["points"].shape[0],
+                lut_return["rate_yuv"],
+                gpt_return["dist"]
+            ]}
+        ).to_csv(f"{filename}_yuv.csv")
 
         ax[0,0].plot(x_axis,bits_y_per_coef_idx/np.sum(bits_y_per_coef_idx))
         ax[0,1].plot(x_axis,bits_u_per_coef_idx/np.sum(bits_u_per_coef_idx))
