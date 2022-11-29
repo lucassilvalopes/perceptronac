@@ -279,8 +279,8 @@ def gpt(pth,Q=40,block_side=8,rho=0.95):
 
         pos[p:p+N,:] = np.arange(0,N).reshape(-1,1)
 
-        points[p:p+N,:] = cubes[n:n+1,:]
-        colors[p:p+N,:] = (W.T[:,0:1] @ (yq[0:1,:] * Q))+128
+        points[p:p+N,:] = Vb # cubes[n:n+1,:]
+        colors[p:p+N,:] = (W.T[:,0:1] @ yb[0:1,:])+128 # (W.T[:,0:1] @ (yq[0:1,:] * Q))+128
 
         # inverse quantize and inverse transform
         Cbr = W.T @ (yq * Q)
