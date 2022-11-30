@@ -494,9 +494,13 @@ def coding_loop(configs,N):
             staticac_rate = get_bpov("/tmp/encoder_out",pc_len)
             staticac_rates.append(staticac_rate)
 
+            save_values(f"{get_prefix(configs)}_{N:03d}_coding_values",np.arange(len(staticac_rates)),
+                {"MLP": staticac_rates,"LUT": staticac_rates},"frame",None)
+
     else:
 
         mlp_rates = []
+        cabac_rates = []
         for pc_in in configs["validation_set"]:
             pc_len = len(c3d.read_PC(pc_in)[1])
             if (configs["reduction"] == 'min'):
@@ -509,10 +513,8 @@ def coding_loop(configs,N):
             mlp_rate = get_bpov("/tmp/encoder_out",pc_len)
             mlp_rates.append(mlp_rate)
 
-        if N <= configs["max_context"] :
+            if N <= configs["max_context"] :
 
-            cabac_rates = []
-            for pc_in in configs["validation_set"]:
                 pc_len = len(c3d.read_PC(pc_in)[1])
                 weights = f"{get_prefix(configs,'parent_id')}_{N:03d}_lut.npy"
                 constructor = CABAC_Constructor(weights,configs["max_context"])
@@ -521,12 +523,13 @@ def coding_loop(configs,N):
                 cabac_rate = get_bpov("/tmp/encoder_out",pc_len)
                 cabac_rates.append(cabac_rate)
 
-        else:
+            else:
 
-            cabac_rates = []
-            for pc_in in configs["validation_set"]:
                 cabac_rate = -1
                 cabac_rates.append(cabac_rate)
+
+            save_values(f"{get_prefix(configs)}_{N:03d}_coding_values",np.arange(len(mlp_rates)),
+                {"MLP": mlp_rates,"LUT": cabac_rates},"frame",None)
 
     if N == 0:
         data = {
