@@ -501,7 +501,9 @@ if __name__ == "__main__":
         filepath = "/home/lucas/Documents/data/NNOC/validation/longdress/longdress_vox10_1300.ply"
         # filepath = "/home/lucas/Documents/data/ricardo9_frame0039.ply"
 
-        gpt_return = gpt(filepath)
+        block_side = 8
+
+        gpt_return = gpt(filepath,block_side=block_side)
         filename = os.path.splitext(os.path.basename(filepath))[0]
         lut_return = lut(gpt_return)
 
@@ -570,7 +572,7 @@ if __name__ == "__main__":
 
         pos = gpt_return["pos"]
         mask_0 = (pos == 0).reshape(-1)
-        points = gpt_return["points"][mask_0,:]
+        points = np.floor(gpt_return["points"][mask_0,:]/block_side)
 
         colors = yuv2rgb(gpt_return["colors"][mask_0,:])
         print(np.min(colors),np.max(colors))
