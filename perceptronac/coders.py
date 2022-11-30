@@ -24,13 +24,14 @@ def lexsort(V):
 
 class PC_Coder:
 
-    def __init__(self,model_constructor,context_size,last_octree_level,percentage_of_uncles=0):
+    def __init__(self,model_constructor,context_size,last_octree_level,percentage_of_uncles=0,device="cpu"):
         self._model_constructor = model_constructor
         self._last_level = last_octree_level
         self._M = int(percentage_of_uncles * context_size)
         self._N = context_size - self._M
         self._use_cache = False
         self._cache_path = None
+        self.device = device
 
     def enable_cache(self,cache_path = None):
         self._use_cache = True
@@ -63,7 +64,10 @@ class PC_Coder:
 
     def _p_y_from_X_y(self,X,y):
 
+        device = torch.device(self.device)
+
         model = self._model_constructor()
+        model.to(device)
 
         batch_size = 2048
 
@@ -76,8 +80,8 @@ class PC_Coder:
         pbar.set_description("preparing the data to encode")
         for data in dataloader:
             X_b,y_b = data
-            X_b = X_b.float() #.to(device)
-            y_b = y_b.float() #.to(device)
+            X_b = X_b.float().to(device)
+            y_b = y_b.float().to(device)
             outputs = model(X_b)
             p.append(outputs.detach())
             v.append(y_b.detach())

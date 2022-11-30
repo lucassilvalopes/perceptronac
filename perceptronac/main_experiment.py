@@ -508,7 +508,8 @@ def coding_loop(configs,N):
             else:
                 weights = f"{get_prefix(configs,'parent_id')}_{N:03d}_model.pt"
             constructor = MLP_N_64N_32N_1_Constructor(N,weights)
-            coder = PC_Coder(constructor.construct,N,configs["last_octree_level"],percentage_of_uncles=configs["percentage_of_uncles"])
+            coder = PC_Coder(constructor.construct,N,configs["last_octree_level"],
+                percentage_of_uncles=configs["percentage_of_uncles"], device=configs["device"])
             coder.encode(pc_in,encoder_in="/tmp/encoder_in",encoder_out="/tmp/encoder_out")
             mlp_rate = get_bpov("/tmp/encoder_out",pc_len)
             mlp_rates.append(mlp_rate)
