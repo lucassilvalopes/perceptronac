@@ -295,7 +295,7 @@ def gpt(pth,Q=40,block_side=8,rho=0.95,dcs=None):
         # inverse quantize and inverse transform
         if dcs is not None:
             for k,v in dcs.items():
-                Cbrk = W.T @ np.concatenate([v[n:(n+1),3:] / W[0,0],yq[1:,:]*Q],exis=0)
+                Cbrk = W.T @ np.concatenate([(v[n:(n+1),3:]-128) / W[0,0],yq[1:,:]*Q],axis=0)
                 ek = Cb[:,0:1]-Cbrk[:,0:1] # Y channel
                 mses[k] = mses[k] + ek.T @ ek
         
@@ -325,7 +325,7 @@ def gpt(pth,Q=40,block_side=8,rho=0.95,dcs=None):
     if dcs is not None:
         for k,v in mses.items():
             mses[k] = mses[k] / Nvox
-            out[f"dist_{k}"] = 10 * np.log10(255*255/mses[k])
+            out[f"dist_{k}"] = (10 * np.log10(255*255/mses[k])).item()
 
     return out
 
@@ -525,7 +525,7 @@ if __name__ == "__main__":
         filepath = "/home/lucas/Documents/data/NNOC/validation/longdress/longdress_vox10_1300.ply"
         # filepath = "/home/lucas/Documents/data/ricardo9_frame0039.ply"
 
-        fdir = "/home/lucas/Documents/perceptronac/perceptronac/coding3d/gpt/regptdcs"
+        fdir = "/home/lucas/Documents/perceptronac/perceptronac/coding3d/gpt/regptdcs_v2"
         dcs = dict()
         for fn in os.listdir(fdir):
             _,V,C = read_PC( os.path.join(fdir,fn) )
@@ -535,7 +535,7 @@ if __name__ == "__main__":
         block_side = 8
 
         gpt_return = gpt(filepath,block_side=block_side,dcs=dcs)
-        pprint(gpt_return)
+        pprint({gpt_return[f"dist_{k}"] for k,v in dcs.items()})
         filename = os.path.splitext(os.path.basename(filepath))[0]
         lut_return = lut(gpt_return)
 
