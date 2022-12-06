@@ -196,7 +196,7 @@ def permutation_selection_matrices(Vb,block_side,infx,infy,infz):
     return Pb1,Pb2
 
 
-def gpt(pth,Q=40,block_side=8,rho=0.95):
+def gpt(pth,Q=40,block_side=8,rho=0.95,dcs=None):
     """
     Applies gaussian process transform to point cloud blocks,
     using the Ornstein-Uhlenbeck model to estimate the covariance matrix,
@@ -221,6 +221,15 @@ def gpt(pth,Q=40,block_side=8,rho=0.95):
 
     # see how many blocks are there
     cubes = np.unique(np.floor(V/block_side),axis=0)
+
+    cubes = cubes[np.lexsort((cubes[:, 2], cubes[:, 1], cubes[:, 0]))]
+
+    if dcs is not None:
+        for k,v in dcs.items():
+            dcs[k] = v[np.lexsort((v[:, 2], v[:, 1], v[:, 0]))]
+
+        mses = {k:0 for k,v in dcs.items()}
+
     ncubes = cubes.shape[0]
 
     # loop and encode blocks
@@ -283,9 +292,16 @@ def gpt(pth,Q=40,block_side=8,rho=0.95):
         colors[p:p+N,:] = (W.T[:,0:1] @ yb[0:1,:])+128 # (W.T[:,0:1] @ (yq[0:1,:] * Q))+128
 
         # inverse quantize and inverse transform
+        if dcs is not None:
+            for k,v in dcs.items():
+                Cbrk = W.T @ np.concatenate([v[n:(n+1),3:],yq[1:,:]*Q],exis=0)
+                ek = Cb[:,0:1]-Cbrk[:,0:1] # Y channel
+                mses[k] = mses[k] + ek.T @ ek
+        
         Cbr = W.T @ (yq * Q)
         e = Cb[:,0:1]-Cbr[:,0:1] # Y channel
         mse = mse + e.T @ e
+
         Crec[p:p+N,:] = Cbr+128
         p = p + N
 
@@ -296,7 +312,7 @@ def gpt(pth,Q=40,block_side=8,rho=0.95):
     mse = mse / Nvox; 
     dist = 10 * np.log10(255*255/mse)
 
-    return {
+    out = {
         "S":S,
         "dist":dist.item(),
         "Evec": Evec,
@@ -304,6 +320,13 @@ def gpt(pth,Q=40,block_side=8,rho=0.95):
         "points": points,
         "colors": colors
     }
+
+    if dcs is not None:
+        for k,v in mses.items():
+            mses[k] = mses[k] / Nvox
+            out[f"dist_{k}"] = 10 * np.log10(255*255/mses[k])
+
+    return out
 
 
 def lut(gpt_return):
