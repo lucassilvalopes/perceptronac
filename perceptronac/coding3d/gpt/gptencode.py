@@ -535,7 +535,7 @@ if __name__ == "__main__":
         block_side = 8
 
         gpt_return = gpt(filepath,block_side=block_side,dcs=dcs)
-        pprint({gpt_return[f"dist_{k}"] for k,v in dcs.items()})
+        pprint({k:gpt_return[f"dist_{k}"] for k,v in dcs.items()})
         filename = os.path.splitext(os.path.basename(filepath))[0]
         lut_return = lut(gpt_return)
 

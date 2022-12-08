@@ -2,11 +2,25 @@
 import numpy as np
 import inspect
 from PIL import Image
+from skimage import filters
 from netpbmfile import imwrite
 import os
 import subprocess as sb
 from perceptronac.coding2d import causal_context
 import perceptronac.coding3d as c3d
+
+
+
+def read_im2bw_otsu(file_name):
+    """
+    https://stackoverflow.com/questions/59113520/python-image-pillow-how-to-make-the-background-more-white-of-images
+    https://stackoverflow.com/questions/65075158/converting-pil-image-to-skimage
+    """
+
+    img = np.array(Image.open(file_name).convert('L'))
+    threshold = filters.threshold_otsu(img)
+    result = (img>threshold).astype(int)
+    return result
 
 
 def read_im2bw(file_name,level):
@@ -48,8 +62,8 @@ def save_pbm(file_name, binary_image):
     imwrite(file_name, data,maxval=1)
 
 
-def im2pbm(im_path,pbm_path,th = 0.4):
-    im = read_im2bw(im_path,th)
+def im2pbm(im_path,pbm_path):
+    im = read_im2bw_otsu(im_path)
     save_pbm(pbm_path, im)
     return im.shape[:2]
 
@@ -81,7 +95,7 @@ def causal_context_many_imgs_binary(pths,N):
     y = []
     X = []
     for pth in pths:
-        img = add_border(read_im2bw(pth,0.4),N)
+        img = add_border(read_im2bw_otsu(pth),N)
         partial_y,partial_X = causal_context((img > 0).astype(int), N)
         y.append(partial_y)
         X.append(partial_X)
@@ -216,7 +230,7 @@ def jbig1_rate(im_path):
     src_path = "/tmp/tmp.pbm"
     dst_path = "/tmp/tmp.jbg"
     
-    h,w = im2pbm(im_path,src_path,0.4)
+    h,w = im2pbm(im_path,src_path)
     sb.run(["pbmtojbg","-q",src_path,dst_path])
     sz = os.path.getsize(dst_path) # bytes
 

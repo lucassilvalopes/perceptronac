@@ -17,6 +17,7 @@ install_requires = [
     'numba==0.53.1',
     'tika==1.24',
     'pdf2image==1.16.0',
+    'scikit-image==0.18.3'
 ]
 
 unit_tests_require = [

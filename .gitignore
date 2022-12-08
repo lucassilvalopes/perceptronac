@@ -133,3 +133,5 @@ dmypy.json
 *.pt
 
 .DS_store
+
+trash
