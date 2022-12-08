@@ -534,20 +534,26 @@ if __name__ == "__main__":
 
     elif len(sys.argv) > 1 and sys.argv[1] == "3":
 
-        filepath = "/home/lucas/Documents/data/NNOC/validation/longdress/longdress_vox10_1300.ply"
-        # filepath = "/home/lucas/Documents/data/ricardo9_frame0039.ply"
+        # filepath = "/home/lucas/Documents/data/NNOC/validation/longdress/longdress_vox10_1300.ply"
+        filepath = "/home/lucas/Documents/data/ricardo10_frame0000.ply"
 
-        fdir = "/home/lucas/Documents/perceptronac/perceptronac/coding3d/gpt/regptdcs_v2"
-        dcs = dict()
-        for fn in os.listdir(fdir):
-            _,V,C = read_PC( os.path.join(fdir,fn) )
-            C = rgb2yuv(C)
-            dcs[os.path.splitext(fn)[0]] = np.concatenate([V,C],axis=1)
+        fdir = None # "/home/lucas/Documents/perceptronac/perceptronac/coding3d/gpt/regptdcs_v2"
+        dcs_info = None
+        if (fdir is not None) and (dcs_info is not None):
+            dcs_df = pd.read_csv(dcs_info)
+            dcs = dict()
+            for fn in os.listdir(fdir):
+                _,V,C = read_PC( os.path.join(fdir,fn) )
+                C = denormalize_colors(C,dcs_df["min"],dcs_df["max"])
+                C = rgb2yuv(C)
+                dcs[os.path.splitext(fn)[0]] = np.concatenate([V,C],axis=1)
+        else:
+            dcs = None
 
         block_side = 8
 
         gpt_return = gpt(filepath,block_side=block_side,dcs=dcs)
-        pprint({k:gpt_return[f"dist_{k}"] for k,v in dcs.items()})
+        # pprint({k:gpt_return[f"dist_{k}"] for k,v in dcs.items()})
         filename = os.path.splitext(os.path.basename(filepath))[0]
         lut_return = lut(gpt_return)
 
@@ -609,7 +615,7 @@ if __name__ == "__main__":
         ax[1,2].set_title(f"V (DC: {bits_v_per_coef_idx[0]/samples_per_coef_idx[0]:.2f})")
 
 
-        fig.savefig(f"rate_per_coef_idx.png", dpi=300, facecolor='w', bbox_inches = "tight")
+        fig.savefig(f"{filename}_rate_per_coef_idx.png", dpi=300, facecolor='w') #, bbox_inches = "tight")
 
         print(gpt_return["dist"])
         print(lut_return["rate"])
@@ -619,17 +625,23 @@ if __name__ == "__main__":
         points = np.floor(gpt_return["points"][mask_0,:]/block_side)
 
         colors = yuv2rgb(gpt_return["colors"][mask_0,:])
-        print(np.min(colors),np.max(colors))
-        write_PC(f"{filename}_GPT_Q40_blocksize8_rho95e-2_DC_YUV2RGB.ply",xyz=points,colors=clip_colors(colors))
+        # print(np.min(colors),np.max(colors))
+        dcs_filename= f"{filename}_GPT_Q40_blocksize8_rho95e-2_DC_YUV2RGB"
+        pd.DataFrame({"min":[np.min(colors)],"max":[np.max(colors)]}).to_csv(f"{dcs_filename}.csv")
+        write_PC(f"{dcs_filename}.ply",xyz=points,colors=normalize_colors(colors,np.min(colors),np.max(colors)))
 
         colors = np.tile(gpt_return["colors"][mask_0,0:1],(1,3))
-        print(np.min(colors),np.max(colors))
-        write_PC(f"{filename}_GPT_Q40_blocksize8_rho95e-2_DC_Y2RGB.ply",xyz=points,colors=clip_colors(colors))
+        # print(np.min(colors),np.max(colors))
+        dcs_filename= f"{filename}_GPT_Q40_blocksize8_rho95e-2_DC_Y2RGB"
+        pd.DataFrame({"min":[np.min(colors)],"max":[np.max(colors)]}).to_csv(f"{dcs_filename}.csv")
+        write_PC(f"{dcs_filename}.ply",xyz=points,colors=normalize_colors(colors,np.min(colors),np.max(colors)))
 
         points = gpt_return["points"]
         colors = yuv2rgb(gpt_return["colors"])
-        print(np.min(colors),np.max(colors))
-        write_PC(f"{filename}_GPT_Q40_blocksize8_rho95e-2_DC_YUV2RGB_orig_geo.ply",xyz=points,colors=clip_colors(colors))
+        # print(np.min(colors),np.max(colors))
+        dcs_filename= f"{filename}_GPT_Q40_blocksize8_rho95e-2_DC_YUV2RGB_orig_geo"
+        pd.DataFrame({"min":[np.min(colors)],"max":[np.max(colors)]}).to_csv(f"{dcs_filename}.csv")
+        write_PC(f"{dcs_filename}.ply",xyz=points,colors=normalize_colors(colors,np.min(colors),np.max(colors)))
 
 
         sys.exit()
