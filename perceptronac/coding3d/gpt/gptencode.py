@@ -458,18 +458,30 @@ def rd_curve(rates_lut,rates_nn,distortions):
     fig.savefig(f"gpt_nn.png", dpi=300, facecolor='w', bbox_inches = "tight")
 
 
-def normalize_colors(colors, no_clip = False):
+def clip_colors(colors):
     """
     https://numpy.org/doc/stable/reference/generated/numpy.clip.html
     http://www.open3d.org/docs/release/python_api/open3d.io.write_point_cloud.html
     https://stackoverflow.com/questions/16963956/difference-between-python-float-and-numpy-float32
     """
-    if no_clip:
-        colors = colors - np.min(colors)
-        colors = (colors/np.max(colors)).astype(np.float32)
-    else:
-        colors = np.clip(colors, 0, 255)
-        colors = (colors/255).astype(np.float32)
+    colors = np.clip(colors, 0, 255)
+    colors = (colors/255).astype(np.float32)
+    return colors
+
+
+def normalize_colors(colors,min_value,max_value):
+
+    colors = colors - min_value
+    colors = (colors/(max_value-min_value)).astype(np.float32)
+
+    return colors
+
+
+def denormalize_colors(colors,min_value,max_value):
+
+    colors = (colors*(max_value-min_value))
+    colors = colors + min_value
+
     return colors
 
 
@@ -608,16 +620,16 @@ if __name__ == "__main__":
 
         colors = yuv2rgb(gpt_return["colors"][mask_0,:])
         print(np.min(colors),np.max(colors))
-        write_PC(f"{filename}_GPT_Q40_blocksize8_rho95e-2_DC_YUV2RGB.ply",xyz=points,colors=normalize_colors(colors))
+        write_PC(f"{filename}_GPT_Q40_blocksize8_rho95e-2_DC_YUV2RGB.ply",xyz=points,colors=clip_colors(colors))
 
         colors = np.tile(gpt_return["colors"][mask_0,0:1],(1,3))
         print(np.min(colors),np.max(colors))
-        write_PC(f"{filename}_GPT_Q40_blocksize8_rho95e-2_DC_Y2RGB.ply",xyz=points,colors=normalize_colors(colors))
+        write_PC(f"{filename}_GPT_Q40_blocksize8_rho95e-2_DC_Y2RGB.ply",xyz=points,colors=clip_colors(colors))
 
         points = gpt_return["points"]
         colors = yuv2rgb(gpt_return["colors"])
         print(np.min(colors),np.max(colors))
-        write_PC(f"{filename}_GPT_Q40_blocksize8_rho95e-2_DC_YUV2RGB_orig_geo.ply",xyz=points,colors=normalize_colors(colors))
+        write_PC(f"{filename}_GPT_Q40_blocksize8_rho95e-2_DC_YUV2RGB_orig_geo.ply",xyz=points,colors=clip_colors(colors))
 
 
         sys.exit()
