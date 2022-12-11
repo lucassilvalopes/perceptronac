@@ -557,8 +557,10 @@ if __name__ == "__main__":
         #     "dcs_dec_info" : "/home/lucas/Documents/perceptronac/perceptronac/coding3d/gpt/regptdcs/Resultados_PCs.xlsx",
         #     "dcs_dec_info_sheet_name" : "Longdress",
         #     "dcs_dec_info_pcs_column_name" : "Point Cloud",
+        #     "dcs_dec_info_original_pc_name" : 'Longdress_1300 vox 10',
         #     "dcs_dec_info_pc_name" : 'Longdress_1300 vox 7',
-        #     "dcs_dec_info_rate_col" : "Rate normalized vox 10 [bpov]"
+        #     "dcs_dec_info_rate_col" : "Rate normalized vox 10 [bpov]",
+        #     "dcs_dec_info_dist_col" : "PSNR_y [dB]"
         # }
 
         dcs_dict = {
@@ -567,8 +569,10 @@ if __name__ == "__main__":
             "dcs_dec_info" : "/home/lucas/Documents/perceptronac/perceptronac/coding3d/gpt/regptdcs/Resultados_PCs.xlsx",
             "dcs_dec_info_sheet_name" : "Ricardo",
             "dcs_dec_info_pcs_column_name" : "Point Cloud",
+            "dcs_dec_info_original_pc_name" : 'Ricardo vox 10',
             "dcs_dec_info_pc_name" : 'Ricardo vox 7',
-            "dcs_dec_info_rate_col" : "Rate normalized vox 10 [bpov]"
+            "dcs_dec_info_rate_col" : "Rate normalized vox 10 [bpov]",
+            "dcs_dec_info_dist_col" : "PSNR_y [dB]"
         }
 
         if (dcs_dict is not None):
@@ -591,8 +595,6 @@ if __name__ == "__main__":
         bits_u_per_coef_idx = np.array(lut_return["bits_u_per_coef_idx"])
         bits_v_per_coef_idx = np.array(lut_return["bits_v_per_coef_idx"])
         samples_per_coef_idx = np.array(lut_return["samples_per_coef_idx"])
-
-        fig, ax = plt.subplots(nrows=2, ncols=3)
 
         x_axis = np.arange(samples_per_coef_idx.shape[0])
 
@@ -628,13 +630,35 @@ if __name__ == "__main__":
                 dcs_dict["dcs_dec_info_pcs_column_name"],
                 dcs_dict["dcs_dec_info_pc_name"])
 
+            original_pc_dec_info = read_dcs_dec_info(
+                dcs_dict["dcs_dec_info"],
+                dcs_dict["dcs_dec_info_sheet_name"],
+                dcs_dict["dcs_dec_info_pcs_column_name"],
+                dcs_dict["dcs_dec_info_original_pc_name"])
+
+            gptgpcc_rates = (dcs_dec_info[dcs_dict["dcs_dec_info_rate_col"]].values + ac_rate).tolist()
+            gptgpcc_dists = [gpt_return[f"dist_{k}"] for k in sorted(dcs.keys())]
             pd.DataFrame({
-                "rate":(dcs_dec_info[dcs_dict["dcs_dec_info_rate_col"]].values + ac_rate).tolist(),
-                "dist":[gpt_return[f"dist_{k}"] for k in sorted(dcs.keys())]
+                "rate":gptgpcc_rates,
+                "dist":gptgpcc_dists
             }).to_csv(f"{filename}_gptgpcc_results.csv")
 
+            fig, ax = plt.subplots(nrows=1, ncols=1)
 
+            h1,= ax.plot(
+                original_pc_dec_info[dcs_dict["dcs_dec_info_rate_col"]].values,
+                original_pc_dec_info[dcs_dict["dcs_dec_info_dist_col"]].values,
+                linestyle="solid",label="gpcc",color="r",marker="o")
+            h2,= ax.plot(gptgpcc_rates,gptgpcc_dists,
+                linestyle="dashed",label="hybrid",color="b",marker="^")
+            h3,= ax.plot([lut_return["rate_yuv"]],[gpt_return["dist"]],
+                linestyle="dotted",label="gpt",color="g",marker="s")
+            ax.legend(handles=[h1,h2,h3],loc="upper right")
+            ax.set_xlabel("bpov yuv")
+            ax.set_ylabel("psnr y")
+            fig.savefig(f"{filename}_gptgpcc_results.png", dpi=300, facecolor='w')
 
+        fig, ax = plt.subplots(nrows=2, ncols=3)
 
         ax[0,0].plot(x_axis,bits_y_per_coef_idx/np.sum(bits_y_per_coef_idx))
         ax[0,1].plot(x_axis,bits_u_per_coef_idx/np.sum(bits_u_per_coef_idx))
