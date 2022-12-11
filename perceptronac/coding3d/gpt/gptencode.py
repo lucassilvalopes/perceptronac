@@ -555,11 +555,14 @@ if __name__ == "__main__":
         block_side = 8
         gpt_Q = 30
 
+        dcs_identification = f"blocksize{block_side}_rho95e-2"
+        acs_identification = f"GPT_Q{gpt_Q}_blocksize{block_side}_rho95e-2"
+
         dcs_dict = None
         # dcs_dict = {
-        #     "dcs_dec_dir" : f"/home/lucas/Documents/perceptronac/perceptronac/coding3d/gpt/regptdcs_Q{gpt_Q}/longdress",
-        #     "dcs_enc_info" : f"/home/lucas/Documents/perceptronac/perceptronac/coding3d/gpt/longdress_vox10_1300_GPT_Q{gpt_Q}_blocksize8_rho95e-2_DC_YUV2RGB.csv",
-        #     "dcs_dec_info" : f"/home/lucas/Documents/perceptronac/perceptronac/coding3d/gpt/regptdcs_Q{gpt_Q}/Resultados_PCs.xlsx",
+        #     "dcs_dec_dir" : "/home/lucas/Documents/perceptronac/perceptronac/coding3d/gpt/regptdcs/longdress",
+        #     "dcs_enc_info" : f"/home/lucas/Documents/perceptronac/perceptronac/coding3d/gpt/Q{gpt_Q}/longdress_vox10_1300_GPT_Q{gpt_Q}_blocksize8_rho95e-2_DC_YUV2RGB.csv",
+        #     "dcs_dec_info" : "/home/lucas/Documents/perceptronac/perceptronac/coding3d/gpt/regptdcs/Resultados_PCs.xlsx",
         #     "dcs_dec_info_sheet_name" : "Longdress",
         #     "dcs_dec_info_pcs_column_name" : "Point Cloud",
         #     "dcs_dec_info_original_pc_name" : 'Longdress_1300 vox 10',
@@ -570,9 +573,9 @@ if __name__ == "__main__":
         # }
 
         # dcs_dict = {
-        #     "dcs_dec_dir" : f"/home/lucas/Documents/perceptronac/perceptronac/coding3d/gpt/regptdcs_Q{gpt_Q}/ricardo",
-        #     "dcs_enc_info" : f"/home/lucas/Documents/perceptronac/perceptronac/coding3d/gpt/ricardo10_frame0000_GPT_Q{gpt_Q}_blocksize8_rho95e-2_DC_YUV2RGB.csv",
-        #     "dcs_dec_info" : f"/home/lucas/Documents/perceptronac/perceptronac/coding3d/gpt/regptdcs_Q{gpt_Q}/Resultados_PCs.xlsx",
+        #     "dcs_dec_dir" : "/home/lucas/Documents/perceptronac/perceptronac/coding3d/gpt/regptdcs/ricardo",
+        #     "dcs_enc_info" : f"/home/lucas/Documents/perceptronac/perceptronac/coding3d/gpt/Q{gpt_Q}/ricardo10_frame0000_GPT_Q{gpt_Q}_blocksize8_rho95e-2_DC_YUV2RGB.csv",
+        #     "dcs_dec_info" : "/home/lucas/Documents/perceptronac/perceptronac/coding3d/gpt/regptdcs/Resultados_PCs.xlsx",
         #     "dcs_dec_info_sheet_name" : "Ricardo",
         #     "dcs_dec_info_pcs_column_name" : "Point Cloud",
         #     "dcs_dec_info_original_pc_name" : 'Ricardo vox 10',
@@ -593,7 +596,7 @@ if __name__ == "__main__":
         else:
             dcs = None
 
-        gpt_return = gpt(filepath,block_side=block_side,dcs=dcs)        
+        gpt_return = gpt(filepath,Q=gpt_Q,block_side=block_side,dcs=dcs)        
         lut_return = lut(gpt_return)
 
         bits_y_per_coef_idx = np.array(lut_return["bits_y_per_coef_idx"])
@@ -605,13 +608,13 @@ if __name__ == "__main__":
 
         pd.DataFrame({
             "x_axis":x_axis,"fraction of bits":bits_y_per_coef_idx/np.sum(bits_y_per_coef_idx),
-            "bits_y_per_coef_idx":bits_y_per_coef_idx,"samples_per_coef_idx":samples_per_coef_idx}).to_csv(f"{filename}_y.csv")
+            "bits_y_per_coef_idx":bits_y_per_coef_idx,"samples_per_coef_idx":samples_per_coef_idx}).to_csv(f"{filename}_{acs_identification}_y.csv")
         pd.DataFrame({
             "x_axis":x_axis,"fraction of bits":bits_u_per_coef_idx/np.sum(bits_u_per_coef_idx),
-            "bits_u_per_coef_idx":bits_u_per_coef_idx,"samples_per_coef_idx":samples_per_coef_idx}).to_csv(f"{filename}_u.csv")
+            "bits_u_per_coef_idx":bits_u_per_coef_idx,"samples_per_coef_idx":samples_per_coef_idx}).to_csv(f"{filename}_{acs_identification}_u.csv")
         pd.DataFrame({
             "x_axis":x_axis,"fraction of bits":bits_v_per_coef_idx/np.sum(bits_v_per_coef_idx),
-            "bits_v_per_coef_idx":bits_v_per_coef_idx,"samples_per_coef_idx":samples_per_coef_idx}).to_csv(f"{filename}_v.csv")
+            "bits_v_per_coef_idx":bits_v_per_coef_idx,"samples_per_coef_idx":samples_per_coef_idx}).to_csv(f"{filename}_{acs_identification}_v.csv")
         
         dc_rate = (bits_y_per_coef_idx[0] + bits_u_per_coef_idx[0] + bits_v_per_coef_idx[0]) / gpt_return["points"].shape[0]
         ac_rate = (np.sum(bits_y_per_coef_idx[1:]) + np.sum(bits_u_per_coef_idx[1:]) + np.sum(bits_v_per_coef_idx[1:])) / gpt_return["points"].shape[0]
@@ -623,7 +626,7 @@ if __name__ == "__main__":
                 lut_return["rate_yuv"],
                 gpt_return["dist"]
             ]}
-        ).to_csv(f"{filename}_yuv.csv")
+        ).to_csv(f"{filename}_{acs_identification}_yuv.csv")
 
 
 
@@ -648,7 +651,7 @@ if __name__ == "__main__":
             pd.DataFrame({
                 "rate":gptgpcc_rates,
                 "dist":gptgpcc_dists
-            }).to_csv(f"{filename}_gptgpcc_results.csv")
+            }).to_csv(f"{filename}_{acs_identification}_gptgpcc_results.csv")
 
             fig, ax = plt.subplots(nrows=1, ncols=1)
 
@@ -663,7 +666,7 @@ if __name__ == "__main__":
             ax.legend(handles=[h1,h2,h3],loc="upper right")
             ax.set_xlabel("bpov yuv")
             ax.set_ylabel("psnr y")
-            fig.savefig(f"{filename}_gptgpcc_results.png", dpi=300, facecolor='w')
+            fig.savefig(f"{filename}_{acs_identification}_gptgpcc_results.png", dpi=300, facecolor='w')
 
         fig, ax = plt.subplots(nrows=2, ncols=3)
 
@@ -696,7 +699,7 @@ if __name__ == "__main__":
         ax[1,2].set_title(f"V (DC: {bits_v_per_coef_idx[0]/samples_per_coef_idx[0]:.2f})")
 
         fig.tight_layout()
-        fig.savefig(f"{filename}_rate_per_coef_idx.png", dpi=300, facecolor='w') #, bbox_inches = "tight")
+        fig.savefig(f"{filename}_{acs_identification}_rate_per_coef_idx.png", dpi=300, facecolor='w')
 
         print(gpt_return["dist"])
         print(lut_return["rate"])
@@ -707,20 +710,20 @@ if __name__ == "__main__":
 
         colors = yuv2rgb(gpt_return["colors"][mask_0,:])
         # print(np.min(colors),np.max(colors))
-        dcs_filename= f"{filename}_GPT_Q{gpt_Q}_blocksize8_rho95e-2_DC_YUV2RGB"
+        dcs_filename= f"{filename}_{dcs_identification}_DC_YUV2RGB"
         pd.DataFrame({"min":[np.min(colors)],"max":[np.max(colors)]}).to_csv(f"{dcs_filename}.csv")
         write_PC(f"{dcs_filename}.ply",xyz=points,colors=normalize_colors(colors,np.min(colors),np.max(colors)))
 
         colors = np.tile(gpt_return["colors"][mask_0,0:1],(1,3))
         # print(np.min(colors),np.max(colors))
-        dcs_filename= f"{filename}_GPT_Q{gpt_Q}_blocksize8_rho95e-2_DC_Y2RGB"
+        dcs_filename= f"{filename}_{dcs_identification}_DC_Y2RGB"
         pd.DataFrame({"min":[np.min(colors)],"max":[np.max(colors)]}).to_csv(f"{dcs_filename}.csv")
         write_PC(f"{dcs_filename}.ply",xyz=points,colors=normalize_colors(colors,np.min(colors),np.max(colors)))
 
         points = gpt_return["points"]
         colors = yuv2rgb(gpt_return["colors"])
         # print(np.min(colors),np.max(colors))
-        dcs_filename= f"{filename}_GPT_Q{gpt_Q}_blocksize8_rho95e-2_DC_YUV2RGB_orig_geo"
+        dcs_filename= f"{filename}_{dcs_identification}_DC_YUV2RGB_orig_geo"
         pd.DataFrame({"min":[np.min(colors)],"max":[np.max(colors)]}).to_csv(f"{dcs_filename}.csv")
         write_PC(f"{dcs_filename}.ply",xyz=points,colors=normalize_colors(colors,np.min(colors),np.max(colors)))
 
