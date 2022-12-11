@@ -485,11 +485,13 @@ def denormalize_colors(colors,min_value,max_value):
     return colors
 
 
-def read_dcs_dec_info(path,sheet_name,pcs_column_name,pc_name):
+def read_dcs_dec_info(path,sheet_name,pcs_column_name,pc_name,n_rates):
 
     df = pd.read_excel(path,engine='openpyxl',sheet_name=None)
 
-    df = df[sheet_name].iloc[df[sheet_name][pcs_column_name].tolist().index(pc_name):,:]
+    start_i = df[sheet_name][pcs_column_name].tolist().index(pc_name)
+
+    df = df[sheet_name].iloc[start_i:(start_i+n_rates),:]
 
     return df
 
@@ -560,7 +562,8 @@ if __name__ == "__main__":
         #     "dcs_dec_info_original_pc_name" : 'Longdress_1300 vox 10',
         #     "dcs_dec_info_pc_name" : 'Longdress_1300 vox 7',
         #     "dcs_dec_info_rate_col" : "Rate normalized vox 10 [bpov]",
-        #     "dcs_dec_info_dist_col" : "PSNR_y [dB]"
+        #     "dcs_dec_info_dist_col" : "PSNR_y [dB]",
+        #     "dcs_dec_info_n_rates" : 5
         # }
 
         dcs_dict = {
@@ -572,7 +575,8 @@ if __name__ == "__main__":
             "dcs_dec_info_original_pc_name" : 'Ricardo vox 10',
             "dcs_dec_info_pc_name" : 'Ricardo vox 7',
             "dcs_dec_info_rate_col" : "Rate normalized vox 10 [bpov]",
-            "dcs_dec_info_dist_col" : "PSNR_y [dB]"
+            "dcs_dec_info_dist_col" : "PSNR_y [dB]",
+            "dcs_dec_info_n_rates" : 5
         }
 
         if (dcs_dict is not None):
@@ -628,13 +632,15 @@ if __name__ == "__main__":
                 dcs_dict["dcs_dec_info"],
                 dcs_dict["dcs_dec_info_sheet_name"],
                 dcs_dict["dcs_dec_info_pcs_column_name"],
-                dcs_dict["dcs_dec_info_pc_name"])
+                dcs_dict["dcs_dec_info_pc_name"],
+                dcs_dict["dcs_dec_info_n_rates"])
 
             original_pc_dec_info = read_dcs_dec_info(
                 dcs_dict["dcs_dec_info"],
                 dcs_dict["dcs_dec_info_sheet_name"],
                 dcs_dict["dcs_dec_info_pcs_column_name"],
-                dcs_dict["dcs_dec_info_original_pc_name"])
+                dcs_dict["dcs_dec_info_original_pc_name"],
+                dcs_dict["dcs_dec_info_n_rates"])
 
             gptgpcc_rates = (dcs_dec_info[dcs_dict["dcs_dec_info_rate_col"]].values + ac_rate).tolist()
             gptgpcc_dists = [gpt_return[f"dist_{k}"] for k in sorted(dcs.keys())]
