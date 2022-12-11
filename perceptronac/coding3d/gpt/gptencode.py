@@ -485,6 +485,15 @@ def denormalize_colors(colors,min_value,max_value):
     return colors
 
 
+def read_dcs_dec_info(path,sheet_name,pcs_column_name,pc_name):
+
+    df = pd.read_excel(path,engine='openpyxl',sheet_name=None)
+
+    df = df[sheet_name].iloc[df[sheet_name][pcs_column_name].tolist().index(pc_name):,:]
+
+    return df
+
+
 if __name__ == "__main__":
 
     ################ I used these lines of code for some tests (remove later) ################
@@ -534,17 +543,32 @@ if __name__ == "__main__":
 
     elif len(sys.argv) > 1 and sys.argv[1] == "3":
 
-        # filepath = "/home/lucas/Documents/data/NNOC/validation/longdress/longdress_vox10_1300.ply"
-        filepath = "/home/lucas/Documents/data/ricardo10_frame0000.ply"
+        import pandas as pd
 
-        fdir = None # "/home/lucas/Documents/perceptronac/perceptronac/coding3d/gpt/regptdcs_v2"
-        dcs_info = None
-        if (fdir is not None) and (dcs_info is not None):
-            dcs_df = pd.read_csv(dcs_info)
+        filepath = "/home/lucas/Documents/data/NNOC/validation/longdress/longdress_vox10_1300.ply"
+        # filepath = "/home/lucas/Documents/data/ricardo10_frame0000.ply"
+
+        filename = os.path.splitext(os.path.basename(filepath))[0]
+
+        # dcs_dict = None
+        dcs_dict = {
+            "dcs_dec_dir" : "/home/lucas/Documents/perceptronac/perceptronac/coding3d/gpt/regptdcs/longdress",
+            "dcs_enc_info" : "/home/lucas/Documents/perceptronac/perceptronac/coding3d/gpt/results/longdress_vox10_1300_GPT_Q40_blocksize8_rho95e-2_DC_YUV2RGB.csv",
+            "dcs_dec_info" : "/home/lucas/Documents/perceptronac/perceptronac/coding3d/gpt/regptdcs/Resultados_PCs.xlsx",
+            "dcs_dec_info_sheet_name" : "Longdress",
+            "dcs_dec_info_pcs_column_name" : "Point Cloud",
+            "dcs_dec_info_pc_name" : 'Longdress_1300 vox 7',
+            "dcs_dec_info_rate_col" : "Rate normalized vox 10 [bpov]"
+        }
+
+
+
+        if (dcs_dict is not None):
+            dcs_enc_info = pd.read_csv(dcs_dict["dcs_enc_info"])
             dcs = dict()
-            for fn in os.listdir(fdir):
-                _,V,C = read_PC( os.path.join(fdir,fn) )
-                C = denormalize_colors(C,dcs_df["min"],dcs_df["max"])
+            for fn in os.listdir(dcs_dict["dcs_dec_dir"]):
+                _,V,C = read_PC( os.path.join(dcs_dict["dcs_dec_dir"],fn) )
+                C = denormalize_colors(C/255,dcs_enc_info.loc[0,"min"],dcs_enc_info.loc[0,"max"])
                 C = rgb2yuv(C)
                 dcs[os.path.splitext(fn)[0]] = np.concatenate([V,C],axis=1)
         else:
@@ -552,9 +576,7 @@ if __name__ == "__main__":
 
         block_side = 8
 
-        gpt_return = gpt(filepath,block_side=block_side,dcs=dcs)
-        # pprint({k:gpt_return[f"dist_{k}"] for k,v in dcs.items()})
-        filename = os.path.splitext(os.path.basename(filepath))[0]
+        gpt_return = gpt(filepath,block_side=block_side,dcs=dcs)        
         lut_return = lut(gpt_return)
 
         bits_y_per_coef_idx = np.array(lut_return["bits_y_per_coef_idx"])
@@ -566,7 +588,6 @@ if __name__ == "__main__":
 
         x_axis = np.arange(samples_per_coef_idx.shape[0])
 
-        import pandas as pd
         pd.DataFrame({
             "x_axis":x_axis,"fraction of bits":bits_y_per_coef_idx/np.sum(bits_y_per_coef_idx),
             "bits_y_per_coef_idx":bits_y_per_coef_idx,"samples_per_coef_idx":samples_per_coef_idx}).to_csv(f"{filename}_y.csv")
@@ -585,6 +606,24 @@ if __name__ == "__main__":
                 gpt_return["dist"]
             ]}
         ).to_csv(f"{filename}_yuv.csv")
+
+
+
+        if (dcs_dict is not None):
+
+            dcs_dec_info = read_dcs_dec_info(
+                dcs_dict["dcs_dec_info"],
+                dcs_dict["dcs_dec_info_sheet_name"],
+                dcs_dict["dcs_dec_info_pcs_column_name"],
+                dcs_dict["dcs_dec_info_pc_name"])
+
+            pd.DataFrame({
+                "rate":dcs_dec_info[dcs_dict["dcs_dec_info_rate_col"]].values.tolist(),
+                "dist":[gpt_return[f"dist_{k}"] for k in sorted(dcs.keys())]
+            }).to_csv(f"{filename}_gptgpcc_results.csv")
+
+
+
 
         ax[0,0].plot(x_axis,bits_y_per_coef_idx/np.sum(bits_y_per_coef_idx))
         ax[0,1].plot(x_axis,bits_u_per_coef_idx/np.sum(bits_u_per_coef_idx))
@@ -614,7 +653,7 @@ if __name__ == "__main__":
         ax[1,2].set_ylabel("Rate (bpv)")
         ax[1,2].set_title(f"V (DC: {bits_v_per_coef_idx[0]/samples_per_coef_idx[0]:.2f})")
 
-
+        fig.tight_layout()
         fig.savefig(f"{filename}_rate_per_coef_idx.png", dpi=300, facecolor='w') #, bbox_inches = "tight")
 
         print(gpt_return["dist"])

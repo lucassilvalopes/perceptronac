@@ -17,7 +17,8 @@ install_requires = [
     'numba==0.53.1',
     'tika==1.24',
     'pdf2image==1.16.0',
-    'scikit-image==0.18.3'
+    'scikit-image==0.18.3',
+    'openpyxl==3.0.10'
 ]
 
 unit_tests_require = [
