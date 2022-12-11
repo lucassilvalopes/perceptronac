@@ -547,37 +547,37 @@ if __name__ == "__main__":
 
         import pandas as pd
 
-        # filepath = "/home/lucas/Documents/data/NNOC/validation/longdress/longdress_vox10_1300.ply"
-        filepath = "/home/lucas/Documents/data/ricardo10_frame0000.ply"
+        filepath = "/home/lucas/Documents/data/NNOC/validation/longdress/longdress_vox10_1300.ply"
+        # filepath = "/home/lucas/Documents/data/ricardo10_frame0000.ply"
 
         filename = os.path.splitext(os.path.basename(filepath))[0]
 
         # dcs_dict = None
-        # dcs_dict = {
-        #     "dcs_dec_dir" : "/home/lucas/Documents/perceptronac/perceptronac/coding3d/gpt/regptdcs/longdress",
-        #     "dcs_enc_info" : "/home/lucas/Documents/perceptronac/perceptronac/coding3d/gpt/results/longdress_vox10_1300_GPT_Q40_blocksize8_rho95e-2_DC_YUV2RGB.csv",
-        #     "dcs_dec_info" : "/home/lucas/Documents/perceptronac/perceptronac/coding3d/gpt/regptdcs/Resultados_PCs.xlsx",
-        #     "dcs_dec_info_sheet_name" : "Longdress",
-        #     "dcs_dec_info_pcs_column_name" : "Point Cloud",
-        #     "dcs_dec_info_original_pc_name" : 'Longdress_1300 vox 10',
-        #     "dcs_dec_info_pc_name" : 'Longdress_1300 vox 7',
-        #     "dcs_dec_info_rate_col" : "Rate normalized vox 10 [bpov]",
-        #     "dcs_dec_info_dist_col" : "PSNR_y [dB]",
-        #     "dcs_dec_info_n_rates" : 5
-        # }
-
         dcs_dict = {
-            "dcs_dec_dir" : "/home/lucas/Documents/perceptronac/perceptronac/coding3d/gpt/regptdcs/ricardo",
-            "dcs_enc_info" : "/home/lucas/Documents/perceptronac/perceptronac/coding3d/gpt/results/ricardo10_frame0000_GPT_Q40_blocksize8_rho95e-2_DC_YUV2RGB.csv",
+            "dcs_dec_dir" : "/home/lucas/Documents/perceptronac/perceptronac/coding3d/gpt/regptdcs/longdress",
+            "dcs_enc_info" : "/home/lucas/Documents/perceptronac/perceptronac/coding3d/gpt/longdress_vox10_1300_GPT_Q40_blocksize8_rho95e-2_DC_YUV2RGB.csv",
             "dcs_dec_info" : "/home/lucas/Documents/perceptronac/perceptronac/coding3d/gpt/regptdcs/Resultados_PCs.xlsx",
-            "dcs_dec_info_sheet_name" : "Ricardo",
+            "dcs_dec_info_sheet_name" : "Longdress",
             "dcs_dec_info_pcs_column_name" : "Point Cloud",
-            "dcs_dec_info_original_pc_name" : 'Ricardo vox 10',
-            "dcs_dec_info_pc_name" : 'Ricardo vox 7',
+            "dcs_dec_info_original_pc_name" : 'Longdress_1300 vox 10',
+            "dcs_dec_info_pc_name" : 'Longdress_1300 vox 7',
             "dcs_dec_info_rate_col" : "Rate normalized vox 10 [bpov]",
             "dcs_dec_info_dist_col" : "PSNR_y [dB]",
             "dcs_dec_info_n_rates" : 5
         }
+
+        # dcs_dict = {
+        #     "dcs_dec_dir" : "/home/lucas/Documents/perceptronac/perceptronac/coding3d/gpt/regptdcs/ricardo",
+        #     "dcs_enc_info" : "/home/lucas/Documents/perceptronac/perceptronac/coding3d/gpt/ricardo10_frame0000_GPT_Q40_blocksize8_rho95e-2_DC_YUV2RGB.csv",
+        #     "dcs_dec_info" : "/home/lucas/Documents/perceptronac/perceptronac/coding3d/gpt/regptdcs/Resultados_PCs.xlsx",
+        #     "dcs_dec_info_sheet_name" : "Ricardo",
+        #     "dcs_dec_info_pcs_column_name" : "Point Cloud",
+        #     "dcs_dec_info_original_pc_name" : 'Ricardo vox 10',
+        #     "dcs_dec_info_pc_name" : 'Ricardo vox 7',
+        #     "dcs_dec_info_rate_col" : "Rate normalized vox 10 [bpov]",
+        #     "dcs_dec_info_dist_col" : "PSNR_y [dB]",
+        #     "dcs_dec_info_n_rates" : 5
+        # }
 
         if (dcs_dict is not None):
             dcs_enc_info = pd.read_csv(dcs_dict["dcs_enc_info"])
