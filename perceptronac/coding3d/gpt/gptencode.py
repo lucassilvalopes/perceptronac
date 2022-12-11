@@ -605,11 +605,14 @@ if __name__ == "__main__":
         pd.DataFrame({
             "x_axis":x_axis,"fraction of bits":bits_v_per_coef_idx/np.sum(bits_v_per_coef_idx),
             "bits_v_per_coef_idx":bits_v_per_coef_idx,"samples_per_coef_idx":samples_per_coef_idx}).to_csv(f"{filename}_v.csv")
+        
+        dc_rate = (bits_y_per_coef_idx[0] + bits_u_per_coef_idx[0] + bits_v_per_coef_idx[0]) / gpt_return["points"].shape[0]
+        ac_rate = (np.sum(bits_y_per_coef_idx[1:]) + np.sum(bits_u_per_coef_idx[1:]) + np.sum(bits_v_per_coef_idx[1:])) / gpt_return["points"].shape[0]
         pd.DataFrame({
             "component": ["DC","AC","total_rate","distortion"],
             "bpp": [
-                (bits_y_per_coef_idx[0] + bits_u_per_coef_idx[0] + bits_v_per_coef_idx[0]) / gpt_return["points"].shape[0],
-                (np.sum(bits_y_per_coef_idx[1:]) + np.sum(bits_u_per_coef_idx[1:]) + np.sum(bits_v_per_coef_idx[1:])) / gpt_return["points"].shape[0],
+                dc_rate,
+                ac_rate,
                 lut_return["rate_yuv"],
                 gpt_return["dist"]
             ]}
@@ -626,7 +629,7 @@ if __name__ == "__main__":
                 dcs_dict["dcs_dec_info_pc_name"])
 
             pd.DataFrame({
-                "rate":dcs_dec_info[dcs_dict["dcs_dec_info_rate_col"]].values.tolist(),
+                "rate":(dcs_dec_info[dcs_dict["dcs_dec_info_rate_col"]].values + ac_rate).tolist(),
                 "dist":[gpt_return[f"dist_{k}"] for k in sorted(dcs.keys())]
             }).to_csv(f"{filename}_gptgpcc_results.csv")
 
