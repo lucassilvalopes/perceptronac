@@ -547,43 +547,43 @@ if __name__ == "__main__":
 
         import pandas as pd
 
-        # filepath = "/home/lucas/Documents/data/NNOC/validation/longdress/longdress_vox10_1300.ply"
-        filepath = "/home/lucas/Documents/data/ricardo10_frame0000.ply"
+        filepath = "/home/lucas/Documents/data/NNOC/validation/longdress/longdress_vox10_1300.ply"
+        # filepath = "/home/lucas/Documents/data/ricardo10_frame0000.ply"
 
         filename = os.path.splitext(os.path.basename(filepath))[0]
 
         block_side = 8
-        gpt_Q = 10
+        gpt_Q = 40
 
         dcs_identification = f"GPT_blocksize{block_side}_rho95e-2"
         acs_identification = f"GPT_Q{gpt_Q}_blocksize{block_side}_rho95e-2"
 
-        # dcs_dict = None
-        # dcs_dict = {
-        #     "dcs_dec_dir" : "/home/lucas/Documents/perceptronac/perceptronac/coding3d/gpt/regptdcs/longdress",
-        #     "dcs_enc_info" : "/home/lucas/Documents/perceptronac/perceptronac/coding3d/gpt/results/longdress_vox10_1300_GPT_blocksize8_rho95e-2_DC_YUV2RGB.csv",
-        #     "dcs_dec_info" : "/home/lucas/Documents/perceptronac/perceptronac/coding3d/gpt/regptdcs/Resultados_PCs.xlsx",
-        #     "dcs_dec_info_sheet_name" : "Longdress",
-        #     "dcs_dec_info_pcs_column_name" : "Point Cloud",
-        #     "dcs_dec_info_original_pc_name" : 'Longdress_1300 vox 10',
-        #     "dcs_dec_info_pc_name" : 'Longdress_1300 vox 7',
-        #     "dcs_dec_info_rate_col" : "Rate normalized vox 10 [bpov]",
-        #     "dcs_dec_info_dist_col" : "PSNR_y [dB]",
-        #     "dcs_dec_info_n_rates" : 5
-        # }
-
+        dcs_dict = None
         dcs_dict = {
-            "dcs_dec_dir" : "/home/lucas/Documents/perceptronac/perceptronac/coding3d/gpt/regptdcs/ricardo",
-            "dcs_enc_info" : "/home/lucas/Documents/perceptronac/perceptronac/coding3d/gpt/results/ricardo10_frame0000_GPT_blocksize8_rho95e-2_DC_YUV2RGB.csv",
+            "dcs_dec_dir" : "/home/lucas/Documents/perceptronac/perceptronac/coding3d/gpt/regptdcs/longdress",
+            "dcs_enc_info" : "/home/lucas/Documents/perceptronac/perceptronac/coding3d/gpt/results/longdress_vox10_1300_GPT_blocksize8_rho95e-2_DC_YUV2RGB.csv",
             "dcs_dec_info" : "/home/lucas/Documents/perceptronac/perceptronac/coding3d/gpt/regptdcs/Resultados_PCs.xlsx",
-            "dcs_dec_info_sheet_name" : "Ricardo",
+            "dcs_dec_info_sheet_name" : "Longdress",
             "dcs_dec_info_pcs_column_name" : "Point Cloud",
-            "dcs_dec_info_original_pc_name" : 'Ricardo vox 10',
-            "dcs_dec_info_pc_name" : 'Ricardo vox 7',
+            "dcs_dec_info_original_pc_name" : 'Longdress_1300 vox 10',
+            "dcs_dec_info_pc_name" : 'Longdress_1300 vox 7',
             "dcs_dec_info_rate_col" : "Rate normalized vox 10 [bpov]",
             "dcs_dec_info_dist_col" : "PSNR_y [dB]",
-            "dcs_dec_info_n_rates" : 5
+            "dcs_dec_info_n_rates" : 7
         }
+
+        # dcs_dict = {
+        #     "dcs_dec_dir" : "/home/lucas/Documents/perceptronac/perceptronac/coding3d/gpt/regptdcs/ricardo",
+        #     "dcs_enc_info" : "/home/lucas/Documents/perceptronac/perceptronac/coding3d/gpt/results/ricardo10_frame0000_GPT_blocksize8_rho95e-2_DC_YUV2RGB.csv",
+        #     "dcs_dec_info" : "/home/lucas/Documents/perceptronac/perceptronac/coding3d/gpt/regptdcs/Resultados_PCs.xlsx",
+        #     "dcs_dec_info_sheet_name" : "Ricardo",
+        #     "dcs_dec_info_pcs_column_name" : "Point Cloud",
+        #     "dcs_dec_info_original_pc_name" : 'Ricardo vox 10',
+        #     "dcs_dec_info_pc_name" : 'Ricardo vox 7',
+        #     "dcs_dec_info_rate_col" : "Rate normalized vox 10 [bpov]",
+        #     "dcs_dec_info_dist_col" : "PSNR_y [dB]",
+        #     "dcs_dec_info_n_rates" : 7
+        # }
 
         if (dcs_dict is not None):
             dcs_enc_info = pd.read_csv(dcs_dict["dcs_enc_info"])
@@ -646,22 +646,31 @@ if __name__ == "__main__":
                 dcs_dict["dcs_dec_info_original_pc_name"],
                 dcs_dict["dcs_dec_info_n_rates"])
 
+            gpcc_rates = original_pc_dec_info[dcs_dict["dcs_dec_info_rate_col"]].values
+            gpcc_dists = original_pc_dec_info[dcs_dict["dcs_dec_info_dist_col"]].values
+
             gptgpcc_rates = (dcs_dec_info[dcs_dict["dcs_dec_info_rate_col"]].values + ac_rate).tolist()
             gptgpcc_dists = [gpt_return[f"dist_{k}"] for k in sorted(dcs.keys())]
+
+            gpt_rates = dcs_dict["dcs_dec_info_n_rates"] * [lut_return["rate_yuv"]]
+            gpt_dists = dcs_dict["dcs_dec_info_n_rates"] * [gpt_return["dist"]]
+
             pd.DataFrame({
-                "rate":gptgpcc_rates,
-                "dist":gptgpcc_dists
+                "gpcc_rate":gpcc_rates,
+                "gpcc_dist":gpcc_dists,
+                "hybrid_rate":gptgpcc_rates,
+                "hybrid_dist":gptgpcc_dists,
+                "gpt_rate":gpt_rates,
+                "gpt_dist":gpt_dists
             }).to_csv(f"results/{filename}_{acs_identification}_gptgpcc_results.csv")
 
             fig, ax = plt.subplots(nrows=1, ncols=1)
 
-            h1,= ax.plot(
-                original_pc_dec_info[dcs_dict["dcs_dec_info_rate_col"]].values,
-                original_pc_dec_info[dcs_dict["dcs_dec_info_dist_col"]].values,
+            h1,= ax.plot(gpcc_rates,gpcc_dists,
                 linestyle="solid",label="gpcc",color="r",marker="o")
             h2,= ax.plot(gptgpcc_rates,gptgpcc_dists,
                 linestyle="dashed",label="hybrid",color="b",marker="^")
-            h3,= ax.plot([lut_return["rate_yuv"]],[gpt_return["dist"]],
+            h3,= ax.plot(gpt_rates,gpt_dists,
                 linestyle="dotted",label="gpt",color="g",marker="s")
             ax.legend(handles=[h1,h2,h3],loc="upper right")
             ax.set_xlabel("bpov yuv")
