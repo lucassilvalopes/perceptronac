@@ -143,8 +143,22 @@ class NNModel:
         return running_loss / n_samples , n_samples
 
 
-# https://stackoverflow.com/questions/18982650/differences-between-matlab-and-numpy-and-pythons-round-function
-matlab_round = np.vectorize(round)
+@np.vectorize
+def matlab_round(x):
+    """
+    Numpy's round tie breaking rule is to round x to the even integer nearest to x 
+    if the fractional part of x is 0.5 (round half to even).
+
+    Python's round tie breaking rule is the more common round half away from zero.
+    That is, if the fractional part of x is 0.5 and x is positive, it is rounded up.
+    If the fractional part of x is 0.5 and x is negative, it is rounded down.
+    
+    Python's round tie breaking rule is the one that agrees with Matlab's tie breaking rule.
+
+    https://en.wikipedia.org/wiki/Rounding#Rounding_to_the_nearest_integer
+    https://stackoverflow.com/questions/18982650/differences-between-matlab-and-numpy-and-pythons-round-function
+    """
+    return round(x)
 
 
 def ac_lapl_rate(xq, sd):

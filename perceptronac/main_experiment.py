@@ -1,9 +1,12 @@
+
+import copy
 import torch
 from perceptronac.perfect_AC import perfect_AC
 from perceptronac.utils import jbig1_rate
 from perceptronac.loading_and_saving import save_model
 from perceptronac.loading_and_saving import save_fig
 from perceptronac.loading_and_saving import save_values
+from perceptronac.loading_and_saving import load_values
 from perceptronac.loading_and_saving import plot_comparison
 from perceptronac.loading_and_saving import save_configs
 from perceptronac.loading_and_saving import save_data
@@ -33,11 +36,27 @@ import pandas as pd
 
 def get_prefix(configs, id_key = 'id', parent_id_index = None ):
     """
-    {"parent_id":""} or 
-    {"parent_id":[]} or 
-    {"parent_id":"123456789"} or 
-    {"parent_id":["123456789","111456789"]} or 
-    {"parent_id":["123456789"]}
+    Prefix string used in file names when loading or saving data or models.
+    Can return the prefix string for the current experiment (id_key = 'id')
+    or a parent experiment (id_key = 'parent_id')
+
+    Args:
+        configs : dictionary containing configuration data.
+            Has the keys 'id','parent_id','save_dir'.
+        id_key : either 'id' or 'parent_id'
+        parent_id_index : the value of the parent_id key in the 
+            configs dictionary can be "" or [] or "XXXXXXXXX" or
+            ["XXXXXXXXX","YYYYYYYYY",...] or ["XXXXXXXXX"], where 
+            XXXXXXXXX and YYYYYYYYY are timestamps. In case it is
+            a list, and it has length greater than 1, a parent_id_index
+            must be specified.
+
+    Returns:
+        Prefix string.
+
+    Exceptions:
+        ValueError : if the value for the id_key in the configs dictionary is empty.
+        ValueError : if there are multiple parents and parent_id_index is not specified
     """
     if not configs[id_key]:
         raise ValueError("Attempted to get prefix for empty id")
@@ -260,17 +279,12 @@ class RatesMLP:
         print("starting training")
         print(f"len trainset : {len(datatraining)} {self.configs['data_type']}s, len validset : {len(datacoding)} {self.configs['data_type']}s")
 
-        train_loss, valid_loss = [], []
-        train_samples, valid_samples = [], []
         phases = self.configs["phases"]
-        prepend_start_valid_loss = ("train" in phases) and ("valid" in phases)
-        if prepend_start_valid_loss:
-            final_loss, n_samples = self.train_one_epoch(model,criterion,optimizer,datatraining,datacoding,"valid")
-            valid_loss.append(final_loss)
-            valid_samples.append(n_samples)
-            self.save_N_min_valid_loss_model(valid_loss,model)
 
-        for epoch in range(self.configs["epochs"]):
+        train_loss, valid_loss, train_samples, valid_samples, epochs =\
+            self.initialize_data(model,criterion,optimizer,datatraining,datacoding)
+
+        for epoch in epochs:
             
             for phase in phases:
                 final_loss, n_samples = self.train_one_epoch(model,criterion,optimizer,datatraining,datacoding,phase)
@@ -283,13 +297,11 @@ class RatesMLP:
                     valid_samples.append(n_samples)
                 
                 print("epoch :" , epoch, ", phase :", phase, ", loss :", final_loss)
-                
-
+            
+                save_values(f"{get_prefix(self.configs)}_{self.N:03d}_{phase}_values",np.arange(epoch+1),
+                    {"MLP": train_loss if phase=='train' else valid_loss[1:]},"epoch")
+            self.save_N_model(model)
             self.save_N_min_valid_loss_model(valid_loss,model)
- 
-        if prepend_start_valid_loss:
-            valid_loss.pop(0)
-            valid_samples.pop(0)
 
         # save final model
         self.save_N_model(model)
@@ -373,16 +385,20 @@ class RatesMLP:
         return criterion
 
     def get_available_models(self):
-        use_min = False
-        if ('train' not in self.configs["phases"]) and (self.configs["reduction"] == 'min'):
-            use_min = True
+        return self.__get_available_models()
+
+    def __get_available_models(self, use_min=None):
+
+        if use_min is None:
+            use_min = ('train' not in self.configs["phases"]) and (self.configs["reduction"] == 'min')
 
         parent_ids = []
         if self.configs.get("parent_id"):
-            parent_ids = self.configs["parent_id"] if isinstance(self.configs["parent_id"],list) else [self.configs["parent_id"]]
+            parent_ids = self.configs["parent_id"]
+            parent_ids = parent_ids if isinstance(parent_ids,list) else [parent_ids]
         
         available_models = []
-        for i,parent_id in enumerate(parent_ids):
+        for i,_ in enumerate(parent_ids):
             file_name = self.min_valid_loss_model_name(id_key='parent_id',parent_id_index=i) if use_min else \
                 self.last_train_loss_model_name(id_key='parent_id',parent_id_index=i)
             if os.path.isfile(file_name):
@@ -390,9 +406,23 @@ class RatesMLP:
         return available_models
 
     def load_model(self):
+        return self.__load_model()
+
+
+    def __load_model(self, use_min=None):
+        """
+        Loads the initial model. 
+        If no parent_id is specified in the configs dict, the model is randomly initialized.
+        If a parent_id is specified and configs=={...,"phases":["valid"],"reduction":"min",...}
+        then the initial model is the previous model with minimum validation loss.
+        If a parent_id is specified and configs=={...,"phases":["train",...],...}
+        then the initial model is the previous model trained for the most number of epochs.
+        If there are multiple models available for the same N (context size),
+        an exception is raised.
+        """
         model = self.instantiate_model()
 
-        available_models = self.get_available_models()
+        available_models = self.__get_available_models(use_min=use_min)
 
         if len(available_models) > 1:
             raise Exception("Multiple models available to load. No rule has been set to solve this issue.")
@@ -401,6 +431,78 @@ class RatesMLP:
             print(f"loading file {file_name}")
             model.load_state_dict(torch.load(file_name))
         return model
+
+
+    def get_available_data(self,phase):
+
+        parent_ids = []
+        if self.configs.get("parent_id"):
+            parent_ids = self.configs["parent_id"]
+            parent_ids = parent_ids if isinstance(parent_ids,list) else [parent_ids]
+        
+        available_data = []
+        for i,_ in enumerate(parent_ids):
+            prefix = get_prefix(self.configs,id_key='parent_id',parent_id_index=i)
+            file_name = f"{prefix}_{self.N:03d}_{phase}_values.csv"
+            if os.path.isfile(file_name):
+                available_data.append(file_name)
+        return available_data
+
+
+    def initialize_data(self,model,criterion,optimizer,datatraining,datacoding):
+
+        train_loss, valid_loss = [], []
+        train_samples, valid_samples = [], []
+
+        epochs = range(self.configs["epochs"])
+
+        if self.configs.get("unfinished_training"): # 1 or 0
+            for phase in ["train","valid"]:
+
+                device = torch.device(self.configs["device"])
+                model = self.__load_model(use_min=(phase=="valid"))
+                model.to(device)
+
+                final_loss, n_samples = self.train_one_epoch(
+                    model,criterion,optimizer,datatraining,(datacoding if phase == "valid" else datatraining),"valid")
+                if phase == "valid":
+                    self.save_N_min_valid_loss_model([final_loss],model)
+                else:
+                    self.save_N_model(model)
+                
+                available_data = self.get_available_data(phase)
+                if len(available_data) > 1:
+                    raise Exception(
+                        "Multiple file names for data available to load. No rule has been set to solve this issue.")
+                elif len(available_data) == 1:
+                    file_name = available_data[0]
+                    if phase == "train":
+                        train_loss = load_values(file_name)["MLP"]
+                        if np.allclose(final_loss,train_loss[-1],atol=1e-04):
+                            pass
+                        elif np.allclose(final_loss,train_loss[-2],atol=1e-04):
+                            train_loss = train_loss[:-1]
+                        else:
+                            raise Exception(
+                                "recalculated train loss and it did not match the last two values provided")
+                        train_samples = len(train_loss) * [n_samples]
+                    else:
+                        valid_loss = load_values(file_name)["MLP"]
+                        if not any([np.allclose(final_loss,v,atol=1e-04) for v in valid_loss]):
+                            raise Exception(
+                                "recalculated valid loss and it did not match any previous value provided")
+                        valid_samples = len(valid_loss) * [n_samples]
+
+            assert abs(len(train_loss)-len(valid_loss)) <= 1
+            if len(valid_loss) < len(train_loss):
+                valid_loss.append(valid_loss[-1])
+            elif len(valid_loss) > len(train_loss):
+                valid_loss = valid_loss[:-1]
+            epochs = range(len(train_loss),self.configs["epochs"])
+
+        return train_loss, valid_loss, train_samples, valid_samples, epochs
+        
+
 
     def save_N_min_valid_loss_model(self,valid_loss,mlp_model):
         if len(valid_loss) == 0:

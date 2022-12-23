@@ -120,6 +120,20 @@ def save_values(csv_name,xvalues,data,xlabel,extra=None):
     values.to_csv(f"{csv_name}.csv")
 
 
+def load_values(csv_name):
+    # columns = pd.read_csv(csv_name, nrows=0).columns.tolist()
+    # index_col = []
+    # for i,col in enumerate(columns):
+    #     if col.endswith("_index"):
+    #         index_col.append(i)
+    # if len(index_col) == 0:
+    #     index_col = 0
+    # return pd.read_csv(csv_name,index_col=index_col)
+    df = pd.read_csv(csv_name)
+    d = df.to_dict(orient="list")
+    return d
+
+
 def save_dataframe(csv_name:str,data:pd.DataFrame,x_col:str,y_col:str,sort_by_x_col:bool = False):
     csv_name = os.path.splitext(csv_name)[0]
     if sort_by_x_col:
