@@ -1,6 +1,6 @@
 
-import copy
 import torch
+import warnings
 from perceptronac.perfect_AC import perfect_AC
 from perceptronac.utils import jbig1_rate
 from perceptronac.loading_and_saving import save_model
@@ -299,7 +299,7 @@ class RatesMLP:
                 print("epoch :" , epoch, ", phase :", phase, ", loss :", final_loss)
             
                 save_values(f"{get_prefix(self.configs)}_{self.N:03d}_{phase}_values",np.arange(epoch+1),
-                    {"MLP": train_loss if phase=='train' else valid_loss[1:]},"epoch")
+                    {"MLP": train_loss if phase=='train' else valid_loss},"epoch")
             self.save_N_model(model)
             self.save_N_min_valid_loss_model(valid_loss,model)
 
@@ -483,14 +483,20 @@ class RatesMLP:
                         elif np.allclose(final_loss,train_loss[-2],atol=1e-04):
                             train_loss = train_loss[:-1]
                         else:
-                            raise Exception(
-                                "recalculated train loss and it did not match the last two values provided")
+                            # raise Exception(
+                            warnings.warn(
+                                f"""Recalculated train loss and it did not match the last two values provided.
+                                {final_loss} != {train_loss[-2]} and {train_loss[-1]}.
+                                This might be because the previous values were calculated during SGD.""")
                         train_samples = len(train_loss) * [n_samples]
                     else:
                         valid_loss = load_values(file_name)["MLP"]
                         if not any([np.allclose(final_loss,v,atol=1e-04) for v in valid_loss]):
-                            raise Exception(
-                                "recalculated valid loss and it did not match any previous value provided")
+                            # raise Exception(
+                            warnings.warn(
+                                f"""Recalculated valid loss and it did not match any previous value provided.
+                                {final_loss} != {np.min(valid_loss)}.
+                                This might be because the previous values were calculated during SGD.""")
                         valid_samples = len(valid_loss) * [n_samples]
 
             assert abs(len(train_loss)-len(valid_loss)) <= 1
