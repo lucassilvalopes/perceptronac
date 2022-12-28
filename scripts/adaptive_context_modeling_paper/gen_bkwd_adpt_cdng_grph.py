@@ -2,6 +2,7 @@
 import sys
 import os
 import re
+import time
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
@@ -51,11 +52,21 @@ def color_map(orig_lbl):
 
 if __name__ == "__main__":
     
-    csv_name = sys.argv[1]
-    ylim_upper = float(sys.argv[2])
-    legend_ncol = int(sys.argv[3])
+    ylim_upper = float(sys.argv[1]) # 0.5
+    legend_ncol = int(sys.argv[2]) # 1
+    csv_name = sys.argv[3]
 
-    data = pd.read_csv(csv_name,index_col=0)#,header=0)
+    data = pd.read_csv(csv_name)
+
+    identifiers = re.findall(r'[\d]{10}',csv_name)
+
+    for i in range(4,len(sys.argv)):
+        csv_name = sys.argv[i]
+        identifiers += re.findall(r'[\d]{10}',csv_name)
+        data = pd.merge(data,pd.read_csv(csv_name),on="iteration")
+
+    data = data.set_index("iteration")
+        
     xvalues = data.index
     len_data = len(xvalues)
 
@@ -87,6 +98,11 @@ if __name__ == "__main__":
     change_aspect(ax)
 
 
-    fname = f"{os.path.splitext(csv_name)[0]}_edited_graph"
+    exp_id = str(int(time.time()))
+    save_dir = f"results/exp_{exp_id}"
 
-    fig.savefig(fname+".png", dpi=300)
+    os.makedirs(save_dir)
+
+    fname = "_".join(sorted(set(identifiers)))
+
+    fig.savefig(f"{save_dir.rstrip('/')}/{fname}_edited_graph.png", dpi=300)
