@@ -1,4 +1,10 @@
+"""
+Example:
 
+python3 scripts/gen_bkwd_adpt_cdng_grph.py 0.5 1 \
+    results/exp_1672230131/rnn_online_coding_Adaptive_Detection_of_Dim_5pages_GRURNN650_lr1e-02_batchsize64.csv \
+    results/exp_1672234599/backward_adaptive_coding_Adaptive_Detection_of_Dim_5pages_lut_mean_lr1e-2_N26.csv
+"""
 import sys
 import os
 import re
@@ -29,9 +35,13 @@ def label_map(orig_lbl):
 def linestyle_map(orig_lbl):
     linestyle_map_dict = {
         "LUTmean": "solid",
+        0.1 : "dashdot",
+        0.01 : "dashed", 
+        0.0001 : "dotted", 
     }
     if "MLP" in orig_lbl:
-        return "dashed"
+        ky = float(re.search(r'[\d\.]{1,}e-[\d]{1,}',orig_lbl).group())
+        return linestyle_map_dict[ky]
     elif "RNN" in orig_lbl:
         return linestyle_tuple['densely dotted']
     else:
@@ -41,9 +51,13 @@ def linestyle_map(orig_lbl):
 def color_map(orig_lbl):
     color_map_dict = {
         "LUTmean": "g",
+        0.1 : "r",
+        0.01 : "b",
+        0.0001 : "c",
     }
     if "MLP" in orig_lbl:
-        return "b"
+        ky = float(re.search(r'[\d\.]{1,}e-[\d]{1,}',orig_lbl).group())
+        return color_map_dict[ky]
     elif "RNN" in orig_lbl:
         return "m"
     else:
