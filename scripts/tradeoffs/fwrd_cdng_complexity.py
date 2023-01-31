@@ -11,18 +11,18 @@ if __name__ == "__main__":
         "id": str(int(time.time())),
         "OptimizerClass":torch.optim.SGD,
         "training_set": [
-            os.path.join('/home/lucas/Documents/data/SPL2020',f) for f in os.listdir('/home/lucas/Documents/data/SPL2020')
+            os.path.join('/home/lucaslopes/perceptronac/SPL2020',f) for f in os.listdir('/home/lucaslopes/perceptronac/SPL2020')
         ],
         "validation_set": [
-            os.path.join('/home/lucas/Documents/data/SPL2020V/pages',f) for f in sorted(os.listdir('/home/lucas/Documents/data/SPL2020V/pages'))[:5]
+            os.path.join('/home/lucaslopes/perceptronac/SPL2020V',f) for f in sorted(os.listdir('/home/lucaslopes/perceptronac/SPL2020V'))[:5]
         ],
-        "epochs": 100,
+        "epochs": 1,
         "learning_rate": 0.0001,
         "batch_size": 1024,
         "num_workers":4,
         "device":"cuda:0", #"cpu"
-        "parent_id": "",
-        "N": 4, # 10,
+        "parent_id": ["1673019509","1673281302"],
+        "N": 32,
         "phases": ['train','valid'], # ['train', 'valid'],
         "xscale": 'log',
         "reduction": 'min', # min, last
