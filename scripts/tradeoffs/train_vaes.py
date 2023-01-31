@@ -353,7 +353,7 @@ if __name__ == "__main__":
 
     for N in [128, 192, 320]:
         for M in [128, 192, 320]:
-            argv = ["-d", "/path/to/image/dataset","--batch-size","16","-lr","1e-4","--save","--cuda","--N",str(N),"--M",str(M)]
+            argv = ["-d", "/home/lucas/Documents/data/vimeo90k_img","--batch-size","16","-lr","1e-4","--save","--cuda","--N",str(N),"--M",str(M)]
             train_history, test_history = main(argv)
             pd.DataFrame(train_history).to_csv(f"N{N}_M{M}_train_history.csv")
             pd.DataFrame(test_history).to_csv(f"N{N}_M{M}_test_history.csv")
