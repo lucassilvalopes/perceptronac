@@ -18,7 +18,8 @@ install_requires = [
     'tika==1.24',
     'pdf2image==1.16.0',
     'scikit-image==0.18.3',
-    'openpyxl==3.0.10'
+    'openpyxl==3.0.10',
+    'compressai==1.2.3'
 ]
 
 unit_tests_require = [
