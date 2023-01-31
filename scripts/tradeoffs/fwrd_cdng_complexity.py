@@ -21,7 +21,7 @@ if __name__ == "__main__":
         "batch_size": 1024,
         "num_workers":4,
         "device":"cuda:0", #"cpu"
-        "parent_id": ["1673019509","1673281302"],
+        "parent_id": ["1673281302","1673019509"],
         "N": 32,
         "phases": ['train','valid'], # ['train', 'valid'],
         "xscale": 'log',

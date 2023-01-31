@@ -424,9 +424,7 @@ class RatesMLP:
 
         available_models = self.__get_available_models(use_min=use_min)
 
-        if len(available_models) > 1:
-            raise Exception("Multiple models available to load. No rule has been set to solve this issue.")
-        elif len(available_models) == 1:
+        if len(available_models) >= 1:
             file_name = available_models[0]
             print(f"loading file {file_name}")
             model.load_state_dict(torch.load(file_name))
@@ -471,10 +469,7 @@ class RatesMLP:
                     self.save_N_model(model)
                 
                 available_data = self.get_available_data(phase)
-                if len(available_data) > 1:
-                    raise Exception(
-                        "Multiple file names for data available to load. No rule has been set to solve this issue.")
-                elif len(available_data) == 1:
+                if len(available_data) >= 1:
                     file_name = available_data[0]
                     if phase == "train":
                         train_loss = load_values(file_name)["MLP"]
