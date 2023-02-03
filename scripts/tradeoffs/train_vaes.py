@@ -352,6 +352,7 @@ def main(argv):
 
 def save_history_data(df,file_name_without_extension):
     df.to_csv(f"{file_name_without_extension}.csv")
+    df=(df-df.min())/(df.max()-df.min())
     axes = df.plot()
     fig = axes.get_figure()
     fig.savefig(f"{file_name_without_extension}.png")
