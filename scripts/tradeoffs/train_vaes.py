@@ -349,11 +349,29 @@ def main(argv):
             )
     return train_history, test_history
 
+
+def save_history_data(df,file_name_without_extension):
+    df.to_csv(f"{file_name_without_extension}.csv")
+    axes = df.plot()
+    fig = axes.get_figure()
+    fig.savefig(f"{file_name_without_extension}.png")
+
+
 if __name__ == "__main__":
 
-    for N in [128, 192, 320]:
+    for N in [96, 128, 192]: #, 320]:
         for M in [128, 192, 320]:
-            argv = ["-d", "/home/lucas/Documents/data/vimeo90k_img","--batch-size","16","-lr","1e-4","--save","--cuda","--N",str(N),"--M",str(M)]
+            argv = [
+                "-d", "/home/lucas/Documents/data/vimeo90k_img",
+                "--batch-size","16",
+                "-lr","1e-4",
+                "--save",
+                "--cuda",
+                "--N",str(N),
+                "--M",str(M),
+                "--epochs","1000",
+            ]
             train_history, test_history = main(argv)
-            pd.DataFrame(train_history).to_csv(f"N{N}_M{M}_train_history.csv")
-            pd.DataFrame(test_history).to_csv(f"N{N}_M{M}_test_history.csv")
+            save_history_data(pd.DataFrame(train_history),f"N{N}_M{M}_train_history")
+            save_history_data(pd.DataFrame(test_history),f"N{N}_M{M}_test_history")
+
