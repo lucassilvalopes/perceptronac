@@ -56,11 +56,10 @@ if __name__ == "__main__":
     
 
     fig_name = \
-        f"rate-dist_{model}_" + \
+        f"{model}_" + \
         f"{str(epochs)}-epochs_" +\
         f"N-{'-'.join(list(map(str,all_N)))}_" +\
         f"M-{'-'.join(list(map(str,all_M)))}"
 
-    fig_name = os.path.join(srcdir,fig_name)
-    save_rate_dist_curve(rate_axis,dist_axis,labels,f"{fig_name}_mse",to_spnr=False)
-    save_rate_dist_curve(rate_axis,dist_axis,labels,f"{fig_name}_psnr",to_psnr=True)
+    save_rate_dist_curve(rate_axis,dist_axis,labels,os.path.join(srcdir,f"rate-dist_{fig_name}"),to_psnr=False)
+    save_rate_dist_curve(rate_axis,dist_axis,labels,os.path.join(srcdir,f"rate-psnr_{fig_name}"),to_psnr=True)
