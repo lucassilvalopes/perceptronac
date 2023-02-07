@@ -370,7 +370,7 @@ if __name__ == "__main__":
                 "--cuda",
                 "--N",str(N),
                 "--M",str(M),
-                "--epochs","1000",
+                "--epochs","10000",
             ]
             train_history, test_history = main(argv)
             save_history_data(pd.DataFrame(train_history),f"N{N}_M{M}_train_history")
