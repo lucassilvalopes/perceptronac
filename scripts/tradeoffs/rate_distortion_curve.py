@@ -3,17 +3,24 @@
 import os
 import sys
 import pandas as pd
+import numpy as np
 import matplotlib.pyplot as plt
 
 
 
-def save_rate_dist_curve(rate,dist,labels,fig_name):
+def mse2psnr(mse):
+    return 10 * np.log10( 1/ mse  )
+
+
+def save_rate_dist_curve(rate,dist,labels,fig_name,to_psnr = False):
+    if to_psnr:
+        dist = list(map(mse2psnr,dist))
     fig, ax = plt.subplots(nrows=1, ncols=1)
     ax.plot(rate,dist,marker="*",linestyle="None")
     for r,d,lbl in zip(rate,dist,labels):
         ax.text(x=r,y=d,s=lbl)
-    ax.set_xlabel("rate")
-    ax.set_ylabel("dist")
+    ax.set_xlabel("rate (bpp)")
+    ax.set_ylabel("psnr (db)" if to_psnr else "mse")
     fig.savefig(f'{fig_name}.png')
 
 
@@ -36,12 +43,15 @@ if __name__ == "__main__":
             if N==192 and M==320:
                 continue
             history = pd.read_csv(os.path.join(srcdir,f"N{N}_M{M}_test_history.csv"))
+            
             for c in history.columns:
                 history[c] = history[c].apply(float)
             idx = history["loss"].argmin()
-            print(N,M,idx,len(history))
-            dist_axis.append( history["mse_loss"].iloc[idx] )
-            rate_axis.append( history["bpp_loss"].iloc[idx] )
+            mse_loss = history["mse_loss"].iloc[idx]
+            bpp_loss = history["bpp_loss"].iloc[idx]
+
+            dist_axis.append( mse_loss )
+            rate_axis.append( bpp_loss )
             labels.append(f"N{N}M{M}")
     
 
@@ -52,4 +62,5 @@ if __name__ == "__main__":
         f"M-{'-'.join(list(map(str,all_M)))}"
 
     fig_name = os.path.join(srcdir,fig_name)
-    save_rate_dist_curve(rate_axis,dist_axis,labels,fig_name)
+    save_rate_dist_curve(rate_axis,dist_axis,labels,f"{fig_name}_mse",to_spnr=False)
+    save_rate_dist_curve(rate_axis,dist_axis,labels,f"{fig_name}_psnr",to_psnr=True)
