@@ -40,8 +40,7 @@ if __name__ == "__main__":
     labels = []
     for N in all_N:
         for M in all_M:
-            if N==192 and M==320:
-                continue
+
             history = pd.read_csv(os.path.join(srcdir,f"N{N}_M{M}_test_history.csv"))
             
             for c in history.columns:
