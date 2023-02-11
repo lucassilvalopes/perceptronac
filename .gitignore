@@ -137,3 +137,4 @@ dmypy.json
 **/trash/
 *.ply
 *.xlsx
+*.tar
