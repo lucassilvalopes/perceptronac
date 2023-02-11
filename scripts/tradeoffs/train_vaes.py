@@ -360,6 +360,8 @@ def save_history_data(df,file_name_without_extension):
 
 if __name__ == "__main__":
 
+    dataset_path = sys.argv[1]
+
     # Machine 0
     # for N in [32, 64, 96, 128, 160, 192, 224]:
     #     for M in [128, 160, 192, 224, 256, 288, 320]:
@@ -376,7 +378,7 @@ if __name__ == "__main__":
     # for N in [32, 64, 160, 224]:
     #     for M in [160, 224, 256, 288]:
             argv = [
-                "-d", "/home/lucas/Documents/data/vimeo90k_img",
+                "-d", dataset_path,
                 "--batch-size","16",
                 "-lr","1e-4",
                 "--save",
