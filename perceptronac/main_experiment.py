@@ -861,161 +861,169 @@ def rate_vs_power_experiment(configs):
         f"{get_prefix(configs)}_power_draw.csv"
     ])
 
-    os.makedirs(f"{configs['save_dir'].rstrip('/')}/exp_{configs['id']}")
+    try:
 
-    assert configs["phases"] == ["valid"]
-    assert configs["epochs"] == 1
+        os.makedirs(f"{configs['save_dir'].rstrip('/')}/exp_{configs['id']}")
 
-    data_bits_plus_model_bits_per_sample_vec = []
-    model_bits_per_sample_vec = []
-    data_bits_per_sample_vec = []
-    params_vec = []
-    qbits_vec = []
-    topology_vec = []
-    start_time_vec = []
-    end_time_vec = []
-    data_samples_vec = []
-    energy_measurement_iteration = []
-    for e_iter in range(configs["energy_measurement_iteration"]):
+        assert configs["phases"] == ["valid"]
+        assert configs["epochs"] == 1
 
-        wq_comb = [(w,q) for w in configs["topologies"] for q in configs["qbits_vec"]]
+        data_bits_plus_model_bits_per_sample_vec = []
+        model_bits_per_sample_vec = []
+        data_bits_per_sample_vec = []
+        params_vec = []
+        qbits_vec = []
+        topology_vec = []
+        start_time_vec = []
+        end_time_vec = []
+        data_samples_vec = []
+        energy_measurement_iteration = []
+        for e_iter in range(configs["energy_measurement_iteration"]):
 
-        for widths,qbits in random.sample(wq_comb, len(wq_comb)):
+            wq_comb = [(w,q) for w in configs["topologies"] for q in configs["qbits_vec"]]
 
-            params = MLPTopologyCalculator.mlp_parameters(widths)
-            params_vec.append(params)
-            qbits_vec.append(qbits)
-            topology_vec.append('_'.join(map(lambda x: f"{x:03d}",widths)))
+            for widths,qbits in random.sample(wq_comb, len(wq_comb)):
 
-            quantizedMLP = RatesQuantizedArbitraryMLP(configs,widths,qbits)
-            start_time_vec.append(time.time())
-            quantized_mlp_results = quantizedMLP.get_rates(configs["training_set"],configs["validation_set"],output_n_samples=True)
-            end_time_vec.append(time.time())
-            data_rate = quantized_mlp_results[1][0]
-            data_samples = quantized_mlp_results[3][0]
-            model_bits,model_samples = quantizedMLP.quantization_info()
-            data_bits = data_rate * data_samples
+                params = MLPTopologyCalculator.mlp_parameters(widths)
+                params_vec.append(params)
+                qbits_vec.append(qbits)
+                topology_vec.append('_'.join(map(lambda x: f"{x:03d}",widths)))
 
-            data_bits_plus_model_bits_per_sample = (data_bits + model_bits)/data_samples
+                quantizedMLP = RatesQuantizedArbitraryMLP(configs,widths,qbits)
+                start_time_vec.append(time.time())
+                quantized_mlp_results = quantizedMLP.get_rates(configs["training_set"],configs["validation_set"],output_n_samples=True)
+                end_time_vec.append(time.time())
+                data_rate = quantized_mlp_results[1][0]
+                data_samples = quantized_mlp_results[3][0]
+                model_bits,model_samples = quantizedMLP.quantization_info()
+                data_bits = data_rate * data_samples
 
-            model_bits_per_sample = model_bits/data_samples
+                data_bits_plus_model_bits_per_sample = (data_bits + model_bits)/data_samples
 
-            model_bits_per_sample_vec.append(model_bits_per_sample)
-            data_bits_plus_model_bits_per_sample_vec.append(data_bits_plus_model_bits_per_sample)
-            data_bits_per_sample_vec.append(data_rate)
+                model_bits_per_sample = model_bits/data_samples
 
-            data_samples_vec.append(data_samples)
+                model_bits_per_sample_vec.append(model_bits_per_sample)
+                data_bits_plus_model_bits_per_sample_vec.append(data_bits_plus_model_bits_per_sample)
+                data_bits_per_sample_vec.append(data_rate)
 
-            energy_measurement_iteration.append(e_iter)
+                data_samples_vec.append(data_samples)
 
-
-    save_configs(f"{get_prefix(configs)}_conf",configs)
-
-
-    data=pd.DataFrame({
-        "data_bits/data_samples":data_bits_per_sample_vec,
-        "(data_bits+model_bits)/data_samples":data_bits_plus_model_bits_per_sample_vec,
-        "model_bits/data_samples":model_bits_per_sample_vec,
-        "data_samples":data_samples_vec,
-        "topology": topology_vec, "params":params_vec,"quantization_bits":qbits_vec,
-        "start_time":start_time_vec,"end_time":end_time_vec,
-        "energy_measurement_iteration": energy_measurement_iteration
-    }).sort_values(["energy_measurement_iteration","topology","quantization_bits"])
-
-    save_dataframe(f"{get_prefix(configs)}_raw_values",data,
-        "topology","data_bits/data_samples")
-
-    model_bits_x_data_bits_data = data.loc[data["energy_measurement_iteration"]==0,:].drop(
-        ["start_time", "end_time", "energy_measurement_iteration"], axis=1)
-
-    model_bits_x_data_bits_selected_points,fig = points_in_convex_hull(model_bits_x_data_bits_data,
-        "model_bits/data_samples","data_bits/data_samples",log_x=False)
-
-    save_fig(f"{get_prefix(configs)}_model_bits_x_data_bits_graph",fig)
-
-    save_dataframe(f"{get_prefix(configs)}_model_bits_x_data_bits_values",model_bits_x_data_bits_data,
-        "model_bits/data_samples","data_bits/data_samples",sort_by_x_col=True)
-
-    save_dataframe(f"{get_prefix(configs)}_model_bits_x_data_bits_hull_values",
-        model_bits_x_data_bits_data.iloc[model_bits_x_data_bits_selected_points,:],
-        "model_bits/data_samples","data_bits/data_samples")
+                energy_measurement_iteration.append(e_iter)
 
 
-    params_x_rate_data = data.loc[
-        np.logical_and(data["energy_measurement_iteration"]==0,data["quantization_bits"]==32)].drop(
-        ["start_time", "end_time", "energy_measurement_iteration","model_bits/data_samples",
-        "(data_bits+model_bits)/data_samples", "quantization_bits"], axis=1)
-
-    params_x_rate_selected_points,fig = points_in_convex_hull(params_x_rate_data,
-        "params","data_bits/data_samples",log_x=False)
-
-    save_fig(f"{get_prefix(configs)}_params_x_rate_graph",fig)
-
-    save_dataframe(f"{get_prefix(configs)}_params_x_rate_values",params_x_rate_data,
-        "params","data_bits/data_samples",sort_by_x_col=True)
-
-    save_dataframe(f"{get_prefix(configs)}_params_x_rate_hull_values",
-        params_x_rate_data.iloc[params_x_rate_selected_points,:],
-        "params","data_bits/data_samples")
+        save_configs(f"{get_prefix(configs)}_conf",configs)
 
 
-    p.kill()
+        data=pd.DataFrame({
+            "data_bits/data_samples":data_bits_per_sample_vec,
+            "(data_bits+model_bits)/data_samples":data_bits_plus_model_bits_per_sample_vec,
+            "model_bits/data_samples":model_bits_per_sample_vec,
+            "data_samples":data_samples_vec,
+            "topology": topology_vec, "params":params_vec,"quantization_bits":qbits_vec,
+            "start_time":start_time_vec,"end_time":end_time_vec,
+            "energy_measurement_iteration": energy_measurement_iteration
+        }).sort_values(["energy_measurement_iteration","topology","quantization_bits"])
 
-    power_draw = np.loadtxt(f"{get_prefix(configs)}_power_draw.csv")
+        save_dataframe(f"{get_prefix(configs)}_raw_values",data,
+            "topology","data_bits/data_samples")
 
-    joules = estimate_joules(data,power_draw)
+        model_bits_x_data_bits_data = data.loc[data["energy_measurement_iteration"]==0,:].drop(
+            ["start_time", "end_time", "energy_measurement_iteration"], axis=1)
 
-    data["joules"] = joules
+        model_bits_x_data_bits_selected_points,fig = points_in_convex_hull(model_bits_x_data_bits_data,
+            "model_bits/data_samples","data_bits/data_samples",log_x=False)
 
-    data = data.groupby(["topology","quantization_bits"]).apply(
-        lambda x: pd.Series({
-            "data_bits/data_samples":x["data_bits/data_samples"].iloc[0],
-            "(data_bits+model_bits)/data_samples":x["(data_bits+model_bits)/data_samples"].iloc[0],
-            "model_bits/data_samples":x["model_bits/data_samples"].iloc[0],
-            "data_samples":x["data_samples"].iloc[0],
-            "topology": x["topology"].iloc[0], 
-            "params": x["params"].iloc[0],
-            "quantization_bits": x["quantization_bits"].iloc[0],
-            "joules": x["joules"].mean(),
-            "joules_std": x["joules"].std()
-        },index=[
-            "data_bits/data_samples",
-            "(data_bits+model_bits)/data_samples",
-            "model_bits/data_samples",
-            "data_samples",
-            "topology",
-            "params",
-            "quantization_bits",
-            "joules",
-            "joules_std"
-        ]))
+        save_fig(f"{get_prefix(configs)}_model_bits_x_data_bits_graph",fig)
+
+        save_dataframe(f"{get_prefix(configs)}_model_bits_x_data_bits_values",model_bits_x_data_bits_data,
+            "model_bits/data_samples","data_bits/data_samples",sort_by_x_col=True)
+
+        save_dataframe(f"{get_prefix(configs)}_model_bits_x_data_bits_hull_values",
+            model_bits_x_data_bits_data.iloc[model_bits_x_data_bits_selected_points,:],
+            "model_bits/data_samples","data_bits/data_samples")
 
 
+        params_x_rate_data = data.loc[
+            np.logical_and(data["energy_measurement_iteration"]==0,data["quantization_bits"]==32)].drop(
+            ["start_time", "end_time", "energy_measurement_iteration","model_bits/data_samples",
+            "(data_bits+model_bits)/data_samples", "quantization_bits"], axis=1)
 
-    static_data = data.loc[data["quantization_bits"]==32,:].drop(
-        ["model_bits/data_samples","(data_bits+model_bits)/data_samples", "quantization_bits"], axis=1)
+        params_x_rate_selected_points,fig = points_in_convex_hull(params_x_rate_data,
+            "params","data_bits/data_samples",log_x=False)
 
-    static_selected_points,fig = points_in_convex_hull(static_data,"data_bits/data_samples",
-        "joules",log_x=False)
+        save_fig(f"{get_prefix(configs)}_params_x_rate_graph",fig)
+
+        save_dataframe(f"{get_prefix(configs)}_params_x_rate_values",params_x_rate_data,
+            "params","data_bits/data_samples",sort_by_x_col=True)
+
+        save_dataframe(f"{get_prefix(configs)}_params_x_rate_hull_values",
+            params_x_rate_data.iloc[params_x_rate_selected_points,:],
+            "params","data_bits/data_samples")
+
+
+        p.kill()
+
+        power_draw = np.loadtxt(f"{get_prefix(configs)}_power_draw.csv")
+
+        joules = estimate_joules(data,power_draw)
+
+        data["joules"] = joules
+
+        data = data.groupby(["topology","quantization_bits"]).apply(
+            lambda x: pd.Series({
+                "data_bits/data_samples":x["data_bits/data_samples"].iloc[0],
+                "(data_bits+model_bits)/data_samples":x["(data_bits+model_bits)/data_samples"].iloc[0],
+                "model_bits/data_samples":x["model_bits/data_samples"].iloc[0],
+                "data_samples":x["data_samples"].iloc[0],
+                "topology": x["topology"].iloc[0], 
+                "params": x["params"].iloc[0],
+                "quantization_bits": x["quantization_bits"].iloc[0],
+                "joules": x["joules"].mean(),
+                "joules_std": x["joules"].std()
+            },index=[
+                "data_bits/data_samples",
+                "(data_bits+model_bits)/data_samples",
+                "model_bits/data_samples",
+                "data_samples",
+                "topology",
+                "params",
+                "quantization_bits",
+                "joules",
+                "joules_std"
+            ]))
+
+
+
+        static_data = data.loc[data["quantization_bits"]==32,:].drop(
+            ["model_bits/data_samples","(data_bits+model_bits)/data_samples", "quantization_bits"], axis=1)
+
+        static_selected_points,fig = points_in_convex_hull(static_data,"data_bits/data_samples",
+            "joules",log_x=False)
+        
+        save_fig(f"{get_prefix(configs)}_static_rate_x_power_graph",fig)
+
+        save_dataframe(f"{get_prefix(configs)}_static_rate_x_power_values",static_data,
+            "data_bits/data_samples","joules",sort_by_x_col=True)
+
+        save_dataframe(f"{get_prefix(configs)}_static_rate_x_power_hull_values",
+            static_data.iloc[static_selected_points,:],
+            "data_bits/data_samples","joules")
+
+
+        semi_adaptive_selected_points,fig = points_in_convex_hull(data,"(data_bits+model_bits)/data_samples",
+            "joules",log_x=False)
+        
+        save_fig(f"{get_prefix(configs)}_semi_adaptive_rate_x_power_graph",fig)
+
+        save_dataframe(f"{get_prefix(configs)}_semi_adaptive_rate_x_power_values",data,
+            "(data_bits+model_bits)/data_samples","joules",sort_by_x_col=True)
+
+        save_dataframe(f"{get_prefix(configs)}_semi_adaptive_rate_x_power_hull_values",
+            data.iloc[semi_adaptive_selected_points,:],
+            "(data_bits+model_bits)/data_samples","joules")
     
-    save_fig(f"{get_prefix(configs)}_static_rate_x_power_graph",fig)
-
-    save_dataframe(f"{get_prefix(configs)}_static_rate_x_power_values",static_data,
-        "data_bits/data_samples","joules",sort_by_x_col=True)
-
-    save_dataframe(f"{get_prefix(configs)}_static_rate_x_power_hull_values",
-        static_data.iloc[static_selected_points,:],
-        "data_bits/data_samples","joules")
-
-
-    semi_adaptive_selected_points,fig = points_in_convex_hull(data,"(data_bits+model_bits)/data_samples",
-        "joules",log_x=False)
-    
-    save_fig(f"{get_prefix(configs)}_semi_adaptive_rate_x_power_graph",fig)
-
-    save_dataframe(f"{get_prefix(configs)}_semi_adaptive_rate_x_power_values",data,
-        "(data_bits+model_bits)/data_samples","joules",sort_by_x_col=True)
-
-    save_dataframe(f"{get_prefix(configs)}_semi_adaptive_rate_x_power_hull_values",
-        data.iloc[semi_adaptive_selected_points,:],
-        "(data_bits+model_bits)/data_samples","joules")
+    finally:
+        # https://stackoverflow.com/questions/43274476/
+        # https://github.com/python/cpython/blob/main/Lib/subprocess.py
+        if p.poll() is None:
+            p.kill()
