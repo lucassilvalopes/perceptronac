@@ -23,7 +23,7 @@ if __name__ == "__main__":
         "batch_size": 8192,
         "num_workers":4,
         "device":"cuda:0", #"cpu"
-        "parent_id": "1659355125",
+        "parent_id": "1675171081",
         "N": 32,
         "phases": ['valid'], # ['train', 'valid'],
         "xscale": "log", # 'linear',
@@ -35,7 +35,7 @@ if __name__ == "__main__":
         "color_space": "YCbCr", # RGB, YCbCr
         "percentage_of_uncles": 0.0, # must be specified if the data type is pointcloud
         "last_octree_level": 10, # must be specified if the data type is pointcloud
-        "save_dir": "/home/lucas/Documents/perceptronac/results",
+        "save_dir": "results",
         "dset_pieces": 1, # if not enough memory to hold all data at once, specify into how many pieces the data should be divided
         "energy_measurement_iteration": 200 # number of repetitions for better energy consumtion estimate
     }
