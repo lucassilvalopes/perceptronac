@@ -372,11 +372,11 @@ if __name__ == "__main__":
     # for N in [32, 64, 160, 224]:
     #     for M in [128, 192, 320]:
     # Machine 3
-    # for N in [96, 128, 192]:
-    #     for M in [160, 224, 256, 288]:
-    # Machine 4
-    for N in [32, 64, 160, 224]:
+    for N in [96, 128, 192]:
         for M in [160, 224, 256, 288]:
+    # Machine 4
+    # for N in [32, 64, 160, 224]:
+    #     for M in [160, 224, 256, 288]:
             argv = [
                 "-d", dataset_path,
                 "--batch-size","16",
