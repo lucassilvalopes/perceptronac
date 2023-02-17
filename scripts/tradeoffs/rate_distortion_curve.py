@@ -26,22 +26,34 @@ def save_rate_dist_curve(rate,dist,labels,fig_name,to_psnr = False):
 
 if __name__ == "__main__":
 
-    srcdir = sys.argv[1]
+    srcdirs = []
+    for i in range(len(sys.argv)):
+        if i == 0:
+            continue
+        srcdirs.append(sys.argv[i])
+        
 
     model = "bmshj2018-factorized"
 
     epochs = 10000
 
-    all_N = [96, 128, 192]
-    all_M = [128, 192, 320]
+    all_N = [32, 64, 96, 128, 160, 192, 224]
+    all_M = [128, 160, 192, 224, 256, 288, 320]
 
     dist_axis = []
     rate_axis = []
     labels = []
     for N in all_N:
         for M in all_M:
-
-            history = pd.read_csv(os.path.join(srcdir,f"N{N}_M{M}_test_history.csv"))
+            history = None
+            for srcdir in srcdirs:
+                try:
+                    history = pd.read_csv(os.path.join(srcdir,f"N{N}_M{M}_test_history.csv"))
+                except FileNotFoundError:
+                    continue
+                
+            if history is None:
+                continue
             
             for c in history.columns:
                 history[c] = history[c].apply(float)
@@ -60,5 +72,5 @@ if __name__ == "__main__":
         f"N-{'-'.join(list(map(str,all_N)))}_" +\
         f"M-{'-'.join(list(map(str,all_M)))}"
 
-    save_rate_dist_curve(rate_axis,dist_axis,labels,os.path.join(srcdir,f"rate-dist_{fig_name}"),to_psnr=False)
-    save_rate_dist_curve(rate_axis,dist_axis,labels,os.path.join(srcdir,f"rate-psnr_{fig_name}"),to_psnr=True)
+    save_rate_dist_curve(rate_axis,dist_axis,labels,f"rate-dist_{fig_name}",to_psnr=False)
+    save_rate_dist_curve(rate_axis,dist_axis,labels,f"rate-psnr_{fig_name}",to_psnr=True)
