@@ -6,6 +6,19 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 
+# # https://stackoverflow.com/questions/3899980/how-to-change-the-font-size-on-a-matplotlib-plot
+# # https://stackoverflow.com/questions/61025847/light-font-weight-in-matplotlib
+# # https://stackoverflow.com/questions/42097053/matplotlib-cannot-find-basic-fonts
+# # https://stackoverflow.com/questions/68750760/matplotlib-font-size-and-line-width-inconsistent
+params = {
+    'axes.labelsize': 20,
+    'axes.titlesize':20,
+    'xtick.labelsize':20,
+    'ytick.labelsize':20,
+    # 'font.size': 12
+}
+
+plt.rcParams.update(params)
 
 
 def mse2psnr(mse):
@@ -16,12 +29,13 @@ def save_rate_dist_curve(rate,dist,labels,fig_name,to_psnr = False):
     if to_psnr:
         dist = list(map(mse2psnr,dist))
     fig, ax = plt.subplots(nrows=1, ncols=1)
+    fig.set_size_inches(21.6,16.72)
     ax.plot(rate,dist,marker="*",linestyle="None")
     for r,d,lbl in zip(rate,dist,labels):
         ax.text(x=r,y=d,s=lbl)
     ax.set_xlabel("rate (bpp)")
     ax.set_ylabel("psnr (db)" if to_psnr else "mse")
-    fig.savefig(f'{fig_name}.png')
+    fig.savefig(f'{fig_name}.png', dpi=300, facecolor='w', bbox_inches = "tight")
 
 
 if __name__ == "__main__":
