@@ -363,8 +363,8 @@ if __name__ == "__main__":
     dataset_path = sys.argv[1]
 
     # Machine 0
-    # for N in [32, 64, 96, 128, 160, 192, 224]:
-    #     for M in [128, 160, 192, 224, 256, 288, 320]:
+    for N in [32, 64, 96, 128, 160, 192, 224]:
+        for M in [32, 64, 96, 128, 160, 192, 224, 256, 288, 320]:
     # Machine 1
     # for N in [96, 128, 192]:
     #     for M in [128, 192, 320]:
@@ -372,11 +372,32 @@ if __name__ == "__main__":
     # for N in [32, 64, 160, 224]:
     #     for M in [128, 192, 320]:
     # Machine 3
-    for N in [96, 128, 192]:
-        for M in [160, 224, 256, 288]:
+    # for N in [96, 128, 192]:
+    #     for M in [160, 224, 256, 288]:
     # Machine 4
     # for N in [32, 64, 160, 224]:
     #     for M in [160, 224, 256, 288]:
+    # # Machine 2 alternative Second run
+    # for N in [32, 64, 96, 128, 160, 192, 224]:
+    #     for M in [32, 64, 96]:
+    # # Machine 3 alternative Second run
+    # for N in [256, 288, 320]:
+    #     for M in [128, 160, 192, 224, 256, 288, 320]:
+    # # Machine 4 alternative Second run
+    # for N in [256, 288, 320]:
+    #     for M in [32, 64, 96]:
+    # Machine 2 Second run
+    # for N in [32, 64]:
+    #     for M in [32, 64, 96]:
+    # # Machine 3 Second run
+    # for N in [96, 128]:
+    #     for M in [32, 64, 96]:
+    # # Machine 4 Second run
+    # for N in [160, 192, 224]:
+    #     for M in [32, 64, 96]:
+    # Machine 2 Third run
+    # for N in [64]:
+    #     for M in [128, 160, 192, 224, 256, 288, 320]:
             argv = [
                 "-d", dataset_path,
                 "--batch-size","16",
