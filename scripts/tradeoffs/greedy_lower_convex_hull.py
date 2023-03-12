@@ -232,7 +232,7 @@ def limit_energy_significant_digits(data):
 if __name__ == "__main__":
 
     data = pd.read_csv(
-        "/home/lucas/Documents/perceptronac/results/exp_1664366985/exp_1664366985_static_rate_x_power_values.csv"
+        "/home/lucas/Documents/perceptronac/results/exp_1676160746/exp_1676160746_static_rate_x_power_values.csv"
     ).set_index("topology")
 
     limit_energy_significant_digits(data)
@@ -253,14 +253,28 @@ if __name__ == "__main__":
     print(true_hull_points)
     print(estimated_hull_points)
 
-# %%
+    # %%
 
+    data = pd.read_csv(
+        "/home/lucas/Documents/perceptronac/results/exp_1676160746/exp_1676160746_static_rate_x_power_values.csv"
+    ).set_index("topology")
 
+    data.head()
 
-# %%
+    # %%
 
+    data = pd.read_csv(
+        "/home/lucas/Documents/perceptronac/scripts/tradeoffs/bpp-mse-psnr_bmshj2018-factorized_10000-epochs_N-32-64-96-128-160-192-224_M-128-160-192-224-256-288-320.csv"
+    ).set_index("labels")
 
-# %%
+    data.head()
 
+    # %%
 
+    data = pd.read_csv(
+        "/home/lucas/Documents/perceptronac/results/exp_1676160183/exp_1676160183_model_bits_x_data_bits_values.csv"
+    ).set_index("topology")
 
+    data.head()
+
+    # %%
