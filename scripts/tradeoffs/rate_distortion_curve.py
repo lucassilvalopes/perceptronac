@@ -88,3 +88,10 @@ if __name__ == "__main__":
 
     save_rate_dist_curve(rate_axis,dist_axis,labels,f"rate-dist_{fig_name}",to_psnr=False)
     save_rate_dist_curve(rate_axis,dist_axis,labels,f"rate-psnr_{fig_name}",to_psnr=True)
+
+    pd.DataFrame({
+        "bpp_loss":rate_axis,
+        "mse_loss":dist_axis,
+        "psnr":list(map(mse2psnr,dist_axis)),
+        "labels":labels
+    }).to_csv(f"bpp-mse-psnr_{fig_name}.csv")
