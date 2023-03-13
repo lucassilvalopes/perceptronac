@@ -113,18 +113,22 @@ def print_tree(node):
 
 
 # %%
-def paint_tree(ax,node):
+def paint_tree(ax,node,x_axis,y_axis):
+    """
+    x_axis = "joules"
+    y_axis = "data_bits/data_samples"
+    """
 
     for i,c in enumerate(node.children):
         color = "green" if i == node.chosen_child_index else "red"
         ax.plot(
-            data.loc[[str(node), str(c)],"joules"].values,
-            data.loc[[str(node), str(c)],"data_bits/data_samples"].values,
+            data.loc[[str(node), str(c)],x_axis].values,
+            data.loc[[str(node), str(c)],y_axis].values,
             linestyle="solid",color=color,marker=None
         )
 
     if node.chosen_child_index != -1:
-        paint_tree(ax,node.children[node.chosen_child_index])
+        paint_tree(ax,node.children[node.chosen_child_index],x_axis,y_axis)
 
 # %%
 
@@ -146,84 +150,88 @@ def chosen_nodes(r):
 
 # %%
 
-def tree_figure(data,r):
+def tree_figure(data,r,x_axis,y_axis):
+    """
+    x_axis = "joules"
+    y_axis = "data_bits/data_samples"
+    """
     fig, ax = plt.subplots(nrows=1, ncols=1)
-    ax.plot(data.loc[:,"joules"].values,data.loc[:,"data_bits/data_samples"].values,linestyle="",marker="x")
-    paint_tree(ax,r)
-    ax.set_xlabel("joules")
-    ax.set_ylabel("data_bits/data_samples")
+    ax.plot(data.loc[:,x_axis].values,data.loc[:,y_axis].values,linestyle="",marker="x")
+    paint_tree(ax,r,x_axis,y_axis)
+    ax.set_xlabel(x_axis)
+    ax.set_ylabel(y_axis)
     return fig
 
 # %%
-def hulls_figure(data,r):
+def hulls_figure(data,r,x_axis,y_axis):
     fig, ax = plt.subplots(nrows=1, ncols=1)
-    ax.plot(data.loc[:,"joules"].values,data.loc[:,"data_bits/data_samples"].values,linestyle="",marker="x")
-    true_hull_points = data.iloc[convex_hull(data.loc[:,["joules","data_bits/data_samples"]].values.tolist()),:]
-    ax.plot(true_hull_points["joules"],true_hull_points["data_bits/data_samples"],linestyle=(0, (5, 5)),color="red",marker=None)
+    ax.plot(data.loc[:,x_axis].values,data.loc[:,y_axis].values,linestyle="",marker="x")
+    true_hull_points = data.iloc[convex_hull(data.loc[:,[x_axis,y_axis]].values.tolist()),:]
+    ax.plot(true_hull_points[x_axis],true_hull_points[y_axis],linestyle=(0, (5, 5)),color="red",marker=None)
     new_points = chosen_nodes(r)
     probe = data.loc[new_points,:]
-    estimated_hull_points = probe.iloc[convex_hull(probe.loc[:,["joules","data_bits/data_samples"]].values.tolist()),:]
+    estimated_hull_points = probe.iloc[convex_hull(probe.loc[:,[x_axis,y_axis]].values.tolist()),:]
     ax.plot(
-        estimated_hull_points["joules"],estimated_hull_points["data_bits/data_samples"],linestyle="dotted",color="green",marker=None)
-    ax.set_xlabel("joules")
-    ax.set_ylabel("data_bits/data_samples")
+        estimated_hull_points[x_axis],estimated_hull_points[y_axis],linestyle="dotted",color="green",marker=None)
+    ax.set_xlabel(x_axis)
+    ax.set_ylabel(y_axis)
     return fig,true_hull_points,estimated_hull_points
 
 # %%
-from scipy.sparse.csgraph import connected_components
+# from scipy.sparse.csgraph import connected_components
 
 
-def labaled_points_figure(data):
+# def labaled_points_figure(data):
 
-    fig, ax = plt.subplots(nrows=1, ncols=1)
-    fig.set_size_inches(27.9,21.6)
-    ax.plot(data.loc[:,"joules"].values,data.loc[:,"data_bits/data_samples"].values,linestyle="",marker="x")
-    ax.set_xlabel("joules")
-    ax.set_ylabel("data_bits/data_samples")
+#     fig, ax = plt.subplots(nrows=1, ncols=1)
+#     fig.set_size_inches(27.9,21.6)
+#     ax.plot(data.loc[:,"joules"].values,data.loc[:,"data_bits/data_samples"].values,linestyle="",marker="x")
+#     ax.set_xlabel("joules")
+#     ax.set_ylabel("data_bits/data_samples")
 
-    X = data.loc[:,["joules","data_bits/data_samples"]].values
-    adj_mtx = np.logical_and(
-        np.sum((np.expand_dims(X,1) - np.expand_dims(X,0))**2,axis=2) > 0,
-        np.logical_and(
-            np.abs(np.expand_dims(X[:,0],1) - np.expand_dims(X[:,0],0)) < 0.5,
-            np.abs(np.expand_dims(X[:,1],1) - np.expand_dims(X[:,1],0)) < 0.0003,
-        )
-    )
+#     X = data.loc[:,["joules","data_bits/data_samples"]].values
+#     adj_mtx = np.logical_and(
+#         np.sum((np.expand_dims(X,1) - np.expand_dims(X,0))**2,axis=2) > 0,
+#         np.logical_and(
+#             np.abs(np.expand_dims(X[:,0],1) - np.expand_dims(X[:,0],0)) < 0.5,
+#             np.abs(np.expand_dims(X[:,1],1) - np.expand_dims(X[:,1],0)) < 0.0003,
+#         )
+#     )
 
-    n_conn_comp, conn_comp_mask = connected_components(adj_mtx)
+#     n_conn_comp, conn_comp_mask = connected_components(adj_mtx)
 
-    points_to_merge =[]
-    for cc in range(n_conn_comp):
-        if np.sum(conn_comp_mask == cc) > 1:
-            points_to_merge.append(data.index.values[conn_comp_mask == cc].tolist())
+#     points_to_merge =[]
+#     for cc in range(n_conn_comp):
+#         if np.sum(conn_comp_mask == cc) > 1:
+#             points_to_merge.append(data.index.values[conn_comp_mask == cc].tolist())
 
-    for top,row in data.loc[:,["joules","data_bits/data_samples"]].iterrows():
-        normal_point = True
-        for g in points_to_merge:
-            if top in g:
-                normal_point = False
-        if normal_point:
-            ax.text(
-                x=row["joules"], #+0.5,
-                y=row["data_bits/data_samples"]-0.0003,
-                s=",".join(list(map(lambda x: str(int(x)),top.split("_")[1:3]))), 
-                # fontdict=dict(color='black',size=8),
-                # bbox=dict(facecolor='yellow',alpha=0.5)
-            )
+#     for top,row in data.loc[:,["joules","data_bits/data_samples"]].iterrows():
+#         normal_point = True
+#         for g in points_to_merge:
+#             if top in g:
+#                 normal_point = False
+#         if normal_point:
+#             ax.text(
+#                 x=row["joules"], #+0.5,
+#                 y=row["data_bits/data_samples"]-0.0003,
+#                 s=",".join(list(map(lambda x: str(int(x)),top.split("_")[1:3]))), 
+#                 # fontdict=dict(color='black',size=8),
+#                 # bbox=dict(facecolor='yellow',alpha=0.5)
+#             )
 
-    for g in points_to_merge:
-        sorted_i = np.argsort(data.loc[g,"joules"].values)
-        ax.text(
-            x=data.loc[g[sorted_i[0]],"joules"], #+0.5,
-            y=data.loc[g[sorted_i[0]],"data_bits/data_samples"]-0.0003,
-            s="/".join(list(map(lambda y: ",".join(list(map(lambda x: str(int(x)),y.split("_")[1:3]))) , np.array(g)[sorted_i].tolist()))), 
-            # fontdict=dict(color='black',size=8),
-            # bbox=dict(facecolor='yellow',alpha=0.5)
-        )
+#     for g in points_to_merge:
+#         sorted_i = np.argsort(data.loc[g,"joules"].values)
+#         ax.text(
+#             x=data.loc[g[sorted_i[0]],"joules"], #+0.5,
+#             y=data.loc[g[sorted_i[0]],"data_bits/data_samples"]-0.0003,
+#             s="/".join(list(map(lambda y: ",".join(list(map(lambda x: str(int(x)),y.split("_")[1:3]))) , np.array(g)[sorted_i].tolist()))), 
+#             # fontdict=dict(color='black',size=8),
+#             # bbox=dict(facecolor='yellow',alpha=0.5)
+#         )
 
-    # fig.savefig('test2png.png', dpi=300, facecolor='w', bbox_inches = "tight")
+#     # fig.savefig('test2png.png', dpi=300, facecolor='w', bbox_inches = "tight")
 
-    return fig
+#     return fig
 
 # %%
 from decimal import Decimal
