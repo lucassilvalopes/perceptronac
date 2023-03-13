@@ -56,7 +56,7 @@ def build_tree(data,possible_values,x_axis,y_axis,initial_values,to_str_method):
     initial_values = {"h1":10,"h2":10}
 
     def to_str_method(params):
-        widths = [32,self.params["h1"],self.params["h2"],1]
+        widths = [32,params["h1"],params["h2"],1]
         return '_'.join(map(lambda x: f"{x:03d}",widths))
     """
     root = Node(**initial_values)
@@ -113,7 +113,7 @@ def print_tree(node):
 
 
 # %%
-def paint_tree(ax,node,x_axis,y_axis):
+def paint_tree(ax,data,node,x_axis,y_axis):
     """
     x_axis = "joules"
     y_axis = "data_bits/data_samples"
@@ -128,7 +128,7 @@ def paint_tree(ax,node,x_axis,y_axis):
         )
 
     if node.chosen_child_index != -1:
-        paint_tree(ax,node.children[node.chosen_child_index],x_axis,y_axis)
+        paint_tree(ax,data,node.children[node.chosen_child_index],x_axis,y_axis)
 
 # %%
 
@@ -157,13 +157,17 @@ def tree_figure(data,r,x_axis,y_axis):
     """
     fig, ax = plt.subplots(nrows=1, ncols=1)
     ax.plot(data.loc[:,x_axis].values,data.loc[:,y_axis].values,linestyle="",marker="x")
-    paint_tree(ax,r,x_axis,y_axis)
+    paint_tree(ax,data,r,x_axis,y_axis)
     ax.set_xlabel(x_axis)
     ax.set_ylabel(y_axis)
     return fig
 
 # %%
 def hulls_figure(data,r,x_axis,y_axis):
+    """
+    x_axis = "joules"
+    y_axis = "data_bits/data_samples"
+    """
     fig, ax = plt.subplots(nrows=1, ncols=1)
     ax.plot(data.loc[:,x_axis].values,data.loc[:,y_axis].values,linestyle="",marker="x")
     true_hull_points = data.iloc[convex_hull(data.loc[:,[x_axis,y_axis]].values.tolist()),:]
@@ -257,52 +261,64 @@ def limit_energy_significant_digits(data):
     return data
 
 # %%
-if __name__ == "__main__":
 
-    data = pd.read_csv(
-        "/home/lucas/Documents/perceptronac/results/exp_1676160746/exp_1676160746_static_rate_x_power_values.csv"
-    ).set_index("topology")
+
+def glch_rate_vs_energy(csv_path):
+
+    data = pd.read_csv(csv_path).set_index("topology")
 
     limit_energy_significant_digits(data)
 
-    labeled_points_fig = labaled_points_figure(data)
-    labeled_points_fig.savefig('labeled_points_fig.png', dpi=300, facecolor='w', bbox_inches = "tight")
+    # labeled_points_fig = labaled_points_figure(data)
+    # labeled_points_fig.savefig('labeled_points_fig.png', dpi=300, facecolor='w', bbox_inches = "tight")
 
-    r = build_tree(data)
+    possible_values = {
+        "h1": [10,20,40,80,160,320,640],
+        "h2": [10,20,40,80,160,320,640]
+    }
+
+    x_axis = "joules"
+    y_axis = "data_bits/data_samples"
+
+    initial_values = {"h1":10,"h2":10}
+
+    def to_str_method(params):
+        widths = [32,params["h1"],params["h2"],1]
+        return '_'.join(map(lambda x: f"{x:03d}",widths))
+
+    r = build_tree(data,possible_values,x_axis,y_axis,initial_values,to_str_method)
 
     print_tree(r)
 
-    tree_fig = tree_figure(data,r)
-    tree_fig.savefig(f"tree_fig.png", dpi=300, facecolor='w', bbox_inches = "tight")
+    tree_fig = tree_figure(data,r,x_axis,y_axis)
+    tree_fig.savefig(f"tree_fig_rate_vs_energy.png", dpi=300, facecolor='w', bbox_inches = "tight")
 
-    hulls_fig,true_hull_points,estimated_hull_points = hulls_figure(data,r)
-    hulls_fig.savefig(f"hulls_fig.png", dpi=300, facecolor='w', bbox_inches = "tight")
+    hulls_fig,true_hull_points,estimated_hull_points = hulls_figure(data,r,x_axis,y_axis)
+    hulls_fig.savefig(f"hulls_fig_rate_vs_energy.png", dpi=300, facecolor='w', bbox_inches = "tight")
 
     print(true_hull_points)
     print(estimated_hull_points)
 
-    # %%
+if __name__ == "__main__":
 
-    data = pd.read_csv(
-        "/home/lucas/Documents/perceptronac/results/exp_1676160746/exp_1676160746_static_rate_x_power_values.csv"
-    ).set_index("topology")
+    glch_rate_vs_energy("/home/lucas/Documents/perceptronac/results/exp_1676160746/exp_1676160746_static_rate_x_power_values.csv")
 
-    data.head()
+    # # %%
 
-    # %%
+    # data = pd.read_csv(
+    #     "/home/lucas/Documents/perceptronac/scripts/tradeoffs/bpp-mse-psnr_bmshj2018-factorized_10000-epochs_N-32-64-96-128-160-192-224_M-128-160-192-224-256-288-320.csv"
+    # ).set_index("labels")
 
-    data = pd.read_csv(
-        "/home/lucas/Documents/perceptronac/scripts/tradeoffs/bpp-mse-psnr_bmshj2018-factorized_10000-epochs_N-32-64-96-128-160-192-224_M-128-160-192-224-256-288-320.csv"
-    ).set_index("labels")
+    # data.head()
 
-    data.head()
+    # # %%
 
-    # %%
+    # data = pd.read_csv(
+    #     "/home/lucas/Documents/perceptronac/results/exp_1676160183/exp_1676160183_model_bits_x_data_bits_values.csv"
+    # ).set_index("topology")
 
-    data = pd.read_csv(
-        "/home/lucas/Documents/perceptronac/results/exp_1676160183/exp_1676160183_model_bits_x_data_bits_values.csv"
-    ).set_index("topology")
+    # data.head()
 
-    data.head()
+    # # %%
 
-    # %%
+# %%
