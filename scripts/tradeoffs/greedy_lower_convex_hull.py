@@ -13,47 +13,67 @@ class Node:
     https://stackoverflow.com/questions/2358045/how-can-i-implement-a-tree-in-python
     """
 
-    possible_values = {
-        "h1": [10,20,40,80,160,320,640],
-        "h2": [10,20,40,80,160,320,640]
-    }
-
     def __init__(self,**kwargs):
         self.params = kwargs
         self.children = []
         self.chosen_child_index = -1
 
-    def auto_increment(self,param_name):
+    def set_to_str_method(self,to_str_method):
+        self.to_str_method = to_str_method
+
+    def auto_increment(self,param_name,possible_values):
         node = Node(**self.params.copy())
+        node.set_to_str_method(self.to_str_method)
         param_value = node.params[param_name]
         new_param_value = param_value
-        i = self.possible_values[param_name].index(param_value)
-        if i+1 < len(self.possible_values[param_name]):
-            new_param_value = self.possible_values[param_name][i+1]
+        i = possible_values[param_name].index(param_value)
+        if i+1 < len(possible_values[param_name]):
+            new_param_value = possible_values[param_name][i+1]
         node.params[param_name] = new_param_value
         return node
 
     def __str__(self):
-        widths = [32,self.params["h1"],self.params["h2"],1]
-        return '_'.join(map(lambda x: f"{x:03d}",widths))
+        return self.to_str_method(self.params)
+
     
 
 # %%
-def build_tree(data):
-    root = Node(h1=10,h2=10)
+def build_tree(data,possible_values,x_axis,y_axis,initial_values,to_str_method):
+    """
+    data = 
+    |---------------|joules|data_bits/data_samples|  
+    |---topology----|------|----------------------|
+    |032_010_010_001|420.00|0.99999999999999999999|
+
+    possible_values = {
+        "h1": [10,20,40,80,160,320,640],
+        "h2": [10,20,40,80,160,320,640]
+    }
+
+    x_axis = "joules"
+    y_axis = "data_bits/data_samples"
+
+    initial_values = {"h1":10,"h2":10}
+
+    def to_str_method(params):
+        widths = [32,self.params["h1"],self.params["h2"],1]
+        return '_'.join(map(lambda x: f"{x:03d}",widths))
+    """
+    root = Node(**initial_values)
+    root.set_to_str_method(to_str_method)
 
     node = root
     while True:
 
         coord = []
         nodes = []
-        for p in ["h1","h2"]:
-            node_p = node.auto_increment(p)
+        for p in sorted(possible_values.keys()):
+            node_p = node.auto_increment(p,possible_values)
             nodes.append(node_p)
-            data_p = data.loc[str(node_p),["joules","data_bits/data_samples"]].values.tolist()
+            data_p = data.loc[str(node_p),[x_axis,y_axis]].values.tolist()
             coord.append(data_p)
         nodes = [node] + nodes
-        coord = [data.loc[str(node),["joules","data_bits/data_samples"]].values.tolist()] + coord
+        coord = [data.loc[str(node),[x_axis,y_axis]].values.tolist()] + coord
         chull = convex_hull(coord)
 
         nodes = nodes[1:]
