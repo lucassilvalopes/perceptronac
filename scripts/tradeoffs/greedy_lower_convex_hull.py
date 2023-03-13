@@ -299,15 +299,42 @@ def glch_rate_vs_energy(csv_path):
     print(true_hull_points)
     print(estimated_hull_points)
 
+
+def glch_rate_vs_dist(csv_path):
+
+    data = pd.read_csv(csv_path).set_index("labels")
+
+    possible_values = {
+        "N": [32, 64, 96, 128, 160, 192, 224],
+        "M": [32, 64, 96, 128, 160, 192, 224, 256, 288, 320]
+    }
+
+    x_axis = "bpp_loss"
+    y_axis = "mse_loss"
+
+    initial_values = {"N":32,"M":32}
+
+    def to_str_method(params):
+        return f"N{params['N']}M{params['M']}"
+    
+    r = build_tree(data,possible_values,x_axis,y_axis,initial_values,to_str_method)
+
+    print_tree(r)
+
+    tree_fig = tree_figure(data,r,x_axis,y_axis)
+    tree_fig.savefig(f"tree_fig_rate_vs_dist.png", dpi=300, facecolor='w', bbox_inches = "tight")
+
+    hulls_fig,true_hull_points,estimated_hull_points = hulls_figure(data,r,x_axis,y_axis)
+    hulls_fig.savefig(f"hulls_fig_rate_vs_dist.png", dpi=300, facecolor='w', bbox_inches = "tight")
+
+    print(true_hull_points)
+    print(estimated_hull_points)
+
 if __name__ == "__main__":
 
     glch_rate_vs_energy("/home/lucas/Documents/perceptronac/results/exp_1676160746/exp_1676160746_static_rate_x_power_values.csv")
 
-    # # %%
-
-    # data = pd.read_csv(
-    #     "/home/lucas/Documents/perceptronac/scripts/tradeoffs/bpp-mse-psnr_bmshj2018-factorized_10000-epochs_N-32-64-96-128-160-192-224_M-128-160-192-224-256-288-320.csv"
-    # ).set_index("labels")
+    glch_rate_vs_dist("/home/lucas/Documents/perceptronac/scripts/tradeoffs/bpp-mse-psnr_bmshj2018-factorized_10000-epochs_N-32-64-96-128-160-192-224_M-32-64-96-128-160-192-224-256-288-320.csv")
 
     # data.head()
 
