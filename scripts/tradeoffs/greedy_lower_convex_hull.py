@@ -330,22 +330,51 @@ def glch_rate_vs_dist(csv_path):
     print(true_hull_points)
     print(estimated_hull_points)
 
+
+def glch_model_bits_vs_data_bits(csv_path):
+
+    data = pd.read_csv(csv_path)
+
+    data['idx'] = data.apply(lambda x: f"{x.topology}_{x.quantization_bits:02d}b", axis=1)
+
+    data = data.set_index("idx")
+
+    possible_values = {
+        "h1": [10,20,40,80,160,320,640],
+        "h2": [10,20,40,80,160,320,640],
+        "qb": [8,16,32]
+    }
+
+    x_axis = "model_bits/data_samples"
+    y_axis = "data_bits/data_samples"
+
+    initial_values = {"h1":10,"h2":10,"qb":8}
+
+    def to_str_method(params):
+        widths = [32,params["h1"],params["h2"],1]
+        return '_'.join(map(lambda x: f"{x:03d}",widths)) + f"_{params['qb']:02d}b"
+
+    r = build_tree(data,possible_values,x_axis,y_axis,initial_values,to_str_method)
+
+    print_tree(r)
+
+    tree_fig = tree_figure(data,r,x_axis,y_axis)
+    tree_fig.savefig(f"tree_fig_model_bits_vs_data_bits.png", dpi=300, facecolor='w', bbox_inches = "tight")
+
+    hulls_fig,true_hull_points,estimated_hull_points = hulls_figure(data,r,x_axis,y_axis)
+    hulls_fig.savefig(f"hulls_fig_model_bits_vs_data_bits.png", dpi=300, facecolor='w', bbox_inches = "tight")
+
+    print(true_hull_points)
+    print(estimated_hull_points)
+
 if __name__ == "__main__":
 
     glch_rate_vs_energy("/home/lucas/Documents/perceptronac/results/exp_1676160746/exp_1676160746_static_rate_x_power_values.csv")
 
     glch_rate_vs_dist("/home/lucas/Documents/perceptronac/scripts/tradeoffs/bpp-mse-psnr_bmshj2018-factorized_10000-epochs_N-32-64-96-128-160-192-224_M-32-64-96-128-160-192-224-256-288-320.csv")
 
-    # data.head()
+    glch_model_bits_vs_data_bits("/home/lucas/Documents/perceptronac/results/exp_1676160183/exp_1676160183_model_bits_x_data_bits_values.csv")
 
-    # # %%
 
-    # data = pd.read_csv(
-    #     "/home/lucas/Documents/perceptronac/results/exp_1676160183/exp_1676160183_model_bits_x_data_bits_values.csv"
-    # ).set_index("topology")
-
-    # data.head()
-
-    # # %%
 
 # %%
