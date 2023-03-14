@@ -97,19 +97,19 @@ def build_tree(data,possible_values,x_axis,y_axis,initial_values,to_str_method):
     return root
 
 # %%
-def print_tree(node):
+def print_tree(node,file=None):
     # print("parent", node)
 
     children_str = ""
     for i,c in enumerate(node.children):
         prefix = "!" if i == node.chosen_child_index else ""
         children_str += f"{prefix}{c} "
-    # print("children",children_str)
-    print(node,children_str)
+    # print("children",children_str,file=file)
+    print(node,children_str,file=file)
 
-    print("\n")
+    print("\n",file=file)
     if node.chosen_child_index != -1:
-        print_tree(node.children[node.chosen_child_index])
+        print_tree(node.children[node.chosen_child_index],file=file)
 
 
 # %%
@@ -288,7 +288,8 @@ def glch_rate_vs_energy(csv_path):
 
     r = build_tree(data,possible_values,x_axis,y_axis,initial_values,to_str_method)
 
-    print_tree(r)
+    with open('tree_rate_vs_energy.txt', 'w') as f:
+        print_tree(r,file=f)
 
     tree_fig = tree_figure(data,r,x_axis,y_axis)
     tree_fig.savefig(f"tree_fig_rate_vs_energy.png", dpi=300, facecolor='w', bbox_inches = "tight")
@@ -319,7 +320,8 @@ def glch_rate_vs_dist(csv_path):
     
     r = build_tree(data,possible_values,x_axis,y_axis,initial_values,to_str_method)
 
-    print_tree(r)
+    with open('tree_rate_vs_dist.txt', 'w') as f:
+        print_tree(r,file=f)
 
     tree_fig = tree_figure(data,r,x_axis,y_axis)
     tree_fig.savefig(f"tree_fig_rate_vs_dist.png", dpi=300, facecolor='w', bbox_inches = "tight")
@@ -356,7 +358,8 @@ def glch_model_bits_vs_data_bits(csv_path):
 
     r = build_tree(data,possible_values,x_axis,y_axis,initial_values,to_str_method)
 
-    print_tree(r)
+    with open('tree_model_bits_vs_data_bits.txt', 'w') as f:
+        print_tree(r,file=f)
 
     tree_fig = tree_figure(data,r,x_axis,y_axis)
     tree_fig.savefig(f"tree_fig_model_bits_vs_data_bits.png", dpi=300, facecolor='w', bbox_inches = "tight")
