@@ -57,6 +57,8 @@ if __name__ == "__main__":
     dist_axis = []
     rate_axis = []
     labels = []
+    partial_N = []
+    partial_M = []
     for N in all_N:
         for M in all_M:
             history = None
@@ -78,13 +80,14 @@ if __name__ == "__main__":
             dist_axis.append( mse_loss )
             rate_axis.append( bpp_loss )
             labels.append(f"N{N}M{M}")
-    
+            partial_N.append(N)
+            partial_M.append(M)
 
     fig_name = \
         f"{model}_" + \
         f"{str(epochs)}-epochs_" +\
-        f"N-{'-'.join(list(map(str,all_N)))}_" +\
-        f"M-{'-'.join(list(map(str,all_M)))}"
+        f"N-{'-'.join(list(map(str,list(set(partial_N)))))}_" +\
+        f"M-{'-'.join(list(map(str,list(set(partial_M)))))}"
 
     save_rate_dist_curve(rate_axis,dist_axis,labels,f"rate-dist_{fig_name}",to_psnr=False)
     save_rate_dist_curve(rate_axis,dist_axis,labels,f"rate-psnr_{fig_name}",to_psnr=True)
