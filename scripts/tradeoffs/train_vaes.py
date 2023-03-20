@@ -366,7 +366,7 @@ if __name__ == "__main__":
         for M in [32, 64, 96, 128, 160, 192, 224, 256, 288, 320]:
             argv = [
                 "-d", dataset_path,
-                "--lambda","0.005",
+                "--lambda","0.02",
                 "--batch-size","16",
                 "-lr","1e-4",
                 "--save",
