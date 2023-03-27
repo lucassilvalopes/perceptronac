@@ -1,7 +1,12 @@
 # %%
 import pandas as pd
+import sys
+import os
+
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+sys.path.append(os.path.dirname(os.path.dirname(SCRIPT_DIR)))
+
 from perceptronac.convex_hull import convex_hull
-from perceptronac.loading_and_saving import points_in_convex_hull
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -301,7 +306,7 @@ def glch_rate_vs_energy(csv_path):
     print(estimated_hull_points)
 
 
-def glch_rate_vs_dist(csv_path):
+def glch_rate_vs_dist(csv_path,x_axis,y_axis):
 
     data = pd.read_csv(csv_path).set_index("labels")
 
@@ -310,8 +315,8 @@ def glch_rate_vs_dist(csv_path):
         "M": [32, 64, 96, 128, 160, 192, 224, 256, 288, 320]
     }
 
-    x_axis = "bpp_loss"
-    y_axis = "mse_loss"
+    # x_axis = "bpp_loss"
+    # y_axis = "mse_loss"
 
     initial_values = {"N":32,"M":32}
 
@@ -320,14 +325,14 @@ def glch_rate_vs_dist(csv_path):
     
     r = build_tree(data,possible_values,x_axis,y_axis,initial_values,to_str_method)
 
-    with open('tree_rate_vs_dist.txt', 'w') as f:
+    with open(f'tree_{x_axis}_vs_{y_axis}.txt', 'w') as f:
         print_tree(r,file=f)
 
     tree_fig = tree_figure(data,r,x_axis,y_axis)
-    tree_fig.savefig(f"tree_fig_rate_vs_dist.png", dpi=300, facecolor='w', bbox_inches = "tight")
+    tree_fig.savefig(f"tree_fig_{x_axis}_vs_{y_axis}.png", dpi=300, facecolor='w', bbox_inches = "tight")
 
     hulls_fig,true_hull_points,estimated_hull_points = hulls_figure(data,r,x_axis,y_axis)
-    hulls_fig.savefig(f"hulls_fig_rate_vs_dist.png", dpi=300, facecolor='w', bbox_inches = "tight")
+    hulls_fig.savefig(f"hulls_fig_{x_axis}_vs_{y_axis}.png", dpi=300, facecolor='w', bbox_inches = "tight")
 
     print(true_hull_points)
     print(estimated_hull_points)
@@ -374,7 +379,20 @@ if __name__ == "__main__":
 
     glch_rate_vs_energy("/home/lucas/Documents/perceptronac/results/exp_1676160746/exp_1676160746_static_rate_x_power_values.csv")
 
-    glch_rate_vs_dist("/home/lucas/Documents/perceptronac/scripts/tradeoffs/bpp-mse-psnr_bmshj2018-factorized_10000-epochs_N-32-64-96-128-160-192-224_M-32-64-96-128-160-192-224-256-288-320.csv")
+    glch_rate_vs_dist(
+        "/home/lucas/Documents/perceptronac/scripts/tradeoffs/bpp-mse-psnr_bmshj2018-factorized_10000-epochs_N-32-64-96-128-160-192-224_M-32-64-96-128-160-192-224-256-288-320.csv",
+        "bpp_loss","mse_loss"
+    )
+
+    glch_rate_vs_dist(
+        "/home/lucas/Documents/perceptronac/scripts/tradeoffs/bpp-mse-psnr-loss-flops-params_bmshj2018-factorized_10000-epochs_N-32-64-96-128-160-192-224_M-32-64-96-128-160-192-224-256-288-320.csv",
+        "flops","loss"
+    )
+
+    glch_rate_vs_dist(
+        "/home/lucas/Documents/perceptronac/scripts/tradeoffs/bpp-mse-psnr-loss-flops-params_bmshj2018-factorized_10000-epochs_N-32-64-96-128-160-192-224_M-32-64-96-128-160-192-224-256-288-320.csv",
+        "params","loss"
+    )
 
     glch_model_bits_vs_data_bits("/home/lucas/Documents/perceptronac/results/exp_1676160183/exp_1676160183_model_bits_x_data_bits_values.csv")
 
