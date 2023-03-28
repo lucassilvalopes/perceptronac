@@ -60,7 +60,7 @@ def add_border(img,N):
     mx = np.max(img)
     ns = int(np.ceil(np.sqrt(N)))
     nr,nc = img.shape[:2]
-    new_img = mx*np.ones((nr+ns,nc+2*ns))
+    new_img = mx*np.ones((nr+ns,nc+2*ns),dtype=img.dtype)
     new_img[ns:nr+ns,ns:nc+2*ns-ns] = img.copy()
     return new_img
 
@@ -71,5 +71,5 @@ if __name__ == "__main__":
 
     pth = "/home/lucas/Documents/data/SPL2020_train/Adversarial_Transfer_Learning_for_Deep_Learning_Based_Automatic_Modulation_Classification_4.png"
 
-    img = (add_border(np.array(Image.open(pth)),N) > 0).astype(int)
+    img = add_border(np.array(Image.open(pth)),N)
     y,X = causal_context((img > 0).astype(int), N)

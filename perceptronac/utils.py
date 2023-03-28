@@ -72,7 +72,7 @@ def add_border(img,N):
     mx = np.max(img)
     ns = int(np.ceil(np.sqrt(N)))
     nr,nc = img.shape[:2]
-    new_img = mx*np.ones((nr+ns,nc+2*ns))
+    new_img = mx*np.ones((nr+ns,nc+2*ns),dtype=img.dtype)
     new_img[ns:nr+ns,ns:nc+2*ns-ns] = img.copy()
     return new_img
 
