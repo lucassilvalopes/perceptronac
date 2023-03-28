@@ -1,6 +1,7 @@
 
 from PIL import Image
 import numpy as np
+import sys
 
 def causal_context(img,N):
     """
@@ -69,7 +70,7 @@ if __name__ == "__main__":
 
     N = 32
 
-    pth = "/home/lucas/Documents/data/SPL2020_train/Adversarial_Transfer_Learning_for_Deep_Learning_Based_Automatic_Modulation_Classification_4.png"
+    pth = sys.argv[1] # /path/to/file.png
 
     img = add_border(np.array(Image.open(pth)),N)
     y,X = causal_context((img > 0).astype(int), N)
