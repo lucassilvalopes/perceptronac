@@ -37,13 +37,19 @@ def mse2psnr(mse):
     return 10 * np.log10( 1/ mse  )
 
 
-def save_curve(x_axis,y_axis,labels,fig_name,x_lbl,y_lbl):
+def save_curve(x_axis,y_axis,labels,fig_name,x_lbl,y_lbl,best_point=None):
 
     fig, ax = plt.subplots(nrows=1, ncols=1)
     fig.set_size_inches(21.6,16.72)
     ax.plot(x_axis,y_axis,marker="*",linestyle="None")
     for r,d,lbl in zip(x_axis,y_axis,labels):
         ax.text(x=r,y=d,s=lbl)
+
+    if best_point:
+        lmbda = (255**2) * 0.01
+        x_axis_b = np.array([np.min(x_axis),np.max(x_axis)])
+        ax.plot(x_axis_b, (-1/lmbda)*x_axis_b + (x_axis[best_point]/lmbda + y_axis[best_point]) )
+
     ax.set_xlabel(x_lbl)
     ax.set_ylabel(y_lbl)
     fig.savefig(f'{fig_name}.png', dpi=300, facecolor='w', bbox_inches = "tight")
@@ -109,7 +115,7 @@ if __name__ == "__main__":
         f"N-{'-'.join(list(map(str,list(set(partial_N)))))}_" +\
         f"M-{'-'.join(list(map(str,list(set(partial_M)))))}"
 
-    save_curve(rate_axis,dist_axis,labels,f"rate-dist_{fig_name}","rate (bpp)","mse")
+    save_curve(rate_axis,dist_axis,labels,f"rate-dist_{fig_name}","rate (bpp)","mse",best_point=np.argmin(loss_axis))
     save_curve(rate_axis,list(map(mse2psnr,dist_axis)),labels,f"rate-psnr_{fig_name}","rate (bpp)","psnr (db)")
 
     save_curve(params_axis,loss_axis,labels,f"params-loss_{fig_name}","params","R+lambda*D")
