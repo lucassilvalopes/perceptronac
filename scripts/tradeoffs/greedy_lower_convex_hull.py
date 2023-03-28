@@ -9,6 +9,12 @@ sys.path.append(os.path.dirname(os.path.dirname(SCRIPT_DIR)))
 from perceptronac.convex_hull import convex_hull
 import numpy as np
 import matplotlib.pyplot as plt
+from sklearn.preprocessing import MinMaxScaler
+
+def min_max_convex_hull(data):
+    scaler = MinMaxScaler()
+    return convex_hull(scaler.fit_transform(data).tolist())
+
 
 
 # %%
@@ -79,7 +85,7 @@ def build_tree(data,possible_values,x_axis,y_axis,initial_values,to_str_method):
             coord.append(data_p)
         nodes = [node] + nodes
         coord = [data.loc[str(node),[x_axis,y_axis]].values.tolist()] + coord
-        chull = convex_hull(coord)
+        chull = min_max_convex_hull(coord)
 
         nodes = nodes[1:]
         coord = coord[1:]
@@ -175,11 +181,11 @@ def hulls_figure(data,r,x_axis,y_axis):
     """
     fig, ax = plt.subplots(nrows=1, ncols=1)
     ax.plot(data.loc[:,x_axis].values,data.loc[:,y_axis].values,linestyle="",marker="x")
-    true_hull_points = data.iloc[convex_hull(data.loc[:,[x_axis,y_axis]].values.tolist()),:]
+    true_hull_points = data.iloc[min_max_convex_hull(data.loc[:,[x_axis,y_axis]].values.tolist()),:]
     ax.plot(true_hull_points[x_axis],true_hull_points[y_axis],linestyle=(0, (5, 5)),color="red",marker=None)
     new_points = chosen_nodes(r)
     probe = data.loc[new_points,:]
-    estimated_hull_points = probe.iloc[convex_hull(probe.loc[:,[x_axis,y_axis]].values.tolist()),:]
+    estimated_hull_points = probe.iloc[min_max_convex_hull(probe.loc[:,[x_axis,y_axis]].values.tolist()),:]
     ax.plot(
         estimated_hull_points[x_axis],estimated_hull_points[y_axis],linestyle="dotted",color="green",marker=None)
     ax.set_xlabel(x_axis)
