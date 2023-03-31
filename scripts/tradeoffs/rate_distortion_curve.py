@@ -37,7 +37,7 @@ def mse2psnr(mse):
     return 10 * np.log10( 1/ mse  )
 
 
-def save_curve(x_axis,y_axis,labels,fig_name,x_lbl,y_lbl,best_point=None):
+def save_curve(x_axis,y_axis,labels,fig_name,x_lbl,y_lbl,other_axes=None):
 
     fig, ax = plt.subplots(nrows=1, ncols=1)
     fig.set_size_inches(21.6,16.72)
@@ -45,10 +45,9 @@ def save_curve(x_axis,y_axis,labels,fig_name,x_lbl,y_lbl,best_point=None):
     for r,d,lbl in zip(x_axis,y_axis,labels):
         ax.text(x=r,y=d,s=lbl)
 
-    if best_point:
-        lmbda = (255**2) * 0.01
-        x_axis_b = np.array([np.min(x_axis),np.max(x_axis)])
-        ax.plot(x_axis_b, (-1/lmbda)*x_axis_b + (x_axis[best_point]/lmbda + y_axis[best_point]) )
+    if other_axes:
+        for other_x,other_y in other_axes:
+            ax.plot(other_x,other_y)
 
     ax.set_xlabel(x_lbl)
     ax.set_ylabel(y_lbl)
@@ -68,54 +67,82 @@ if __name__ == "__main__":
 
     epochs = 10000
 
+    all_L = ["1e-2", "5e-3", "2e-2"]
     all_N = [32, 64, 96, 128, 160, 192, 224]
     all_M = [32, 64, 96, 128, 160, 192, 224, 256, 288, 320]
 
-    dist_axis = []
-    rate_axis = []
-    loss_axis = []
-    flops_axis = []
-    params_axis = []
-    labels = []
+    dist_axis = {L:[] for L in all_L}
+    rate_axis = {L:[] for L in all_L}
+    loss_axis = {L:[] for L in all_L}
+    flops_axis = {L:[] for L in all_L}
+    params_axis = {L:[] for L in all_L}
+    labels = {L:[] for L in all_L}
+    partial_L = []
     partial_N = []
     partial_M = []
-    for N in all_N:
-        for M in all_M:
-            history = None
-            for srcdir in srcdirs:
-                try:
-                    history = pd.read_csv(os.path.join(srcdir,f"N{N}_M{M}_test_history.csv"))
-                except FileNotFoundError:
+    for L in all_L:
+        for N in all_N:
+            for M in all_M:
+                history = None
+                for srcdir in srcdirs:
+                    try:
+                        history = pd.read_csv(os.path.join(srcdir,f"L{L}_N{N}_M{M}_test_history.csv"))
+                    except FileNotFoundError:
+                        continue
+                    
+                if history is None:
                     continue
                 
-            if history is None:
-                continue
-            
-            for c in history.columns:
-                history[c] = history[c].apply(float)
-            idx = history["loss"].argmin()
-            mse_loss = history["mse_loss"].iloc[idx]
-            bpp_loss = history["bpp_loss"].iloc[idx]
+                for c in history.columns:
+                    history[c] = history[c].apply(float)
+                idx = history["loss"].argmin()
+                mse_loss = history["mse_loss"].iloc[idx]
+                bpp_loss = history["bpp_loss"].iloc[idx]
 
-            overall_loss = history["loss"].iloc[idx]
-            flops,params = get_factorized_prior_complexity(N,M)
+                overall_loss = history["loss"].iloc[idx]
+                flops,params = get_factorized_prior_complexity(N,M)
 
-            dist_axis.append( mse_loss )
-            rate_axis.append( bpp_loss )
-            loss_axis.append( overall_loss )
-            flops_axis.append( flops )
-            params_axis.append( params )
-            labels.append(f"N{N}M{M}")
-            partial_N.append(N)
-            partial_M.append(M)
+                dist_axis[L].append( mse_loss )
+                rate_axis[L].append( bpp_loss )
+                loss_axis[L].append( overall_loss )
+                flops_axis[L].append( flops )
+                params_axis[L].append( params )
+                labels[L].append(f"L{L}N{N}M{M}")
+                partial_L.append(L)
+                partial_N.append(N)
+                partial_M.append(M)
+    
+
+    other_axes = []
+    for L in list(set(partial_L)):
+        best_point=np.argmin(loss_axis[L])
+        lmbda = (255**2) * float(L)
+        other_x = np.array([np.min(rate_axis[L]),np.max(rate_axis[L])])
+        other_y = (-1/lmbda)*other_x + (rate_axis[L][best_point]/lmbda + dist_axis[L][best_point])
+        other_axes.append([other_x,other_y])
+
+
+    def join_Ls_data(data):
+        return [v for k in sorted(data.keys()) for v in data[k]]
+
+
+    dist_axis = join_Ls_data(dist_axis)
+    rate_axis = join_Ls_data(rate_axis)
+    loss_axis = join_Ls_data(loss_axis)
+    flops_axis = join_Ls_data(flops_axis)
+    params_axis = join_Ls_data(params_axis)
+    labels = join_Ls_data(labels)
+
+
 
     fig_name = \
         f"{model}_" + \
         f"{str(epochs)}-epochs_" +\
+        f"L-{'-'.join(list(set(partial_L)))}_" +\
         f"N-{'-'.join(list(map(str,list(set(partial_N)))))}_" +\
         f"M-{'-'.join(list(map(str,list(set(partial_M)))))}"
 
-    save_curve(rate_axis,dist_axis,labels,f"rate-dist_{fig_name}","rate (bpp)","mse",best_point=np.argmin(loss_axis))
+    save_curve(rate_axis,dist_axis,labels,f"rate-dist_{fig_name}","rate (bpp)","mse",other_axes = other_axes)
     save_curve(rate_axis,list(map(mse2psnr,dist_axis)),labels,f"rate-psnr_{fig_name}","rate (bpp)","psnr (db)")
 
     save_curve(params_axis,loss_axis,labels,f"params-loss_{fig_name}","params","R+lambda*D")
