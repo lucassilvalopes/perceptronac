@@ -317,17 +317,18 @@ def glch_rate_vs_dist(csv_path,x_axis,y_axis):
     data = pd.read_csv(csv_path).set_index("labels")
 
     possible_values = {
-        "N": [32, 64, 96, 128, 160, 192, 224],
+        "L": ["5e-3", "1e-2", "2e-2"],
+        "N": [32, 64, 96, 128], # , 160, 192, 224
         "M": [32, 64, 96, 128, 160, 192, 224, 256, 288, 320]
     }
 
     # x_axis = "bpp_loss"
     # y_axis = "mse_loss"
 
-    initial_values = {"N":32,"M":32}
+    initial_values = {"L":"5e-3", "N":32,"M":32}
 
     def to_str_method(params):
-        return f"N{params['N']}M{params['M']}"
+        return f"L{params['L']}N{params['N']}M{params['M']}"
     
     r = build_tree(data,possible_values,x_axis,y_axis,initial_values,to_str_method)
 
@@ -383,24 +384,24 @@ def glch_model_bits_vs_data_bits(csv_path):
 
 if __name__ == "__main__":
 
-    glch_rate_vs_energy("/home/lucas/Documents/perceptronac/results/exp_1676160746/exp_1676160746_static_rate_x_power_values.csv")
+    # glch_rate_vs_energy("/home/lucas/Documents/perceptronac/results/exp_1676160746/exp_1676160746_static_rate_x_power_values.csv")
 
     glch_rate_vs_dist(
-        "/home/lucas/Documents/perceptronac/scripts/tradeoffs/bpp-mse-psnr_bmshj2018-factorized_10000-epochs_N-32-64-96-128-160-192-224_M-32-64-96-128-160-192-224-256-288-320.csv",
+        "/home/lucas/Documents/perceptronac/scripts/tradeoffs/bpp-mse-psnr-loss-flops-params_bmshj2018-factorized_10000-epochs_L-2e-2-1e-2-5e-3_N-32-64-96-128-160-192-224_M-32-64-96-128-160-192-224-256-288-320.csv",
         "bpp_loss","mse_loss"
     )
 
     glch_rate_vs_dist(
-        "/home/lucas/Documents/perceptronac/scripts/tradeoffs/bpp-mse-psnr-loss-flops-params_bmshj2018-factorized_10000-epochs_N-32-64-96-128-160-192-224_M-32-64-96-128-160-192-224-256-288-320.csv",
+        "/home/lucas/Documents/perceptronac/scripts/tradeoffs/bpp-mse-psnr-loss-flops-params_bmshj2018-factorized_10000-epochs_L-2e-2-1e-2-5e-3_N-32-64-96-128-160-192-224_M-32-64-96-128-160-192-224-256-288-320.csv",
         "flops","loss"
     )
 
     glch_rate_vs_dist(
-        "/home/lucas/Documents/perceptronac/scripts/tradeoffs/bpp-mse-psnr-loss-flops-params_bmshj2018-factorized_10000-epochs_N-32-64-96-128-160-192-224_M-32-64-96-128-160-192-224-256-288-320.csv",
+        "/home/lucas/Documents/perceptronac/scripts/tradeoffs/bpp-mse-psnr-loss-flops-params_bmshj2018-factorized_10000-epochs_L-2e-2-1e-2-5e-3_N-32-64-96-128-160-192-224_M-32-64-96-128-160-192-224-256-288-320.csv",
         "params","loss"
     )
 
-    glch_model_bits_vs_data_bits("/home/lucas/Documents/perceptronac/results/exp_1676160183/exp_1676160183_model_bits_x_data_bits_values.csv")
+    # glch_model_bits_vs_data_bits("/home/lucas/Documents/perceptronac/results/exp_1676160183/exp_1676160183_model_bits_x_data_bits_values.csv")
 
 
 
