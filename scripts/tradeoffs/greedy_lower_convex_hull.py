@@ -11,9 +11,15 @@ import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.preprocessing import MinMaxScaler
 
-def min_max_convex_hull(data):
+def min_max_convex_hull(data,start="right"):
+    """
+    start : either "left" or "right"
+    """
     scaler = MinMaxScaler()
-    return convex_hull(scaler.fit_transform(data).tolist())
+    data = scaler.fit_transform(data)
+    if start=="right":
+        data = data[:,::-1]
+    return convex_hull(data.tolist())
 
 
 
