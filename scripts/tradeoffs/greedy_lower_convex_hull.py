@@ -175,14 +175,14 @@ def paint_tree(ax,data,node,x_axis,y_axis):
 
 # %%
 
-def chosen_nodes(r):
+def tree_nodes(r, all_nodes = True):
 
     new_points = [str(r)]
 
     n = r
     while True:
         for i,c in enumerate(n.children):
-            if n.chosen_child_index == i:
+            if (all_nodes) or (n.chosen_child_index == i):
                 new_points.append(str(c))
         if n.chosen_child_index != -1:
             n = n.children[n.chosen_child_index]
@@ -215,7 +215,7 @@ def hulls_figure(data,r,x_axis,y_axis):
     ax.plot(data.loc[:,x_axis].values,data.loc[:,y_axis].values,linestyle="",marker="x")
     true_hull_points = data.iloc[min_max_convex_hull(data.loc[:,[x_axis,y_axis]].values.tolist()),:]
     ax.plot(true_hull_points[x_axis],true_hull_points[y_axis],linestyle=(0, (5, 5)),color="red",marker=None)
-    new_points = chosen_nodes(r)
+    new_points = tree_nodes(r)
     probe = data.loc[new_points,:]
     estimated_hull_points = probe.iloc[min_max_convex_hull(probe.loc[:,[x_axis,y_axis]].values.tolist()),:]
     ax.plot(
