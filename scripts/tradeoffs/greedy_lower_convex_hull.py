@@ -90,7 +90,7 @@ def build_tree(data,possible_values,x_axis,y_axis,initial_values,to_str_method):
             data_p = data.loc[str(node_p),[x_axis,y_axis]].values.tolist()
             coord.append(data_p)
 
-
+        # # Option 1
         # node.children = nodes
 
         # strs = [str(n) for n in nodes]
@@ -108,19 +108,19 @@ def build_tree(data,possible_values,x_axis,y_axis,initial_values,to_str_method):
         # node.chosen_child_index = strs.index(str(chosen_node))
         # node = chosen_node
 
-
-        nodes = [node] + nodes
-        coord = [data.loc[str(node),[x_axis,y_axis]].values.tolist()] + coord
+        # # Option 2
+        # nodes = [node] + nodes
+        # coord = [data.loc[str(node),[x_axis,y_axis]].values.tolist()] + coord
         chull = min_max_convex_hull(coord)
 
-        nodes = nodes[1:]
-        coord = coord[1:]
-        if 0 in chull:
-            chull.pop(chull.index(0))
-        chull = [e-1 for e in chull]
+        # nodes = nodes[1:]
+        # coord = coord[1:]
+        # if 0 in chull:
+        #     chull.pop(chull.index(0))
+        # chull = [e-1 for e in chull]
 
-        if len(chull) == 0:
-            chull.append(0)
+        # if len(chull) == 0:
+        #     chull.append(0)
 
         chosen_node_index = chull[0]
         chosen_node = nodes[chosen_node_index]
