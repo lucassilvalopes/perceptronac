@@ -11,7 +11,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.preprocessing import MinMaxScaler
 
-def min_max_convex_hull(data,start="right"):
+def min_max_convex_hull(data,start="left"):
     """
     start : either "left" or "right"
     """
@@ -115,18 +115,18 @@ def build_tree(data,possible_values,x_axis,y_axis,initial_values,to_str_method):
             
         else: # > 1 or == 0
             
-            # nodes = [node] + nodes
-            # coord = [data.loc[str(node),[x_axis,y_axis]].values.tolist()] + coord
+            nodes = [node] + nodes
+            coord = [data.loc[str(node),[x_axis,y_axis]].values.tolist()] + coord
             chull = min_max_convex_hull(coord)
 
-            # nodes = nodes[1:]
-            # coord = coord[1:]
-            # if 0 in chull:
-            #     chull.pop(chull.index(0))
-            # chull = [e-1 for e in chull]
+            nodes = nodes[1:]
+            coord = coord[1:]
+            if 0 in chull:
+                chull.pop(chull.index(0))
+            chull = [e-1 for e in chull]
 
-            # if len(chull) == 0:
-            #     chull.append(0)
+            if len(chull) == 0:
+                chull.append(0)
 
             chosen_node_index = chull[0]
             chosen_node = nodes[chosen_node_index]
