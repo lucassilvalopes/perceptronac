@@ -89,6 +89,26 @@ def build_tree(data,possible_values,x_axis,y_axis,initial_values,to_str_method):
             nodes.append(node_p)
             data_p = data.loc[str(node_p),[x_axis,y_axis]].values.tolist()
             coord.append(data_p)
+
+
+        # node.children = nodes
+
+        # strs = [str(n) for n in nodes]
+
+        # duplicated = [s == str(node) for s in strs]
+
+        # if all(duplicated):
+        #     break
+
+        # chull = min_max_convex_hull([c for c,d in zip(coord,duplicated) if not d])
+
+        # chosen_node_index = chull[0]
+        # chosen_node = [n for n,d in zip(nodes,duplicated) if not d][chosen_node_index]
+
+        # node.chosen_child_index = strs.index(str(chosen_node))
+        # node = chosen_node
+
+
         nodes = [node] + nodes
         coord = [data.loc[str(node),[x_axis,y_axis]].values.tolist()] + coord
         chull = min_max_convex_hull(coord)
