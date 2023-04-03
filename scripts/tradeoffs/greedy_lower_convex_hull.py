@@ -11,7 +11,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.preprocessing import MinMaxScaler
 
-def min_max_convex_hull(data,start="left"):
+def min_max_convex_hull(data,start="right"):
     """
     start : either "left" or "right"
     """
@@ -115,27 +115,46 @@ def build_tree(data,possible_values,x_axis,y_axis,initial_values,to_str_method):
             
         else: # > 1 or == 0
             
-            nodes = [node] + nodes
-            coord = [data.loc[str(node),[x_axis,y_axis]].values.tolist()] + coord
-            chull = min_max_convex_hull(coord)
+            # option 1
+            node.children = nodes
 
-            nodes = nodes[1:]
-            coord = coord[1:]
-            if 0 in chull:
-                chull.pop(chull.index(0))
-            chull = [e-1 for e in chull]
+            strs = [str(n) for n in nodes]
 
-            if len(chull) == 0:
-                chull.append(0)
+            duplicated = [s == str(node) for s in strs]
+
+            if all(duplicated):
+                break
+
+            chull = min_max_convex_hull([c for c,d in zip(coord,duplicated) if not d])
 
             chosen_node_index = chull[0]
-            chosen_node = nodes[chosen_node_index]
+            chosen_node = [n for n,d in zip(nodes,duplicated) if not d][chosen_node_index]
 
-            node.children = nodes
-            if str(chosen_node) == str(node):
-                break
-            node.chosen_child_index = chosen_node_index
+            node.chosen_child_index = strs.index(str(chosen_node))
             node = chosen_node
+
+            # option 2
+            # # nodes = [node] + nodes
+            # # coord = [data.loc[str(node),[x_axis,y_axis]].values.tolist()] + coord
+            # chull = min_max_convex_hull(coord)
+
+            # # nodes = nodes[1:]
+            # # coord = coord[1:]
+            # # if 0 in chull:
+            # #     chull.pop(chull.index(0))
+            # # chull = [e-1 for e in chull]
+
+            # # if len(chull) == 0:
+            # #     chull.append(0)
+
+            # chosen_node_index = chull[0]
+            # chosen_node = nodes[chosen_node_index]
+
+            # node.children = nodes
+            # if str(chosen_node) == str(node):
+            #     break
+            # node.chosen_child_index = chosen_node_index
+            # node = chosen_node
 
     return root
 
