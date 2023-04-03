@@ -80,56 +80,62 @@ def build_tree(data,possible_values,x_axis,y_axis,initial_values,to_str_method):
     root.set_to_str_method(to_str_method)
 
     node = root
+
+    live_nodes = [node]
+    live_coord = [data.loc[str(node),[x_axis,y_axis]].values.tolist()]
+    current_global_hull = [0]
+
     while True:
 
         coord = []
         nodes = []
+        promising = []
         for p in sorted(possible_values.keys()):
             node_p = node.auto_increment(p,possible_values)
             nodes.append(node_p)
             data_p = data.loc[str(node_p),[x_axis,y_axis]].values.tolist()
             coord.append(data_p)
 
-        # # Option 1
-        # node.children = nodes
+            live_nodes.append(node_p)
+            live_coord.append(data_p)
+            new_global_hull = min_max_convex_hull(live_coord)
+            if new_global_hull != current_global_hull:
+                current_global_hull = new_global_hull
+                promising.append(True)
+            else:
+                promising.append(False)
 
-        # strs = [str(n) for n in nodes]
+        if promising.count(True) == 1:
+            chosen_node_index = promising.index(True)
+            chosen_node = nodes[chosen_node_index]
+            node.children = nodes
+            node.chosen_child_index = chosen_node_index
+            node = chosen_node
+            continue
+            
+        else: # > 1 or == 0
+            
+            # nodes = [node] + nodes
+            # coord = [data.loc[str(node),[x_axis,y_axis]].values.tolist()] + coord
+            chull = min_max_convex_hull(coord)
 
-        # duplicated = [s == str(node) for s in strs]
+            # nodes = nodes[1:]
+            # coord = coord[1:]
+            # if 0 in chull:
+            #     chull.pop(chull.index(0))
+            # chull = [e-1 for e in chull]
 
-        # if all(duplicated):
-        #     break
+            # if len(chull) == 0:
+            #     chull.append(0)
 
-        # chull = min_max_convex_hull([c for c,d in zip(coord,duplicated) if not d])
+            chosen_node_index = chull[0]
+            chosen_node = nodes[chosen_node_index]
 
-        # chosen_node_index = chull[0]
-        # chosen_node = [n for n,d in zip(nodes,duplicated) if not d][chosen_node_index]
-
-        # node.chosen_child_index = strs.index(str(chosen_node))
-        # node = chosen_node
-
-        # # Option 2
-        # nodes = [node] + nodes
-        # coord = [data.loc[str(node),[x_axis,y_axis]].values.tolist()] + coord
-        chull = min_max_convex_hull(coord)
-
-        # nodes = nodes[1:]
-        # coord = coord[1:]
-        # if 0 in chull:
-        #     chull.pop(chull.index(0))
-        # chull = [e-1 for e in chull]
-
-        # if len(chull) == 0:
-        #     chull.append(0)
-
-        chosen_node_index = chull[0]
-        chosen_node = nodes[chosen_node_index]
-
-        node.children = nodes
-        if str(chosen_node) == str(node):
-            break
-        node.chosen_child_index = chosen_node_index
-        node = chosen_node
+            node.children = nodes
+            if str(chosen_node) == str(node):
+                break
+            node.chosen_child_index = chosen_node_index
+            node = chosen_node
 
     return root
 
