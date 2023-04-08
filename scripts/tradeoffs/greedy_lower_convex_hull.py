@@ -11,7 +11,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.preprocessing import MinMaxScaler
 
-def min_max_convex_hull(data,start="right"):
+def min_max_convex_hull(data,start="left"):
     """
     start : either "left" or "right"
     """
@@ -55,6 +55,52 @@ class Node:
     
 
 # %%
+
+def make_choice(current_global_hull,coord,candidate_coord):
+
+    pass
+
+def build_tree_2(data,possible_values,x_axis,y_axis,initial_values,to_str_method):
+
+    root = Node(**initial_values)
+    root.set_to_str_method(to_str_method)
+
+    node = root
+
+    nodes = [node]
+    coord = [data.loc[str(node),[x_axis,y_axis]].values.tolist()]
+    current_global_hull = [0]
+
+    while True:
+
+        candidate_coord = []
+        candidate_nodes = []
+        for p in sorted(possible_values.keys()):
+            node_p = node.auto_increment(p,possible_values)
+            candidate_nodes.append(node_p)
+            data_p = data.loc[str(node_p),[x_axis,y_axis]].values.tolist()
+            candidate_coord.append(data_p)
+        
+        if all([str(n) == str(node) for n in candidate_nodes]):
+            break
+
+        chosen_node_index = make_choice(
+            current_global_hull,nodes,coord,candidate_nodes,candidate_coord)
+
+        chosen_node = candidate_nodes[chosen_node_index]
+        chosen_coord = candidate_coord[chosen_node_index]
+
+        nodes = nodes + [chosen_node]
+        coord = coord + [chosen_coord]
+
+        current_global_hull = min_max_convex_hull(coord)
+
+        node.children = candidate_nodes
+
+        node.chosen_child_index = chosen_node_index
+        node = chosen_node
+
+
 def build_tree(data,possible_values,x_axis,y_axis,initial_values,to_str_method):
     """
     data = 
@@ -98,7 +144,7 @@ def build_tree(data,possible_values,x_axis,y_axis,initial_values,to_str_method):
 
             live_nodes.append(node_p)
             live_coord.append(data_p)
-            new_global_hull = min_max_convex_hull(live_coord)
+            new_global_hull = min_max_convex_hull(live_coord,"right")
             if new_global_hull != current_global_hull:
                 current_global_hull = new_global_hull
                 promising.append(True)
@@ -125,7 +171,7 @@ def build_tree(data,possible_values,x_axis,y_axis,initial_values,to_str_method):
             if all(duplicated):
                 break
 
-            chull = min_max_convex_hull([c for c,d in zip(coord,duplicated) if not d])
+            chull = min_max_convex_hull([c for c,d in zip(coord,duplicated) if not d],"right")
 
             chosen_node_index = chull[0]
             chosen_node = [n for n,d in zip(nodes,duplicated) if not d][chosen_node_index]
@@ -435,24 +481,24 @@ def glch_model_bits_vs_data_bits(csv_path):
 
 if __name__ == "__main__":
 
-    # glch_rate_vs_energy("/home/lucas/Documents/perceptronac/results/exp_1676160746/exp_1676160746_static_rate_x_power_values.csv")
+    glch_rate_vs_energy("/home/lucas/Documents/perceptronac/results/exp_1676160746/exp_1676160746_static_rate_x_power_values.csv")
 
-    glch_rate_vs_dist(
-        "/home/lucas/Documents/perceptronac/scripts/tradeoffs/bpp-mse-psnr-loss-flops-params_bmshj2018-factorized_10000-epochs_L-2e-2-1e-2-5e-3_N-32-64-96-128-160-192-224_M-32-64-96-128-160-192-224-256-288-320.csv",
-        "bpp_loss","mse_loss"
-    )
+    # glch_rate_vs_dist(
+    #     "/home/lucas/Documents/perceptronac/scripts/tradeoffs/bpp-mse-psnr-loss-flops-params_bmshj2018-factorized_10000-epochs_L-2e-2-1e-2-5e-3_N-32-64-96-128-160-192-224_M-32-64-96-128-160-192-224-256-288-320.csv",
+    #     "bpp_loss","mse_loss"
+    # )
 
-    glch_rate_vs_dist(
-        "/home/lucas/Documents/perceptronac/scripts/tradeoffs/bpp-mse-psnr-loss-flops-params_bmshj2018-factorized_10000-epochs_L-2e-2-1e-2-5e-3_N-32-64-96-128-160-192-224_M-32-64-96-128-160-192-224-256-288-320.csv",
-        "flops","loss"
-    )
+    # glch_rate_vs_dist(
+    #     "/home/lucas/Documents/perceptronac/scripts/tradeoffs/bpp-mse-psnr-loss-flops-params_bmshj2018-factorized_10000-epochs_L-2e-2-1e-2-5e-3_N-32-64-96-128-160-192-224_M-32-64-96-128-160-192-224-256-288-320.csv",
+    #     "flops","loss"
+    # )
 
-    glch_rate_vs_dist(
-        "/home/lucas/Documents/perceptronac/scripts/tradeoffs/bpp-mse-psnr-loss-flops-params_bmshj2018-factorized_10000-epochs_L-2e-2-1e-2-5e-3_N-32-64-96-128-160-192-224_M-32-64-96-128-160-192-224-256-288-320.csv",
-        "params","loss"
-    )
+    # glch_rate_vs_dist(
+    #     "/home/lucas/Documents/perceptronac/scripts/tradeoffs/bpp-mse-psnr-loss-flops-params_bmshj2018-factorized_10000-epochs_L-2e-2-1e-2-5e-3_N-32-64-96-128-160-192-224_M-32-64-96-128-160-192-224-256-288-320.csv",
+    #     "params","loss"
+    # )
 
-    # glch_model_bits_vs_data_bits("/home/lucas/Documents/perceptronac/results/exp_1676160183/exp_1676160183_model_bits_x_data_bits_values.csv")
+    glch_model_bits_vs_data_bits("/home/lucas/Documents/perceptronac/results/exp_1676160183/exp_1676160183_model_bits_x_data_bits_values.csv")
 
 
 
