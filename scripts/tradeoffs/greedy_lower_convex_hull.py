@@ -83,11 +83,29 @@ def dist_to_chull(chull,coord,pt):
     return np.min(dists)
 
 
-def make_choice(chull,coord,candidate_coord):
+def make_choice(chull,node,coord,candidate_nodes,candidate_coord):
 
-    pass
+    if all([str(n) == str(node) for n in candidate_nodes]):
+        return -1
 
-def build_tree_2(data,possible_values,x_axis,y_axis,initial_values,to_str_method):
+    dists = []
+
+    for pt in candidate_coord:
+
+        dist = dist_to_chull(chull,coord,pt)
+
+        dists.append(dist)
+    
+    idx = np.argsort(dists)
+
+    filtered_idx = [i for i in idx if str(candidate_nodes[i]) != str(node)]
+
+    return filtered_idx[0]
+    
+
+
+
+def build_tree(data,possible_values,x_axis,y_axis,initial_values,to_str_method):
 
     root = Node(**initial_values)
     root.set_to_str_method(to_str_method)
@@ -108,11 +126,11 @@ def build_tree_2(data,possible_values,x_axis,y_axis,initial_values,to_str_method
             data_p = data.loc[str(node_p),[x_axis,y_axis]].values.tolist()
             candidate_coord.append(data_p)
         
-        if all([str(n) == str(node) for n in candidate_nodes]):
-            break
-
         chosen_node_index = make_choice(
-            chull,nodes,coord,candidate_nodes,candidate_coord)
+            chull,node,coord,candidate_nodes,candidate_coord)
+
+        if chosen_node_index == -1:
+            break
 
         chosen_node = candidate_nodes[chosen_node_index]
         chosen_coord = candidate_coord[chosen_node_index]
@@ -128,7 +146,7 @@ def build_tree_2(data,possible_values,x_axis,y_axis,initial_values,to_str_method
         node = chosen_node
 
 
-def build_tree(data,possible_values,x_axis,y_axis,initial_values,to_str_method):
+def build_tree_old(data,possible_values,x_axis,y_axis,initial_values,to_str_method):
     """
     data = 
     |---------------|joules|data_bits/data_samples|  
