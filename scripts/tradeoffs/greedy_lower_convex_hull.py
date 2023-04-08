@@ -70,6 +70,13 @@ def dist_to_chull(chull,coord,pt):
 
         line_vec = np.array(coord[chull[i+1]]) - np.array(coord[chull[i]])
 
+        if line_vec[0]<0 and line_vec[1]>0:
+            line_vec = -line_vec
+        elif line_vec[0]==0 and line_vec[1]>0:
+            line_vec = np.array([line_vec[0],-line_vec[1]])
+        elif line_vec[0]<0 and line_vec[1]==0:
+            line_vec = np.array([-line_vec[0],line_vec[1]])
+
         pt_vec = np.array(pt) - np.array(coord[chull[i]])
 
         proj_vec = (line_vec / np.linalg.norm(line_vec)) * (pt_vec.reshape(1,-1) @ line_vec.reshape(-1,1))
@@ -84,6 +91,12 @@ def dist_to_chull(chull,coord,pt):
 
 
 def make_choice(chull,node,coord,candidate_nodes,candidate_coord):
+
+    scaler = MinMaxScaler()
+    scaler.fit(coord)
+    coord = scaler.transform(coord)
+    candidate_coord = scaler.transform(candidate_coord)
+
 
     if all([str(n) == str(node) for n in candidate_nodes]):
         return -1
