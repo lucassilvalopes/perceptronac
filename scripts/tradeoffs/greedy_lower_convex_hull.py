@@ -62,19 +62,19 @@ class Node:
 def dist_to_chull(chull,coord,pt):
 
     if len(chull) == 1:
-        return pt[0] - coord[0][0]
+        return pt[0] - coord[chull[0]][0]
         
     dists = []
 
     for i in range(len(chull)-1):
 
-        line_vec = np.array(coord[i+1]) - np.array(coord[i])
+        line_vec = np.array(coord[chull[i+1]]) - np.array(coord[chull[i]])
 
-        pt_vec = np.array(pt) - np.array(coord[i])
+        pt_vec = np.array(pt) - np.array(coord[chull[i]])
 
         proj_vec = (line_vec / np.linalg.norm(line_vec)) * (pt_vec.reshape(1,-1) @ line_vec.reshape(-1,1))
 
-        orth_vec = np.array(pt) - (np.array(coord[i]) + proj_vec)
+        orth_vec = np.array(pt) - (np.array(coord[chull[i]]) + proj_vec)
 
         dist = np.sign(np.cross(line_vec,orth_vec)) * np.linalg.norm(orth_vec)
 
