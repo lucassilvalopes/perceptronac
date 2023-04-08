@@ -56,7 +56,34 @@ class Node:
 
 # %%
 
-def make_choice(current_global_hull,coord,candidate_coord):
+
+
+
+def dist_to_chull(chull,coord,pt):
+
+    if len(chull) == 1:
+        return pt[0] - coord[0][0]
+        
+    dists = []
+
+    for i in range(len(chull)-1):
+
+        line_vec = np.array(coord[i+1]) - np.array(coord[i])
+
+        pt_vec = np.array(pt) - np.array(coord[i])
+
+        proj_vec = (line_vec / np.linalg.norm(line_vec)) * (pt_vec.reshape(1,-1) @ line_vec.reshape(-1,1))
+
+        orth_vec = np.array(pt) - (np.array(coord[i]) + proj_vec)
+
+        dist = np.sign(np.cross(line_vec,orth_vec)) * np.linalg.norm(orth_vec)
+
+        dists.append(dist)
+    
+    return np.min(dists)
+
+
+def make_choice(chull,coord,candidate_coord):
 
     pass
 
@@ -69,7 +96,7 @@ def build_tree_2(data,possible_values,x_axis,y_axis,initial_values,to_str_method
 
     nodes = [node]
     coord = [data.loc[str(node),[x_axis,y_axis]].values.tolist()]
-    current_global_hull = [0]
+    chull = [0]
 
     while True:
 
@@ -85,7 +112,7 @@ def build_tree_2(data,possible_values,x_axis,y_axis,initial_values,to_str_method
             break
 
         chosen_node_index = make_choice(
-            current_global_hull,nodes,coord,candidate_nodes,candidate_coord)
+            chull,nodes,coord,candidate_nodes,candidate_coord)
 
         chosen_node = candidate_nodes[chosen_node_index]
         chosen_coord = candidate_coord[chosen_node_index]
@@ -93,7 +120,7 @@ def build_tree_2(data,possible_values,x_axis,y_axis,initial_values,to_str_method
         nodes = nodes + [chosen_node]
         coord = coord + [chosen_coord]
 
-        current_global_hull = min_max_convex_hull(coord)
+        chull = min_max_convex_hull(coord)
 
         node.children = candidate_nodes
 
