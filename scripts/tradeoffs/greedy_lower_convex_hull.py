@@ -66,6 +66,8 @@ def dist_to_chull(chull,coord,pt):
         
     dists = []
 
+    # fig, ax = plt.subplots(nrows=1, ncols=1)
+
     for i in range(len(chull)-1):
 
         line_vec = np.array(coord[chull[i+1]]) - np.array(coord[chull[i]])
@@ -79,24 +81,42 @@ def dist_to_chull(chull,coord,pt):
 
         pt_vec = np.array(pt) - np.array(coord[chull[i]])
 
-        proj_vec = (line_vec / np.linalg.norm(line_vec)) * (pt_vec.reshape(1,-1) @ line_vec.reshape(-1,1))
+        proj_vec = (line_vec / np.linalg.norm(line_vec)**2) * (pt_vec.reshape(1,-1) @ line_vec.reshape(-1,1)).item()
 
         orth_vec = np.array(pt) - (np.array(coord[chull[i]]) + proj_vec)
 
         dist = np.sign(np.cross(line_vec,orth_vec)) * np.linalg.norm(orth_vec)
 
         dists.append(dist)
-    
+        
+        # ax.plot([coord[chull[i]][0],pt[0]],[coord[chull[i]][1],pt[1]],color="r")
+        # ax.plot([coord[chull[i]][0],coord[chull[i+1]][0]],[coord[chull[i]][1],coord[chull[i+1]][1]],color="g")
+        # ax.plot(
+        #     [coord[chull[i]][0] + proj_vec[0],pt[0]],
+        #     [coord[chull[i]][1] + proj_vec[1],pt[1]],
+        #     color="b")
+        # ax.text(x=coord[chull[i]][0],y=coord[chull[i]][1],s="chull[i]")
+        # ax.text(x=pt[0],y=pt[1],s="pt")
+        # ax.set_xlim(-1.1*np.max(np.abs(np.array(coord + [pt]))),1.1*np.max(np.abs(np.array(coord+ [pt]))))
+        # ax.set_ylim(-1.1*np.max(np.abs(np.array(coord+ [pt]))),1.1*np.max(np.abs(np.array(coord+ [pt]))))
+
+        # # https://stackoverflow.com/a/57249253
+        # ratio = 1.0
+        # xleft, xright = ax.get_xlim()
+        # ybottom, ytop = ax.get_ylim()
+        # ax.set_aspect(abs((xright-xleft)/(ybottom-ytop))*ratio)
+
+        # ax.text(x=0,y=0,s=dist)
+
     return np.min(dists)
 
 
 def make_choice(chull,node,coord,candidate_nodes,candidate_coord):
 
     scaler = MinMaxScaler()
-    scaler.fit(coord)
-    coord = scaler.transform(coord)
-    candidate_coord = scaler.transform(candidate_coord)
-
+    scaler.fit(coord + candidate_coord)
+    coord = scaler.transform(coord).tolist()
+    candidate_coord = scaler.transform(candidate_coord).tolist()
 
     if all([str(n) == str(node) for n in candidate_nodes]):
         return -1
@@ -146,10 +166,9 @@ def build_tree(data,possible_values,x_axis,y_axis,initial_values,to_str_method):
             break
 
         chosen_node = candidate_nodes[chosen_node_index]
-        chosen_coord = candidate_coord[chosen_node_index]
 
-        nodes = nodes + [chosen_node]
-        coord = coord + [chosen_coord]
+        nodes = nodes + candidate_nodes
+        coord = coord + candidate_coord
 
         chull = min_max_convex_hull(coord)
 
@@ -541,24 +560,24 @@ def glch_model_bits_vs_data_bits(csv_path):
 
 if __name__ == "__main__":
 
-    glch_rate_vs_energy("/home/lucas/Documents/perceptronac/results/exp_1676160746/exp_1676160746_static_rate_x_power_values.csv")
+    # glch_rate_vs_energy("/home/lucas/Documents/perceptronac/results/exp_1676160746/exp_1676160746_static_rate_x_power_values.csv")
 
-    glch_rate_vs_dist(
-        "/home/lucas/Documents/perceptronac/scripts/tradeoffs/bpp-mse-psnr-loss-flops-params_bmshj2018-factorized_10000-epochs_L-2e-2-1e-2-5e-3_N-32-64-96-128-160-192-224_M-32-64-96-128-160-192-224-256-288-320.csv",
-        "bpp_loss","mse_loss"
-    )
+    # glch_rate_vs_dist(
+    #     "/home/lucas/Documents/perceptronac/scripts/tradeoffs/bpp-mse-psnr-loss-flops-params_bmshj2018-factorized_10000-epochs_L-2e-2-1e-2-5e-3_N-32-64-96-128-160-192-224_M-32-64-96-128-160-192-224-256-288-320.csv",
+    #     "bpp_loss","mse_loss"
+    # )
 
-    glch_rate_vs_dist(
-        "/home/lucas/Documents/perceptronac/scripts/tradeoffs/bpp-mse-psnr-loss-flops-params_bmshj2018-factorized_10000-epochs_L-2e-2-1e-2-5e-3_N-32-64-96-128-160-192-224_M-32-64-96-128-160-192-224-256-288-320.csv",
-        "flops","loss"
-    )
+    # glch_rate_vs_dist(
+    #     "/home/lucas/Documents/perceptronac/scripts/tradeoffs/bpp-mse-psnr-loss-flops-params_bmshj2018-factorized_10000-epochs_L-2e-2-1e-2-5e-3_N-32-64-96-128-160-192-224_M-32-64-96-128-160-192-224-256-288-320.csv",
+    #     "flops","loss"
+    # )
 
     glch_rate_vs_dist(
         "/home/lucas/Documents/perceptronac/scripts/tradeoffs/bpp-mse-psnr-loss-flops-params_bmshj2018-factorized_10000-epochs_L-2e-2-1e-2-5e-3_N-32-64-96-128-160-192-224_M-32-64-96-128-160-192-224-256-288-320.csv",
         "params","loss"
     )
 
-    glch_model_bits_vs_data_bits("/home/lucas/Documents/perceptronac/results/exp_1676160183/exp_1676160183_model_bits_x_data_bits_values.csv")
+    # glch_model_bits_vs_data_bits("/home/lucas/Documents/perceptronac/results/exp_1676160183/exp_1676160183_model_bits_x_data_bits_values.csv")
 
 
 
