@@ -165,12 +165,20 @@ def build_tree(data,possible_values,x_axis,y_axis,initial_values,to_str_method):
         if chosen_node_index == -1:
             break
 
-        chosen_node = candidate_nodes[chosen_node_index]
+        len_nodes = len(nodes)
+        len_coord = len(coord)
 
         nodes = nodes + candidate_nodes
         coord = coord + candidate_coord
 
         chull = min_max_convex_hull(coord)
+
+        candidates_in_chull = [i-len_nodes for i in chull if i >= len_nodes]
+
+        if (len(candidates_in_chull)>0) and (chosen_node_index not in candidates_in_chull):
+            chosen_node_index = candidates_in_chull[0]
+
+        chosen_node = candidate_nodes[chosen_node_index]
 
         node.children = candidate_nodes
 
