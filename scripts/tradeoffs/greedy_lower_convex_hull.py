@@ -193,8 +193,8 @@ def make_choice(data,x_axis,y_axis,chull,node,node_coord,nodes,coord,candidate_n
 def build_tree(data,possible_values,x_axis,y_axis,initial_values,to_str_method):
 
 
-    data[x_axis] = MinMaxScaler().fit_transform(data[x_axis].values.reshape(-1,1))
-    data[y_axis] = MinMaxScaler().fit_transform(data[y_axis].values.reshape(-1,1))
+    # data[x_axis] = MinMaxScaler().fit_transform(data[x_axis].values.reshape(-1,1))
+    # data[y_axis] = MinMaxScaler().fit_transform(data[y_axis].values.reshape(-1,1))
 
     root = Node(**initial_values)
     root.set_to_str_method(to_str_method)
@@ -554,9 +554,12 @@ def glch_rate_vs_energy(csv_path):
     print(estimated_hull_points)
 
 
-def glch_rate_vs_dist(csv_path,x_axis,y_axis):
+def glch_rate_vs_dist(csv_path,x_axis,y_axis,scale_x,scale_y):
 
     data = pd.read_csv(csv_path).set_index("labels")
+
+    data[x_axis] = data[x_axis].values/scale_x
+    data[y_axis] = data[y_axis].values/scale_y
 
     possible_values = {
         "L": ["5e-3", "1e-2", "2e-2"],
@@ -630,17 +633,17 @@ if __name__ == "__main__":
 
     glch_rate_vs_dist(
         "/home/lucas/Documents/perceptronac/scripts/tradeoffs/bpp-mse-psnr-loss-flops-params_bmshj2018-factorized_10000-epochs_L-2e-2-1e-2-5e-3_N-32-64-96-128-160-192-224_M-32-64-96-128-160-192-224-256-288-320.csv",
-        "bpp_loss","mse_loss"
+        "bpp_loss","mse_loss",1,1
     )
 
     glch_rate_vs_dist(
         "/home/lucas/Documents/perceptronac/scripts/tradeoffs/bpp-mse-psnr-loss-flops-params_bmshj2018-factorized_10000-epochs_L-2e-2-1e-2-5e-3_N-32-64-96-128-160-192-224_M-32-64-96-128-160-192-224-256-288-320.csv",
-        "flops","loss"
+        "flops","loss",1e10,1
     )
 
     glch_rate_vs_dist(
         "/home/lucas/Documents/perceptronac/scripts/tradeoffs/bpp-mse-psnr-loss-flops-params_bmshj2018-factorized_10000-epochs_L-2e-2-1e-2-5e-3_N-32-64-96-128-160-192-224_M-32-64-96-128-160-192-224-256-288-320.csv",
-        "params","loss"
+        "params","loss",1e6,1
     )
 
     glch_model_bits_vs_data_bits("/home/lucas/Documents/perceptronac/results/exp_1676160183/exp_1676160183_model_bits_x_data_bits_values.csv")
