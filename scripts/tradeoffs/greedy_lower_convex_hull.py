@@ -143,7 +143,7 @@ def dist_to_chull(chull,coord,pt):
 
     improv = (pt[0]-best_yet[0]) + (pt[1]-best_yet[1])
 
-    return -improv
+    return improv
 
     
 
@@ -193,8 +193,8 @@ def make_choice(data,x_axis,y_axis,chull,node,node_coord,nodes,coord,candidate_n
 def build_tree(data,possible_values,x_axis,y_axis,initial_values,to_str_method):
 
 
-    # data[x_axis] = MinMaxScaler().fit_transform(data[x_axis].values.reshape(-1,1))
-    # data[y_axis] = MinMaxScaler().fit_transform(data[y_axis].values.reshape(-1,1))
+    data[x_axis] = MinMaxScaler().fit_transform(data[x_axis].values.reshape(-1,1))
+    data[y_axis] = MinMaxScaler().fit_transform(data[y_axis].values.reshape(-1,1))
 
     root = Node(**initial_values)
     root.set_to_str_method(to_str_method)
@@ -626,17 +626,17 @@ def glch_model_bits_vs_data_bits(csv_path):
 
 if __name__ == "__main__":
 
-    glch_rate_vs_energy("/home/lucas/Documents/perceptronac/results/exp_1676160746/exp_1676160746_static_rate_x_power_values.csv")
+    # glch_rate_vs_energy("/home/lucas/Documents/perceptronac/results/exp_1676160746/exp_1676160746_static_rate_x_power_values.csv")
 
     # glch_rate_vs_dist(
     #     "/home/lucas/Documents/perceptronac/scripts/tradeoffs/bpp-mse-psnr-loss-flops-params_bmshj2018-factorized_10000-epochs_L-2e-2-1e-2-5e-3_N-32-64-96-128-160-192-224_M-32-64-96-128-160-192-224-256-288-320.csv",
     #     "bpp_loss","mse_loss"
     # )
 
-    # glch_rate_vs_dist(
-    #     "/home/lucas/Documents/perceptronac/scripts/tradeoffs/bpp-mse-psnr-loss-flops-params_bmshj2018-factorized_10000-epochs_L-2e-2-1e-2-5e-3_N-32-64-96-128-160-192-224_M-32-64-96-128-160-192-224-256-288-320.csv",
-    #     "flops","loss"
-    # )
+    glch_rate_vs_dist(
+        "/home/lucas/Documents/perceptronac/scripts/tradeoffs/bpp-mse-psnr-loss-flops-params_bmshj2018-factorized_10000-epochs_L-2e-2-1e-2-5e-3_N-32-64-96-128-160-192-224_M-32-64-96-128-160-192-224-256-288-320.csv",
+        "flops","loss"
+    )
 
     # glch_rate_vs_dist(
     #     "/home/lucas/Documents/perceptronac/scripts/tradeoffs/bpp-mse-psnr-loss-flops-params_bmshj2018-factorized_10000-epochs_L-2e-2-1e-2-5e-3_N-32-64-96-128-160-192-224_M-32-64-96-128-160-192-224-256-288-320.csv",
