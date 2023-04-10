@@ -143,13 +143,8 @@ def dist_to_chull(chull,coord,pt):
 
 
 
-def make_choice(chull,node,node_coord,nodes,coord,candidate_nodes,candidate_coord):
-
-    # scaler = MinMaxScaler()
-    # scaler.fit(coord + candidate_coord + [node_coord])
-    # coord = scaler.transform(coord).tolist()
-    # candidate_coord = scaler.transform(candidate_coord).tolist()
-    # node_coord = scaler.transform([node_coord]).tolist()[0]
+def make_choice(data,x_axis,y_axis,chull,node,node_coord,nodes,coord,candidate_nodes,candidate_coord,
+                debug=True):
 
     if all([str(n) == str(node) for n in candidate_nodes]):
         return -1
@@ -168,56 +163,54 @@ def make_choice(chull,node,node_coord,nodes,coord,candidate_nodes,candidate_coor
 
     chosen_node_index = filtered_idx[0]
 
-    fig, ax = plt.subplots(nrows=1, ncols=1)
+    if debug:
 
-    # ax.plot(
-    #     [c[0] for c in candidate_coord],[c[1] for c in candidate_coord],
-    #     marker="*",
-    #     linestyle=""
-    # )
+        fig, ax = plt.subplots(nrows=1, ncols=1)
 
-    ax.plot(
-        [node_coord[0]],[node_coord[1]],
-        marker="s",
-        linestyle=""
-    )
+        ax.plot(data[x_axis].values, data[y_axis].values,marker="x",linestyle="")
 
-    ax.text(x=node_coord[0],y=node_coord[1],s=str(node))
-
-    line_vec = calc_line_vec(chull,coord)
-
-    ax.plot(
-        [coord[chull[-1]][0],(coord[chull[-1]]+line_vec/np.linalg.norm(line_vec))[0]],
-        [coord[chull[-1]][1],(coord[chull[-1]]+line_vec/np.linalg.norm(line_vec))[1]],color="b")
-
-    ax.text(x=coord[chull[-1]][0],y=coord[chull[-1]][1],s=str(nodes[chull[-1]]))
-
-    if len(chull) > 1:
         ax.plot(
-        [coord[chull[-2]][0],(coord[chull[-1]])[0]],
-        [coord[chull[-2]][1],(coord[chull[-1]])[1]],color="b")
-        ax.text(x=coord[chull[-2]][0],y=coord[chull[-2]][1],s=str(nodes[chull[-2]]))
+            [node_coord[0]],[node_coord[1]],
+            marker="s",
+            linestyle=""
+        )
 
-    for i,pt in enumerate(candidate_coord):
+        ax.text(x=node_coord[0],y=node_coord[1],s=str(node))
+
+        line_vec = calc_line_vec(chull,coord)
+
         ax.plot(
-            [coord[chull[-1]][0],pt[0]],
-            [coord[chull[-1]][1],pt[1]],
-            color=("g" if i == chosen_node_index else "r") )
+            [coord[chull[-1]][0],(coord[chull[-1]]+line_vec)[0]],
+            [coord[chull[-1]][1],(coord[chull[-1]]+line_vec)[1]],color="b")
+
+        ax.text(x=coord[chull[-1]][0],y=coord[chull[-1]][1],s=str(nodes[chull[-1]]))
+
+        if len(chull) > 1:
+            ax.plot(
+            [coord[chull[-2]][0],(coord[chull[-1]])[0]],
+            [coord[chull[-2]][1],(coord[chull[-1]])[1]],color="b")
+            ax.text(x=coord[chull[-2]][0],y=coord[chull[-2]][1],s=str(nodes[chull[-2]]))
+
+        for i,pt in enumerate(candidate_coord):
+            ax.plot(
+                [coord[chull[-1]][0],pt[0]],
+                [coord[chull[-1]][1],pt[1]],
+                color=("g" if i == chosen_node_index else "r") )
+            
+            ax.text(x=pt[0],y=pt[1],s=str(candidate_nodes[i]))
         
-        ax.text(x=pt[0],y=pt[1],s=str(candidate_nodes[i]))
-    
-    
+        
 
-    lb = -1.3*np.max(np.abs(np.array(coord + candidate_coord)))
-    ub = 1.3*np.max(np.abs(np.array(coord + candidate_coord)))
-    ax.set_xlim(lb,ub)
-    ax.set_ylim(lb,ub)
+        # lb = -1.3*np.max(np.abs(np.array(coord + candidate_coord)))
+        # ub = 1.3*np.max(np.abs(np.array(coord + candidate_coord)))
+        # ax.set_xlim(lb,ub)
+        # ax.set_ylim(lb,ub)
 
-    # https://stackoverflow.com/a/57249253
-    ratio = 1.0
-    xleft, xright = ax.get_xlim()
-    ybottom, ytop = ax.get_ylim()
-    ax.set_aspect(abs((xright-xleft)/(ybottom-ytop))*ratio)
+        # # https://stackoverflow.com/a/57249253
+        # ratio = 1.0
+        # xleft, xright = ax.get_xlim()
+        # ybottom, ytop = ax.get_ylim()
+        # ax.set_aspect(abs((xright-xleft)/(ybottom-ytop))*ratio)
 
 
     return chosen_node_index
@@ -251,7 +244,7 @@ def build_tree(data,possible_values,x_axis,y_axis,initial_values,to_str_method):
             data_p = data.loc[str(node_p),[x_axis,y_axis]].values.tolist()
             candidate_coord.append(data_p)
         
-        chosen_node_index = make_choice(
+        chosen_node_index = make_choice(data,x_axis,y_axis,
             chull,node,node_coord,nodes,coord,candidate_nodes,candidate_coord)
 
         if chosen_node_index == -1:
