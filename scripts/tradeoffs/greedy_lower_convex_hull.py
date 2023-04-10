@@ -112,7 +112,7 @@ def dist_to_chull_old(chull,coord,pt):
     return np.min(dists)
 
 
-def dist_to_chull(chull,coord,pt):
+def calc_line_vec(chull,coord):
 
     if len(chull) == 1:
         line_vec = np.array([0,-1])
@@ -126,6 +126,13 @@ def dist_to_chull(chull,coord,pt):
         elif line_vec[0]<0 and line_vec[1]==0:
             line_vec = np.array([-line_vec[0],line_vec[1]])
     
+    return line_vec
+
+
+def dist_to_chull(chull,coord,pt):
+
+    line_vec = calc_line_vec(chull,coord)
+    
     pt_vec = np.array(pt) - np.array(coord[chull[-1]])
 
     c = (pt_vec.reshape(1,-1) @ line_vec.reshape(-1,1)).item() / (np.linalg.norm(line_vec) * np.linalg.norm(pt_vec))
@@ -136,12 +143,13 @@ def dist_to_chull(chull,coord,pt):
 
 
 
-def make_choice(chull,node,coord,candidate_nodes,candidate_coord):
+def make_choice(chull,node,node_coord,nodes,coord,candidate_nodes,candidate_coord):
 
-    scaler = MinMaxScaler()
-    scaler.fit(coord + candidate_coord)
-    coord = scaler.transform(coord).tolist()
-    candidate_coord = scaler.transform(candidate_coord).tolist()
+    # scaler = MinMaxScaler()
+    # scaler.fit(coord + candidate_coord + [node_coord])
+    # coord = scaler.transform(coord).tolist()
+    # candidate_coord = scaler.transform(candidate_coord).tolist()
+    # node_coord = scaler.transform([node_coord]).tolist()[0]
 
     if all([str(n) == str(node) for n in candidate_nodes]):
         return -1
@@ -158,12 +166,70 @@ def make_choice(chull,node,coord,candidate_nodes,candidate_coord):
 
     filtered_idx = [i for i in idx if str(candidate_nodes[i]) != str(node)]
 
-    return filtered_idx[0]
+    chosen_node_index = filtered_idx[0]
+
+    fig, ax = plt.subplots(nrows=1, ncols=1)
+
+    # ax.plot(
+    #     [c[0] for c in candidate_coord],[c[1] for c in candidate_coord],
+    #     marker="*",
+    #     linestyle=""
+    # )
+
+    ax.plot(
+        [node_coord[0]],[node_coord[1]],
+        marker="s",
+        linestyle=""
+    )
+
+    ax.text(x=node_coord[0],y=node_coord[1],s=str(node))
+
+    line_vec = calc_line_vec(chull,coord)
+
+    ax.plot(
+        [coord[chull[-1]][0],(coord[chull[-1]]+line_vec/np.linalg.norm(line_vec))[0]],
+        [coord[chull[-1]][1],(coord[chull[-1]]+line_vec/np.linalg.norm(line_vec))[1]],color="b")
+
+    ax.text(x=coord[chull[-1]][0],y=coord[chull[-1]][1],s=str(nodes[chull[-1]]))
+
+    if len(chull) > 1:
+        ax.plot(
+        [coord[chull[-2]][0],(coord[chull[-1]])[0]],
+        [coord[chull[-2]][1],(coord[chull[-1]])[1]],color="b")
+        ax.text(x=coord[chull[-2]][0],y=coord[chull[-2]][1],s=str(nodes[chull[-2]]))
+
+    for i,pt in enumerate(candidate_coord):
+        ax.plot(
+            [coord[chull[-1]][0],pt[0]],
+            [coord[chull[-1]][1],pt[1]],
+            color=("g" if i == chosen_node_index else "r") )
+        
+        ax.text(x=pt[0],y=pt[1],s=str(candidate_nodes[i]))
+    
+    
+
+    lb = -1.3*np.max(np.abs(np.array(coord + candidate_coord)))
+    ub = 1.3*np.max(np.abs(np.array(coord + candidate_coord)))
+    ax.set_xlim(lb,ub)
+    ax.set_ylim(lb,ub)
+
+    # https://stackoverflow.com/a/57249253
+    ratio = 1.0
+    xleft, xright = ax.get_xlim()
+    ybottom, ytop = ax.get_ylim()
+    ax.set_aspect(abs((xright-xleft)/(ybottom-ytop))*ratio)
+
+
+    return chosen_node_index
     
 
 
 
 def build_tree(data,possible_values,x_axis,y_axis,initial_values,to_str_method):
+
+
+    data[x_axis] = MinMaxScaler().fit_transform(data[x_axis].values.reshape(-1,1))
+    data[y_axis] = MinMaxScaler().fit_transform(data[y_axis].values.reshape(-1,1))
 
     root = Node(**initial_values)
     root.set_to_str_method(to_str_method)
@@ -171,7 +237,8 @@ def build_tree(data,possible_values,x_axis,y_axis,initial_values,to_str_method):
     node = root
 
     nodes = [node]
-    coord = [data.loc[str(node),[x_axis,y_axis]].values.tolist()]
+    node_coord = data.loc[str(node),[x_axis,y_axis]].values.tolist()
+    coord = [node_coord]
     chull = [0]
 
     while True:
@@ -185,7 +252,7 @@ def build_tree(data,possible_values,x_axis,y_axis,initial_values,to_str_method):
             candidate_coord.append(data_p)
         
         chosen_node_index = make_choice(
-            chull,node,coord,candidate_nodes,candidate_coord)
+            chull,node,node_coord,nodes,coord,candidate_nodes,candidate_coord)
 
         if chosen_node_index == -1:
             break
@@ -209,6 +276,7 @@ def build_tree(data,possible_values,x_axis,y_axis,initial_values,to_str_method):
 
         node.chosen_child_index = chosen_node_index
         node = chosen_node
+        node_coord = data.loc[str(node),[x_axis,y_axis]].values.tolist()
 
     return root
 
