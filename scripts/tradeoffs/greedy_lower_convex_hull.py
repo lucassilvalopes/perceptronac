@@ -150,7 +150,7 @@ def dist_to_chull(chull,coord,pt):
 
 
 def make_choice(data,x_axis,y_axis,chull,node,node_coord,nodes,coord,candidate_nodes,candidate_coord,
-                debug=True):
+                debug=False):
 
     if all([str(n) == str(node) for n in candidate_nodes]):
         return -1
@@ -626,24 +626,24 @@ def glch_model_bits_vs_data_bits(csv_path):
 
 if __name__ == "__main__":
 
-    # glch_rate_vs_energy("/home/lucas/Documents/perceptronac/results/exp_1676160746/exp_1676160746_static_rate_x_power_values.csv")
+    glch_rate_vs_energy("/home/lucas/Documents/perceptronac/results/exp_1676160746/exp_1676160746_static_rate_x_power_values.csv")
 
-    # glch_rate_vs_dist(
-    #     "/home/lucas/Documents/perceptronac/scripts/tradeoffs/bpp-mse-psnr-loss-flops-params_bmshj2018-factorized_10000-epochs_L-2e-2-1e-2-5e-3_N-32-64-96-128-160-192-224_M-32-64-96-128-160-192-224-256-288-320.csv",
-    #     "bpp_loss","mse_loss"
-    # )
+    glch_rate_vs_dist(
+        "/home/lucas/Documents/perceptronac/scripts/tradeoffs/bpp-mse-psnr-loss-flops-params_bmshj2018-factorized_10000-epochs_L-2e-2-1e-2-5e-3_N-32-64-96-128-160-192-224_M-32-64-96-128-160-192-224-256-288-320.csv",
+        "bpp_loss","mse_loss"
+    )
 
     glch_rate_vs_dist(
         "/home/lucas/Documents/perceptronac/scripts/tradeoffs/bpp-mse-psnr-loss-flops-params_bmshj2018-factorized_10000-epochs_L-2e-2-1e-2-5e-3_N-32-64-96-128-160-192-224_M-32-64-96-128-160-192-224-256-288-320.csv",
         "flops","loss"
     )
 
-    # glch_rate_vs_dist(
-    #     "/home/lucas/Documents/perceptronac/scripts/tradeoffs/bpp-mse-psnr-loss-flops-params_bmshj2018-factorized_10000-epochs_L-2e-2-1e-2-5e-3_N-32-64-96-128-160-192-224_M-32-64-96-128-160-192-224-256-288-320.csv",
-    #     "params","loss"
-    # )
+    glch_rate_vs_dist(
+        "/home/lucas/Documents/perceptronac/scripts/tradeoffs/bpp-mse-psnr-loss-flops-params_bmshj2018-factorized_10000-epochs_L-2e-2-1e-2-5e-3_N-32-64-96-128-160-192-224_M-32-64-96-128-160-192-224-256-288-320.csv",
+        "params","loss"
+    )
 
-    # glch_model_bits_vs_data_bits("/home/lucas/Documents/perceptronac/results/exp_1676160183/exp_1676160183_model_bits_x_data_bits_values.csv")
+    glch_model_bits_vs_data_bits("/home/lucas/Documents/perceptronac/results/exp_1676160183/exp_1676160183_model_bits_x_data_bits_values.csv")
 
 
 
