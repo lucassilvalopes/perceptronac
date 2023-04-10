@@ -8,6 +8,7 @@ sys.path.append(os.path.dirname(os.path.dirname(SCRIPT_DIR)))
 
 from perceptronac.convex_hull import convex_hull
 import numpy as np
+import math
 import matplotlib.pyplot as plt
 from sklearn.preprocessing import MinMaxScaler
 
@@ -59,7 +60,7 @@ class Node:
 
 
 
-def dist_to_chull(chull,coord,pt):
+def dist_to_chull_old(chull,coord,pt):
 
     if len(chull) == 1:
         return pt[0] - coord[chull[0]][0]
@@ -109,6 +110,30 @@ def dist_to_chull(chull,coord,pt):
         # ax.text(x=0,y=0,s=dist)
 
     return np.min(dists)
+
+
+def dist_to_chull(chull,coord,pt):
+
+    if len(chull) == 1:
+        line_vec = np.array([0,-1])
+    else:
+        line_vec = np.array(coord[chull[-1]]) - np.array(coord[chull[-2]])
+
+        if line_vec[0]<0 and line_vec[1]>0:
+            line_vec = -line_vec
+        elif line_vec[0]==0 and line_vec[1]>0:
+            line_vec = np.array([line_vec[0],-line_vec[1]])
+        elif line_vec[0]<0 and line_vec[1]==0:
+            line_vec = np.array([-line_vec[0],line_vec[1]])
+    
+    pt_vec = np.array(pt) - np.array(coord[chull[-1]])
+
+    c = (pt_vec.reshape(1,-1) @ line_vec.reshape(-1,1)).item() / (np.linalg.norm(line_vec) * np.linalg.norm(pt_vec))
+
+    theta = np.sign(np.cross(line_vec,pt_vec)) * math.acos(c)
+
+    return theta
+
 
 
 def make_choice(chull,node,coord,candidate_nodes,candidate_coord):
