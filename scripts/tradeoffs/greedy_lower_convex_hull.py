@@ -60,7 +60,7 @@ class Node:
 
 
 
-def dist_to_chull_old(chull,coord,pt):
+def dist_to_chull_old_old(chull,coord,pt):
 
     if len(chull) == 1:
         return pt[0] - coord[chull[0]][0]
@@ -112,7 +112,7 @@ def dist_to_chull_old(chull,coord,pt):
     return np.min(dists)
 
 
-def calc_line_vec(chull,coord):
+def dist_to_chull_old(chull,coord,pt):
 
     if len(chull) == 1:
         line_vec = np.array([0,-1])
@@ -126,13 +126,6 @@ def calc_line_vec(chull,coord):
         elif line_vec[0]<0 and line_vec[1]==0:
             line_vec = np.array([-line_vec[0],line_vec[1]])
     
-    return line_vec
-
-
-def dist_to_chull(chull,coord,pt):
-
-    line_vec = calc_line_vec(chull,coord)
-    
     pt_vec = np.array(pt) - np.array(coord[chull[-1]])
 
     c = (pt_vec.reshape(1,-1) @ line_vec.reshape(-1,1)).item() / (np.linalg.norm(line_vec) * np.linalg.norm(pt_vec))
@@ -140,6 +133,19 @@ def dist_to_chull(chull,coord,pt):
     theta = np.sign(np.cross(line_vec,pt_vec)) * math.acos(c)
 
     return theta
+
+
+def dist_to_chull(chull,coord,pt):
+
+    best_yet = np.min([coord[i] for i in chull],axis=0)
+
+    # improv = (pt[0]-best_yet[0])/best_yet[0] + (pt[1]-best_yet[1])/best_yet[1]
+
+    improv = (pt[0]-best_yet[0]) + (pt[1]-best_yet[1])
+
+    return -improv
+
+    
 
 
 
@@ -169,49 +175,15 @@ def make_choice(data,x_axis,y_axis,chull,node,node_coord,nodes,coord,candidate_n
 
         ax.plot(data[x_axis].values, data[y_axis].values,marker="x",linestyle="")
 
-        ax.plot(
-            [node_coord[0]],[node_coord[1]],
-            marker="s",
-            linestyle=""
-        )
-
         ax.text(x=node_coord[0],y=node_coord[1],s=str(node))
-
-        line_vec = calc_line_vec(chull,coord)
-
-        ax.plot(
-            [coord[chull[-1]][0],(coord[chull[-1]]+line_vec)[0]],
-            [coord[chull[-1]][1],(coord[chull[-1]]+line_vec)[1]],color="b")
-
-        ax.text(x=coord[chull[-1]][0],y=coord[chull[-1]][1],s=str(nodes[chull[-1]]))
-
-        if len(chull) > 1:
-            ax.plot(
-            [coord[chull[-2]][0],(coord[chull[-1]])[0]],
-            [coord[chull[-2]][1],(coord[chull[-1]])[1]],color="b")
-            ax.text(x=coord[chull[-2]][0],y=coord[chull[-2]][1],s=str(nodes[chull[-2]]))
 
         for i,pt in enumerate(candidate_coord):
             ax.plot(
-                [coord[chull[-1]][0],pt[0]],
-                [coord[chull[-1]][1],pt[1]],
+                [node_coord[0],pt[0]],
+                [node_coord[1],pt[1]],
                 color=("g" if i == chosen_node_index else "r") )
             
-            ax.text(x=pt[0],y=pt[1],s=str(candidate_nodes[i]))
-        
-        
-
-        # lb = -1.3*np.max(np.abs(np.array(coord + candidate_coord)))
-        # ub = 1.3*np.max(np.abs(np.array(coord + candidate_coord)))
-        # ax.set_xlim(lb,ub)
-        # ax.set_ylim(lb,ub)
-
-        # # https://stackoverflow.com/a/57249253
-        # ratio = 1.0
-        # xleft, xright = ax.get_xlim()
-        # ybottom, ytop = ax.get_ylim()
-        # ax.set_aspect(abs((xright-xleft)/(ybottom-ytop))*ratio)
-
+            ax.text(x=pt[0],y=pt[1],s=f"{str(candidate_nodes[i])},d={dists[i]}")
 
     return chosen_node_index
     
@@ -221,8 +193,8 @@ def make_choice(data,x_axis,y_axis,chull,node,node_coord,nodes,coord,candidate_n
 def build_tree(data,possible_values,x_axis,y_axis,initial_values,to_str_method):
 
 
-    data[x_axis] = MinMaxScaler().fit_transform(data[x_axis].values.reshape(-1,1))
-    data[y_axis] = MinMaxScaler().fit_transform(data[y_axis].values.reshape(-1,1))
+    # data[x_axis] = MinMaxScaler().fit_transform(data[x_axis].values.reshape(-1,1))
+    # data[y_axis] = MinMaxScaler().fit_transform(data[y_axis].values.reshape(-1,1))
 
     root = Node(**initial_values)
     root.set_to_str_method(to_str_method)
@@ -654,7 +626,7 @@ def glch_model_bits_vs_data_bits(csv_path):
 
 if __name__ == "__main__":
 
-    # glch_rate_vs_energy("/home/lucas/Documents/perceptronac/results/exp_1676160746/exp_1676160746_static_rate_x_power_values.csv")
+    glch_rate_vs_energy("/home/lucas/Documents/perceptronac/results/exp_1676160746/exp_1676160746_static_rate_x_power_values.csv")
 
     # glch_rate_vs_dist(
     #     "/home/lucas/Documents/perceptronac/scripts/tradeoffs/bpp-mse-psnr-loss-flops-params_bmshj2018-factorized_10000-epochs_L-2e-2-1e-2-5e-3_N-32-64-96-128-160-192-224_M-32-64-96-128-160-192-224-256-288-320.csv",
@@ -666,10 +638,10 @@ if __name__ == "__main__":
     #     "flops","loss"
     # )
 
-    glch_rate_vs_dist(
-        "/home/lucas/Documents/perceptronac/scripts/tradeoffs/bpp-mse-psnr-loss-flops-params_bmshj2018-factorized_10000-epochs_L-2e-2-1e-2-5e-3_N-32-64-96-128-160-192-224_M-32-64-96-128-160-192-224-256-288-320.csv",
-        "params","loss"
-    )
+    # glch_rate_vs_dist(
+    #     "/home/lucas/Documents/perceptronac/scripts/tradeoffs/bpp-mse-psnr-loss-flops-params_bmshj2018-factorized_10000-epochs_L-2e-2-1e-2-5e-3_N-32-64-96-128-160-192-224_M-32-64-96-128-160-192-224-256-288-320.csv",
+    #     "params","loss"
+    # )
 
     # glch_model_bits_vs_data_bits("/home/lucas/Documents/perceptronac/results/exp_1676160183/exp_1676160183_model_bits_x_data_bits_values.csv")
 
