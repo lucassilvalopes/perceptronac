@@ -57,84 +57,6 @@ class Node:
 
 # %%
 
-
-
-
-def dist_to_chull_old_old(chull,coord,pt):
-
-    if len(chull) == 1:
-        return pt[0] - coord[chull[0]][0]
-        
-    dists = []
-
-    # fig, ax = plt.subplots(nrows=1, ncols=1)
-
-    for i in range(len(chull)-1):
-
-        line_vec = np.array(coord[chull[i+1]]) - np.array(coord[chull[i]])
-
-        if line_vec[0]<0 and line_vec[1]>0:
-            line_vec = -line_vec
-        elif line_vec[0]==0 and line_vec[1]>0:
-            line_vec = np.array([line_vec[0],-line_vec[1]])
-        elif line_vec[0]<0 and line_vec[1]==0:
-            line_vec = np.array([-line_vec[0],line_vec[1]])
-
-        pt_vec = np.array(pt) - np.array(coord[chull[i]])
-
-        proj_vec = (line_vec / np.linalg.norm(line_vec)**2) * (pt_vec.reshape(1,-1) @ line_vec.reshape(-1,1)).item()
-
-        orth_vec = np.array(pt) - (np.array(coord[chull[i]]) + proj_vec)
-
-        dist = np.sign(np.cross(line_vec,orth_vec)) * np.linalg.norm(orth_vec)
-
-        dists.append(dist)
-        
-        # ax.plot([coord[chull[i]][0],pt[0]],[coord[chull[i]][1],pt[1]],color="r")
-        # ax.plot([coord[chull[i]][0],coord[chull[i+1]][0]],[coord[chull[i]][1],coord[chull[i+1]][1]],color="g")
-        # ax.plot(
-        #     [coord[chull[i]][0] + proj_vec[0],pt[0]],
-        #     [coord[chull[i]][1] + proj_vec[1],pt[1]],
-        #     color="b")
-        # ax.text(x=coord[chull[i]][0],y=coord[chull[i]][1],s="chull[i]")
-        # ax.text(x=pt[0],y=pt[1],s="pt")
-        # ax.set_xlim(-1.1*np.max(np.abs(np.array(coord + [pt]))),1.1*np.max(np.abs(np.array(coord+ [pt]))))
-        # ax.set_ylim(-1.1*np.max(np.abs(np.array(coord+ [pt]))),1.1*np.max(np.abs(np.array(coord+ [pt]))))
-
-        # # https://stackoverflow.com/a/57249253
-        # ratio = 1.0
-        # xleft, xright = ax.get_xlim()
-        # ybottom, ytop = ax.get_ylim()
-        # ax.set_aspect(abs((xright-xleft)/(ybottom-ytop))*ratio)
-
-        # ax.text(x=0,y=0,s=dist)
-
-    return np.min(dists)
-
-
-def dist_to_chull_old(chull,coord,pt):
-
-    if len(chull) == 1:
-        line_vec = np.array([0,-1])
-    else:
-        line_vec = np.array(coord[chull[-1]]) - np.array(coord[chull[-2]])
-
-        if line_vec[0]<0 and line_vec[1]>0:
-            line_vec = -line_vec
-        elif line_vec[0]==0 and line_vec[1]>0:
-            line_vec = np.array([line_vec[0],-line_vec[1]])
-        elif line_vec[0]<0 and line_vec[1]==0:
-            line_vec = np.array([-line_vec[0],line_vec[1]])
-    
-    pt_vec = np.array(pt) - np.array(coord[chull[-1]])
-
-    c = (pt_vec.reshape(1,-1) @ line_vec.reshape(-1,1)).item() / (np.linalg.norm(line_vec) * np.linalg.norm(pt_vec))
-
-    theta = np.sign(np.cross(line_vec,pt_vec)) * math.acos(c)
-
-    return theta
-
-
 def dist_to_chull(chull,coord,pt):
 
     best_yet = np.min([coord[i] for i in chull],axis=0)
@@ -190,8 +112,27 @@ def make_choice(data,x_axis,y_axis,chull,node,node_coord,nodes,coord,candidate_n
 
 
 
-def build_tree(data,possible_values,x_axis,y_axis,initial_values,to_str_method):
+def build_tree(data,possible_values,x_axis,y_axis,initial_values,to_str_method,start="left"):
+    """
+    data = 
+    |---------------|joules|data_bits/data_samples|  
+    |---topology----|------|----------------------|
+    |032_010_010_001|420.00|0.99999999999999999999|
 
+    possible_values = {
+        "h1": [10,20,40,80,160,320,640],
+        "h2": [10,20,40,80,160,320,640]
+    }
+
+    x_axis = "joules"
+    y_axis = "data_bits/data_samples"
+
+    initial_values = {"h1":10,"h2":10}
+
+    def to_str_method(params):
+        widths = [32,params["h1"],params["h2"],1]
+        return '_'.join(map(lambda x: f"{x:03d}",widths))
+    """
 
     # data[x_axis] = MinMaxScaler().fit_transform(data[x_axis].values.reshape(-1,1))
     # data[y_axis] = MinMaxScaler().fit_transform(data[y_axis].values.reshape(-1,1))
@@ -228,7 +169,7 @@ def build_tree(data,possible_values,x_axis,y_axis,initial_values,to_str_method):
         nodes = nodes + candidate_nodes
         coord = coord + candidate_coord
 
-        chull = min_max_convex_hull(coord)
+        chull = min_max_convex_hull(coord,start=start)
 
         candidates_in_chull = [i-len_nodes for i in chull if i >= len_nodes]
 
@@ -245,109 +186,6 @@ def build_tree(data,possible_values,x_axis,y_axis,initial_values,to_str_method):
 
     return root
 
-
-def build_tree_old(data,possible_values,x_axis,y_axis,initial_values,to_str_method):
-    """
-    data = 
-    |---------------|joules|data_bits/data_samples|  
-    |---topology----|------|----------------------|
-    |032_010_010_001|420.00|0.99999999999999999999|
-
-    possible_values = {
-        "h1": [10,20,40,80,160,320,640],
-        "h2": [10,20,40,80,160,320,640]
-    }
-
-    x_axis = "joules"
-    y_axis = "data_bits/data_samples"
-
-    initial_values = {"h1":10,"h2":10}
-
-    def to_str_method(params):
-        widths = [32,params["h1"],params["h2"],1]
-        return '_'.join(map(lambda x: f"{x:03d}",widths))
-    """
-    root = Node(**initial_values)
-    root.set_to_str_method(to_str_method)
-
-    node = root
-
-    live_nodes = [node]
-    live_coord = [data.loc[str(node),[x_axis,y_axis]].values.tolist()]
-    current_global_hull = [0]
-
-    while True:
-
-        coord = []
-        nodes = []
-        promising = []
-        for p in sorted(possible_values.keys()):
-            node_p = node.auto_increment(p,possible_values)
-            nodes.append(node_p)
-            data_p = data.loc[str(node_p),[x_axis,y_axis]].values.tolist()
-            coord.append(data_p)
-
-            live_nodes.append(node_p)
-            live_coord.append(data_p)
-            new_global_hull = min_max_convex_hull(live_coord,"right")
-            if new_global_hull != current_global_hull:
-                current_global_hull = new_global_hull
-                promising.append(True)
-            else:
-                promising.append(False)
-
-        if promising.count(True) == 1:
-            chosen_node_index = promising.index(True)
-            chosen_node = nodes[chosen_node_index]
-            node.children = nodes
-            node.chosen_child_index = chosen_node_index
-            node = chosen_node
-            continue
-            
-        else: # > 1 or == 0
-            
-            # option 1
-            node.children = nodes
-
-            strs = [str(n) for n in nodes]
-
-            duplicated = [s == str(node) for s in strs]
-
-            if all(duplicated):
-                break
-
-            chull = min_max_convex_hull([c for c,d in zip(coord,duplicated) if not d],"right")
-
-            chosen_node_index = chull[0]
-            chosen_node = [n for n,d in zip(nodes,duplicated) if not d][chosen_node_index]
-
-            node.chosen_child_index = strs.index(str(chosen_node))
-            node = chosen_node
-
-            # option 2
-            # # nodes = [node] + nodes
-            # # coord = [data.loc[str(node),[x_axis,y_axis]].values.tolist()] + coord
-            # chull = min_max_convex_hull(coord)
-
-            # # nodes = nodes[1:]
-            # # coord = coord[1:]
-            # # if 0 in chull:
-            # #     chull.pop(chull.index(0))
-            # # chull = [e-1 for e in chull]
-
-            # # if len(chull) == 0:
-            # #     chull.append(0)
-
-            # chosen_node_index = chull[0]
-            # chosen_node = nodes[chosen_node_index]
-
-            # node.children = nodes
-            # if str(chosen_node) == str(node):
-            #     break
-            # node.chosen_child_index = chosen_node_index
-            # node = chosen_node
-
-    return root
 
 # %%
 def print_tree(node,file=None):
@@ -554,7 +392,7 @@ def glch_rate_vs_energy(csv_path):
     print(estimated_hull_points)
 
 
-def glch_rate_vs_dist(csv_path,x_axis,y_axis,scale_x,scale_y):
+def glch_rate_vs_dist(csv_path,x_axis,y_axis,scale_x,scale_y,start="left"):
 
     data = pd.read_csv(csv_path).set_index("labels")
 
@@ -570,7 +408,14 @@ def glch_rate_vs_dist(csv_path,x_axis,y_axis,scale_x,scale_y):
     # x_axis = "bpp_loss"
     # y_axis = "mse_loss"
 
-    initial_values = {"L":"5e-3", "N":32,"M":32}
+    if start == "right":
+        possible_values = {k:v[::-1] for k,v in possible_values.items()}
+
+    initial_values = {
+        "L":possible_values["L"][0], 
+        "N":possible_values["N"][0],
+        "M":possible_values["M"][0]
+    }
 
     def to_str_method(params):
         return f"L{params['L']}N{params['N']}M{params['M']}"
@@ -629,24 +474,24 @@ def glch_model_bits_vs_data_bits(csv_path):
 
 if __name__ == "__main__":
 
-    glch_rate_vs_energy("/home/lucas/Documents/perceptronac/results/exp_1676160746/exp_1676160746_static_rate_x_power_values.csv")
+    # glch_rate_vs_energy("/home/lucas/Documents/perceptronac/results/exp_1676160746/exp_1676160746_static_rate_x_power_values.csv")
 
     glch_rate_vs_dist(
         "/home/lucas/Documents/perceptronac/scripts/tradeoffs/bpp-mse-psnr-loss-flops-params_bmshj2018-factorized_10000-epochs_L-2e-2-1e-2-5e-3_N-32-64-96-128-160-192-224_M-32-64-96-128-160-192-224-256-288-320.csv",
-        "bpp_loss","mse_loss",1,1
+        "bpp_loss","mse_loss",1,1,start="right"
     )
 
-    glch_rate_vs_dist(
-        "/home/lucas/Documents/perceptronac/scripts/tradeoffs/bpp-mse-psnr-loss-flops-params_bmshj2018-factorized_10000-epochs_L-2e-2-1e-2-5e-3_N-32-64-96-128-160-192-224_M-32-64-96-128-160-192-224-256-288-320.csv",
-        "flops","loss",1e10,1
-    )
+    # glch_rate_vs_dist(
+    #     "/home/lucas/Documents/perceptronac/scripts/tradeoffs/bpp-mse-psnr-loss-flops-params_bmshj2018-factorized_10000-epochs_L-2e-2-1e-2-5e-3_N-32-64-96-128-160-192-224_M-32-64-96-128-160-192-224-256-288-320.csv",
+    #     "flops","loss",1e10,1
+    # )
 
-    glch_rate_vs_dist(
-        "/home/lucas/Documents/perceptronac/scripts/tradeoffs/bpp-mse-psnr-loss-flops-params_bmshj2018-factorized_10000-epochs_L-2e-2-1e-2-5e-3_N-32-64-96-128-160-192-224_M-32-64-96-128-160-192-224-256-288-320.csv",
-        "params","loss",1e6,1
-    )
+    # glch_rate_vs_dist(
+    #     "/home/lucas/Documents/perceptronac/scripts/tradeoffs/bpp-mse-psnr-loss-flops-params_bmshj2018-factorized_10000-epochs_L-2e-2-1e-2-5e-3_N-32-64-96-128-160-192-224_M-32-64-96-128-160-192-224-256-288-320.csv",
+    #     "params","loss",1e6,1
+    # )
 
-    glch_model_bits_vs_data_bits("/home/lucas/Documents/perceptronac/results/exp_1676160183/exp_1676160183_model_bits_x_data_bits_values.csv")
+    # glch_model_bits_vs_data_bits("/home/lucas/Documents/perceptronac/results/exp_1676160183/exp_1676160183_model_bits_x_data_bits_values.csv")
 
 
 
