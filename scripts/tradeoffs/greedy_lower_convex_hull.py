@@ -249,7 +249,7 @@ def tree_figure(data,r,x_axis,y_axis,fig=None):
     if fig is None:
         fig, ax = plt.subplots(nrows=1, ncols=1)
     else:
-        ax = fig.axes
+        ax = fig.axes[0]
     ax.plot(data.loc[:,x_axis].values,data.loc[:,y_axis].values,linestyle="",marker="x")
     paint_tree(ax,data,r,x_axis,y_axis)
     ax.set_xlabel(x_axis)
@@ -472,7 +472,7 @@ def glch_rate_vs_dist_2(csv_path,x_axis,y_axis,scale_x,scale_y,start="left"):
 
     brute_keys = "".join(list(brute_dict.keys()))
     greedy_keys = "".join(list(greedy_dict.keys()))
-    exp_id = f"{x_axis}_vs_{y_axis}_brute_{brute_keys}_greedy_{greedy_keys}"
+    exp_id = f"{x_axis}_vs_{y_axis}_brute_{brute_keys}_greedy_{greedy_keys}_start_{start}"
 
     rs = []
     tree_file = open(f'tree_{exp_id}.txt', 'w')
@@ -542,9 +542,9 @@ if __name__ == "__main__":
 
     # glch_rate_vs_energy("/home/lucas/Documents/perceptronac/results/exp_1676160746/exp_1676160746_static_rate_x_power_values.csv")
 
-    glch_rate_vs_dist(
+    glch_rate_vs_dist_2(
         "/home/lucas/Documents/perceptronac/scripts/tradeoffs/bpp-mse-psnr-loss-flops-params_bmshj2018-factorized_10000-epochs_L-2e-2-1e-2-5e-3_N-32-64-96-128-160-192-224_M-32-64-96-128-160-192-224-256-288-320.csv",
-        "bpp_loss","mse_loss",1,1,start="left"
+        "bpp_loss","mse_loss",1,1,start="right"
     )
 
     # glch_rate_vs_dist(
