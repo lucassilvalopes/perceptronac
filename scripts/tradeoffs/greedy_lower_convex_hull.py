@@ -241,12 +241,15 @@ def tree_nodes(r, all_nodes = True):
 
 # %%
 
-def tree_figure(data,r,x_axis,y_axis):
+def tree_figure(data,r,x_axis,y_axis,fig=None):
     """
     x_axis = "joules"
     y_axis = "data_bits/data_samples"
     """
-    fig, ax = plt.subplots(nrows=1, ncols=1)
+    if fig is None:
+        fig, ax = plt.subplots(nrows=1, ncols=1)
+    else:
+        ax = fig.axes
     ax.plot(data.loc[:,x_axis].values,data.loc[:,y_axis].values,linestyle="",marker="x")
     paint_tree(ax,data,r,x_axis,y_axis)
     ax.set_xlabel(x_axis)
@@ -254,7 +257,7 @@ def tree_figure(data,r,x_axis,y_axis):
     return fig
 
 # %%
-def hulls_figure(data,r,x_axis,y_axis):
+def hulls_figure(data,rs,x_axis,y_axis):
     """
     x_axis = "joules"
     y_axis = "data_bits/data_samples"
@@ -263,7 +266,9 @@ def hulls_figure(data,r,x_axis,y_axis):
     ax.plot(data.loc[:,x_axis].values,data.loc[:,y_axis].values,linestyle="",marker="x")
     true_hull_points = data.iloc[min_max_convex_hull(data.loc[:,[x_axis,y_axis]].values.tolist()),:]
     ax.plot(true_hull_points[x_axis],true_hull_points[y_axis],linestyle=(0, (5, 5)),color="red",marker=None)
-    new_points = tree_nodes(r)
+    new_points = []
+    for r in rs:
+        new_points += tree_nodes(r)
     probe = data.loc[new_points,:]
     estimated_hull_points = probe.iloc[min_max_convex_hull(probe.loc[:,[x_axis,y_axis]].values.tolist()),:]
     ax.plot(
@@ -385,7 +390,7 @@ def glch_rate_vs_energy(csv_path):
     tree_fig = tree_figure(data,r,x_axis,y_axis)
     tree_fig.savefig(f"tree_fig_rate_vs_energy.png", dpi=300, facecolor='w', bbox_inches = "tight")
 
-    hulls_fig,true_hull_points,estimated_hull_points = hulls_figure(data,r,x_axis,y_axis)
+    hulls_fig,true_hull_points,estimated_hull_points = hulls_figure(data,[r],x_axis,y_axis)
     hulls_fig.savefig(f"hulls_fig_rate_vs_energy.png", dpi=300, facecolor='w', bbox_inches = "tight")
 
     print(true_hull_points)
@@ -428,8 +433,69 @@ def glch_rate_vs_dist(csv_path,x_axis,y_axis,scale_x,scale_y,start="left"):
     tree_fig = tree_figure(data,r,x_axis,y_axis)
     tree_fig.savefig(f"tree_fig_{x_axis}_vs_{y_axis}_start_{start}.png", dpi=300, facecolor='w', bbox_inches = "tight")
 
-    hulls_fig,true_hull_points,estimated_hull_points = hulls_figure(data,r,x_axis,y_axis)
+    hulls_fig,true_hull_points,estimated_hull_points = hulls_figure(data,[r],x_axis,y_axis)
     hulls_fig.savefig(f"hulls_fig_{x_axis}_vs_{y_axis}_start_{start}.png", dpi=300, facecolor='w', bbox_inches = "tight")
+
+    print(true_hull_points)
+    print(estimated_hull_points)
+
+
+def glch_rate_vs_dist_2(csv_path,x_axis,y_axis,scale_x,scale_y,start="left"):
+
+    data = pd.read_csv(csv_path).set_index("labels")
+
+    data[x_axis] = data[x_axis].values/scale_x
+    data[y_axis] = data[y_axis].values/scale_y
+
+    brute_dict = {
+        "L": ["5e-3", "1e-2", "2e-2"]
+    }
+
+    greedy_dict = {
+        "N": [32, 64, 96, 128, 160, 192, 224],
+        "M": [32, 64, 96, 128, 160, 192, 224, 256, 288, 320]
+    }
+
+    if start == "right":
+        greedy_dict = {k:v[::-1] for k,v in greedy_dict.items()}
+
+    initial_state = {
+        "N":greedy_dict["N"][0],
+        "M":greedy_dict["M"][0]
+    }
+
+    def to_str_method_factory(brute_params):
+        def to_str_method(greedy_params):
+            return f"L{brute_params['L']}N{greedy_params['N']}M{greedy_params['M']}"
+        return to_str_method
+
+
+    brute_keys = "".join(list(brute_dict.keys()))
+    greedy_keys = "".join(list(greedy_dict.keys()))
+    exp_id = f"{x_axis}_vs_{y_axis}_brute_{brute_keys}_greedy_{greedy_keys}"
+
+    rs = []
+    tree_file = open(f'tree_{exp_id}.txt', 'w')
+    tree_fig = None
+    for L in brute_dict["L"]:
+
+        to_str_method = to_str_method_factory({"L":L})
+
+        current_data = data.iloc[[i for i,lbl in enumerate(data.index) if f"L{L}" in lbl],:]
+        
+        r = build_tree(current_data,greedy_dict,x_axis,y_axis,initial_state,to_str_method)
+
+        rs.append(r)
+
+        print_tree(r,file=tree_file)
+
+        tree_fig = tree_figure(data,r,x_axis,y_axis,fig=tree_fig)
+    
+    tree_file.close()
+    tree_fig.savefig(f"tree_fig_{exp_id}.png", dpi=300, facecolor='w', bbox_inches = "tight")
+
+    hulls_fig,true_hull_points,estimated_hull_points = hulls_figure(data,rs,x_axis,y_axis)
+    hulls_fig.savefig(f"hulls_fig_{exp_id}.png", dpi=300, facecolor='w', bbox_inches = "tight")
 
     print(true_hull_points)
     print(estimated_hull_points)
@@ -466,7 +532,7 @@ def glch_model_bits_vs_data_bits(csv_path):
     tree_fig = tree_figure(data,r,x_axis,y_axis)
     tree_fig.savefig(f"tree_fig_model_bits_vs_data_bits.png", dpi=300, facecolor='w', bbox_inches = "tight")
 
-    hulls_fig,true_hull_points,estimated_hull_points = hulls_figure(data,r,x_axis,y_axis)
+    hulls_fig,true_hull_points,estimated_hull_points = hulls_figure(data,[r],x_axis,y_axis)
     hulls_fig.savefig(f"hulls_fig_model_bits_vs_data_bits.png", dpi=300, facecolor='w', bbox_inches = "tight")
 
     print(true_hull_points)
