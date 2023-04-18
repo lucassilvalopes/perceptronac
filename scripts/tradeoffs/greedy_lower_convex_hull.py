@@ -359,6 +359,15 @@ def limit_energy_significant_digits(data):
 # %%
 
 
+def save_hull_points(file_name,true_hull_points,estimated_hull_points):
+
+    with open(f'{file_name}.txt', 'w') as f:
+        print("true_hull_points",file=f)
+        print(true_hull_points,file=f)
+        print("estimated_hull_points",file=f)
+        print(estimated_hull_points,file=f)
+
+
 def glch_rate_vs_energy(csv_path):
 
     data = pd.read_csv(csv_path).set_index("topology")
@@ -393,8 +402,7 @@ def glch_rate_vs_energy(csv_path):
     hulls_fig,true_hull_points,estimated_hull_points = hulls_figure(data,[r],x_axis,y_axis)
     hulls_fig.savefig(f"hulls_fig_rate_vs_energy.png", dpi=300, facecolor='w', bbox_inches = "tight")
 
-    print(true_hull_points)
-    print(estimated_hull_points)
+    save_hull_points("hulls_rate_vs_energy",true_hull_points,estimated_hull_points)
 
 
 def glch_rate_vs_dist(csv_path,x_axis,y_axis,scale_x,scale_y,start="left"):
@@ -436,8 +444,7 @@ def glch_rate_vs_dist(csv_path,x_axis,y_axis,scale_x,scale_y,start="left"):
     hulls_fig,true_hull_points,estimated_hull_points = hulls_figure(data,[r],x_axis,y_axis)
     hulls_fig.savefig(f"hulls_fig_{x_axis}_vs_{y_axis}_start_{start}.png", dpi=300, facecolor='w', bbox_inches = "tight")
 
-    print(true_hull_points)
-    print(estimated_hull_points)
+    save_hull_points(f"hulls_fig_{x_axis}_vs_{y_axis}_start_{start}",true_hull_points,estimated_hull_points)
 
 
 def glch_rate_vs_dist_2(csv_path,x_axis,y_axis,scale_x,scale_y,start="left"):
@@ -497,8 +504,7 @@ def glch_rate_vs_dist_2(csv_path,x_axis,y_axis,scale_x,scale_y,start="left"):
     hulls_fig,true_hull_points,estimated_hull_points = hulls_figure(data,rs,x_axis,y_axis)
     hulls_fig.savefig(f"hulls_fig_{exp_id}.png", dpi=300, facecolor='w', bbox_inches = "tight")
 
-    print(true_hull_points)
-    print(estimated_hull_points)
+    save_hull_points(f"hulls_fig_{exp_id}",true_hull_points,estimated_hull_points)
 
 
 def glch_model_bits_vs_data_bits(csv_path):
@@ -535,29 +541,29 @@ def glch_model_bits_vs_data_bits(csv_path):
     hulls_fig,true_hull_points,estimated_hull_points = hulls_figure(data,[r],x_axis,y_axis)
     hulls_fig.savefig(f"hulls_fig_model_bits_vs_data_bits.png", dpi=300, facecolor='w', bbox_inches = "tight")
 
-    print(true_hull_points)
-    print(estimated_hull_points)
+    save_hull_points(f"hulls_fig_model_bits_vs_data_bits",true_hull_points,estimated_hull_points)
+
 
 if __name__ == "__main__":
 
-    # glch_rate_vs_energy("/home/lucas/Documents/perceptronac/results/exp_1676160746/exp_1676160746_static_rate_x_power_values.csv")
+    glch_rate_vs_energy("/home/lucas/Documents/perceptronac/results/exp_1676160746/exp_1676160746_static_rate_x_power_values.csv")
 
     glch_rate_vs_dist_2(
         "/home/lucas/Documents/perceptronac/scripts/tradeoffs/bpp-mse-psnr-loss-flops-params_bmshj2018-factorized_10000-epochs_L-2e-2-1e-2-5e-3_N-32-64-96-128-160-192-224_M-32-64-96-128-160-192-224-256-288-320.csv",
         "bpp_loss","mse_loss",1,1,start="right"
     )
 
-    # glch_rate_vs_dist(
-    #     "/home/lucas/Documents/perceptronac/scripts/tradeoffs/bpp-mse-psnr-loss-flops-params_bmshj2018-factorized_10000-epochs_L-2e-2-1e-2-5e-3_N-32-64-96-128-160-192-224_M-32-64-96-128-160-192-224-256-288-320.csv",
-    #     "flops","loss",1e10,1
-    # )
+    glch_rate_vs_dist(
+        "/home/lucas/Documents/perceptronac/scripts/tradeoffs/bpp-mse-psnr-loss-flops-params_bmshj2018-factorized_10000-epochs_L-2e-2-1e-2-5e-3_N-32-64-96-128-160-192-224_M-32-64-96-128-160-192-224-256-288-320.csv",
+        "flops","loss",1e10,1
+    )
 
-    # glch_rate_vs_dist(
-    #     "/home/lucas/Documents/perceptronac/scripts/tradeoffs/bpp-mse-psnr-loss-flops-params_bmshj2018-factorized_10000-epochs_L-2e-2-1e-2-5e-3_N-32-64-96-128-160-192-224_M-32-64-96-128-160-192-224-256-288-320.csv",
-    #     "params","loss",1e6,1
-    # )
+    glch_rate_vs_dist(
+        "/home/lucas/Documents/perceptronac/scripts/tradeoffs/bpp-mse-psnr-loss-flops-params_bmshj2018-factorized_10000-epochs_L-2e-2-1e-2-5e-3_N-32-64-96-128-160-192-224_M-32-64-96-128-160-192-224-256-288-320.csv",
+        "params","loss",1e6,1
+    )
 
-    # glch_model_bits_vs_data_bits("/home/lucas/Documents/perceptronac/results/exp_1676160183/exp_1676160183_model_bits_x_data_bits_values.csv")
+    glch_model_bits_vs_data_bits("/home/lucas/Documents/perceptronac/results/exp_1676160183/exp_1676160183_model_bits_x_data_bits_values.csv")
 
 
 
