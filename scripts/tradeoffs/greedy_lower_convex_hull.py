@@ -241,21 +241,19 @@ def tree_nodes(r, all_nodes = True):
 
 # %%
 
-def tree_figure(data,r,x_axis,y_axis,fig=None):
+def tree_figure(data,r,x_axis,y_axis,ax=None):
     """
     x_axis = "joules"
     y_axis = "data_bits/data_samples"
     """
-    if fig is None:
-        fig, ax = plt.subplots(nrows=1, ncols=1)
-        ax.plot(data.loc[:,x_axis].values,data.loc[:,y_axis].values,linestyle="",marker="x")
-        ax.plot([data.loc[str(r),x_axis]],[data.loc[str(r),y_axis]],linestyle="",color="yellow",marker="o")
-    else:
-        ax = fig.axes[0]
+        
+    ax.plot(data.loc[:,x_axis].values,data.loc[:,y_axis].values,linestyle="",marker="x")
+    ax.plot([data.loc[str(r),x_axis]],[data.loc[str(r),y_axis]],linestyle="",color="yellow",marker="o")
+
     paint_tree(ax,data,r,x_axis,y_axis)
     ax.set_xlabel(x_axis)
     ax.set_ylabel(y_axis)
-    return fig
+
 
 # %%
 def hulls_figure(data,rs,x_axis,y_axis):
@@ -397,7 +395,8 @@ def glch_rate_vs_energy(csv_path):
     with open('tree_rate_vs_energy.txt', 'w') as f:
         print_tree(r,file=f)
 
-    tree_fig = tree_figure(data,r,x_axis,y_axis)
+    tree_fig, ax = plt.subplots(nrows=1, ncols=1)
+    tree_figure(data,r,x_axis,y_axis,ax=ax)
     tree_fig.savefig(f"tree_fig_rate_vs_energy.png", dpi=300, facecolor='w', bbox_inches = "tight")
 
     hulls_fig,true_hull_points,estimated_hull_points = hulls_figure(data,[r],x_axis,y_axis)
@@ -439,7 +438,8 @@ def glch_rate_vs_dist(csv_path,x_axis,y_axis,scale_x,scale_y,start="left"):
     with open(f'tree_{x_axis}_vs_{y_axis}_start_{start}.txt', 'w') as f:
         print_tree(r,file=f)
 
-    tree_fig = tree_figure(data,r,x_axis,y_axis)
+    tree_fig, ax = plt.subplots(nrows=1, ncols=1)
+    tree_figure(data,r,x_axis,y_axis,ax=ax)
     tree_fig.savefig(f"tree_fig_{x_axis}_vs_{y_axis}_start_{start}.png", dpi=300, facecolor='w', bbox_inches = "tight")
 
     hulls_fig,true_hull_points,estimated_hull_points = hulls_figure(data,[r],x_axis,y_axis)
@@ -485,10 +485,9 @@ def glch_rate_vs_dist_2(csv_path,x_axis,y_axis,scale_x,scale_y,start="left"):
     rs = []
     tree_file = open(f'tree_{exp_id}.txt', 'w')
 
-    tree_fig, ax = plt.subplots(nrows=1, ncols=1)
-    ax.plot(data.loc[:,x_axis].values,data.loc[:,y_axis].values,linestyle="",marker="x")
+    tree_fig, ax = plt.subplots(nrows=1, ncols=len(brute_dict["L"]))
 
-    for L in brute_dict["L"]:
+    for i,L in enumerate(brute_dict["L"]):
 
         to_str_method = to_str_method_factory({"L":L})
 
@@ -500,10 +499,10 @@ def glch_rate_vs_dist_2(csv_path,x_axis,y_axis,scale_x,scale_y,start="left"):
 
         print_tree(r,file=tree_file)
 
-        tree_fig.axes[0].plot(
+        tree_fig.axes[i].plot(
             [current_data.loc[str(r),x_axis]],
             [current_data.loc[str(r),y_axis]],linestyle="",color="yellow",marker="o")
-        tree_fig = tree_figure(current_data,r,x_axis,y_axis,fig=tree_fig)
+        tree_figure(current_data,r,x_axis,y_axis,ax=tree_fig.axes[i])
     
     tree_file.close()
     tree_fig.savefig(f"tree_fig_{exp_id}.png", dpi=300, facecolor='w', bbox_inches = "tight")
@@ -542,7 +541,8 @@ def glch_model_bits_vs_data_bits(csv_path):
     with open('tree_model_bits_vs_data_bits.txt', 'w') as f:
         print_tree(r,file=f)
 
-    tree_fig = tree_figure(data,r,x_axis,y_axis)
+    tree_fig, ax = plt.subplots(nrows=1, ncols=1)
+    tree_figure(data,r,x_axis,y_axis,ax=ax)
     tree_fig.savefig(f"tree_fig_model_bits_vs_data_bits.png", dpi=300, facecolor='w', bbox_inches = "tight")
 
     hulls_fig,true_hull_points,estimated_hull_points = hulls_figure(data,[r],x_axis,y_axis)
