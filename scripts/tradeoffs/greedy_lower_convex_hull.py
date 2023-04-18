@@ -248,9 +248,9 @@ def tree_figure(data,r,x_axis,y_axis,fig=None):
     """
     if fig is None:
         fig, ax = plt.subplots(nrows=1, ncols=1)
+        ax.plot(data.loc[:,x_axis].values,data.loc[:,y_axis].values,linestyle="",marker="x")
     else:
         ax = fig.axes[0]
-    ax.plot(data.loc[:,x_axis].values,data.loc[:,y_axis].values,linestyle="",marker="x")
     paint_tree(ax,data,r,x_axis,y_axis)
     ax.set_xlabel(x_axis)
     ax.set_ylabel(y_axis)
@@ -483,7 +483,10 @@ def glch_rate_vs_dist_2(csv_path,x_axis,y_axis,scale_x,scale_y,start="left"):
 
     rs = []
     tree_file = open(f'tree_{exp_id}.txt', 'w')
-    tree_fig = None
+
+    tree_fig, ax = plt.subplots(nrows=1, ncols=1)
+    ax.plot(data.loc[:,x_axis].values,data.loc[:,y_axis].values,linestyle="",marker="x")
+
     for L in brute_dict["L"]:
 
         to_str_method = to_str_method_factory({"L":L})
@@ -496,7 +499,7 @@ def glch_rate_vs_dist_2(csv_path,x_axis,y_axis,scale_x,scale_y,start="left"):
 
         print_tree(r,file=tree_file)
 
-        tree_fig = tree_figure(data,r,x_axis,y_axis,fig=tree_fig)
+        tree_fig = tree_figure(current_data,r,x_axis,y_axis,fig=tree_fig)
     
     tree_file.close()
     tree_fig.savefig(f"tree_fig_{exp_id}.png", dpi=300, facecolor='w', bbox_inches = "tight")
