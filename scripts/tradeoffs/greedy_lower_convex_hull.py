@@ -249,6 +249,7 @@ def tree_figure(data,r,x_axis,y_axis,fig=None):
     if fig is None:
         fig, ax = plt.subplots(nrows=1, ncols=1)
         ax.plot(data.loc[:,x_axis].values,data.loc[:,y_axis].values,linestyle="",marker="x")
+        ax.plot([data.loc[str(r),x_axis]],[data.loc[str(r),y_axis]],linestyle="",color="yellow",marker="o")
     else:
         ax = fig.axes[0]
     paint_tree(ax,data,r,x_axis,y_axis)
@@ -499,6 +500,9 @@ def glch_rate_vs_dist_2(csv_path,x_axis,y_axis,scale_x,scale_y,start="left"):
 
         print_tree(r,file=tree_file)
 
+        tree_fig.axes[0].plot(
+            [current_data.loc[str(r),x_axis]],
+            [current_data.loc[str(r),y_axis]],linestyle="",color="yellow",marker="o")
         tree_fig = tree_figure(current_data,r,x_axis,y_axis,fig=tree_fig)
     
     tree_file.close()
