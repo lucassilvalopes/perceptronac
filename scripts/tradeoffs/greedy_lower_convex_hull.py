@@ -422,14 +422,14 @@ def glch_rate_vs_dist(csv_path,x_axis,y_axis,scale_x,scale_y,start="left"):
     
     r = build_tree(data,possible_values,x_axis,y_axis,initial_values,to_str_method)
 
-    with open(f'tree_{x_axis}_vs_{y_axis}.txt', 'w') as f:
+    with open(f'tree_{x_axis}_vs_{y_axis}_start_{start}.txt', 'w') as f:
         print_tree(r,file=f)
 
     tree_fig = tree_figure(data,r,x_axis,y_axis)
-    tree_fig.savefig(f"tree_fig_{x_axis}_vs_{y_axis}.png", dpi=300, facecolor='w', bbox_inches = "tight")
+    tree_fig.savefig(f"tree_fig_{x_axis}_vs_{y_axis}_start_{start}.png", dpi=300, facecolor='w', bbox_inches = "tight")
 
     hulls_fig,true_hull_points,estimated_hull_points = hulls_figure(data,r,x_axis,y_axis)
-    hulls_fig.savefig(f"hulls_fig_{x_axis}_vs_{y_axis}.png", dpi=300, facecolor='w', bbox_inches = "tight")
+    hulls_fig.savefig(f"hulls_fig_{x_axis}_vs_{y_axis}_start_{start}.png", dpi=300, facecolor='w', bbox_inches = "tight")
 
     print(true_hull_points)
     print(estimated_hull_points)
@@ -478,7 +478,7 @@ if __name__ == "__main__":
 
     glch_rate_vs_dist(
         "/home/lucas/Documents/perceptronac/scripts/tradeoffs/bpp-mse-psnr-loss-flops-params_bmshj2018-factorized_10000-epochs_L-2e-2-1e-2-5e-3_N-32-64-96-128-160-192-224_M-32-64-96-128-160-192-224-256-288-320.csv",
-        "bpp_loss","mse_loss",1,1,start="right"
+        "bpp_loss","mse_loss",1,1,start="left"
     )
 
     # glch_rate_vs_dist(
