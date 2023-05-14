@@ -212,11 +212,13 @@ def paint_tree(ax,data,node,x_axis,y_axis):
 
     for i,c in enumerate(node.children):
         color = "green" if i == node.chosen_child_index else "red"
-        ax.plot(
-            data.loc[[str(node), str(c)],x_axis].values,
-            data.loc[[str(node), str(c)],y_axis].values,
-            linestyle="solid",color=color,marker=None
-        )
+        line_x_vec = data.loc[[str(node), str(c)],x_axis].values
+        line_y_vec = data.loc[[str(node), str(c)],y_axis].values
+        # ax.plot(line_x_vec,line_y_vec,linestyle="solid",color=color,marker=None)
+        ax.arrow(
+            line_x_vec[0], line_y_vec[0], 
+            (line_x_vec[1]-line_x_vec[0]), 
+            (line_y_vec[1]-line_y_vec[0]), color=color)
 
     if node.chosen_child_index != -1:
         paint_tree(ax,data,node.children[node.chosen_child_index],x_axis,y_axis)
@@ -241,18 +243,22 @@ def tree_nodes(r, all_nodes = True):
 
 # %%
 
-def tree_figure(data,r,x_axis,y_axis,ax=None):
+def tree_figure(data,r,x_axis,y_axis,x_range=None,y_range=None,ax=None):
     """
     x_axis = "joules"
     y_axis = "data_bits/data_samples"
     """
         
-    ax.plot(data.loc[:,x_axis].values,data.loc[:,y_axis].values,linestyle="",marker="x")
+    ax.plot(data.loc[:,x_axis].values,data.loc[:,y_axis].values,linestyle="",color="blue",marker="o")
     ax.plot([data.loc[str(r),x_axis]],[data.loc[str(r),y_axis]],linestyle="",color="yellow",marker="o")
 
     paint_tree(ax,data,r,x_axis,y_axis)
     ax.set_xlabel(x_axis)
     ax.set_ylabel(y_axis)
+    if x_range:
+        ax.set_xlim(x_range[0],x_range[1])
+    if y_range:
+        ax.set_ylim(y_range[0],y_range[1])
 
 
 # %%
@@ -367,7 +373,7 @@ def save_hull_points(file_name,true_hull_points,estimated_hull_points):
         print(estimated_hull_points,file=f)
 
 
-def glch_rate_vs_energy(csv_path):
+def glch_rate_vs_energy(csv_path,x_range=None,y_range=None):
 
     data = pd.read_csv(csv_path).set_index("topology")
 
@@ -396,7 +402,7 @@ def glch_rate_vs_energy(csv_path):
         print_tree(r,file=f)
 
     tree_fig, ax = plt.subplots(nrows=1, ncols=1)
-    tree_figure(data,r,x_axis,y_axis,ax=ax)
+    tree_figure(data,r,x_axis,y_axis,x_range=x_range,y_range=y_range,ax=ax)
     tree_fig.savefig(f"tree_fig_rate_vs_energy.png", dpi=300, facecolor='w', bbox_inches = "tight")
 
     hulls_fig,true_hull_points,estimated_hull_points = hulls_figure(data,[r],x_axis,y_axis)
@@ -405,7 +411,7 @@ def glch_rate_vs_energy(csv_path):
     save_hull_points("hulls_rate_vs_energy",true_hull_points,estimated_hull_points)
 
 
-def glch_rate_vs_dist(csv_path,x_axis,y_axis,scale_x,scale_y,start="left"):
+def glch_rate_vs_dist(csv_path,x_axis,y_axis,scale_x,scale_y,x_range=None,y_range=None,start="left"):
 
     data = pd.read_csv(csv_path).set_index("labels")
 
@@ -439,7 +445,7 @@ def glch_rate_vs_dist(csv_path,x_axis,y_axis,scale_x,scale_y,start="left"):
         print_tree(r,file=f)
 
     tree_fig, ax = plt.subplots(nrows=1, ncols=1)
-    tree_figure(data,r,x_axis,y_axis,ax=ax)
+    tree_figure(data,r,x_axis,y_axis,x_range=x_range,y_range=y_range,ax=ax)
     tree_fig.savefig(f"tree_fig_{x_axis}_vs_{y_axis}_start_{start}.png", dpi=300, facecolor='w', bbox_inches = "tight")
 
     hulls_fig,true_hull_points,estimated_hull_points = hulls_figure(data,[r],x_axis,y_axis)
@@ -448,7 +454,7 @@ def glch_rate_vs_dist(csv_path,x_axis,y_axis,scale_x,scale_y,start="left"):
     save_hull_points(f"hulls_fig_{x_axis}_vs_{y_axis}_start_{start}",true_hull_points,estimated_hull_points)
 
 
-def glch_rate_vs_dist_2(csv_path,x_axis,y_axis,scale_x,scale_y,start="left"):
+def glch_rate_vs_dist_2(csv_path,x_axis,y_axis,scale_x,scale_y,x_range=None,y_range=None,start="left"):
 
     data = pd.read_csv(csv_path).set_index("labels")
 
@@ -502,7 +508,7 @@ def glch_rate_vs_dist_2(csv_path,x_axis,y_axis,scale_x,scale_y,start="left"):
         tree_fig.axes[i].plot(
             [current_data.loc[str(r),x_axis]],
             [current_data.loc[str(r),y_axis]],linestyle="",color="yellow",marker="o")
-        tree_figure(current_data,r,x_axis,y_axis,ax=tree_fig.axes[i])
+        tree_figure(current_data,r,x_axis,y_axis,x_range=x_range,y_range=y_range,ax=tree_fig.axes[i])
     
     tree_file.close()
     tree_fig.savefig(f"tree_fig_{exp_id}.png", dpi=300, facecolor='w', bbox_inches = "tight")
@@ -513,7 +519,7 @@ def glch_rate_vs_dist_2(csv_path,x_axis,y_axis,scale_x,scale_y,start="left"):
     save_hull_points(f"hulls_fig_{exp_id}",true_hull_points,estimated_hull_points)
 
 
-def glch_model_bits_vs_data_bits(csv_path):
+def glch_model_bits_vs_data_bits(csv_path,x_range=None,y_range=None):
 
     data = pd.read_csv(csv_path)
 
@@ -542,7 +548,7 @@ def glch_model_bits_vs_data_bits(csv_path):
         print_tree(r,file=f)
 
     tree_fig, ax = plt.subplots(nrows=1, ncols=1)
-    tree_figure(data,r,x_axis,y_axis,ax=ax)
+    tree_figure(data,r,x_axis,y_axis,x_range=x_range,y_range=y_range,ax=ax)
     tree_fig.savefig(f"tree_fig_model_bits_vs_data_bits.png", dpi=300, facecolor='w', bbox_inches = "tight")
 
     hulls_fig,true_hull_points,estimated_hull_points = hulls_figure(data,[r],x_axis,y_axis)
@@ -553,24 +559,39 @@ def glch_model_bits_vs_data_bits(csv_path):
 
 if __name__ == "__main__":
 
-    glch_rate_vs_energy("/home/lucas/Documents/perceptronac/results/exp_1676160746/exp_1676160746_static_rate_x_power_values.csv")
+    glch_rate_vs_energy(
+        "/home/lucas/Documents/perceptronac/results/exp_1676160746/exp_1676160746_static_rate_x_power_values.csv",
+        x_range=[277,313],
+        y_range=[0.115,0.133]
+    )
 
     glch_rate_vs_dist_2(
         "/home/lucas/Documents/perceptronac/scripts/tradeoffs/bpp-mse-psnr-loss-flops-params_bmshj2018-factorized_10000-epochs_L-2e-2-1e-2-5e-3_N-32-64-96-128-160-192-224_M-32-64-96-128-160-192-224-256-288-320.csv",
-        "bpp_loss","mse_loss",1,1,start="right"
+        "bpp_loss","mse_loss",1,1,
+        x_range=[0.1,1.75],
+        y_range=[0.001,0.0045],
+        start="right"
     )
 
     glch_rate_vs_dist(
         "/home/lucas/Documents/perceptronac/scripts/tradeoffs/bpp-mse-psnr-loss-flops-params_bmshj2018-factorized_10000-epochs_L-2e-2-1e-2-5e-3_N-32-64-96-128-160-192-224_M-32-64-96-128-160-192-224-256-288-320.csv",
-        "flops","loss",1e10,1
+        "flops","loss",1e10,1,
+        x_range=[-0.2,3.75],
+        y_range=[1.3,3.1]
     )
 
     glch_rate_vs_dist(
         "/home/lucas/Documents/perceptronac/scripts/tradeoffs/bpp-mse-psnr-loss-flops-params_bmshj2018-factorized_10000-epochs_L-2e-2-1e-2-5e-3_N-32-64-96-128-160-192-224_M-32-64-96-128-160-192-224-256-288-320.csv",
-        "params","loss",1e6,1
+        "params","loss",1e6,1,
+        x_range=[-0.1,4],
+        y_range=[1.3,3.1]
     )
 
-    glch_model_bits_vs_data_bits("/home/lucas/Documents/perceptronac/results/exp_1676160183/exp_1676160183_model_bits_x_data_bits_values.csv")
+    glch_model_bits_vs_data_bits(
+        "/home/lucas/Documents/perceptronac/results/exp_1676160183/exp_1676160183_model_bits_x_data_bits_values.csv",
+        x_range=[-0.1,0.8],
+        y_range=None
+    )
 
 
 
