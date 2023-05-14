@@ -208,6 +208,8 @@ def paint_tree(ax,data,node,x_axis,y_axis):
     """
     x_axis = "joules"
     y_axis = "data_bits/data_samples"
+
+    https://stackoverflow.com/questions/34017866/arrow-on-a-line-plot-with-matplotlib
     """
 
     for i,c in enumerate(node.children):
@@ -215,10 +217,16 @@ def paint_tree(ax,data,node,x_axis,y_axis):
         line_x_vec = data.loc[[str(node), str(c)],x_axis].values
         line_y_vec = data.loc[[str(node), str(c)],y_axis].values
         # ax.plot(line_x_vec,line_y_vec,linestyle="solid",color=color,marker=None)
-        ax.arrow(
-            line_x_vec[0], line_y_vec[0], 
-            (line_x_vec[1]-line_x_vec[0]), 
-            (line_y_vec[1]-line_y_vec[0]), color=color)
+        # ax.arrow(
+        #     line_x_vec[0], line_y_vec[0], 
+        #     (line_x_vec[1]-line_x_vec[0]), 
+        #     (line_y_vec[1]-line_y_vec[0]), color=color, shape='full', lw=1, length_includes_head=True, head_width=.05)
+        ax.annotate('',
+            xytext=(line_x_vec[0], line_y_vec[0]),
+            xy=(line_x_vec[1], line_y_vec[1]),
+            arrowprops=dict(arrowstyle="->", color=color),
+            # size=size
+        )
 
     if node.chosen_child_index != -1:
         paint_tree(ax,data,node.children[node.chosen_child_index],x_axis,y_axis)
@@ -577,14 +585,14 @@ if __name__ == "__main__":
         "/home/lucas/Documents/perceptronac/scripts/tradeoffs/bpp-mse-psnr-loss-flops-params_bmshj2018-factorized_10000-epochs_L-2e-2-1e-2-5e-3_N-32-64-96-128-160-192-224_M-32-64-96-128-160-192-224-256-288-320.csv",
         "flops","loss",1e10,1,
         x_range=[-0.2,3.75],
-        y_range=[1.3,3.1]
+        y_range=[1.1,3.1]
     )
 
     glch_rate_vs_dist(
         "/home/lucas/Documents/perceptronac/scripts/tradeoffs/bpp-mse-psnr-loss-flops-params_bmshj2018-factorized_10000-epochs_L-2e-2-1e-2-5e-3_N-32-64-96-128-160-192-224_M-32-64-96-128-160-192-224-256-288-320.csv",
         "params","loss",1e6,1,
         x_range=[-0.1,4],
-        y_range=[1.3,3.1]
+        y_range=[1.1,3.1]
     )
 
     glch_model_bits_vs_data_bits(
