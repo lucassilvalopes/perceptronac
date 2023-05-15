@@ -299,6 +299,11 @@ def paint_hulls(true_hull_points,estimated_hull_points,x_axis,y_axis,ax):
         estimated_hull_points[x_axis],estimated_hull_points[y_axis],linestyle="dotted",color="green",marker=None)
 
 
+def paint_hull_points(true_hull_points,x_axis,y_axis,ax):
+
+    ax.plot(true_hull_points[x_axis],true_hull_points[y_axis],linestyle="",color="black",marker=".")
+
+
 def save_all_data(data,r,x_axis,y_axis,x_range,y_range,data_id):
 
     true_hull_points,estimated_hull_points = compute_hulls(data,[r],x_axis,y_axis)
@@ -310,7 +315,7 @@ def save_all_data(data,r,x_axis,y_axis,x_range,y_range,data_id):
     paint_cloud(data,x_axis,y_axis,ax,".")
     paint_root(data,r,x_axis,y_axis,ax)
     paint_tree(ax,data,r,x_axis,y_axis)
-    paint_hulls(true_hull_points,estimated_hull_points,x_axis,y_axis,ax)
+    paint_hull_points(true_hull_points,x_axis,y_axis,ax)
     adjust_axes(x_axis,y_axis,x_range,y_range,ax)
     tree_fig.savefig(f"tree_fig_{data_id}.png", dpi=300, facecolor='w', bbox_inches = "tight")
 
@@ -538,9 +543,15 @@ def glch_rate_vs_dist_2(csv_path,x_axis,y_axis,scale_x,scale_y,x_range=None,y_ra
             tree_fig.axes[i].set_ylabel('')
     
     tree_file.close()
-    tree_fig.savefig(f"tree_fig_{exp_id}.png", dpi=300, facecolor='w', bbox_inches = "tight")
 
     true_hull_points,estimated_hull_points = compute_hulls(data,rs,x_axis,y_axis)
+
+    for i in range(len(brute_dict["L"])):
+        paint_hull_points(true_hull_points,x_axis,y_axis,tree_fig.axes[i])
+
+    tree_fig.savefig(f"tree_fig_{exp_id}.png", dpi=300, facecolor='w', bbox_inches = "tight")
+
+    
     hulls_fig, ax = plt.subplots(nrows=1, ncols=1)
     paint_cloud(data,x_axis,y_axis,ax,"x")
     paint_hulls(true_hull_points,estimated_hull_points,x_axis,y_axis,ax)
