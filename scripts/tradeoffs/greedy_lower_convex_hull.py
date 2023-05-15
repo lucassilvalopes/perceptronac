@@ -528,10 +528,10 @@ def glch_rate_vs_dist_2(csv_path,x_axis,y_axis,scale_x,scale_y,x_range=None,y_ra
 
         print_tree(r,file=tree_file)
 
-        tree_fig.axes[i].plot(
-            [current_data.loc[str(r),x_axis]],
-            [current_data.loc[str(r),y_axis]],linestyle="",color="yellow",marker="o")
-        tree_figure(data,r,x_axis,y_axis,x_range=x_range,y_range=y_range,ax=tree_fig.axes[i])
+        paint_root(data,r,x_axis,y_axis,tree_fig.axes[i])
+        paint_cloud(data,x_axis,y_axis,tree_fig.axes[i],".")
+        paint_tree(tree_fig.axes[i],data,r,x_axis,y_axis)
+        adjust_axes(x_axis,y_axis,x_range,y_range,tree_fig.axes[i])
 
         if i != 0:
             tree_fig.axes[i].set_yticks([])
@@ -540,7 +540,11 @@ def glch_rate_vs_dist_2(csv_path,x_axis,y_axis,scale_x,scale_y,x_range=None,y_ra
     tree_file.close()
     tree_fig.savefig(f"tree_fig_{exp_id}.png", dpi=300, facecolor='w', bbox_inches = "tight")
 
-    hulls_fig,true_hull_points,estimated_hull_points = hulls_figure(data,rs,x_axis,y_axis)
+    true_hull_points,estimated_hull_points = compute_hulls(data,rs,x_axis,y_axis)
+    hulls_fig, ax = plt.subplots(nrows=1, ncols=1)
+    paint_cloud(data,x_axis,y_axis,ax,"x")
+    paint_hulls(true_hull_points,estimated_hull_points,x_axis,y_axis,ax)
+    adjust_axes(x_axis,y_axis,None,None,ax)
     hulls_fig.savefig(f"hulls_fig_{exp_id}.png", dpi=300, facecolor='w', bbox_inches = "tight")
 
     save_hull_points(f"hulls_fig_{exp_id}",true_hull_points,estimated_hull_points)
@@ -582,13 +586,13 @@ if __name__ == "__main__":
         # y_range=[0.115,0.133]
     )
 
-    # glch_rate_vs_dist_2(
-    #     "/home/lucas/Documents/perceptronac/scripts/tradeoffs/bpp-mse-psnr-loss-flops-params_bmshj2018-factorized_10000-epochs_L-2e-2-1e-2-5e-3_N-32-64-96-128-160-192-224_M-32-64-96-128-160-192-224-256-288-320.csv",
-    #     "bpp_loss","mse_loss",1,1,
-    #     x_range=[0.1,1.75],
-    #     y_range=[0.001,0.0045],
-    #     start="right"
-    # )
+    glch_rate_vs_dist_2(
+        "/home/lucas/Documents/perceptronac/scripts/tradeoffs/bpp-mse-psnr-loss-flops-params_bmshj2018-factorized_10000-epochs_L-2e-2-1e-2-5e-3_N-32-64-96-128-160-192-224_M-32-64-96-128-160-192-224-256-288-320.csv",
+        "bpp_loss","mse_loss",1,1,
+        # x_range=[0.1,1.75],
+        # y_range=[0.001,0.0045],
+        start="right"
+    )
 
     glch_rate_vs_dist(
         "/home/lucas/Documents/perceptronac/scripts/tradeoffs/bpp-mse-psnr-loss-flops-params_bmshj2018-factorized_10000-epochs_L-2e-2-1e-2-5e-3_N-32-64-96-128-160-192-224_M-32-64-96-128-160-192-224-256-288-320.csv",
