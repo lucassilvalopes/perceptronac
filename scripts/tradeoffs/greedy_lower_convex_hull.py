@@ -257,7 +257,7 @@ def tree_figure(data,r,x_axis,y_axis,x_range=None,y_range=None,ax=None):
     y_axis = "data_bits/data_samples"
     """
         
-    ax.plot(data.loc[:,x_axis].values,data.loc[:,y_axis].values,linestyle="",color="blue",marker="o")
+    ax.plot(data.loc[:,x_axis].values,data.loc[:,y_axis].values,linestyle="",color="blue",marker=".")
     ax.plot([data.loc[str(r),x_axis]],[data.loc[str(r),y_axis]],linestyle="",color="yellow",marker="o")
 
     paint_tree(ax,data,r,x_axis,y_axis)
@@ -517,6 +517,10 @@ def glch_rate_vs_dist_2(csv_path,x_axis,y_axis,scale_x,scale_y,x_range=None,y_ra
             [current_data.loc[str(r),x_axis]],
             [current_data.loc[str(r),y_axis]],linestyle="",color="yellow",marker="o")
         tree_figure(current_data,r,x_axis,y_axis,x_range=x_range,y_range=y_range,ax=tree_fig.axes[i])
+
+        if i != 0:
+            tree_fig.axes[i].set_yticks([])
+            tree_fig.axes[i].set_ylabel('')
     
     tree_file.close()
     tree_fig.savefig(f"tree_fig_{exp_id}.png", dpi=300, facecolor='w', bbox_inches = "tight")
