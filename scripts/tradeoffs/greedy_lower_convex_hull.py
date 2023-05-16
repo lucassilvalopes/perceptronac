@@ -217,7 +217,7 @@ def paint_tree(ax,data,node,x_axis,y_axis,x_range,y_range):
     """
 
     for i,c in enumerate(node.children):
-        color = "green" if i == node.chosen_child_index else "red"
+        color = "green" if i == node.chosen_child_index else "firebrick"
         line_x_vec = data.loc[[str(node), str(c)],x_axis].values
         line_y_vec = data.loc[[str(node), str(c)],y_axis].values
 
@@ -305,14 +305,14 @@ def paint_hulls(true_hull_points,estimated_hull_points,x_axis,y_axis,ax):
     x_axis = "joules"
     y_axis = "data_bits/data_samples"
     """
-    ax.plot(true_hull_points[x_axis],true_hull_points[y_axis],linestyle=(0, (5, 5)),color="red",marker=None)
+    ax.plot(true_hull_points[x_axis],true_hull_points[y_axis],linestyle=(0, (5, 5)),color="orangered",marker=None)
     ax.plot(
-        estimated_hull_points[x_axis],estimated_hull_points[y_axis],linestyle="dotted",color="green",marker=None)
+        estimated_hull_points[x_axis],estimated_hull_points[y_axis],linestyle="dotted",color="black",marker=None)
 
 
 def paint_hull_points(true_hull_points,x_axis,y_axis,ax):
 
-    ax.plot(true_hull_points[x_axis],true_hull_points[y_axis],linestyle="",color="black",marker=".")
+    ax.plot(true_hull_points[x_axis],true_hull_points[y_axis],linestyle="",color="orangered",marker=".")
 
 
 def save_all_data(data,r,x_axis,y_axis,x_range,y_range,data_id):
@@ -606,6 +606,13 @@ if __name__ == "__main__":
         "/home/lucas/Documents/perceptronac/results/exp_1676160746/exp_1676160746_static_rate_x_power_values.csv",
         x_range=[277,313],
         y_range=[0.115,0.133]
+    )
+
+    glch_rate_vs_dist(
+        "/home/lucas/Documents/perceptronac/scripts/tradeoffs/bpp-mse-psnr-loss-flops-params_bmshj2018-factorized_10000-epochs_L-2e-2-1e-2-5e-3_N-32-64-96-128-160-192-224_M-32-64-96-128-160-192-224-256-288-320.csv",
+        "bpp_loss","mse_loss",1,1,
+        x_range=[0.1,1.75],
+        y_range=[0.001,0.0045]
     )
 
     glch_rate_vs_dist_2(
