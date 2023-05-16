@@ -223,8 +223,11 @@ def paint_tree(ax,data,node,x_axis,y_axis,x_range,y_range):
 
         if (x_range is not None) and (y_range is not None):
 
+            xd = 0.01 * np.abs(x_range[1] - x_range[0])
+            yd = 0.01 * np.abs(y_range[1] - y_range[0])
+
             x1,y1,x2,y2 = cohenSutherlandClip(
-                x_range[0],x_range[1],y_range[0],y_range[1],line_x_vec[0],line_y_vec[0],line_x_vec[1],line_y_vec[1])
+                x_range[0]+xd,x_range[1]-xd,y_range[0]+yd,y_range[1]-yd,line_x_vec[0],line_y_vec[0],line_x_vec[1],line_y_vec[1])
         else:
             x1,y1,x2,y2 = line_x_vec[0], line_y_vec[0], line_x_vec[1], line_y_vec[1]
 
