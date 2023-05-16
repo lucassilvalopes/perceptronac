@@ -297,7 +297,7 @@ def compute_hulls(data,rs,x_axis,y_axis):
     probe = data.loc[new_points,:]
     estimated_hull_points = probe.iloc[min_max_convex_hull(probe.loc[:,[x_axis,y_axis]].values.tolist()),:]
 
-    n_trained_networks = len(new_points)
+    n_trained_networks = len(set(new_points))
 
     return true_hull_points,estimated_hull_points,n_trained_networks
 
