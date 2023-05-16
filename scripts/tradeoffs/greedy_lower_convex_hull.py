@@ -297,7 +297,9 @@ def compute_hulls(data,rs,x_axis,y_axis):
     probe = data.loc[new_points,:]
     estimated_hull_points = probe.iloc[min_max_convex_hull(probe.loc[:,[x_axis,y_axis]].values.tolist()),:]
 
-    return true_hull_points,estimated_hull_points
+    n_trained_networks = len(new_points)
+
+    return true_hull_points,estimated_hull_points,n_trained_networks
 
 
 def paint_hulls(true_hull_points,estimated_hull_points,x_axis,y_axis,ax):
@@ -317,10 +319,11 @@ def paint_hull_points(true_hull_points,x_axis,y_axis,ax):
 
 def save_all_data(data,r,x_axis,y_axis,x_range,y_range,data_id):
 
-    true_hull_points,estimated_hull_points = compute_hulls(data,[r],x_axis,y_axis)
+    true_hull_points,estimated_hull_points,n_trained_networks = compute_hulls(data,[r],x_axis,y_axis)
 
     with open(f'tree_{data_id}.txt', 'w') as f:
         print_tree(r,file=f)
+        print(f"number of trained networks : {n_trained_networks}",file=f)
 
     tree_fig, ax = plt.subplots(nrows=1, ncols=1)
     paint_cloud(data,x_axis,y_axis,ax,".")
@@ -553,9 +556,10 @@ def glch_rate_vs_dist_2(csv_path,x_axis,y_axis,scale_x,scale_y,x_range=None,y_ra
             tree_fig.axes[i].set_yticks([])
             tree_fig.axes[i].set_ylabel('')
     
-    tree_file.close()
+    true_hull_points,estimated_hull_points,n_trained_networks = compute_hulls(data,rs,x_axis,y_axis)
 
-    true_hull_points,estimated_hull_points = compute_hulls(data,rs,x_axis,y_axis)
+    print(f"number of trained networks : {n_trained_networks}",file=tree_file)
+    tree_file.close()
 
     for i in range(len(brute_dict["L"])):
         paint_hull_points(true_hull_points,x_axis,y_axis,tree_fig.axes[i])
