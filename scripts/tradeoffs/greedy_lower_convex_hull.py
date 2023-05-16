@@ -204,7 +204,11 @@ def print_tree(node,file=None):
 
 
 # %%
-def paint_tree(ax,data,node,x_axis,y_axis):
+
+from line_clipping import cohenSutherlandClip
+
+
+def paint_tree(ax,data,node,x_axis,y_axis,x_range,y_range):
     """
     x_axis = "joules"
     y_axis = "data_bits/data_samples"
@@ -216,20 +220,24 @@ def paint_tree(ax,data,node,x_axis,y_axis):
         color = "green" if i == node.chosen_child_index else "red"
         line_x_vec = data.loc[[str(node), str(c)],x_axis].values
         line_y_vec = data.loc[[str(node), str(c)],y_axis].values
-        # ax.plot(line_x_vec,line_y_vec,linestyle="solid",color=color,marker=None)
-        # ax.arrow(
-        #     line_x_vec[0], line_y_vec[0], 
-        #     (line_x_vec[1]-line_x_vec[0]), 
-        #     (line_y_vec[1]-line_y_vec[0]), color=color, shape='full', lw=1, length_includes_head=True, head_width=.05)
-        ax.annotate('',
-            xytext=(line_x_vec[0], line_y_vec[0]),
-            xy=(line_x_vec[1], line_y_vec[1]),
-            arrowprops=dict(arrowstyle="->", color=color),
-            # size=size
-        )
+
+        if (x_range is not None) and (y_range is not None):
+
+            x1,y1,x2,y2 = cohenSutherlandClip(
+                x_range[0],x_range[1],y_range[0],y_range[1],line_x_vec[0],line_y_vec[0],line_x_vec[1],line_y_vec[1])
+        else:
+            x1,y1,x2,y2 = line_x_vec[0], line_y_vec[0], line_x_vec[1], line_y_vec[1]
+
+        if (x1 is not None) and (y1 is not None) and (x2 is not None) and (y2 is not None):
+            ax.annotate('',
+                xytext= (x1,y1),
+                xy= (x2,y2),
+                arrowprops=dict(arrowstyle="->", color=color),
+                # size=size
+            )
 
     if node.chosen_child_index != -1:
-        paint_tree(ax,data,node.children[node.chosen_child_index],x_axis,y_axis)
+        paint_tree(ax,data,node.children[node.chosen_child_index],x_axis,y_axis,x_range,y_range)
 
 # %%
 
@@ -314,7 +322,7 @@ def save_all_data(data,r,x_axis,y_axis,x_range,y_range,data_id):
     tree_fig, ax = plt.subplots(nrows=1, ncols=1)
     paint_cloud(data,x_axis,y_axis,ax,".")
     paint_root(data,r,x_axis,y_axis,ax)
-    paint_tree(ax,data,r,x_axis,y_axis)
+    paint_tree(ax,data,r,x_axis,y_axis,x_range,y_range)
     paint_hull_points(true_hull_points,x_axis,y_axis,ax)
     adjust_axes(x_axis,y_axis,x_range,y_range,ax)
     tree_fig.savefig(f"tree_fig_{data_id}.png", dpi=300, facecolor='w', bbox_inches = "tight")
@@ -535,7 +543,7 @@ def glch_rate_vs_dist_2(csv_path,x_axis,y_axis,scale_x,scale_y,x_range=None,y_ra
 
         paint_root(data,r,x_axis,y_axis,tree_fig.axes[i])
         paint_cloud(data,x_axis,y_axis,tree_fig.axes[i],".")
-        paint_tree(tree_fig.axes[i],data,r,x_axis,y_axis)
+        paint_tree(tree_fig.axes[i],data,r,x_axis,y_axis,x_range,y_range)
         adjust_axes(x_axis,y_axis,x_range,y_range,tree_fig.axes[i])
 
         if i != 0:
@@ -593,36 +601,36 @@ if __name__ == "__main__":
 
     glch_rate_vs_energy(
         "/home/lucas/Documents/perceptronac/results/exp_1676160746/exp_1676160746_static_rate_x_power_values.csv",
-        # x_range=[277,313],
-        # y_range=[0.115,0.133]
+        x_range=[277,313],
+        y_range=[0.115,0.133]
     )
 
     glch_rate_vs_dist_2(
         "/home/lucas/Documents/perceptronac/scripts/tradeoffs/bpp-mse-psnr-loss-flops-params_bmshj2018-factorized_10000-epochs_L-2e-2-1e-2-5e-3_N-32-64-96-128-160-192-224_M-32-64-96-128-160-192-224-256-288-320.csv",
         "bpp_loss","mse_loss",1,1,
-        # x_range=[0.1,1.75],
-        # y_range=[0.001,0.0045],
+        x_range=[0.1,1.75],
+        y_range=[0.001,0.0045],
         start="right"
     )
 
     glch_rate_vs_dist(
         "/home/lucas/Documents/perceptronac/scripts/tradeoffs/bpp-mse-psnr-loss-flops-params_bmshj2018-factorized_10000-epochs_L-2e-2-1e-2-5e-3_N-32-64-96-128-160-192-224_M-32-64-96-128-160-192-224-256-288-320.csv",
         "flops","loss",1e10,1,
-        # x_range=[-0.2,3.75],
-        # y_range=[1.1,3.1]
+        x_range=[-0.2,3.75],
+        y_range=[1.1,3.1]
     )
 
     glch_rate_vs_dist(
         "/home/lucas/Documents/perceptronac/scripts/tradeoffs/bpp-mse-psnr-loss-flops-params_bmshj2018-factorized_10000-epochs_L-2e-2-1e-2-5e-3_N-32-64-96-128-160-192-224_M-32-64-96-128-160-192-224-256-288-320.csv",
         "params","loss",1e6,1,
-        # x_range=[-0.1,4],
-        # y_range=[1.1,3.1]
+        x_range=[-0.1,4],
+        y_range=[1.1,3.1]
     )
 
     glch_model_bits_vs_data_bits(
         "/home/lucas/Documents/perceptronac/results/exp_1676160183/exp_1676160183_model_bits_x_data_bits_values.csv",
-        # x_range=[-0.1,0.8],
-        # y_range=None
+        x_range=[-0.1,0.8],
+        y_range=None
     )
 
 
