@@ -68,7 +68,16 @@ def dist_to_chull(chull,coord,pt):
     return improv
 
     
+def dist_to_chull_2(node_coord,pt):
+    """Dr Chou's suggestion"""
 
+    if (pt[1] == node_coord[1]) and (pt[0] == node_coord[0]):
+        return 0
+    if (pt[0] == node_coord[0]):
+        return np.inf
+    improv = (pt[1]-node_coord[1])/(pt[0]-node_coord[0])
+
+    return improv
 
 
 def make_choice(data,x_axis,y_axis,chull,node,node_coord,nodes,coord,candidate_nodes,candidate_coord,
@@ -81,7 +90,8 @@ def make_choice(data,x_axis,y_axis,chull,node,node_coord,nodes,coord,candidate_n
 
     for pt in candidate_coord:
 
-        dist = dist_to_chull(chull,coord,pt)
+        # dist = dist_to_chull(chull,coord,pt)
+        dist = dist_to_chull_2(node_coord,pt)
 
         dists.append(dist)
     
@@ -608,43 +618,43 @@ if __name__ == "__main__":
 
     glch_rate_vs_energy(
         "/home/lucas/Documents/perceptronac/results/exp_1676160746/exp_1676160746_static_rate_x_power_values.csv",
-        x_range=[277,313],
-        y_range=[0.115,0.133]
+        # x_range=[277,313],
+        # y_range=[0.115,0.133]
     )
 
     glch_rate_vs_dist(
         "/home/lucas/Documents/perceptronac/scripts/tradeoffs/bpp-mse-psnr-loss-flops-params_bmshj2018-factorized_10000-epochs_L-2e-2-1e-2-5e-3_N-32-64-96-128-160-192-224_M-32-64-96-128-160-192-224-256-288-320.csv",
         "bpp_loss","mse_loss",1,1,
-        x_range=[0.1,1.75],
-        y_range=[0.001,0.0045]
+        # x_range=[0.1,1.75],
+        # y_range=[0.001,0.0045]
     )
 
-    glch_rate_vs_dist_2(
+    # glch_rate_vs_dist_2(
+    #     "/home/lucas/Documents/perceptronac/scripts/tradeoffs/bpp-mse-psnr-loss-flops-params_bmshj2018-factorized_10000-epochs_L-2e-2-1e-2-5e-3_N-32-64-96-128-160-192-224_M-32-64-96-128-160-192-224-256-288-320.csv",
+    #     "bpp_loss","mse_loss",1,1,
+    #     x_range=[0.1,1.75],
+    #     y_range=[0.001,0.0045],
+    #     start="right"
+    # )
+
+    glch_rate_vs_dist(
         "/home/lucas/Documents/perceptronac/scripts/tradeoffs/bpp-mse-psnr-loss-flops-params_bmshj2018-factorized_10000-epochs_L-2e-2-1e-2-5e-3_N-32-64-96-128-160-192-224_M-32-64-96-128-160-192-224-256-288-320.csv",
-        "bpp_loss","mse_loss",1,1,
-        x_range=[0.1,1.75],
-        y_range=[0.001,0.0045],
-        start="right"
+        "flops","loss",1,1, #1e10,1,
+        # x_range=[-0.2,3.75],
+        # y_range=[1.1,3.1]
     )
 
     glch_rate_vs_dist(
         "/home/lucas/Documents/perceptronac/scripts/tradeoffs/bpp-mse-psnr-loss-flops-params_bmshj2018-factorized_10000-epochs_L-2e-2-1e-2-5e-3_N-32-64-96-128-160-192-224_M-32-64-96-128-160-192-224-256-288-320.csv",
-        "flops","loss",1e10,1,
-        x_range=[-0.2,3.75],
-        y_range=[1.1,3.1]
-    )
-
-    glch_rate_vs_dist(
-        "/home/lucas/Documents/perceptronac/scripts/tradeoffs/bpp-mse-psnr-loss-flops-params_bmshj2018-factorized_10000-epochs_L-2e-2-1e-2-5e-3_N-32-64-96-128-160-192-224_M-32-64-96-128-160-192-224-256-288-320.csv",
-        "params","loss",1e6,1,
-        x_range=[-0.1,4],
-        y_range=[1.1,3.1]
+        "params","loss",1,1, #1e6,1,
+        # x_range=[-0.1,4],
+        # y_range=[1.1,3.1]
     )
 
     glch_model_bits_vs_data_bits(
         "/home/lucas/Documents/perceptronac/results/exp_1676160183/exp_1676160183_model_bits_x_data_bits_values.csv",
-        x_range=[-0.1,0.8],
-        y_range=None
+        # x_range=[-0.1,0.8],
+        # y_range=None
     )
 
 
