@@ -407,15 +407,15 @@ class NNLaplacianVarianceModel:
         self.lr = configs["learning_rate"]
         self.batch_size = configs["batch_size"]
 
-    def train(self,S):
+    def train(self,X,y):
         self.model.train()
-        return self._apply(S,"train")
+        return self._apply(X,y,"train")
 
-    def validate(self,S):
+    def validate(self,X,y):
         self.model.eval()
-        return self._apply(S,"valid")
+        return self._apply(X,y,"valid")
 
-    def _apply(self,S, phase):
+    def _apply(self,X,y, phase):
 
         device = torch.device("cuda:0")
 
@@ -426,7 +426,7 @@ class NNLaplacianVarianceModel:
         OptimizerClass=torch.optim.SGD
         optimizer = OptimizerClass(model.parameters(), lr=self.lr)
 
-        dset = torch.utils.data.TensorDataset(torch.tensor(S[:,3:]),torch.tensor(S[:,0:1]))
+        dset = torch.utils.data.TensorDataset(X,y)
         dataloader = torch.utils.data.DataLoader(dset,batch_size=self.batch_size,shuffle=True)
 
         if phase == 'train':

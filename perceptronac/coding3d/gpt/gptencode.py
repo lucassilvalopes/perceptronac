@@ -8,6 +8,7 @@ import scipy.io
 from perceptronac.coding3d import read_PC, write_PC
 from perceptronac.losses import LaplacianRate
 from perceptronac.losses import ac_lapl_rate
+from perceptronac.models import NNLaplacianVarianceModel
 import matplotlib.pyplot as plt
 from pprint import pprint
 
@@ -623,7 +624,7 @@ if __name__ == "__main__":
 
     for Q in [40]: # [10,20,30,40]:
 
-        nnmodel = NNModel(configs,configs["N"])
+        nnmodel = NNLaplacianVarianceModel(configs,configs["N"])
         
         for outer_loop_epoch in range(configs["outer_loop_epochs"]):
 
@@ -665,12 +666,12 @@ if __name__ == "__main__":
 
                     if phase == "train":
                         for _ in range(configs["inner_loop_epochs"]):
-                            t_rate,t_samples = nnmodel.train(full_S)
+                            t_rate,t_samples = nnmodel.train(torch.tensor(full_S[:,3:]),torch.tensor(full_S[:,0:1]))
                         train_rates.append(t_rate)
                         train_samples.append(t_samples)
                     else:
 
-                        v_rate,v_samples = nnmodel.validate(full_S)
+                        v_rate,v_samples = nnmodel.validate(torch.tensor(full_S[:,3:]),torch.tensor(full_S[:,0:1]))
 
                         valid_rates.append(v_rate)
                         valid_samples.append(v_samples)
