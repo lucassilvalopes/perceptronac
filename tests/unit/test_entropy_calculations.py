@@ -6,8 +6,8 @@ import torch
 from perceptronac.coding2d import causal_context
 from perceptronac.context_training import context_training
 from perceptronac.context_coding import context_coding
-# from perceptronac.perfect_AC import perfect_AC
-# from perceptronac.models import Log2BCELoss
+# from perceptronac.losses import perfect_AC
+# from perceptronac.losses import Log2BCELoss
 
 class TestEntropyCalculations(unittest.TestCase):
     def setUp(self):
