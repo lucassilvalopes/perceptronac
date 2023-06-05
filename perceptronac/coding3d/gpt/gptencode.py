@@ -7,6 +7,7 @@ import os
 import scipy.io
 from perceptronac.coding3d import read_PC, write_PC
 from perceptronac.losses import LaplacianRate
+from perceptronac.losses import ac_lapl_rate
 import matplotlib.pyplot as plt
 from pprint import pprint
 
@@ -136,39 +137,6 @@ def matlab_round(x):
     https://stackoverflow.com/questions/18982650/differences-between-matlab-and-numpy-and-pythons-round-function
     """
     return round(x)
-
-
-def ac_lapl_rate(xq, sd):
-    """
-    In the paper there was a Q in the exponent of the exponentials, 
-    because the standard deviation was of dequantized coefficients.
-    Here the standard deviation is of quantized coefficients. 
-    If the standard deviation of quantized coefficients is sd, 
-    then the standard deviation of dequantized coefficients is Q*sd. 
-    Replacing the standard deviation of dequantized coefficients by Q*sd
-    in the paper, gives the formulas used here.
-
-    The mean of the coefficients of any bin is 0, regardless of the standard deviation.
-    If the standard deviation is 0, this means the coefficients in the bin are 0.
-    If they are zero, they do not need to be sent, they can simply be discarded, ignored.
-    """
-
-    nz = sd > 1e-6 
-    
-    xqa = np.abs(xq[nz])
-    
-    sdnz = sd[nz]
-    
-    rgt0 = (1/np.log(2)) * ( (np.sqrt(2) * xqa) / sdnz) - np.log2( np.sinh(1/(np.sqrt(2) * sdnz) ) )
-    
-    r0 = -np.log2(1-np.exp(-1/(np.sqrt(2) * sdnz)))
-    
-    r = rgt0 * (xqa > 0).astype(int) + r0 * (xqa == 0).astype(int)
-    
-    rateac = np.sum(r)
-    
-    return rateac
-
 
 
 def permutation_selection_matrices(Vb,block_side,infx,infy,infz):
