@@ -146,33 +146,6 @@ class Pointnet_3_64N_32N_16N_1(torch.nn.Module):
         return x
 
 
-class Log2BCELoss(torch.nn.Module):
-    def __init__(self,*args,**kwargs):
-        super().__init__()
-        self.bce_loss = torch.nn.BCELoss(*args,**kwargs)
-
-    def forward(self, pred, target):
-        return self.bce_loss(pred, target)/torch.log(torch.tensor(2,dtype=target.dtype,device=target.device))
-
-
-class Log2CrossEntropyLoss(torch.nn.Module):
-    def __init__(self,*args,**kwargs):
-        super().__init__()
-        self.cross_entropy_loss = torch.nn.CrossEntropyLoss(*args,**kwargs)
-
-    def forward(self, pred, target):
-        return self.cross_entropy_loss(pred, target.long())/torch.log(torch.tensor(2,dtype=target.dtype,device=target.device))
-
-
-class Log2NLLLoss(torch.nn.Module):
-    def __init__(self,*args,**kwargs):
-        super().__init__()
-        self.nll_loss = torch.nn.NLLLoss(*args,**kwargs)
-
-    def forward(self, pred, target):
-        return self.nll_loss(pred, target.long())/torch.log(torch.tensor(2,dtype=target.dtype,device=target.device))
-
-
 class CausalContextDataset(torch.utils.data.Dataset):
     def __init__(
         self,pths,data_type,N,percentage_of_uncles=None,getXy_later=False,

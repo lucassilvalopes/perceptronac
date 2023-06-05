@@ -10,8 +10,8 @@ from perceptronac.loading_and_saving import load_values
 from perceptronac.loading_and_saving import plot_comparison
 from perceptronac.loading_and_saving import save_configs
 from perceptronac.loading_and_saving import save_data
-from perceptronac.models import Log2BCELoss
-from perceptronac.models import Log2CrossEntropyLoss
+from perceptronac.losses import Log2BCELoss
+from perceptronac.losses import Log2CrossEntropyLoss
 from perceptronac.models import CABAC,CA256AC
 from perceptronac.models import StaticAC,S256AC
 from perceptronac.models import CausalContextDataset

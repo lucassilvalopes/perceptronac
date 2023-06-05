@@ -6,6 +6,7 @@ import sys
 import os
 import scipy.io
 from perceptronac.coding3d import read_PC, write_PC
+from perceptronac.losses import LaplacianRate
 import matplotlib.pyplot as plt
 from pprint import pprint
 
@@ -48,30 +49,6 @@ class Model(torch.nn.Module):
         # return 0.01 + xa * (1 + xb )
 
         return 0.01 + self.max_sd * xa
-
-
-class LaplacianRate(torch.nn.Module):
-    def forward(self, pred, target):
-        """
-        target xq, S[:,0]
-        pred sdnz
-
-        obs: negative standard deviation makes no sense
-        """
-
-        two = torch.tensor(2,dtype=target.dtype,device=target.device)
-        
-        rgt0 = (1/torch.log(two)) * ( (torch.sqrt(two) * torch.abs(target)) / pred) - torch.log2( torch.sinh(1/(torch.sqrt(two) * pred) ) )
-        
-        r0 = -torch.log2(1-torch.exp(-1/(torch.sqrt(two) * pred)))
-
-        rgt0_mask = torch.abs(target) > 0
-
-        r0_mask = torch.abs(target) == 0
-        
-        rateac = torch.sum(rgt0[rgt0_mask]) + torch.sum(r0[r0_mask])
-        
-        return rateac
 
 
 class NNModel:

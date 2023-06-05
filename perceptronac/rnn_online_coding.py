@@ -11,7 +11,7 @@ import numpy as np
 from tqdm import tqdm
 import time 
 import os
-from perceptronac.models import Log2NLLLoss
+from perceptronac.losses import Log2NLLLoss
 from perceptronac.utils import causal_context_many_imgs
 from perceptronac.loading_and_saving import plot_comparison
 from perceptronac.loading_and_saving import save_values
