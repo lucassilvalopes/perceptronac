@@ -24,7 +24,7 @@ import torch
 import numpy as np
 from perceptronac.models import MLP_N_64N_32N_1
 from perceptronac.utils import causal_context_many_imgs
-from perceptronac.perfect_AC import perfect_AC
+from perceptronac.losses import perfect_AC
 from perceptronac.losses import Log2BCELoss
 from perceptronac.loading_and_saving import plot_comparison
 from perceptronac.loading_and_saving import save_values

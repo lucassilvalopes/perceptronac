@@ -1,7 +1,7 @@
 
 import torch
 import warnings
-from perceptronac.perfect_AC import perfect_AC
+from perceptronac.losses import perfect_AC
 from perceptronac.utils import jbig1_rate
 from perceptronac.loading_and_saving import save_model
 from perceptronac.loading_and_saving import save_fig
