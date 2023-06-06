@@ -437,7 +437,7 @@ class NNLaplacianVarianceModel:
         running_loss = 0.0
         n_samples = 0.0
 
-        pbar = tqdm(total=np.ceil(len(dset)/self.batch_size))
+        # pbar = tqdm(total=np.ceil(len(dset)/self.batch_size))
         for data in dataloader:
 
             Xt_b,yt_b= data
@@ -458,8 +458,8 @@ class NNLaplacianVarianceModel:
 
             running_loss += loss.item()
             n_samples += yt_b.numel()
-            pbar.update(1)
-            pbar.set_description(f"loss: {running_loss / n_samples} max_sd: {model.max_sd}")
-        pbar.close()
+        #     pbar.update(1)
+        #     pbar.set_description(f"loss: {running_loss / n_samples} max_sd: {model.max_sd}")
+        # pbar.close()
 
         return running_loss / n_samples , n_samples

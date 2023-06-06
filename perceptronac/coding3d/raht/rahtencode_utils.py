@@ -2,6 +2,7 @@
 import pandas as pd
 import numpy as np
 from collections import Counter
+from perceptronac.losses import ac_lapl_rate
 
 
 @np.vectorize
@@ -65,3 +66,10 @@ def raht_lut(yq,wy,Q):
     sv = np.sqrt(2) * (sv / Q)
     
     return sv
+
+
+def estimate_lut_rate(config):
+    nX,yq,wy= read_data(config)
+    rate = ac_lapl_rate(yq.reshape(-1),raht_lut(yq,wy,config["Q"]))/max(yq.shape)
+    return rate
+
