@@ -598,6 +598,11 @@ if __name__ == "__main__":
         gpt_return = gpt(filepath,Q=gpt_Q,block_side=block_side,dcs=None)        
         lut_return = lut(gpt_return)
         print(lut_return["rate_yuv"],gpt_return["dist"])
+
+        # import pandas as pd
+        # pd.DataFrame(data=gpt_return["S"]).to_csv("ricardo9_frame0039_S.csv", index=False, header=False)
+        # pd.DataFrame(data=lut_return["sv"]).to_csv("ricardo9_frame0039_sv.csv", index=False, header=False)
+
         sys.exit()
 
     ##########################################################################################

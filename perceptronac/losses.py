@@ -72,6 +72,8 @@ class Log2NLLLoss(torch.nn.Module):
 
 def ac_lapl_rate(xq, sd):
     """
+    NUMBER OF BITS to transmit xq assuming xq[i] has a laplacian distribution with std sd[i]
+
     In the paper there was a Q in the exponent of the exponentials, 
     because the standard deviation was of dequantized coefficients.
     Here the standard deviation is of quantized coefficients. 
@@ -105,13 +107,15 @@ def ac_lapl_rate(xq, sd):
 class LaplacianRate(torch.nn.Module):
     def forward(self, pred, target):
         """
+        NUMBER OF BITS to transmit target assuming target[i,j] has a laplacian distribution with std pred[i,j]
+
         In the paper ``Transform coding for point clouds using a Gaussian
         process model'' there was a Q in the exponent of the exponentials, 
         because the standard deviation was of dequantized coefficients.
         Here the standard deviation is of quantized coefficients. 
-        If the standard deviation of quantized coefficients is sd, 
-        then the standard deviation of dequantized coefficients is Q*sd. 
-        Replacing the standard deviation of dequantized coefficients by Q*sd
+        If the standard deviation of quantized coefficients is pred, 
+        then the standard deviation of dequantized coefficients is Q*pred. 
+        Replacing the standard deviation of dequantized coefficients by Q*pred
         in the paper, gives the formulas used here.
 
         target : quantized coefficients
