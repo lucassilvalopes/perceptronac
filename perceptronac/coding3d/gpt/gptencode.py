@@ -590,6 +590,16 @@ if __name__ == "__main__":
 
         sys.exit()
 
+    elif len(sys.argv) > 1 and sys.argv[1] == "4":
+
+        filepath = "/home/lucas/Documents/data/ricardo9_frame0039.ply"
+        block_side = 8
+        gpt_Q = 40
+        gpt_return = gpt(filepath,Q=gpt_Q,block_side=block_side,dcs=None)        
+        lut_return = lut(gpt_return)
+        print(lut_return["rate_yuv"],gpt_return["dist"])
+        sys.exit()
+
     ##########################################################################################
 
 
