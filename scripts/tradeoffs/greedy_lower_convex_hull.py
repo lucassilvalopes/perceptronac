@@ -80,8 +80,53 @@ def dist_to_chull_2(node_coord,pt):
     return improv
 
 
+def make_choice_2(node,candidate_nodes,candidate_coord):
+    """
+    Choose among children based on a local convex hull
+    
+    Params:
+        node: current source node
+        candidate_nodes: local nodes to choose from
+        candidate_coord: coordinates of the local nodes to choose from
+    
+    Returns:
+        chosen_node_index: index of the chosen local node.
+            -1 if all options are equal to the source node
+    """
+
+    if all([str(n) == str(node) for n in candidate_nodes]):
+        return -1
+
+    filtered_coord = [c for n,c in zip(candidate_nodes,candidate_coord) if str(n) != str(node)]
+
+    local_chull = convex_hull(filtered_coord)
+
+    i = candidate_coord.index(filtered_coord[local_chull[0]])
+
+    return i
+
+
 def make_choice(data,x_axis,y_axis,chull,node,node_coord,nodes,coord,candidate_nodes,candidate_coord,
                 debug=False):
+    """
+    Params:
+        data: all data, used during plotting for debugging
+        x_axis: name of the x-axis
+        y_axis: name of the y-axis
+        chull: current global convex hull (actually not necessary)
+        node: current source node
+        node_coord: coordinates of the current source node
+        nodes: all nodes of the tree so far (actually not necessary)
+        coord: all the coordinates of the nodes of the tree so far (actually not necessary)
+        candidate_nodes: local nodes to choose from
+        candidate_coord: coordinates of the local nodes to choose from
+        debug: whether to plot something or not
+    
+    Returns:
+        chosen_node_index: index of the chosen local node.
+            -1 if all options are equal to the source node
+    
+    """
 
     if all([str(n) == str(node) for n in candidate_nodes]):
         return -1
@@ -167,8 +212,9 @@ def build_tree(data,possible_values,x_axis,y_axis,initial_values,to_str_method,s
             data_p = data.loc[str(node_p),[x_axis,y_axis]].values.tolist()
             candidate_coord.append(data_p)
         
-        chosen_node_index = make_choice(data,x_axis,y_axis,
-            chull,node,node_coord,nodes,coord,candidate_nodes,candidate_coord)
+        # chosen_node_index = make_choice(data,x_axis,y_axis,
+        #     chull,node,node_coord,nodes,coord,candidate_nodes,candidate_coord)
+        chosen_node_index = make_choice_2(node,candidate_nodes,candidate_coord)
 
         if chosen_node_index == -1:
             break
