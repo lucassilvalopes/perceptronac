@@ -80,7 +80,7 @@ def dist_to_chull_2(node_coord,pt):
     return improv
 
 
-def make_choice_2(node,candidate_nodes,candidate_coord):
+def make_choice_2(data,x_axis,y_axis,node,node_coord,candidate_nodes,candidate_coord):
     """
     Choose among children based on a local convex hull
     
@@ -103,7 +103,50 @@ def make_choice_2(node,candidate_nodes,candidate_coord):
 
     i = candidate_coord.index(filtered_coord[local_chull[0]])
 
+    if len(local_chull) != 1:
+        # print(f"Draw between {[filtered_coord[i] for i in local_chull]}. Choosing the first one")        
+        # plot_choice(data,x_axis,y_axis,node,node_coord,candidate_nodes,candidate_coord,i)
+        plot_choice_2(x_axis,y_axis,node,node_coord,candidate_nodes,candidate_coord,i)
+
     return i
+
+
+def plot_choice_2(x_axis,y_axis,node,node_coord,candidate_nodes,candidate_coord,chosen_node_index):
+
+    fig, ax = plt.subplots(nrows=1, ncols=1)
+
+    ax.text(x=node_coord[0],y=node_coord[1],s=str(node))
+
+    for i,pt in enumerate(candidate_coord):
+        ax.plot(
+            [node_coord[0],pt[0]],
+            [node_coord[1],pt[1]],
+            color=("g" if i == chosen_node_index else "r") )
+        
+        ax.text(x=pt[0],y=pt[1],s=f"{str(candidate_nodes[i])}")
+    ax.set_xlabel(x_axis)
+    ax.set_ylabel(y_axis)
+    fig.show()
+
+def plot_choice(data,x_axis,y_axis,node,node_coord,candidate_nodes,candidate_coord,chosen_node_index,dists=None):
+
+    fig, ax = plt.subplots(nrows=1, ncols=1)
+
+    ax.plot(data[x_axis].values, data[y_axis].values,marker="x",linestyle="")
+
+    ax.text(x=node_coord[0],y=node_coord[1],s=str(node))
+
+    for i,pt in enumerate(candidate_coord):
+        ax.plot(
+            [node_coord[0],pt[0]],
+            [node_coord[1],pt[1]],
+            color=("g" if i == chosen_node_index else "r") )
+
+        ax.text(x=pt[0],y=pt[1],s=f"{str(candidate_nodes[i])}" + \
+                (f",d={dists[i]}" if (dists is not None) else ""))
+    ax.set_xlabel(x_axis)
+    ax.set_ylabel(y_axis)
+    fig.show()
 
 
 def make_choice(data,x_axis,y_axis,chull,node,node_coord,nodes,coord,candidate_nodes,candidate_coord,
@@ -147,20 +190,7 @@ def make_choice(data,x_axis,y_axis,chull,node,node_coord,nodes,coord,candidate_n
     chosen_node_index = filtered_idx[0]
 
     if debug:
-
-        fig, ax = plt.subplots(nrows=1, ncols=1)
-
-        ax.plot(data[x_axis].values, data[y_axis].values,marker="x",linestyle="")
-
-        ax.text(x=node_coord[0],y=node_coord[1],s=str(node))
-
-        for i,pt in enumerate(candidate_coord):
-            ax.plot(
-                [node_coord[0],pt[0]],
-                [node_coord[1],pt[1]],
-                color=("g" if i == chosen_node_index else "r") )
-            
-            ax.text(x=pt[0],y=pt[1],s=f"{str(candidate_nodes[i])},d={dists[i]}")
+        plot_choice(data,x_axis,y_axis,node,node_coord,candidate_nodes,candidate_coord,chosen_node_index,dists)
 
     return chosen_node_index
     
@@ -189,6 +219,8 @@ def build_tree(data,possible_values,x_axis,y_axis,initial_values,to_str_method,s
         return '_'.join(map(lambda x: f"{x:03d}",widths))
     """
 
+    print(f"(x_axis,y_axis) : ({x_axis},{y_axis})")
+
     # data[x_axis] = MinMaxScaler().fit_transform(data[x_axis].values.reshape(-1,1))
     # data[y_axis] = MinMaxScaler().fit_transform(data[y_axis].values.reshape(-1,1))
 
@@ -214,7 +246,8 @@ def build_tree(data,possible_values,x_axis,y_axis,initial_values,to_str_method,s
         
         # chosen_node_index = make_choice(data,x_axis,y_axis,
         #     chull,node,node_coord,nodes,coord,candidate_nodes,candidate_coord)
-        chosen_node_index = make_choice_2(node,candidate_nodes,candidate_coord)
+        chosen_node_index = make_choice_2(data,x_axis,y_axis,
+            node,node_coord,candidate_nodes,candidate_coord)
 
         if chosen_node_index == -1:
             break
@@ -685,14 +718,14 @@ if __name__ == "__main__":
 
     glch_rate_vs_dist(
         "/home/lucas/Documents/perceptronac/scripts/tradeoffs/bpp-mse-psnr-loss-flops-params_bmshj2018-factorized_10000-epochs_L-2e-2-1e-2-5e-3_N-32-64-96-128-160-192-224_M-32-64-96-128-160-192-224-256-288-320.csv",
-        "flops","loss",1,1, #1e10,1,
+        "flops","loss",1e10,1,
         # x_range=[-0.2,3.75],
         # y_range=[1.1,3.1]
     )
 
     glch_rate_vs_dist(
         "/home/lucas/Documents/perceptronac/scripts/tradeoffs/bpp-mse-psnr-loss-flops-params_bmshj2018-factorized_10000-epochs_L-2e-2-1e-2-5e-3_N-32-64-96-128-160-192-224_M-32-64-96-128-160-192-224-256-288-320.csv",
-        "params","loss",1,1, #1e6,1,
+        "params","loss",1e6,1,
         # x_range=[-0.1,4],
         # y_range=[1.1,3.1]
     )
