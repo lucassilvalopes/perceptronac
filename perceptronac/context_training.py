@@ -17,6 +17,8 @@
 # p = p1 ./ (p1 + p0); 
 
 import numpy as np
+from scipy.sparse import lil_matrix
+
 
 def context_training(X,y,max_context=20):
     L,N = X.shape
@@ -43,3 +45,18 @@ def context_training(X,y,max_context=20):
     p[np.logical_and(p0 == 0,p1 != 0)]=(1 - np.finfo(p.dtype).eps)
 
     return p
+
+
+def context_training_nonbinary(X,y):
+    """
+    https://cmdlinetips.com/2018/03/sparse-matrices-in-python-with-scipy/
+    https://docs.scipy.org/doc/scipy/reference/sparse.html
+    """
+    n_bits = 8
+    L,N = X.shape
+    po2 = 2 ** (n_bits * np.arange(0,N).reshape(-1,1))
+    context = X @ po2
+    c = lil_matrix((2**(n_bits*N),2**n_bits))
+    for k in range(L):
+        c[context[k,0],y[k,0]] = c[context[k,0],y[k,0]] + 1
+    return c

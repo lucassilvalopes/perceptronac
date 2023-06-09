@@ -22,3 +22,8 @@ Suggestions:
 - save plotVC.html in /tmp/ instead of in the current folder
 - join the two scripts in one, giving the option to turn the light source on or off
 - improve the way that the initial camera position is defined, none of the current methods work 100%
+
+## [Unreleased] - 2022-06-23
+
+I joined the two scripts plotvoxcloud and plotvoxcloud2 in a single script, by adding an input to control the lights in the plotvoxcloud script.
+Improved the initial camera position, I think I figured out what was wrong.

@@ -18,13 +18,14 @@
 # the learning rate will affect the convergence
 
 import os
+import time
 import math
 import torch
 import numpy as np
 from perceptronac.models import MLP_N_64N_32N_1
 from perceptronac.utils import causal_context_many_imgs
-from perceptronac.perfect_AC import perfect_AC
-from perceptronac.models import Log2BCELoss, CausalContextDataset
+from perceptronac.losses import perfect_AC
+from perceptronac.losses import Log2BCELoss
 from perceptronac.loading_and_saving import plot_comparison
 from perceptronac.loading_and_saving import save_values
 from perceptronac.loading_and_saving import linestyle_tuple
@@ -120,37 +121,38 @@ class RealTimeLUT:
         raise ValueError(f"{self.central_tendency} not an option, only \"mode\" or \"mean\"")
 
     def update(self,Xi,yi):
+        L,N = Xi.shape
         context = Xi @ self.po2 # np.array([[]]) @ (2 ** np.arange(0,0).reshape(-1,1)) == 0
-        if (yi[0,0] == 1):
-            self.c1[context[0,0],0] = self.c1[context[0,0],0] + 1
-        else:
-            self.c0[context[0,0],0] = self.c0[context[0,0],0] + 1
-    def predict(self,Xi):
-        context = Xi @ self.po2 # np.array([[]]) @ (2 ** np.arange(0,0).reshape(-1,1)) == 0
-        c1 = self.c1[context[0,0],0]
-        c0 = self.c0[context[0,0],0]
+        for k in range(L):
+            if (yi[k,0] == 1):
+                self.c1[context[k,0],0] = self.c1[context[k,0],0] + 1
+            else:
+                self.c0[context[k,0],0] = self.c0[context[k,0],0] + 1
 
-        pp = np.zeros((1,1)) 
-        if self.central_tendency == "mode":
-            pp[0,0] = np.max([1,c1]) / (np.max([1,c1]) + np.max([1,c0]))
-            if c0 != 0 and c1 == 0:
-                pp[0,0]=(0 + np.finfo(pp.dtype).eps)
-            elif c0 == 0 and c1 != 0:
-                pp[0,0]=(1 - np.finfo(pp.dtype).eps)
-        elif self.central_tendency=="mean":
-            pp[0,0] = c1 / (c1 + c0)
-        else:
-            self.bad_central_tendency()
+    def predict(self,Xi):
+        L,N = Xi.shape
+        context = Xi @ self.po2 # np.array([[]]) @ (2 ** np.arange(0,0).reshape(-1,1)) == 0
+        pp = np.zeros((L,1))
+        for k in range(L):
+            c1 = self.c1[context[k,0],0]
+            c0 = self.c0[context[k,0],0]
+
+            if self.central_tendency == "mode":
+                pp[k,0] = np.max([1,c1]) / (np.max([1,c1]) + np.max([1,c0]))
+                if c0 != 0 and c1 == 0:
+                    pp[k,0]=(0 + np.finfo(pp.dtype).eps)
+                elif c0 == 0 and c1 != 0:
+                    pp[k,0]=(1 - np.finfo(pp.dtype).eps)
+            elif self.central_tendency=="mean":
+                pp[k,0] = c1 / (c1 + c0)
+            else:
+                self.bad_central_tendency()
+        
         return pp
 
 
-def backward_adaptive_coding(pths,N,lr,central_tendencies,with_lut=False,with_mlp=True):
+def backward_adaptive_coding(pths,N,lr,central_tendencies,with_lut=False,with_mlp=True,parallel=False,samples_per_time=1,n_pieces=1):
     
-
-    trainset = CausalContextDataset(pths,"image",N)
-    y,X = trainset.y,trainset.X
-    dataloader = torch.utils.data.DataLoader(trainset,batch_size=1,shuffle=False,num_workers=6)
-
     if N == 0:
         with_mlp = False
 
@@ -194,43 +196,111 @@ def backward_adaptive_coding(pths,N,lr,central_tendencies,with_lut=False,with_ml
             lut_avg_code_length_histories[central_tendency] = []
             lut_running_losses[central_tendency] = 0.0 
 
+
+    # (1024*768) * len(pths) must be divisible by n_pieces*batch_size
+    # (1024*768) must be divisible by n_pieces
+    # ((1024*768) * len(pths)) // n_pieces must be divisible by batch_size
+    piece_len = (1024*768) // n_pieces
+
     iteration = 0
+    for piece in range(n_pieces):
 
-    for data in tqdm(dataloader):
+        if parallel:
+            if samples_per_time != 1:
+                raise ValueError("parallel processing with more than one sample per page at a time is not supported yet")
 
-        X_b,y_b= data
+            batch_size=len(pths)
+            y = []
+            X = []
+            for pth in pths:
+                partial_y,partial_X = causal_context_many_imgs([pth], N)
+                y.append(partial_y[(piece*piece_len):((piece+1)*piece_len),:].copy())
+                X.append(partial_X[(piece*piece_len):((piece+1)*piece_len),:].copy())
+                del partial_y,partial_X
 
-        if with_mlp:
+            y = np.concatenate(y,axis=1).reshape(-1,1)
+            if N > 0:
+                X = np.concatenate(X,axis=1).reshape(-1,N)
+            else:
+                X = np.zeros((y.shape[0],0),dtype=int)
+        else:
+            batch_size=samples_per_time
 
-            X_b = X_b.float().to(device)
-            y_b = y_b.float().to(device)
+            lower_lim = (piece*piece_len*len(pths))
+            upper_lim = ((piece+1)*piece_len*len(pths))
 
-            optimizer.zero_grad()
-            outputs = model(X_b)
-            loss = criterion(outputs, y_b)
-            loss.backward()
-            optimizer.step()
+            page_len = (piece_len * n_pieces)
 
-            mlp_running_loss += loss.item()
-            mlp_avg_code_length_history.append( mlp_running_loss / (iteration + 1) )
+            start_page_upper_lim = page_len
+            start_page_lower_lim = 0
+            start_page = 0
+            while lower_lim >= start_page_upper_lim:
+                start_page += 1
+                start_page_lower_lim = start_page*page_len
+                start_page_upper_lim = (start_page+1)*page_len
 
-        assert y_b.item() == y[iteration,0]
-        assert np.allclose(X_b.cpu().numpy().reshape(-1) , X[iteration,:].reshape(-1))
+            end_page_upper_lim = page_len
+            end_page_lower_lim = 0
+            end_page = 0
+            while upper_lim > end_page_upper_lim:
+                end_page += 1
+                end_page_lower_lim = end_page*page_len
+                end_page_upper_lim = (end_page+1)*page_len
 
-        if with_lut:
-            for central_tendency in central_tendencies:
-
-                lut_pred_t = luts[central_tendency].predict(X[iteration:iteration+1,:])
-                luts[central_tendency].update(X[iteration:iteration+1,:],y[iteration:iteration+1,:])
-
-                lut_loss = perfect_AC(y[iteration:iteration+1,:],lut_pred_t)
-
-                lut_running_losses[central_tendency] += lut_loss
-                lut_avg_code_length_histories[central_tendency].append( lut_running_losses[central_tendency] / (iteration + 1) )
+            y,X = causal_context_many_imgs(np.array(pths)[start_page:end_page+1].tolist(), N)
+            y = y[lower_lim-start_page_lower_lim:upper_lim-start_page_lower_lim,:]
+            X = X[lower_lim-start_page_lower_lim:upper_lim-start_page_lower_lim,:]
 
 
-        iteration += 1
-            
+        trainset = torch.utils.data.TensorDataset(torch.tensor(X),torch.tensor(y))
+        dataloader = torch.utils.data.DataLoader(trainset,batch_size=batch_size,shuffle=False)
+
+
+        n_batches = len(y)//batch_size
+        pbar = tqdm(total=n_batches)
+
+        # for iteration in range(n_batches):
+        #     ...
+        #     X_b,y_b= torch.tensor(X[start:stop,:]),torch.tensor(y[start:stop,:])
+
+        
+        for data in dataloader:
+            X_b,y_b=data
+
+            start = iteration * batch_size - (piece*piece_len*len(pths))
+            stop = (iteration+1)* batch_size - (piece*piece_len*len(pths))
+
+            if with_mlp:
+
+                X_b = X_b.float().to(device)
+                y_b = y_b.float().to(device)
+
+                optimizer.zero_grad()
+                outputs = model(X_b)
+                loss = criterion(outputs, y_b)
+                loss.backward()
+                optimizer.step()
+
+                mlp_running_loss += loss.item()
+                mlp_avg_code_length_history.append( mlp_running_loss / ((iteration + 1) * batch_size) )
+
+            assert np.allclose(y_b.detach().cpu().numpy().astype(int) , y[start:stop,:].astype(int))
+            assert np.allclose(X_b.detach().cpu().numpy().astype(int) , X[start:stop,:].astype(int))
+
+            if with_lut:
+                for central_tendency in central_tendencies:
+
+                    lut_pred_t = luts[central_tendency].predict(X[start:stop,:])
+                    luts[central_tendency].update(X[start:stop,:],y[start:stop,:])
+
+                    lut_loss = batch_size * perfect_AC(y[start:stop,:],lut_pred_t)
+
+                    lut_running_losses[central_tendency] += lut_loss
+                    lut_avg_code_length_histories[central_tendency].append(lut_running_losses[central_tendency]/((iteration+1)*batch_size))
+
+            iteration+=1
+            pbar.update(1)
+        pbar.close()            
 
     data = dict()
     if with_mlp:
@@ -243,13 +313,17 @@ def backward_adaptive_coding(pths,N,lr,central_tendencies,with_lut=False,with_ml
 
 
 def backward_adaptive_coding_experiment(exp_name,docs,Ns,learning_rates,central_tendencies,colors,linestyles,
-    labels,legend_ncol,ylim):
+    labels,legend_ncol,ylim,parallel=False,samples_per_time=1,n_pieces=1):
 
     max_N = 26
 
     for N in Ns:
-
-        len_data = len(docs[0]) * 1024*768
+        if parallel:
+            if samples_per_time != 1:
+                raise ValueError("parallel processing with more than one sample per page at a time is not supported yet")
+            len_data = 1024*768
+        else:
+            len_data = (len(docs[0]) * 1024*768) // samples_per_time
 
         data = dict()
         if N > 0:
@@ -265,12 +339,14 @@ def backward_adaptive_coding_experiment(exp_name,docs,Ns,learning_rates,central_
             if N > 0:
                 for i_lr,lr in enumerate(learning_rates):
                     with_lut = ((i_lr == len(learning_rates)-1) and (N<=max_N))
-                    partial_data = backward_adaptive_coding(doc,N,lr,central_tendencies,with_lut=with_lut)
+                    partial_data = backward_adaptive_coding(doc,N,lr,central_tendencies,with_lut=with_lut,
+                        parallel=parallel,samples_per_time=samples_per_time,n_pieces=n_pieces)
                     k = "MLPlr={:.0e}".format(lr)
                     data[k] = data[k] + np.array(partial_data[k])
             if (N<=max_N):
                 if not all([f"LUT{central_tendency}" in partial_data.keys() for central_tendency in central_tendencies]):
-                    partial_data = backward_adaptive_coding(doc,N,0,central_tendencies,with_lut=True,with_mlp=False)
+                    partial_data = backward_adaptive_coding(doc,N,0,central_tendencies,with_lut=True,with_mlp=False,
+                        parallel=parallel,samples_per_time=samples_per_time,n_pieces=n_pieces)
                 for central_tendency in central_tendencies:
                     k = f"LUT{central_tendency}"
                     data[k] = data[k] + np.array(partial_data[k])
@@ -297,7 +373,12 @@ def backward_adaptive_coding_experiment(exp_name,docs,Ns,learning_rates,central_
 
         change_aspect(ax)
 
-        fname = f"backward_adaptive_coding_{exp_name}_N{N}"
+        exp_id = str(int(time.time()))
+        save_dir = f"results/exp_{exp_id}"
+
+        os.makedirs(save_dir)
+
+        fname = f"{save_dir.rstrip('/')}/backward_adaptive_coding_{exp_name}_N{N}"
 
         fig.savefig(fname+".png", dpi=300)
 

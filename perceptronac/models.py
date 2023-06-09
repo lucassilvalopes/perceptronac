@@ -9,10 +9,12 @@
 
 
 import torch
-from perceptronac.context_training import context_training
-from perceptronac.context_coding import context_coding
+from perceptronac.context_training import context_training,context_training_nonbinary
+from perceptronac.context_coding import context_coding,context_coding_nonbinary
 from perceptronac.utils import causal_context_many_imgs
 from perceptronac.utils import causal_context_many_pcs
+from perceptronac.losses import LaplacianRate
+from tqdm import tqdm
 import numpy as np
 import os
 
@@ -29,21 +31,8 @@ class Perceptron(torch.nn.Module):
         return x
 
 
-class ArbitraryWidthMLP(torch.nn.Module):
-    def __init__(self,N,W):
-        super().__init__()
-        self.layers = torch.nn.Sequential(
-            torch.nn.Linear(N, W),
-            torch.nn.ReLU(),
-            torch.nn.Linear(W, 1),
-            torch.nn.Sigmoid()
-        )
-    def forward(self, x):
-        return self.layers(x)
-
-
 class ArbitraryMLP(torch.nn.Module):
-    def __init__(self,widths,intended_loss = "BCELoss"):
+    def __init__(self,widths,intended_loss = "BCELoss", head_x3 = False):
         """
         Examples: 
             For a binary classification, the following are equivalent:
@@ -52,9 +41,15 @@ class ArbitraryMLP(torch.nn.Module):
         """
         super().__init__()
         modules = []
-        for i in range(len(widths[:-1])):
-            modules.append(torch.nn.Linear(widths[i],widths[i+1]))
-            if i < len(widths[:-1])-1:
+        n_layers = len(widths[:-1])
+        for i in range(n_layers):
+            
+            if (i == n_layers-1) and head_x3: 
+                modules.append(ColorHead(widths[i],widths[i+1]))
+            else:
+                modules.append(torch.nn.Linear(widths[i],widths[i+1]))
+
+            if i < n_layers-1: 
                 modules.append(torch.nn.ReLU())
             elif intended_loss == "BCELoss":
                 modules.append(torch.nn.Sigmoid())
@@ -65,11 +60,29 @@ class ArbitraryMLP(torch.nn.Module):
                 # Softmax is included in the nn.CrossEntropyLoss
                 pass
             elif intended_loss == "NLLLoss":
-                modules.append(torch.nn.LogSoftmax())
+                modules.append(torch.nn.LogSoftmax(dim=1))
         self.layers = torch.nn.Sequential(*modules)
     def forward(self, x):
         return self.layers(x)
 
+
+class ColorHead(torch.nn.Module):
+    """
+    inspirations:
+    https://github.com/usuyama/pytorch-unet/blob/master/pytorch_unet.py
+    https://github.com/pytorch/vision/blob/main/torchvision/models/segmentation/fcn.py
+    https://pytorch.org/docs/stable/generated/torch.cat.html
+    """
+    def __init__(self,in_dim,C):
+        super().__init__()
+        self.ch1 = torch.nn.Linear(in_dim,C)
+        self.ch2 = torch.nn.Linear(in_dim,C)
+        self.ch3 = torch.nn.Linear(in_dim,C)
+
+    def forward(self, x):
+        x = torch.cat([self.ch1(x).unsqueeze(2),self.ch2(x).unsqueeze(2),self.ch3(x).unsqueeze(2)], dim=2)
+        return x
+        
 
 class MLP_N_64N_32N_1(torch.nn.Module):
     def __init__(self,N):
@@ -86,51 +99,76 @@ class MLP_N_64N_32N_1(torch.nn.Module):
         return self.layers(x)
 
 
-class MLP_N_1024_512_1(torch.nn.Module):
+# class MLP_N_64N_32N_1(torch.nn.Module):
+#     """binary image or point cloud geometry"""
+#     def __init__(self,N):
+#         super().__init__()
+#         self.mlp = ArbitraryMLP([N,64*N,32*N,1],intended_loss="BCELoss",head_x3=False)
+#     def forward(self, x):
+#         return self.mlp(x)
+
+
+class MLP_N_64N_32N_256(torch.nn.Module):
+    """grayscale image"""
     def __init__(self,N):
         super().__init__()
-        self.layers = torch.nn.Sequential(
-            torch.nn.Linear(N, 1024),
+        self.mlp = ArbitraryMLP([N,64*N,32*N,256],intended_loss="CrossEntropyLoss",head_x3=False)
+    def forward(self, x):
+        return self.mlp(x)
+
+
+class MLP_N_64N_32N_3x256(torch.nn.Module):
+    """color image"""
+    def __init__(self,N):
+        super().__init__()
+        self.mlp = ArbitraryMLP([3*N,64*N,32*N,256],intended_loss="CrossEntropyLoss",head_x3=True)
+    def forward(self, x):
+        return self.mlp(x)
+
+
+class Pointnet_3_64N_32N_16N_1(torch.nn.Module):
+    def __init__(self,N):
+        super().__init__()
+        self.mlp1 = torch.nn.Sequential(
+            torch.nn.Linear(3, 64*N),
             torch.nn.ReLU(),
-            torch.nn.Linear(1024, 512),
+            torch.nn.Linear(64*N, 32*N),
+            torch.nn.ReLU()
+        )
+        self.mlp2 = torch.nn.Sequential(
+            torch.nn.Linear(32*N, 16*N),
             torch.nn.ReLU(),
-            torch.nn.Linear(512, 1),
+            torch.nn.Linear(16*N, 1),
             torch.nn.Sigmoid()
         )
     def forward(self, x):
-        return self.layers(x)
-
-
-class MLP_N_2048_1024_1(torch.nn.Module):
-    def __init__(self,N):
-        super().__init__()
-        self.layers = torch.nn.Sequential(
-            torch.nn.Linear(N, 2048),
-            torch.nn.ReLU(),
-            torch.nn.Linear(2048, 1024),
-            torch.nn.ReLU(),
-            torch.nn.Linear(1024, 1),
-            torch.nn.Sigmoid()
-        )
-    def forward(self, x):
-        return self.layers(x)
-
-
-class Log2BCELoss(torch.nn.Module):
-    def __init__(self,*args,**kwargs):
-        super().__init__()
-        self.bce_loss = torch.nn.BCELoss(*args,**kwargs)
-
-    def forward(self, pred, target):
-        return self.bce_loss(pred, target)/torch.log(torch.tensor(2,dtype=target.dtype,device=target.device))
+        x = self.mlp1(x)
+        x = torch.max(x,dim=1,keepdim=False)
+        x = self.mlp2(x)
+        return x
 
 
 class CausalContextDataset(torch.utils.data.Dataset):
-    def __init__(self,pths,data_type,N,percentage_of_uncles=None,getXy_later=False):
+    def __init__(
+        self,pths,data_type,N,percentage_of_uncles=None,getXy_later=False,
+        geo_or_attr = None, n_classes=None, channels=None, color_space=None
+    ):
         self.pths = pths
         self.data_type = data_type
         self.N = N
-        self.percentage_of_uncles = percentage_of_uncles
+
+        if data_type == "pointcloud":
+            self.percentage_of_uncles = percentage_of_uncles
+            self.geo_or_attr = geo_or_attr if (geo_or_attr is not None) else "geometry"
+            if self.geo_or_attr == "attributes":
+                self.n_classes = n_classes if (n_classes is not None) else 256
+                self.channels = channels if (channels is not None) else [1,0,0]
+                self.color_space = color_space if (color_space is not None) else "YCbCr"
+        elif data_type == "image":
+            self.n_classes = n_classes if (n_classes is not None) else 2
+            self.channels = channels if (channels is not None) else [1,0,0]
+            self.color_space = color_space if (color_space is not None) else "YCbCr"
+
         if getXy_later:
             self.y,self.X = [],[]
         else:
@@ -138,22 +176,33 @@ class CausalContextDataset(torch.utils.data.Dataset):
 
     def getXy(self):
         if self.data_type == "image":
-            self.y,self.X = causal_context_many_imgs(self.pths, self.N)
+            self.y,self.X = causal_context_many_imgs(
+                self.pths, self.N, n_classes=self.n_classes,
+                channels=self.channels, color_space=self.color_space)
         elif self.data_type == "pointcloud":
             if self.percentage_of_uncles is None:
                 m = f"Input percentage_of_uncles must be specified "+\
                     "for data type pointcloud."
                 raise ValueError(m)
             self.y,self.X = causal_context_many_pcs(
-                self.pths, self.N, self.percentage_of_uncles)
+                self.pths, self.N, self.percentage_of_uncles, geo_or_attr = self.geo_or_attr,
+                n_classes=self.n_classes, channels=self.channels, color_space=self.color_space)
         elif self.data_type == "table":
             Xy = np.vstack([self.load_table(pth) for pth in self.pths])
-            assert Xy.shape[1] - 1 == self.N
-            self.X = Xy[:,:self.N]
-            self.y = Xy[:,self.N:]
+            if (self.channels is None) or np.count_nonzero(self.channels) == 1:
+                assert Xy.shape[1] - 1 == self.N
+                self.X = Xy[:,:self.N]
+                self.y = Xy[:,self.N:]
+            elif np.count_nonzero(self.channels) == 3:
+                assert Xy.shape[1] - 3 == 3*self.N
+                self.X = Xy[:,:3*self.N]
+                self.y = Xy[:,3*self.N:]
+            else:
+                m = f"Unsupported number of channels {np.count_nonzero(self.channels)}."
+                raise ValueError(m)
         else:
-            m = f"Data type {self.data_type} not supported.\n"+\
-                "Supported data types : image, pointcloud, table."
+            # https://stackoverflow.com/questions/12262463/print-out-the-class-parameters-on-python
+            m = "Unsupported combination "+ ' '.join([f"{k}={v}" for k,v in self.__dict__.items()])
             raise ValueError(m)
 
     @staticmethod
@@ -168,13 +217,20 @@ class CausalContextDataset(torch.utils.data.Dataset):
     def __len__(self):
         return len(self.y)
     def __getitem__(self,idx):
-        return self.X[idx,:],self.y[idx,:]
+        if (
+            (False if (self.n_classes is None) else (self.n_classes == 256)) and 
+            (False if (self.channels is None) else (np.count_nonzero(self.channels) == 1) )
+        ):
+            return self.X[idx,:],self.y[idx,0] # because of torch.nn.CrossEntropyLoss
+        else:
+            return self.X[idx,:],self.y[idx,:]
 
 
-class StaticAC:        
+#static binary arithmetic coder
+class StaticAC:
     def __call__(self,X):
         return self.forward(X)
-    def load_p(self,y=None,p=None):
+    def load(self,y=None,p=None):
         if y is not None:
             self.p = float(np.sum(y==1)/len(y))
         elif p is not None:
@@ -188,10 +244,38 @@ class StaticAC:
             return self.p * np.ones((X.shape[0],1))
 
 
+#static 256 arithmetic coder
+class S256AC:
+    def __call__(self,X):
+        return self.forward(X)
+    def load(self,y=None,ps=None):
+        if y is not None:
+            n_channels = y.shape[1]
+            n_symbols = 256
+            n_samples = y.shape[0]
+            self.ps = np.zeros((1,n_symbols,n_channels))
+            for ch in range(n_channels):
+                self.ps[0,:,ch] = np.histogram(y[:,ch], bins=list(range(n_symbols+1)))[0]/n_samples
+        elif ps is not None:
+            self.ps = ps
+        else:
+            raise ValueError("Specify either ps or y")
+    def forward(self,X):
+        n_channels = self.ps.shape[2]
+        n_symbols = self.ps.shape[1]
+        n_predictions = X.shape[0]
+        if isinstance(X,torch.Tensor):
+            device = X.device
+            return torch.ones((n_predictions,n_symbols,n_channels),device=device) * torch.tensor(self.ps,device=device)
+        else:
+            return np.ones((n_predictions,n_symbols,n_channels)) * self.ps
+
+
+#context adaptive binary arithmetic coder
 class CABAC:
     def __init__(self,max_context):
         self.max_context = max_context
-    def load_lut(self,X=None,y=None,lut=None):
+    def load(self,X=None,y=None,lut=None):
         if lut is not None:
             self.context_p = lut
         elif (X is not None) and (y is not None):
@@ -208,6 +292,28 @@ class CABAC:
             return torch.tensor(pp,device=device)
         else:
             return context_coding(X,self.context_p)
+
+
+#context adaptive 256 arithmetic coder
+class CA256AC:
+    def load(self,X=None,y=None,lut=None):
+        if (lut is not None):
+            self.lut = lut
+        elif (X is not None) and (y is not None):
+            n_channels = y.shape[1]
+            self.lut = [context_training_nonbinary(X,y[:,ch:ch+1]) for ch in range(n_channels)]
+        else:
+            raise ValueError("Specify either lut or both X and y")
+    def __call__(self, X):
+        return self.forward(X)
+    def forward(self, X):
+        if isinstance(X,torch.Tensor):
+            device = X.device
+            X = X.detach().cpu().numpy()
+            pp = np.concatenate([np.expand_dims(context_coding_nonbinary(X,context_c),2) for context_c in self.lut],axis=2)
+            return torch.tensor(pp,device=device)
+        else:
+            return np.concatenate([np.expand_dims(context_coding_nonbinary(X,context_c),2) for context_c in self.lut],axis=2)
 
 
 class MLP_N_64N_32N_1_Constructor:
@@ -232,7 +338,7 @@ class StaticAC_Constructor:
         staticac = StaticAC()
         with open(self.weights, 'rb') as f:
             p = np.load(f)
-        staticac.load_p(p=p[0])
+        staticac.load(p=p[0])
         return staticac
 
 
@@ -246,5 +352,114 @@ class CABAC_Constructor:
         cabac = CABAC(self.max_context)
         with open(self.weights, 'rb') as f:
             lut = np.load(f)
-        cabac.load_lut(lut=lut.reshape(-1,1))
+        cabac.load(lut=lut.reshape(-1,1))
         return cabac
+
+
+class LaplacianVarianceModel(torch.nn.Module):
+    def __init__(self,N): 
+        super().__init__()
+        self.max_sd = 0
+
+        a1_i = N
+        a1_o = a2_i = min(8192,64*N) # min(2048,64*N)
+        a2_o = a3_i = min(4096,32*N) # min(1024,32*N)
+        a3_o = 1
+
+        self.a1 = torch.nn.Linear( a1_i, a1_o )
+        self.a1_act = torch.nn.ReLU()
+        self.a2 = torch.nn.Linear( a2_i , a2_o )
+        self.a2_act = torch.nn.ReLU()
+        self.a3 = torch.nn.Linear( a3_i , a3_o )
+        self.a3_act = torch.nn.Sigmoid()
+
+        # self.b1 = torch.nn.Linear(N, min(1024,32*N) )
+        # self.b1_act = torch.nn.ReLU()
+        # self.b2 = torch.nn.Linear( min(1024,32*N), 1)
+        # self.b2_act = torch.nn.ReLU()
+
+    def forward(self, x):
+        xa = self.a1(x)
+        xa = self.a1_act(xa)
+        xa = self.a2(xa)
+        xa = self.a2_act(xa)
+        xa = self.a3(xa)
+        xa = self.a3_act(xa)
+
+        # xb = self.b1(x)
+        # xb = self.b1_act(xb)
+        # xb = self.b2(xb)
+        # xb = self.b2_act(xb)
+
+        # return 0.01 + xa * (1 + xb )
+
+        return 0.01 + self.max_sd * xa
+
+
+class NNLaplacianVarianceModel:
+
+    def __init__(self,configs,N):
+        # seed = 7
+        # torch.manual_seed(seed)
+        # random.seed(seed)
+        # np.random.seed(seed)
+        self.model = LaplacianVarianceModel(N)
+        self.lr = configs["learning_rate"]
+        self.batch_size = configs["batch_size"]
+
+    def train(self,X,y):
+        self.model.train()
+        return self._apply(X,y,"train")
+
+    def validate(self,X,y):
+        self.model.eval()
+        return self._apply(X,y,"valid")
+
+    def _apply(self,X,y, phase):
+
+        device = torch.device("cuda:0")
+
+        model = self.model
+        model.to(device)
+
+        criterion = LaplacianRate()
+        OptimizerClass=torch.optim.SGD
+        optimizer = OptimizerClass(model.parameters(), lr=self.lr)
+
+        dset = torch.utils.data.TensorDataset(X,y)
+        dataloader = torch.utils.data.DataLoader(dset,batch_size=self.batch_size,shuffle=True)
+
+        if phase == 'train':
+            model.train(True)
+        else:
+            model.train(False) 
+
+        running_loss = 0.0
+        n_samples = 0.0
+
+        # pbar = tqdm(total=np.ceil(len(dset)/self.batch_size))
+        for data in dataloader:
+
+            Xt_b,yt_b= data
+            Xt_b = Xt_b.float().to(device)
+            yt_b = yt_b.float().to(device)
+
+            if phase == 'train':
+                optimizer.zero_grad()
+                model.max_sd = max([model.max_sd,torch.max(torch.abs(yt_b.detach())).item()])
+                outputs = model(Xt_b)
+                loss = criterion(outputs, yt_b)
+                loss.backward()
+                optimizer.step()
+            else:
+                with torch.no_grad():
+                    outputs = model(Xt_b)
+                    loss = criterion(outputs, yt_b)
+
+            running_loss += loss.item()
+            n_samples += yt_b.numel()
+        #     pbar.update(1)
+        #     pbar.set_description(f"loss: {running_loss / n_samples} max_sd: {model.max_sd}")
+        # pbar.close()
+
+        return running_loss / n_samples , n_samples

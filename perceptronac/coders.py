@@ -24,12 +24,14 @@ def lexsort(V):
 
 class PC_Coder:
 
-    def __init__(self,model_constructor,context_size,last_octree_level):
+    def __init__(self,model_constructor,context_size,last_octree_level,percentage_of_uncles=0,device="cpu"):
         self._model_constructor = model_constructor
-        self._N = context_size
         self._last_level = last_octree_level
+        self._M = int(percentage_of_uncles * context_size)
+        self._N = context_size - self._M
         self._use_cache = False
         self._cache_path = None
+        self.device = device
 
     def enable_cache(self,cache_path = None):
         self._use_cache = True
@@ -53,7 +55,7 @@ class PC_Coder:
         y = []
         X = []
         for pc in pcs:
-            _,partial_X,partial_y,_,_ = c3d.pc_causal_context(pc, self._N, 0)
+            _,partial_X,partial_y,_,_ = c3d.pc_causal_context(pc, self._N, self._M)
             y.append(np.expand_dims(partial_y.astype(int),1) )
             X.append(partial_X.astype(int))
         y = np.vstack(y)
@@ -62,7 +64,10 @@ class PC_Coder:
 
     def _p_y_from_X_y(self,X,y):
 
+        device = torch.device(self.device)
+
         model = self._model_constructor()
+        model.to(device)
 
         batch_size = 2048
 
@@ -71,16 +76,20 @@ class PC_Coder:
 
         p = []
         v = []
-        for data in tqdm(dataloader, desc="preparing the data to encode"):
+        pbar = tqdm(total=np.ceil(len(dset)/batch_size))
+        pbar.set_description("preparing the data to encode")
+        for data in dataloader:
             X_b,y_b = data
-            X_b = X_b.float() #.to(device)
-            y_b = y_b.float() #.to(device)
+            X_b = X_b.float().to(device)
+            y_b = y_b.float().to(device)
             outputs = model(X_b)
-            p.append(outputs.detach().cpu().numpy())
-            v.append(y_b.detach().cpu().numpy())
-        
-        p = np.vstack(p)
-        v = np.vstack(v)
+            p.append(outputs.detach())
+            v.append(y_b.detach())
+            pbar.update(1)
+        pbar.close()
+
+        p = torch.vstack(p).cpu().numpy()
+        v = torch.vstack(v).cpu().numpy()
         
         p=p.reshape(-1).tolist()
         v=v.reshape(-1).tolist()
@@ -119,8 +128,12 @@ class PC_Coder:
 
     def _write_encoder_inpt_file(self,y):
         encoderInputFile = BitFile(self._encoder_in, "wb")
-        for y_b in tqdm(y, desc=f"writing {self._encoder_in}"):
+        pbar = tqdm(total=len(y))
+        pbar.set_description(f"writing {self._encoder_in}")
+        for y_b in y:
             encoderInputFile.outputBit(int(y_b))
+            pbar.update(1)
+        pbar.close()
 
     def encode(self,pc_in,encoder_in="/tmp/encoder_in",encoder_out="/tmp/encoder_out"):
 
@@ -147,7 +160,9 @@ class PC_Coder:
         encoderOutputFile = BitFile(self._encoder_out, "wb")
         enc = ArithmeticEncoder(encoderInputFile, encoderOutputFile, 3, 1)
 
-        for context in tqdm(contextloader,desc=f"writing {self._encoder_out}"):
+        pbar = tqdm(total=len(contextloader))
+        pbar.set_description(f"writing {self._encoder_out}")
+        for context in contextloader:
             p = predictor(context)
             counts = [
                 max(1,math.floor(16000*(1-p))),
@@ -157,6 +172,8 @@ class PC_Coder:
             _,totals =defineIntervals(counts)
             symbol = enc.do_one_step(totals)
             assert symbol != 2
+            pbar.update(1)
+        pbar.close()
 
         _,totals =defineIntervals(counts)
         symbol = enc.do_one_step(totals)
@@ -190,7 +207,9 @@ class PC_Coder:
         dec = ArithmeticDecoder(decoderInputFile, decoderOutputFile, 3, 1)
 
         pc = []
-        for iteration in tqdm(itertools.count(),desc=f"writing {self._decoder_out}"):
+        pbar = tqdm(total=None)
+        pbar.set_description(f"writing {self._decoder_out}")
+        for iteration in itertools.count():
             p = predictor( context_generator(pc,iteration) )
             counts = [
                 max(1,math.floor(16000*(1-p))),
@@ -202,6 +221,8 @@ class PC_Coder:
             if symbol == 2:
                 break
             pc = update_pc(pc,symbol,iteration)
+            pbar.update(1)
+        pbar.close()
 
         return pc
 
@@ -213,7 +234,9 @@ class PC_Coder:
 
         last_level = 10
 
-        for level in tqdm(range(1,last_level+1),desc="reconstructing the pc"):
+        pbar = tqdm(total=last_level)
+        pbar.set_description("reconstructing the pc")
+        for level in range(1,last_level+1):
             if level == 1:
                 V_d = c3d.xyz_displacements([0,1])
             else:
@@ -226,6 +249,8 @@ class PC_Coder:
                     is_to_delete.append(i)
             V_d = np.delete(V_d,is_to_delete,axis=0)
             # print(f"level {level} len : {len(V_d)}")
+            pbar.update(1)
+        pbar.close()
 
         return V_d
 

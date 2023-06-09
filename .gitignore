@@ -133,3 +133,10 @@ dmypy.json
 *.pt
 
 .DS_store
+
+**/trash/
+*.ply
+*.xlsx
+*.tar
+*.zip
+*.txt

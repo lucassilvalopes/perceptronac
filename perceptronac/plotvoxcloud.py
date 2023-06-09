@@ -48,6 +48,7 @@ TEMPLATE_VG = """
     var container, stats;
     var camera, scene, renderer;
     var points;
+    var lights_on = {lights_on};
 
     init();
     animate();
@@ -94,30 +95,41 @@ TEMPLATE_VG = """
 
         var geometry = new THREE.BoxGeometry( S_x, S_z, S_y );
 
-        for ( var i = 0; i < n_voxels; i ++ ) {{            
-            var mesh = new THREE.Mesh( geometry, new THREE.MeshLambertMaterial() );
+        for ( var i = 0; i < n_voxels; i ++ ) {{     
+            if (lights_on){{       
+                var mesh = new THREE.Mesh( geometry, new THREE.MeshLambertMaterial() );
+            }} else {{
+                var mesh = new THREE.Mesh( geometry, new THREE.MeshBasicMaterial() );
+            }}
             mesh.material.color.setRGB(R[i], G[i], B[i]);
             mesh.position.x = X[i];
             mesh.position.y = Y[i];
             mesh.position.z = Z[i];
-            mesh.castShadow = true;
-            mesh.receiveShadow = true;
+            if (lights_on){{
+                mesh.castShadow = true;
+                mesh.receiveShadow = true;
+            }}
             scene.add(mesh);
         }}
 
-        ambient = new THREE.AmbientLight();
-        ambient.color.setRGB(0.5,0.5,0.5);
-        scene.add(ambient);
+        if (lights_on){{
+            ambient = new THREE.AmbientLight();
+            ambient.color.setRGB(0.5,0.5,0.5);
+            scene.add(ambient);
 
-        var light = new THREE.SpotLight(0xffffff, 1);
-        light.position.set(camera_x, camera_y, camera_z);
-        light.castShadow = true;
-        light.shadowCameraVisible = true;
-        light.name = "spotlight";
-        scene.add(light);
+            var light = new THREE.SpotLight(0xffffff, 1);
+            light.position.set(camera_x, camera_y, camera_z);
+            light.castShadow = true;
+            light.shadowCameraVisible = true;
+            light.name = "spotlight";
+            scene.add(light);
+        }}
+
         
         renderer = new THREE.WebGLRenderer( {{ antialias: false }} );
-        renderer.shadowMapEnabled = true;
+        if (lights_on){{
+            renderer.shadowMapEnabled = true;
+        }}
         renderer.setPixelRatio( window.devicePixelRatio );
         renderer.setSize( window.innerWidth, window.innerHeight );
 
@@ -143,27 +155,29 @@ TEMPLATE_VG = """
 
     function render() {{
         renderer.render( scene, camera );
-        var v = new THREE.Vector3();
-        const m = new THREE.Matrix3();
-        var angle = Math.PI / 6;
-        m.set( 
-            Math.cos(angle), -Math.sin(angle), 0, 
-            Math.sin(angle), Math.cos(angle), 0, 
-            0, 0, 1 
-        );
-        v.set(camera.position.x,camera.position.y,camera.position.z)
-        v.applyMatrix3(m)
-        scene.getObjectByName("spotlight").position.set(
-            v.x,v.y,v.z)
+        if (lights_on){{
+            var v = new THREE.Vector3();
+            const m = new THREE.Matrix3();
+            var angle = Math.PI / 6;
+            m.set( 
+                Math.cos(angle), -Math.sin(angle), 0, 
+                Math.sin(angle), Math.cos(angle), 0, 
+                0, 0, 1 
+            );
+            v.set(camera.position.x,camera.position.y,camera.position.z)
+            v.applyMatrix3(m)
+            scene.getObjectByName("spotlight").position.set(
+                v.x,v.y,v.z)
+        }}
     }}
 </script>
 </body>
 </html>
 """
 
-def plotvoxcloud(points, rgb):
+def plotvoxcloud(points, rgb, lights_on = False):
 
-    camera_position = points.max(0) + abs(points.max(0))
+    camera_position = points.max(0) + (points.max(0) - points.min(0))
     look = points.mean(0)
     axis_size = points.ptp() * 1.5
 
@@ -185,6 +199,7 @@ def plotvoxcloud(points, rgb):
             S_y=1.0,
             S_z=1.0,
             n_voxels=points.shape[0],
-            axis_size=axis_size))
+            axis_size=axis_size,
+            lights_on=1 if lights_on else 0))
 
     return IFrame("plotVC.html",width=800, height=800)

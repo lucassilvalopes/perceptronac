@@ -1,5 +1,7 @@
 
+from PIL import Image
 import numpy as np
+import sys
 
 def causal_context(img,N):
     """
@@ -55,27 +57,20 @@ def causal_context(img,N):
     return y,X
 
 
-# function [y, X] = causal_context(img, N)
-# ns  =  ceil(sqrt(N));
-# Im = (-ns:0)' * ones(1,2*ns+1);
-# Jm = ones(ns+1,1) * (-ns:ns);
-# Jm(ns+1,ns+1:2*ns+1) = 0;
-# iv = Im(:);
-# jv = Jm(:);
-# d = sqrt(0.99*jv.*jv+iv.*iv);
-# [~,ind] = sort(d);
-# S = zeros(2,N);
-# for k = 1:N
-#     S(1,k) = iv(ind(ns+1+k));
-#     S(2,k) = jv(ind(ns+1+k));
-# end
-# img = (img > 0);
-# [nr, nc] = size(img); 
-# imgy = img(ns+1:nr,ns+1:nc-ns);
-# y = imgy(:);
-# Npixels = length(y);
-# X = zeros(Npixels, N);
-# for k = 1:N
-#     imgx = img(ns+1+S(1,k):nr+S(1,k),ns+1+S(2,k):nc-ns+S(2,k));
-#     X(:,k) = imgx(:);
-# end
+def add_border(img,N):
+    mx = np.max(img)
+    ns = int(np.ceil(np.sqrt(N)))
+    nr,nc = img.shape[:2]
+    new_img = mx*np.ones((nr+ns,nc+2*ns),dtype=img.dtype)
+    new_img[ns:nr+ns,ns:nc+2*ns-ns] = img.copy()
+    return new_img
+
+
+if __name__ == "__main__":
+
+    N = 32
+
+    pth = sys.argv[1] # /path/to/file.png
+
+    img = add_border(np.array(Image.open(pth)),N)
+    y,X = causal_context((img > 0).astype(int), N)

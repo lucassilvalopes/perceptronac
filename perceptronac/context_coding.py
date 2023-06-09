@@ -12,6 +12,7 @@
 
 import numpy as np
 
+
 def context_coding(X, context_p):
     L,N = X.shape
     X = (X > 0).astype(int)
@@ -24,3 +25,17 @@ def context_coding(X, context_p):
     # r = perfect_AC(y, pp)
     return pp
 
+
+def context_coding_nonbinary(X, context_c):
+    n_bits = 8
+    L,N = X.shape
+    po2 = 2 ** (n_bits * np.arange(0,N).reshape(-1,1))
+    context = X @ po2
+
+    counts_to_prob = lambda x : x/np.sum(x) if np.any(x>0) else np.ones(x.shape)/(2**n_bits)
+
+    pp = np.zeros((L,2**n_bits)) 
+    for k in range(L):
+        pp[k,:] = counts_to_prob(context_c[context[k,0],:].toarray())
+
+    return pp

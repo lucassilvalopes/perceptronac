@@ -1,4 +1,6 @@
+
 import math
+
 
 def vnorm(v):
     return math.sqrt(v[0]**2 + v[1]**2)
@@ -11,7 +13,8 @@ def vdiff(v1,v2):
 
 def convex_hull(coord):
 
-    c = min(coord,key=lambda x: x[0])
+    # c = min(coord,key=lambda x: x[0])
+    c = sorted(coord, key=lambda x: (x[0], x[1]))[0]
     ref = [0,-1] # vertical vector pointing down
     hull = [coord.index(c)]
     while ((hull[0] != hull[-1]) or (len(hull) == 1)):
