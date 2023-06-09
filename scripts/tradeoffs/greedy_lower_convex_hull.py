@@ -80,6 +80,24 @@ def dist_to_chull_2(node_coord,pt):
     return improv
 
 
+def dist_to_chull_3(chull,coord,pt):
+
+    if len(chull) == 1:
+        lmbd = 0
+    else:
+        numerator = (coord[chull[-1]][0] - coord[chull[-2]][0])
+        denominator = (coord[chull[-1]][1] - coord[chull[-2]][1])
+
+        if denominator == 0:
+            return pt[1]
+        else:
+            lmbd = -numerator/denominator
+
+    improv = pt[0] + lmbd * pt[1]
+
+    return improv
+
+
 def make_choice_2(data,x_axis,y_axis,node,node_coord,candidate_nodes,candidate_coord):
     """
     Choose among children based on a local convex hull
@@ -179,7 +197,8 @@ def make_choice(data,x_axis,y_axis,chull,node,node_coord,nodes,coord,candidate_n
     for pt in candidate_coord:
 
         # dist = dist_to_chull(chull,coord,pt)
-        dist = dist_to_chull_2(node_coord,pt)
+        # dist = dist_to_chull_2(node_coord,pt)
+        dist = dist_to_chull_3(chull,coord,pt)
 
         dists.append(dist)
     
@@ -244,10 +263,10 @@ def build_tree(data,possible_values,x_axis,y_axis,initial_values,to_str_method,s
             data_p = data.loc[str(node_p),[x_axis,y_axis]].values.tolist()
             candidate_coord.append(data_p)
         
-        # chosen_node_index = make_choice(data,x_axis,y_axis,
-        #     chull,node,node_coord,nodes,coord,candidate_nodes,candidate_coord)
-        chosen_node_index = make_choice_2(data,x_axis,y_axis,
-            node,node_coord,candidate_nodes,candidate_coord)
+        chosen_node_index = make_choice(data,x_axis,y_axis,
+            chull,node,node_coord,nodes,coord,candidate_nodes,candidate_coord)
+        # chosen_node_index = make_choice_2(data,x_axis,y_axis,
+        #     node,node_coord,candidate_nodes,candidate_coord)
 
         if chosen_node_index == -1:
             break
