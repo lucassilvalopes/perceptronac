@@ -212,7 +212,54 @@ def make_choice(data,x_axis,y_axis,chull,node,node_coord,nodes,coord,candidate_n
         plot_choice(data,x_axis,y_axis,node,node_coord,candidate_nodes,candidate_coord,chosen_node_index,dists)
 
     return chosen_node_index
-    
+
+
+def make_choice_3(chull,node,nodes,coord,candidate_nodes,candidate_coord,start):
+
+    if all([str(n) == str(node) for n in candidate_nodes]):
+        return -1
+
+    filtered_coord = [c for n,c in zip(candidate_nodes,candidate_coord) if str(n) != str(node)]
+
+    len_nodes = len(nodes)
+
+    coord = coord + filtered_coord
+
+    chull = min_max_convex_hull(coord,start=start)
+
+    candidates_in_chull = [i-len_nodes for i in chull if i >= len_nodes]
+
+    if (len(candidates_in_chull)==0):
+
+        xs = [c[0] for c in filtered_coord]
+        ys = [c[1] for c in filtered_coord]
+
+        min_x = min(xs)
+        min_y = min(ys)
+
+        argmin_x = [i for i,x in enumerate(xs) if x == min_x]
+        argmin_y = [j for j,y in enumerate(ys) if y == min_y]
+
+        if start == "left":
+            if len(argmin_x) == 1:
+                chosen_node_index = argmin_x[0]
+            else:
+                chosen_node_index = argmin_x[np.argmax([ys[i] for i in argmin_x])]
+        elif start == "right":
+            if len(argmin_y) == 1:
+                chosen_node_index = argmin_y[0]
+            else:
+                chosen_node_index = argmin_y[np.argmax([xs[j] for j in argmin_y])]
+        else:
+            raise ValueError(start)
+
+    else:
+        chosen_node_index = candidates_in_chull[0]
+
+    chosen_node_index = candidate_coord.index(filtered_coord[chosen_node_index])
+
+    return chosen_node_index
+
 
 
 
@@ -263,10 +310,11 @@ def build_tree(data,possible_values,x_axis,y_axis,initial_values,to_str_method,s
             data_p = data.loc[str(node_p),[x_axis,y_axis]].values.tolist()
             candidate_coord.append(data_p)
         
-        chosen_node_index = make_choice(data,x_axis,y_axis,
-            chull,node,node_coord,nodes,coord,candidate_nodes,candidate_coord)
+        # chosen_node_index = make_choice(data,x_axis,y_axis,
+        #     chull,node,node_coord,nodes,coord,candidate_nodes,candidate_coord)
         # chosen_node_index = make_choice_2(data,x_axis,y_axis,
         #     node,node_coord,candidate_nodes,candidate_coord)
+        chosen_node_index = make_choice_3(chull,node,nodes,coord,candidate_nodes,candidate_coord,start)
 
         if chosen_node_index == -1:
             break
