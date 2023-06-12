@@ -214,7 +214,7 @@ def make_choice(data,x_axis,y_axis,chull,node,node_coord,nodes,coord,candidate_n
     return chosen_node_index
 
 
-def make_choice_3(chull,node,nodes,coord,candidate_nodes,candidate_coord,start):
+def make_choice_3(x_axis,y_axis,chull,node,node_coord,nodes,coord,candidate_nodes,candidate_coord,start):
 
     if all([str(n) == str(node) for n in candidate_nodes]):
         return -1
@@ -240,23 +240,27 @@ def make_choice_3(chull,node,nodes,coord,candidate_nodes,candidate_coord,start):
         argmin_x = [i for i,x in enumerate(xs) if x == min_x]
         argmin_y = [j for j,y in enumerate(ys) if y == min_y]
 
-        if start == "left":
+        if start == "right":
             if len(argmin_x) == 1:
                 chosen_node_index = argmin_x[0]
             else:
                 chosen_node_index = argmin_x[np.argmax([ys[i] for i in argmin_x])]
-        elif start == "right":
+        elif start == "left":
             if len(argmin_y) == 1:
                 chosen_node_index = argmin_y[0]
             else:
                 chosen_node_index = argmin_y[np.argmax([xs[j] for j in argmin_y])]
         else:
             raise ValueError(start)
+        
+        chosen_node_index = candidate_coord.index(filtered_coord[chosen_node_index])
+
+        plot_choice_2(x_axis,y_axis,node,node_coord,candidate_nodes,candidate_coord,chosen_node_index)
 
     else:
         chosen_node_index = candidates_in_chull[0]
 
-    chosen_node_index = candidate_coord.index(filtered_coord[chosen_node_index])
+        chosen_node_index = candidate_coord.index(filtered_coord[chosen_node_index])
 
     return chosen_node_index
 
@@ -314,7 +318,8 @@ def build_tree(data,possible_values,x_axis,y_axis,initial_values,to_str_method,s
         #     chull,node,node_coord,nodes,coord,candidate_nodes,candidate_coord)
         # chosen_node_index = make_choice_2(data,x_axis,y_axis,
         #     node,node_coord,candidate_nodes,candidate_coord)
-        chosen_node_index = make_choice_3(chull,node,nodes,coord,candidate_nodes,candidate_coord,start)
+        chosen_node_index = make_choice_3(x_axis,y_axis,chull,
+            node,node_coord,nodes,coord,candidate_nodes,candidate_coord,start)
 
         if chosen_node_index == -1:
             break
