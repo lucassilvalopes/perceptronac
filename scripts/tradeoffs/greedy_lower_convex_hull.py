@@ -598,22 +598,19 @@ def save_hull_points(file_name,true_hull_points,estimated_hull_points):
         print(estimated_hull_points,file=f)
 
 
-def glch_rate_vs_energy(csv_path,x_range=None,y_range=None):
+def glch_rate_vs_energy(csv_path,x_axis,y_axis,scale_x,scale_y,title,x_range=None,y_range=None):
 
     data = pd.read_csv(csv_path).set_index("topology")
 
     limit_energy_significant_digits(data)
 
-    # labeled_points_fig = labaled_points_figure(data)
-    # labeled_points_fig.savefig('labeled_points_fig.png', dpi=300, facecolor='w', bbox_inches = "tight")
+    data[x_axis] = data[x_axis].values/scale_x
+    data[y_axis] = data[y_axis].values/scale_y
 
     possible_values = {
         "h1": [10,20,40,80,160,320,640],
         "h2": [10,20,40,80,160,320,640]
     }
-
-    x_axis = "joules"
-    y_axis = "data_bits/data_samples"
 
     initial_values = {"h1":10,"h2":10}
 
@@ -623,7 +620,7 @@ def glch_rate_vs_energy(csv_path,x_range=None,y_range=None):
 
     r = build_tree(data,possible_values,x_axis,y_axis,initial_values,to_str_method)
 
-    save_all_data(data,r,x_axis,y_axis,x_range,y_range,'rate_vs_energy')
+    save_all_data(data,r,x_axis,y_axis,x_range,y_range,title)
 
 
 
@@ -772,8 +769,16 @@ if __name__ == "__main__":
 
     glch_rate_vs_energy(
         "/home/lucas/Documents/perceptronac/results/exp_1676160746/exp_1676160746_static_rate_x_power_values.csv",
+        "joules","data_bits/data_samples",1,1,"rate_vs_energy"
         # x_range=[277,313],
         # y_range=[0.115,0.133]
+    )
+
+    glch_rate_vs_energy(
+        "/home/lucas/Documents/perceptronac/results/exp_1676160746/exp_1676160746_static_rate_x_power_values.csv",
+        "params","data_bits/data_samples",1e6,1,"rate_vs_params"
+        # x_range=None,
+        # y_range=None
     )
 
     glch_rate_vs_dist(
