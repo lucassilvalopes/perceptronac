@@ -436,12 +436,24 @@ def paint_root(data,r,x_axis,y_axis,ax):
     ax.plot([data.loc[str(r),x_axis]],[data.loc[str(r),y_axis]],linestyle="",color="yellow",marker="o")
 
 
-def adjust_axes(x_axis,y_axis,x_range,y_range,ax):
+def adjust_axes(x_axis,y_axis,x_range,y_range,ax,x_in_log_scale=False):
     """
     x_axis = "joules"
     y_axis = "data_bits/data_samples"
     """
     
+    if x_in_log_scale:
+        ax.set_xscale("log")
+        # xvalues = ax.get_xticks()
+        # ub = np.min(xvalues[xvalues>=np.max(data[x_col])])
+        # lb = np.max(xvalues[xvalues<=np.min(data[x_col])])
+        # xvalues = xvalues[np.logical_and(xvalues>=lb,xvalues<=ub)]
+        # ax.set_xticklabels([])
+        # ax.set_xticklabels([], minor=True)
+        # ax.set_xticks(xvalues)
+        # ax.set_xticklabels(xvalues)
+
+
     ax.set_xlabel(x_axis)
     ax.set_ylabel(y_axis)
     if x_range:
@@ -482,7 +494,7 @@ def paint_hull_points(true_hull_points,x_axis,y_axis,ax):
     ax.plot(true_hull_points[x_axis],true_hull_points[y_axis],linestyle="",color="orangered",marker=".")
 
 
-def save_all_data(data,r,x_axis,y_axis,x_range,y_range,data_id):
+def save_all_data(data,r,x_axis,y_axis,x_range,y_range,data_id,x_in_log_scale=False):
 
     true_hull_points,estimated_hull_points,n_trained_networks = compute_hulls(data,[r],x_axis,y_axis)
 
@@ -495,13 +507,13 @@ def save_all_data(data,r,x_axis,y_axis,x_range,y_range,data_id):
     paint_root(data,r,x_axis,y_axis,ax)
     paint_tree(ax,data,r,x_axis,y_axis,x_range,y_range)
     paint_hull_points(true_hull_points,x_axis,y_axis,ax)
-    adjust_axes(x_axis,y_axis,x_range,y_range,ax)
+    adjust_axes(x_axis,y_axis,x_range,y_range,ax,x_in_log_scale)
     tree_fig.savefig(f"tree_fig_{data_id}.png", dpi=300, facecolor='w', bbox_inches = "tight")
 
     hulls_fig, ax = plt.subplots(nrows=1, ncols=1)
     paint_cloud(data,x_axis,y_axis,ax,"x")
     paint_hulls(true_hull_points,estimated_hull_points,x_axis,y_axis,ax)
-    adjust_axes(x_axis,y_axis,None,None,ax)
+    adjust_axes(x_axis,y_axis,None,None,ax,x_in_log_scale)
     hulls_fig.savefig(f"hulls_fig_{data_id}.png", dpi=300, facecolor='w', bbox_inches = "tight")
 
     save_hull_points(f"hulls_{data_id}",true_hull_points,estimated_hull_points)
@@ -599,7 +611,7 @@ def save_hull_points(file_name,true_hull_points,estimated_hull_points):
         print(estimated_hull_points,file=f)
 
 
-def glch_rate_vs_energy(csv_path,x_axis,y_axis,scale_x,scale_y,title,x_range=None,y_range=None):
+def glch_rate_vs_energy(csv_path,x_axis,y_axis,scale_x,scale_y,title,x_range=None,y_range=None,x_in_log_scale=False):
 
     if "raw_values" in csv_path:
 
@@ -636,7 +648,7 @@ def glch_rate_vs_energy(csv_path,x_axis,y_axis,scale_x,scale_y,title,x_range=Non
 
     r = build_tree(data,possible_values,x_axis,y_axis,initial_values,to_str_method)
 
-    save_all_data(data,r,x_axis,y_axis,x_range,y_range,title)
+    save_all_data(data,r,x_axis,y_axis,x_range,y_range,title,x_in_log_scale)
 
 
 
@@ -753,7 +765,7 @@ def glch_rate_vs_dist_2(csv_path,x_axis,y_axis,scale_x,scale_y,x_range=None,y_ra
     save_hull_points(f"hulls_fig_{exp_id}",true_hull_points,estimated_hull_points)
 
 
-def glch_model_bits_vs_data_bits(csv_path,x_range=None,y_range=None):
+def glch_model_bits_vs_data_bits(csv_path,x_range=None,y_range=None,x_in_log_scale=False):
 
     data = pd.read_csv(csv_path)
 
@@ -778,7 +790,7 @@ def glch_model_bits_vs_data_bits(csv_path,x_range=None,y_range=None):
 
     r = build_tree(data,possible_values,x_axis,y_axis,initial_values,to_str_method)
 
-    save_all_data(data,r,x_axis,y_axis,x_range,y_range,'model_bits_vs_data_bits')
+    save_all_data(data,r,x_axis,y_axis,x_range,y_range,'model_bits_vs_data_bits',x_in_log_scale)
 
 
 if __name__ == "__main__":
@@ -799,9 +811,10 @@ if __name__ == "__main__":
 
     glch_rate_vs_energy(
         "/home/lucas/Documents/perceptronac/results/exp_1676160746/exp_1676160746_static_rate_x_power_values.csv",
-        "params","data_bits/data_samples",1e6,1,"rate_vs_params"
+        "params","data_bits/data_samples",1e6,1,"rate_vs_params",
         # x_range=None,
-        # y_range=None
+        # y_range=None,
+        x_in_log_scale=True
     )
 
     glch_rate_vs_dist(
@@ -836,7 +849,8 @@ if __name__ == "__main__":
     glch_model_bits_vs_data_bits(
         "/home/lucas/Documents/perceptronac/results/exp_1676160183/exp_1676160183_model_bits_x_data_bits_values.csv",
         # x_range=[-0.1,0.8],
-        # y_range=None
+        # y_range=None,
+        x_in_log_scale=True
     )
 
 
