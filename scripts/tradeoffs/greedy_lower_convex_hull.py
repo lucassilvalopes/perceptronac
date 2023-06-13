@@ -7,6 +7,7 @@ SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.dirname(os.path.dirname(SCRIPT_DIR)))
 
 from perceptronac.convex_hull import convex_hull
+from perceptronac.power_consumption import estimate_joules
 import numpy as np
 import math
 import matplotlib.pyplot as plt
@@ -600,9 +601,24 @@ def save_hull_points(file_name,true_hull_points,estimated_hull_points):
 
 def glch_rate_vs_energy(csv_path,x_axis,y_axis,scale_x,scale_y,title,x_range=None,y_range=None):
 
-    data = pd.read_csv(csv_path).set_index("topology")
+    if "raw_values" in csv_path:
 
-    limit_energy_significant_digits(data)
+        data = pd.read_csv(csv_path).set_index("topology")
+
+        csv_path_2 = csv_path.replace("raw_values","power_draw")
+
+        power_draw = np.loadtxt(csv_path_2)
+
+        joules = estimate_joules(data,power_draw)
+
+        data["joules"] = joules
+
+        data = data[data["energy_measurement_iteration"]==0]
+
+    else:
+        data = pd.read_csv(csv_path).set_index("topology")
+
+        limit_energy_significant_digits(data)
 
     data[x_axis] = data[x_axis].values/scale_x
     data[y_axis] = data[y_axis].values/scale_y
@@ -770,6 +786,13 @@ if __name__ == "__main__":
     glch_rate_vs_energy(
         "/home/lucas/Documents/perceptronac/results/exp_1676160746/exp_1676160746_static_rate_x_power_values.csv",
         "joules","data_bits/data_samples",1,1,"rate_vs_energy"
+        # x_range=[277,313],
+        # y_range=[0.115,0.133]
+    )
+
+    glch_rate_vs_energy(
+        "/home/lucas/Documents/perceptronac/results/exp_1676160746/exp_1676160746_raw_values.csv",
+        "joules","data_bits/data_samples",1,1,"rate_vs_energy_noisy"
         # x_range=[277,313],
         # y_range=[0.115,0.133]
     )
