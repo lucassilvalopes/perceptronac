@@ -143,9 +143,37 @@ def make_choice_2(data,x_axis,y_axis,node,node_coord,candidate_nodes,candidate_c
 
         local_chull = convex_hull(filtered_coord)
 
-        i = candidate_coord.index(filtered_coord[local_chull[0]])
+        i = candidate_coord.index(filtered_coord[local_chull[-1]])
 
         return i
+
+    # if len(below) > 1:
+    #     left = [i for i in range(len(filtered_coord)) if (filtered_coord[i][0] < node_coord[0])]
+    #     right = [i for i in range(len(filtered_coord)) if (filtered_coord[i][0] >= node_coord[0])]
+
+    #     if len(left) == 1:
+    #         return left[0]
+        
+    #     if len(left) == 0:
+
+    #         filtered_coord = [candidate_coord[i] for i in right]
+
+    #         local_chull = convex_hull(filtered_coord)
+
+    #         i = candidate_coord.index(filtered_coord[local_chull[0]])
+
+    #         return i
+    
+    #     if len(left) > 1:
+
+    #         filtered_coord = [candidate_coord[i] for i in left]
+
+    #         local_chull = convex_hull(filtered_coord)
+
+    #         i = candidate_coord.index(filtered_coord[local_chull[0]])
+
+    #         return i
+
 
     # filtered_coord = [c for n,c in zip(candidate_nodes,candidate_coord) if str(n) != str(node)]
 
