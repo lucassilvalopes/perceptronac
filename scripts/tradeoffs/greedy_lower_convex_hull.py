@@ -113,21 +113,52 @@ def make_choice_2(data,x_axis,y_axis,node,node_coord,candidate_nodes,candidate_c
             -1 if all options are equal to the source node
     """
 
-    if all([str(n) == str(node) for n in candidate_nodes]):
+    valid = [i for i,n in enumerate(candidate_nodes) if str(n) != str(node)]
+
+    if len(valid) == 0:
         return -1
 
-    filtered_coord = [c for n,c in zip(candidate_nodes,candidate_coord) if str(n) != str(node)]
+    if len(valid) == 1:
+        return valid[0]
 
-    local_chull = convex_hull(filtered_coord)
+    below = [i for i in range(len(candidate_nodes)) if (str(candidate_nodes[i]) != str(node)) and (candidate_coord[i][1] < node_coord[1])]
+    above = [i for i in range(len(candidate_nodes)) if (str(candidate_nodes[i]) != str(node)) and (candidate_coord[i][1] >= node_coord[1])]
 
-    i = candidate_coord.index(filtered_coord[local_chull[-1]])
+    if len(below) == 1:
+        return below[0]
 
-    if len(local_chull) != 1:
-        # print(f"Draw between {[filtered_coord[i] for i in local_chull]}. Choosing the first one")        
-        # plot_choice(data,x_axis,y_axis,node,node_coord,candidate_nodes,candidate_coord,i)
-        plot_choice_2(x_axis,y_axis,node,node_coord,candidate_nodes,candidate_coord,i)
+    if len(below) == 0:
 
-    return i
+        filtered_coord = [candidate_coord[i] for i in above]
+
+        local_chull = convex_hull(filtered_coord)
+
+        i = candidate_coord.index(filtered_coord[local_chull[-1]])
+
+        return i
+    
+    if len(below) > 1:
+
+        filtered_coord = [candidate_coord[i] for i in below]
+
+        local_chull = convex_hull(filtered_coord)
+
+        i = candidate_coord.index(filtered_coord[local_chull[0]])
+
+        return i
+
+    # filtered_coord = [c for n,c in zip(candidate_nodes,candidate_coord) if str(n) != str(node)]
+
+    # local_chull = convex_hull(filtered_coord)
+
+    # i = candidate_coord.index(filtered_coord[local_chull[-1]])
+
+    # if len(local_chull) != 1:
+    #     # print(f"Draw between {[filtered_coord[i] for i in local_chull]}. Choosing the first one")        
+    #     # plot_choice(data,x_axis,y_axis,node,node_coord,candidate_nodes,candidate_coord,i)
+    #     plot_choice_2(x_axis,y_axis,node,node_coord,candidate_nodes,candidate_coord,i)
+
+    # return i
 
 
 def plot_choice_2(x_axis,y_axis,node,node_coord,candidate_nodes,candidate_coord,chosen_node_index):
