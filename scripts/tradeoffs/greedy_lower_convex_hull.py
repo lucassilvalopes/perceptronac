@@ -120,7 +120,7 @@ def make_choice_2(data,x_axis,y_axis,node,node_coord,candidate_nodes,candidate_c
 
     local_chull = convex_hull(filtered_coord)
 
-    i = candidate_coord.index(filtered_coord[local_chull[0]])
+    i = candidate_coord.index(filtered_coord[local_chull[-1]])
 
     if len(local_chull) != 1:
         # print(f"Draw between {[filtered_coord[i] for i in local_chull]}. Choosing the first one")        
@@ -318,10 +318,10 @@ def build_tree(data,possible_values,x_axis,y_axis,initial_values,to_str_method,s
             data_p = data.loc[str(node_p),[x_axis,y_axis]].values.tolist()
             candidate_coord.append(data_p)
         
-        chosen_node_index = make_choice(data,x_axis,y_axis,
-            chull,node,node_coord,nodes,coord,candidate_nodes,candidate_coord)
-        # chosen_node_index = make_choice_2(data,x_axis,y_axis,
-        #     node,node_coord,candidate_nodes,candidate_coord)
+        # chosen_node_index = make_choice(data,x_axis,y_axis,
+        #     chull,node,node_coord,nodes,coord,candidate_nodes,candidate_coord)
+        chosen_node_index = make_choice_2(data,x_axis,y_axis,
+            node,node_coord,candidate_nodes,candidate_coord)
         # chosen_node_index = make_choice_3(x_axis,y_axis,chull,
         #     node,node_coord,nodes,coord,candidate_nodes,candidate_coord,start)
 
