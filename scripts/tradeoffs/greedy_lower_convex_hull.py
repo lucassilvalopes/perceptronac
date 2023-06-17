@@ -147,36 +147,47 @@ def make_choice_2(data,x_axis,y_axis,node,node_coord,candidate_nodes,candidate_c
 
     #     return i
 
+    # if len(below) > 1:
+
+    #     filtered_coord = [candidate_coord[i] for i in below]
+
+    #     left = [i for i in range(len(filtered_coord)) if (filtered_coord[i][0] <= node_coord[0])]
+    #     right = [i for i in range(len(filtered_coord)) if (filtered_coord[i][0] > node_coord[0])]
+
+    #     if len(left) == 1:
+    #         return left[0]
+        
+    #     if len(left) == 0:
+
+    #         filtered_coord = [candidate_coord[i] for i in right]
+
+    #         local_chull = convex_hull(filtered_coord)
+
+    #         i = candidate_coord.index(filtered_coord[local_chull[-1]])
+
+    #         return i
+    
+    #     if len(left) > 1:
+
+    #         filtered_coord = [candidate_coord[i] for i in left]
+
+    #         local_chull = convex_hull(filtered_coord)
+
+    #         i = candidate_coord.index(filtered_coord[local_chull[-1]])
+
+    #         return i
+
     if len(below) > 1:
 
         filtered_coord = [candidate_coord[i] for i in below]
 
-        left = [i for i in range(len(filtered_coord)) if (filtered_coord[i][0] <= node_coord[0])]
-        right = [i for i in range(len(filtered_coord)) if (filtered_coord[i][0] > node_coord[0])]
+        i = np.argmin(
+            [min((c[0] - node_coord[0])/node_coord[0],(c[1] - node_coord[1])/node_coord[1]) for c in filtered_coord]
+        )
 
-        if len(left) == 1:
-            return left[0]
-        
-        if len(left) == 0:
+        i = candidate_coord.index(filtered_coord[i])  
 
-            filtered_coord = [candidate_coord[i] for i in right]
-
-            local_chull = convex_hull(filtered_coord)
-
-            i = candidate_coord.index(filtered_coord[local_chull[-1]])
-
-            return i
-    
-        if len(left) > 1:
-
-            filtered_coord = [candidate_coord[i] for i in left]
-
-            local_chull = convex_hull(filtered_coord)
-
-            i = candidate_coord.index(filtered_coord[local_chull[-1]])
-
-            return i
-
+        return i
 
     # filtered_coord = [c for n,c in zip(candidate_nodes,candidate_coord) if str(n) != str(node)]
 
@@ -873,7 +884,8 @@ if __name__ == "__main__":
 
     glch_rate_vs_energy(
         "/home/lucas/Documents/perceptronac/results/exp_1676160746/exp_1676160746_static_rate_x_power_values.csv",
-        "params","data_bits/data_samples",1e6,1,"rate_vs_params",
+        "params","data_bits/data_samples",1,1,#1e6,1,
+        "rate_vs_params",
         # x_range=None,
         # y_range=None,
         x_in_log_scale=True
@@ -896,14 +908,14 @@ if __name__ == "__main__":
 
     glch_rate_vs_dist(
         "/home/lucas/Documents/perceptronac/scripts/tradeoffs/bpp-mse-psnr-loss-flops-params_bmshj2018-factorized_10000-epochs_L-2e-2-1e-2-5e-3_N-32-64-96-128-160-192-224_M-32-64-96-128-160-192-224-256-288-320.csv",
-        "flops","loss",1e10,1,
+        "flops","loss",1,1,#1e10,1,
         # x_range=[-0.2,3.75],
         # y_range=[1.1,3.1]
     )
 
     glch_rate_vs_dist(
         "/home/lucas/Documents/perceptronac/scripts/tradeoffs/bpp-mse-psnr-loss-flops-params_bmshj2018-factorized_10000-epochs_L-2e-2-1e-2-5e-3_N-32-64-96-128-160-192-224_M-32-64-96-128-160-192-224-256-288-320.csv",
-        "params","loss",1e6,1,
+        "params","loss",1,1,#1e6,1,
         # x_range=[-0.1,4],
         # y_range=[1.1,3.1]
     )
