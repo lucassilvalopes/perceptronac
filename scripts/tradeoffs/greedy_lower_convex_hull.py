@@ -222,7 +222,14 @@ def plot_choice_2(x_axis,y_axis,node,node_coord,candidate_nodes,candidate_coord,
         ax.text(x=pt[0],y=pt[1],s=f"{str(candidate_nodes[i])}")
     ax.set_xlabel(x_axis)
     ax.set_ylabel(y_axis)
-    fig.show()
+    # fig.show()
+
+    if len([n for n in candidate_nodes if (str(n) != str(node))]) > 1:
+
+        fig.savefig(
+            f"{x_axis.replace('/','_over_')}_vs_{y_axis.replace('/','_over_')}-{'-'.join([str(c) for c in candidate_nodes])}.png", 
+            dpi=300, facecolor='w', bbox_inches = "tight")
+
 
 def plot_choice(data,x_axis,y_axis,node,node_coord,candidate_nodes,candidate_coord,chosen_node_index,dists=None):
 
@@ -287,7 +294,8 @@ def make_choice(data,x_axis,y_axis,chull,node,node_coord,nodes,coord,candidate_n
     chosen_node_index = filtered_idx[0]
 
     if debug:
-        plot_choice(data,x_axis,y_axis,node,node_coord,candidate_nodes,candidate_coord,chosen_node_index,dists)
+        # plot_choice(data,x_axis,y_axis,node,node_coord,candidate_nodes,candidate_coord,chosen_node_index,dists)
+        plot_choice_2(x_axis,y_axis,node,node_coord,candidate_nodes,candidate_coord,chosen_node_index)
 
     return chosen_node_index
 
