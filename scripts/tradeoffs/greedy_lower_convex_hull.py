@@ -58,13 +58,13 @@ class Node:
 
 # %%
 
-def dist_to_chull(chull,coord,pt):
+def dist_to_chull(chull,coord,pt,scale_x,scale_y):
 
     best_yet = np.max([coord[i] for i in chull],axis=0)
 
     # improv = (pt[0]-best_yet[0])/best_yet[0] + (pt[1]-best_yet[1])/best_yet[1]
 
-    improv = pt[0] + pt[1]
+    improv = pt[0]/scale_x + pt[1]/scale_y
 
     return improv
 
@@ -98,6 +98,7 @@ def dist_to_chull_3(chull,coord,pt):
 
     return improv
 
+MIN_CHG = 0.03
 
 def make_choice_2(data,x_axis,y_axis,node,node_coord,candidate_nodes,candidate_coord):
     """
@@ -113,8 +114,11 @@ def make_choice_2(data,x_axis,y_axis,node,node_coord,candidate_nodes,candidate_c
             -1 if all options are equal to the source node
     """
 
-    valid = [i for i,n in enumerate(candidate_nodes) if str(n) != str(node)]
-
+    valid = [
+        i for i,c in enumerate(candidate_coord)
+        if (abs(c[0] - node_coord[0])/node_coord[0] > MIN_CHG) or (abs(c[1] - node_coord[1])/node_coord[1] > MIN_CHG)
+    ]
+    
     if len(valid) == 0:
         return -1
 
@@ -133,19 +137,19 @@ def make_choice_2(data,x_axis,y_axis,node,node_coord,candidate_nodes,candidate_c
 
         local_chull = convex_hull(filtered_coord)
 
-        i = candidate_coord.index(filtered_coord[local_chull[-1]])
+        i = candidate_coord.index(filtered_coord[local_chull[0]])
 
         return i
     
-    # if len(below) > 1:
+    if len(below) > 1:
 
-    #     filtered_coord = [candidate_coord[i] for i in below]
+        filtered_coord = [candidate_coord[i] for i in below]
 
-    #     local_chull = convex_hull(filtered_coord)
+        local_chull = convex_hull(filtered_coord)
 
-    #     i = candidate_coord.index(filtered_coord[local_chull[-1]])
+        i = candidate_coord.index(filtered_coord[local_chull[0]])
 
-    #     return i
+        return i
 
     # if len(below) > 1:
 
@@ -177,17 +181,17 @@ def make_choice_2(data,x_axis,y_axis,node,node_coord,candidate_nodes,candidate_c
 
     #         return i
 
-    if len(below) > 1:
+    # if len(below) > 1:
 
-        filtered_coord = [candidate_coord[i] for i in below]
+    #     filtered_coord = [candidate_coord[i] for i in below]
 
-        i = np.argmin(
-            [min((c[0] - node_coord[0])/node_coord[0],(c[1] - node_coord[1])/node_coord[1]) for c in filtered_coord]
-        )
+    #     i = np.argmin(
+    #         [min((c[0] - node_coord[0])/node_coord[0],(c[1] - node_coord[1])/node_coord[1]) for c in filtered_coord]
+    #     )
 
-        i = candidate_coord.index(filtered_coord[i])  
+    #     i = candidate_coord.index(filtered_coord[i])  
 
-        return i
+    #     return i
 
     # filtered_coord = [c for n,c in zip(candidate_nodes,candidate_coord) if str(n) != str(node)]
 
@@ -242,7 +246,7 @@ def plot_choice(data,x_axis,y_axis,node,node_coord,candidate_nodes,candidate_coo
 
 
 def make_choice(data,x_axis,y_axis,chull,node,node_coord,nodes,coord,candidate_nodes,candidate_coord,
-                debug=False):
+                debug=True,scale_x=1,scale_y=1):
     """
     Params:
         data: all data, used during plotting for debugging
@@ -270,7 +274,7 @@ def make_choice(data,x_axis,y_axis,chull,node,node_coord,nodes,coord,candidate_n
 
     for pt in candidate_coord:
 
-        dist = dist_to_chull(chull,coord,pt)
+        dist = dist_to_chull(chull,coord,pt,scale_x,scale_y)
         # dist = dist_to_chull_2(node_coord,pt)
         # dist = dist_to_chull_3(chull,coord,pt)
 
@@ -344,7 +348,7 @@ def make_choice_3(x_axis,y_axis,chull,node,node_coord,nodes,coord,candidate_node
 
 
 
-def build_tree(data,possible_values,x_axis,y_axis,initial_values,to_str_method,start="left"):
+def build_tree(data,possible_values,x_axis,y_axis,initial_values,to_str_method,start="left",scale_x=1,scale_y=1):
     """
     data = 
     |---------------|joules|data_bits/data_samples|  
@@ -391,10 +395,10 @@ def build_tree(data,possible_values,x_axis,y_axis,initial_values,to_str_method,s
             data_p = data.loc[str(node_p),[x_axis,y_axis]].values.tolist()
             candidate_coord.append(data_p)
         
-        # chosen_node_index = make_choice(data,x_axis,y_axis,
-        #     chull,node,node_coord,nodes,coord,candidate_nodes,candidate_coord)
-        chosen_node_index = make_choice_2(data,x_axis,y_axis,
-            node,node_coord,candidate_nodes,candidate_coord)
+        chosen_node_index = make_choice(data,x_axis,y_axis,
+            chull,node,node_coord,nodes,coord,candidate_nodes,candidate_coord,scale_x=scale_x,scale_y=scale_y)
+        # chosen_node_index = make_choice_2(data,x_axis,y_axis,
+        #     node,node_coord,candidate_nodes,candidate_coord)
         # chosen_node_index = make_choice_3(x_axis,y_axis,chull,
         #     node,node_coord,nodes,coord,candidate_nodes,candidate_coord,start)
 
@@ -705,8 +709,8 @@ def glch_rate_vs_energy(csv_path,x_axis,y_axis,scale_x,scale_y,title,x_range=Non
 
         limit_energy_significant_digits(data)
 
-    data[x_axis] = data[x_axis].values/scale_x
-    data[y_axis] = data[y_axis].values/scale_y
+    # data[x_axis] = data[x_axis].values/scale_x
+    # data[y_axis] = data[y_axis].values/scale_y
 
     possible_values = {
         "h1": [10,20,40,80,160,320,640],
@@ -719,7 +723,7 @@ def glch_rate_vs_energy(csv_path,x_axis,y_axis,scale_x,scale_y,title,x_range=Non
         widths = [32,params["h1"],params["h2"],1]
         return '_'.join(map(lambda x: f"{x:03d}",widths))
 
-    r = build_tree(data,possible_values,x_axis,y_axis,initial_values,to_str_method)
+    r = build_tree(data,possible_values,x_axis,y_axis,initial_values,to_str_method,scale_x=scale_x,scale_y=scale_y)
 
     save_all_data(data,r,x_axis,y_axis,x_range,y_range,title,x_in_log_scale)
 
@@ -729,8 +733,8 @@ def glch_rate_vs_dist(csv_path,x_axis,y_axis,scale_x,scale_y,x_range=None,y_rang
 
     data = pd.read_csv(csv_path).set_index("labels")
 
-    data[x_axis] = data[x_axis].values/scale_x
-    data[y_axis] = data[y_axis].values/scale_y
+    # data[x_axis] = data[x_axis].values/scale_x
+    # data[y_axis] = data[y_axis].values/scale_y
 
     possible_values = {
         "L": ["5e-3", "1e-2", "2e-2"],
@@ -753,7 +757,7 @@ def glch_rate_vs_dist(csv_path,x_axis,y_axis,scale_x,scale_y,x_range=None,y_rang
     def to_str_method(params):
         return f"L{params['L']}N{params['N']}M{params['M']}"
     
-    r = build_tree(data,possible_values,x_axis,y_axis,initial_values,to_str_method)
+    r = build_tree(data,possible_values,x_axis,y_axis,initial_values,to_str_method,scale_x=scale_x,scale_y=scale_y)
 
     save_all_data(data,r,x_axis,y_axis,x_range,y_range,f'{x_axis}_vs_{y_axis}_start_{start}')
 
@@ -762,8 +766,8 @@ def glch_rate_vs_dist_2(csv_path,x_axis,y_axis,scale_x,scale_y,x_range=None,y_ra
 
     data = pd.read_csv(csv_path).set_index("labels")
 
-    data[x_axis] = data[x_axis].values/scale_x
-    data[y_axis] = data[y_axis].values/scale_y
+    # data[x_axis] = data[x_axis].values/scale_x
+    # data[y_axis] = data[y_axis].values/scale_y
 
     brute_dict = {
         "L": ["5e-3", "1e-2", "2e-2"]
@@ -803,7 +807,7 @@ def glch_rate_vs_dist_2(csv_path,x_axis,y_axis,scale_x,scale_y,x_range=None,y_ra
 
         current_data = data.iloc[[i for i,lbl in enumerate(data.index) if f"L{L}" in lbl],:]
         
-        r = build_tree(current_data,greedy_dict,x_axis,y_axis,initial_state,to_str_method)
+        r = build_tree(current_data,greedy_dict,x_axis,y_axis,initial_state,to_str_method,scale_x=scale_x,scale_y=scale_y)
 
         rs.append(r)
 
@@ -884,7 +888,7 @@ if __name__ == "__main__":
 
     glch_rate_vs_energy(
         "/home/lucas/Documents/perceptronac/results/exp_1676160746/exp_1676160746_static_rate_x_power_values.csv",
-        "params","data_bits/data_samples",1,1,#1e6,1,
+        "params","data_bits/data_samples",1e6,1,
         "rate_vs_params",
         # x_range=None,
         # y_range=None,
@@ -908,14 +912,14 @@ if __name__ == "__main__":
 
     glch_rate_vs_dist(
         "/home/lucas/Documents/perceptronac/scripts/tradeoffs/bpp-mse-psnr-loss-flops-params_bmshj2018-factorized_10000-epochs_L-2e-2-1e-2-5e-3_N-32-64-96-128-160-192-224_M-32-64-96-128-160-192-224-256-288-320.csv",
-        "flops","loss",1,1,#1e10,1,
+        "flops","loss",1e10,1,
         # x_range=[-0.2,3.75],
         # y_range=[1.1,3.1]
     )
 
     glch_rate_vs_dist(
         "/home/lucas/Documents/perceptronac/scripts/tradeoffs/bpp-mse-psnr-loss-flops-params_bmshj2018-factorized_10000-epochs_L-2e-2-1e-2-5e-3_N-32-64-96-128-160-192-224_M-32-64-96-128-160-192-224-256-288-320.csv",
-        "params","loss",1,1,#1e6,1,
+        "params","loss",1e6,1,
         # x_range=[-0.1,4],
         # y_range=[1.1,3.1]
     )
