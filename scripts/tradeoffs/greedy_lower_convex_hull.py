@@ -207,11 +207,13 @@ def make_choice_2(data,x_axis,y_axis,node,node_coord,candidate_nodes,candidate_c
     # return i
 
 
-def plot_choice_2(x_axis,y_axis,node,node_coord,candidate_nodes,candidate_coord,chosen_node_index):
+def plot_choice_2(x_axis,y_axis,node,node_coord,candidate_nodes,candidate_coord,chosen_node_index,txt_file=None):
 
     fig, ax = plt.subplots(nrows=1, ncols=1)
 
     ax.text(x=node_coord[0],y=node_coord[1],s=str(node))
+
+    print(f"-1,-1,-1,-1,-1",file=txt_file)
 
     for i,pt in enumerate(candidate_coord):
         ax.plot(
@@ -220,6 +222,8 @@ def plot_choice_2(x_axis,y_axis,node,node_coord,candidate_nodes,candidate_coord,
             color=("g" if i == chosen_node_index else "r") )
         
         ax.text(x=pt[0],y=pt[1],s=f"{str(candidate_nodes[i])}")
+
+        print(f"{node_coord[0]},{node_coord[1]},{pt[0]},{pt[1]},{(1 if i == chosen_node_index else 0)}",file=txt_file)
     ax.set_xlabel(x_axis)
     ax.set_ylabel(y_axis)
     # fig.show()
@@ -253,7 +257,7 @@ def plot_choice(data,x_axis,y_axis,node,node_coord,candidate_nodes,candidate_coo
 
 
 def make_choice(data,x_axis,y_axis,chull,node,node_coord,nodes,coord,candidate_nodes,candidate_coord,
-                debug=True,scale_x=1,scale_y=1):
+                debug=True,scale_x=1,scale_y=1,txt_file=None):
     """
     Params:
         data: all data, used during plotting for debugging
@@ -295,7 +299,7 @@ def make_choice(data,x_axis,y_axis,chull,node,node_coord,nodes,coord,candidate_n
 
     if debug:
         # plot_choice(data,x_axis,y_axis,node,node_coord,candidate_nodes,candidate_coord,chosen_node_index,dists)
-        plot_choice_2(x_axis,y_axis,node,node_coord,candidate_nodes,candidate_coord,chosen_node_index)
+        plot_choice_2(x_axis,y_axis,node,node_coord,candidate_nodes,candidate_coord,chosen_node_index,txt_file=txt_file)
 
     return chosen_node_index
 
@@ -378,6 +382,9 @@ def build_tree(data,possible_values,x_axis,y_axis,initial_values,to_str_method,s
         return '_'.join(map(lambda x: f"{x:03d}",widths))
     """
 
+    txt_file = open(f"transitions_{x_axis.replace('/','_over_')}_vs_{y_axis.replace('/','_over_')}.txt", 'w')
+    print(f"src_x,src_y,dst_x,dst_y,taken",file=txt_file)
+
     print(f"(x_axis,y_axis) : ({x_axis},{y_axis})")
 
     # data[x_axis] = MinMaxScaler().fit_transform(data[x_axis].values.reshape(-1,1))
@@ -404,7 +411,7 @@ def build_tree(data,possible_values,x_axis,y_axis,initial_values,to_str_method,s
             candidate_coord.append(data_p)
         
         chosen_node_index = make_choice(data,x_axis,y_axis,
-            chull,node,node_coord,nodes,coord,candidate_nodes,candidate_coord,scale_x=scale_x,scale_y=scale_y)
+            chull,node,node_coord,nodes,coord,candidate_nodes,candidate_coord,scale_x=scale_x,scale_y=scale_y,txt_file=txt_file)
         # chosen_node_index = make_choice_2(data,x_axis,y_axis,
         #     node,node_coord,candidate_nodes,candidate_coord)
         # chosen_node_index = make_choice_3(x_axis,y_axis,chull,
@@ -433,6 +440,8 @@ def build_tree(data,possible_values,x_axis,y_axis,initial_values,to_str_method,s
         node.chosen_child_index = chosen_node_index
         node = chosen_node
         node_coord = data.loc[str(node),[x_axis,y_axis]].values.tolist()
+
+    txt_file.close()
 
     return root
 
