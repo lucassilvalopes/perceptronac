@@ -70,7 +70,7 @@ def dist_to_chull(chull,coord,pt,scale_x,scale_y):
 
 
 
-def plot_choice_2(x_axis,y_axis,node,node_coord,candidate_nodes,candidate_coord,chosen_node_index,txt_file=None):
+def plot_choice_2(x_axis,y_axis,node,node_coord,candidate_nodes,candidate_coord,chosen_node_index,txt_file=None,title=None):
 
     fig, ax = plt.subplots(nrows=1, ncols=1)
 
@@ -89,6 +89,10 @@ def plot_choice_2(x_axis,y_axis,node,node_coord,candidate_nodes,candidate_coord,
         print(f"{node_coord[0]},{node_coord[1]},{pt[0]},{pt[1]},{(1 if i == chosen_node_index else 0)}",file=txt_file)
     ax.set_xlabel(x_axis)
     ax.set_ylabel(y_axis)
+
+    if title is not None:
+        ax.set_title(title)
+
     # fig.show()
 
     if len([n for n in candidate_nodes if (str(n) != str(node))]) > 1:
@@ -98,13 +102,15 @@ def plot_choice_2(x_axis,y_axis,node,node_coord,candidate_nodes,candidate_coord,
             dpi=300, facecolor='w', bbox_inches = "tight")
 
 
-def plot_choice(data,x_axis,y_axis,node,node_coord,candidate_nodes,candidate_coord,chosen_node_index,dists=None):
+def plot_choice(data,x_axis,y_axis,node,node_coord,candidate_nodes,candidate_coord,chosen_node_index,dists=None,txt_file=None,title=None):
 
     fig, ax = plt.subplots(nrows=1, ncols=1)
 
     ax.plot(data[x_axis].values, data[y_axis].values,marker="x",linestyle="")
 
     ax.text(x=node_coord[0],y=node_coord[1],s=str(node))
+
+    print(f"-1,-1,-1,-1,-1",file=txt_file)
 
     for i,pt in enumerate(candidate_coord):
         ax.plot(
@@ -114,9 +120,22 @@ def plot_choice(data,x_axis,y_axis,node,node_coord,candidate_nodes,candidate_coo
 
         ax.text(x=pt[0],y=pt[1],s=f"{str(candidate_nodes[i])}" + \
                 (f",d={dists[i]}" if (dists is not None) else ""))
+
+        print(f"{node_coord[0]},{node_coord[1]},{pt[0]},{pt[1]},{(1 if i == chosen_node_index else 0)}",file=txt_file)
+
     ax.set_xlabel(x_axis)
     ax.set_ylabel(y_axis)
-    fig.show()
+
+    if title is not None:
+        ax.set_title(title)
+
+    # fig.show()
+
+    if len([n for n in candidate_nodes if (str(n) != str(node))]) > 1:
+
+        fig.savefig(
+            f"debug/{x_axis.replace('/','_over_')}_vs_{y_axis.replace('/','_over_')}-{'-'.join([str(c) for c in candidate_nodes])}.png", 
+            dpi=300, facecolor='w', bbox_inches = "tight")
 
 
 def make_choice(data,x_axis,y_axis,chull,node,node_coord,nodes,coord,candidate_nodes,candidate_coord,
@@ -198,7 +217,7 @@ def make_choice_2(data,x_axis,y_axis,node,node_coord,candidate_nodes,candidate_c
     return i
 
 
-def make_choice_3(x_axis,y_axis,chull,node,node_coord,nodes,coord,candidate_nodes,candidate_coord,start,scale_x=1,scale_y=1,txt_file=None,debug=False):
+def make_choice_3(data,x_axis,y_axis,chull,node,node_coord,nodes,coord,candidate_nodes,candidate_coord,start,scale_x=1,scale_y=1,txt_file=None,debug=False):
 
     if all([str(n) == str(node) for n in candidate_nodes]):
         return -1
@@ -215,11 +234,15 @@ def make_choice_3(x_axis,y_axis,chull,node,node_coord,nodes,coord,candidate_node
 
     activate_debug = False
 
+    title = None 
+
     if (len(candidates_in_chull)==1):
 
         chosen_node_index = candidates_in_chull[0]
 
         chosen_node_index = candidate_coord.index(filtered_coord[chosen_node_index])
+
+        title = "case_1"
 
     else:
 
@@ -228,28 +251,35 @@ def make_choice_3(x_axis,y_axis,chull,node,node_coord,nodes,coord,candidate_node
         if (len(candidates_in_chull)==0) and (len(local_chull) == 1):
 
             chosen_node_index = candidate_coord.index(filtered_coord[local_chull[0]])
+
+            title = "case_2"
         
         elif (len(candidates_in_chull)==0) and (len(local_chull) != 1):
 
             chosen_node_index = candidate_coord.index(filtered_coord[local_chull[1]])
 
+            title = "case_3"
+
         else:
 
             chosen_node_index = make_choice(None,x_axis,y_axis,chull,node,node_coord,nodes,coord,candidate_nodes,candidate_coord,
                     debug=False,scale_x=scale_x,scale_y=scale_y,txt_file=txt_file)
+        
+            title = "case_4"
 
             activate_debug = True
     
 
     if debug and activate_debug:
-        plot_choice_2(x_axis,y_axis,node,node_coord,candidate_nodes,candidate_coord,chosen_node_index,txt_file=txt_file)
+        plot_choice_2(x_axis,y_axis,node,node_coord,candidate_nodes,candidate_coord,chosen_node_index,txt_file=txt_file,title=title)
+        # plot_choice(data,x_axis,y_axis,node,node_coord,candidate_nodes,candidate_coord,chosen_node_index,dists=None,txt_file=txt_file,title=title)
 
     return chosen_node_index
 
 
 
 
-def build_tree(data,possible_values,x_axis,y_axis,initial_values,to_str_method,start="left",scale_x=1,scale_y=1,debug=False):
+def build_tree(data,possible_values,x_axis,y_axis,initial_values,to_str_method,start="left",scale_x=1,scale_y=1,debug=True):
     """
     data = 
     |---------------|joules|data_bits/data_samples|  
@@ -272,10 +302,6 @@ def build_tree(data,possible_values,x_axis,y_axis,initial_values,to_str_method,s
     """
 
     if debug:
-        if os.path.isdir("debug"):
-            import shutil
-            shutil.rmtree("debug")
-        os.mkdir("debug")
         txt_file = open(f"debug/transitions_{x_axis.replace('/','_over_')}_vs_{y_axis.replace('/','_over_')}.txt", 'w')
         print(f"src_x,src_y,dst_x,dst_y,taken",file=txt_file)
     else:
@@ -308,7 +334,7 @@ def build_tree(data,possible_values,x_axis,y_axis,initial_values,to_str_method,s
         
         # chosen_node_index = make_choice(data,x_axis,y_axis,
         #     chull,node,node_coord,nodes,coord,candidate_nodes,candidate_coord,debug=debug,scale_x=scale_x,scale_y=scale_y,txt_file=txt_file)
-        chosen_node_index = make_choice_3(x_axis,y_axis,chull,
+        chosen_node_index = make_choice_3(data,x_axis,y_axis,chull,
             node,node_coord,nodes,coord,candidate_nodes,candidate_coord,start,scale_x=scale_x,scale_y=scale_y,txt_file=txt_file,debug=debug)
 
         if chosen_node_index == -1:
@@ -783,6 +809,11 @@ def glch_model_bits_vs_data_bits(csv_path,x_range=None,y_range=None,x_in_log_sca
 
 
 if __name__ == "__main__":
+
+    if os.path.isdir("debug"):
+        import shutil
+        shutil.rmtree("debug")
+    os.mkdir("debug")
 
     glch_rate_vs_energy(
         "/home/lucas/Documents/perceptronac/results/exp_1676160746/exp_1676160746_static_rate_x_power_values.csv",
