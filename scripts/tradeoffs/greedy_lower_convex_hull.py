@@ -225,10 +225,14 @@ def make_choice_3(x_axis,y_axis,chull,node,node_coord,nodes,coord,candidate_node
 
         local_chull = convex_hull(filtered_coord)
 
-        if len(local_chull) == 1:
+        if (len(candidates_in_chull)==0) and (len(local_chull) == 1):
 
             chosen_node_index = candidate_coord.index(filtered_coord[local_chull[0]])
         
+        elif (len(candidates_in_chull)==0) and (len(local_chull) != 1):
+
+            chosen_node_index = candidate_coord.index(filtered_coord[local_chull[1]])
+
         else:
 
             chosen_node_index = make_choice(None,x_axis,y_axis,chull,node,node_coord,nodes,coord,candidate_nodes,candidate_coord,
