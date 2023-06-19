@@ -68,143 +68,6 @@ def dist_to_chull(chull,coord,pt,scale_x,scale_y):
 
     return improv
 
-    
-def dist_to_chull_2(node_coord,pt):
-    """Dr Chou's suggestion"""
-
-    if (pt[1] == node_coord[1]) and (pt[0] == node_coord[0]):
-        return 0
-    if (pt[0] == node_coord[0]):
-        return np.inf
-    improv = (pt[1]-node_coord[1])/(pt[0]-node_coord[0])
-
-    return improv
-
-
-def dist_to_chull_3(chull,coord,pt):
-
-    if len(chull) == 1:
-        lmbd = 0
-    else:
-        numerator = (coord[chull[-1]][0] - coord[chull[-2]][0])
-        denominator = (coord[chull[-1]][1] - coord[chull[-2]][1])
-
-        if denominator == 0:
-            return pt[1]
-        else:
-            lmbd = -numerator/denominator
-
-    improv = pt[0] + lmbd * pt[1]
-
-    return improv
-
-MIN_CHG = 0.03
-
-def make_choice_2(data,x_axis,y_axis,node,node_coord,candidate_nodes,candidate_coord):
-    """
-    Choose among children based on a local convex hull
-    
-    Params:
-        node: current source node
-        candidate_nodes: local nodes to choose from
-        candidate_coord: coordinates of the local nodes to choose from
-    
-    Returns:
-        chosen_node_index: index of the chosen local node.
-            -1 if all options are equal to the source node
-    """
-
-    valid = [
-        i for i,c in enumerate(candidate_coord)
-        if (abs(c[0] - node_coord[0])/node_coord[0] > MIN_CHG) or (abs(c[1] - node_coord[1])/node_coord[1] > MIN_CHG)
-    ]
-    
-    if len(valid) == 0:
-        return -1
-
-    if len(valid) == 1:
-        return valid[0]
-
-    below = [i for i in range(len(candidate_nodes)) if (str(candidate_nodes[i]) != str(node)) and (candidate_coord[i][1] < node_coord[1])]
-    above = [i for i in range(len(candidate_nodes)) if (str(candidate_nodes[i]) != str(node)) and (candidate_coord[i][1] >= node_coord[1])]
-
-    if len(below) == 1:
-        return below[0]
-
-    if len(below) == 0:
-
-        filtered_coord = [candidate_coord[i] for i in above]
-
-        local_chull = convex_hull(filtered_coord)
-
-        i = candidate_coord.index(filtered_coord[local_chull[0]])
-
-        return i
-    
-    if len(below) > 1:
-
-        filtered_coord = [candidate_coord[i] for i in below]
-
-        local_chull = convex_hull(filtered_coord)
-
-        i = candidate_coord.index(filtered_coord[local_chull[0]])
-
-        return i
-
-    # if len(below) > 1:
-
-    #     filtered_coord = [candidate_coord[i] for i in below]
-
-    #     left = [i for i in range(len(filtered_coord)) if (filtered_coord[i][0] <= node_coord[0])]
-    #     right = [i for i in range(len(filtered_coord)) if (filtered_coord[i][0] > node_coord[0])]
-
-    #     if len(left) == 1:
-    #         return left[0]
-        
-    #     if len(left) == 0:
-
-    #         filtered_coord = [candidate_coord[i] for i in right]
-
-    #         local_chull = convex_hull(filtered_coord)
-
-    #         i = candidate_coord.index(filtered_coord[local_chull[-1]])
-
-    #         return i
-    
-    #     if len(left) > 1:
-
-    #         filtered_coord = [candidate_coord[i] for i in left]
-
-    #         local_chull = convex_hull(filtered_coord)
-
-    #         i = candidate_coord.index(filtered_coord[local_chull[-1]])
-
-    #         return i
-
-    # if len(below) > 1:
-
-    #     filtered_coord = [candidate_coord[i] for i in below]
-
-    #     i = np.argmin(
-    #         [min((c[0] - node_coord[0])/node_coord[0],(c[1] - node_coord[1])/node_coord[1]) for c in filtered_coord]
-    #     )
-
-    #     i = candidate_coord.index(filtered_coord[i])  
-
-    #     return i
-
-    # filtered_coord = [c for n,c in zip(candidate_nodes,candidate_coord) if str(n) != str(node)]
-
-    # local_chull = convex_hull(filtered_coord)
-
-    # i = candidate_coord.index(filtered_coord[local_chull[-1]])
-
-    # if len(local_chull) != 1:
-    #     # print(f"Draw between {[filtered_coord[i] for i in local_chull]}. Choosing the first one")        
-    #     # plot_choice(data,x_axis,y_axis,node,node_coord,candidate_nodes,candidate_coord,i)
-    #     plot_choice_2(x_axis,y_axis,node,node_coord,candidate_nodes,candidate_coord,i)
-
-    # return i
 
 
 def plot_choice_2(x_axis,y_axis,node,node_coord,candidate_nodes,candidate_coord,chosen_node_index,txt_file=None):
@@ -231,7 +94,7 @@ def plot_choice_2(x_axis,y_axis,node,node_coord,candidate_nodes,candidate_coord,
     if len([n for n in candidate_nodes if (str(n) != str(node))]) > 1:
 
         fig.savefig(
-            f"{x_axis.replace('/','_over_')}_vs_{y_axis.replace('/','_over_')}-{'-'.join([str(c) for c in candidate_nodes])}.png", 
+            f"debug/{x_axis.replace('/','_over_')}_vs_{y_axis.replace('/','_over_')}-{'-'.join([str(c) for c in candidate_nodes])}.png", 
             dpi=300, facecolor='w', bbox_inches = "tight")
 
 
@@ -304,7 +167,7 @@ def make_choice(data,x_axis,y_axis,chull,node,node_coord,nodes,coord,candidate_n
     return chosen_node_index
 
 
-def make_choice_3(x_axis,y_axis,chull,node,node_coord,nodes,coord,candidate_nodes,candidate_coord,start):
+def make_choice_3(x_axis,y_axis,chull,node,node_coord,nodes,coord,candidate_nodes,candidate_coord,start,scale_x=1,scale_y=1,txt_file=None,debug=False):
 
     if all([str(n) == str(node) for n in candidate_nodes]):
         return -1
@@ -319,48 +182,31 @@ def make_choice_3(x_axis,y_axis,chull,node,node_coord,nodes,coord,candidate_node
 
     candidates_in_chull = [i-len_nodes for i in chull if i >= len_nodes]
 
-    if (len(candidates_in_chull)==0):
+    if (len(candidates_in_chull)==1):
 
-        xs = [c[0] for c in filtered_coord]
-        ys = [c[1] for c in filtered_coord]
-
-        min_x = min(xs)
-        min_y = min(ys)
-
-        argmin_x = [i for i,x in enumerate(xs) if x == min_x]
-        argmin_y = [j for j,y in enumerate(ys) if y == min_y]
-
-        if start == "right":
-            if len(argmin_x) == 1:
-                chosen_node_index = argmin_x[0]
-            else:
-                chosen_node_index = argmin_x[np.argmax([ys[i] for i in argmin_x])]
-        elif start == "left":
-            if len(argmin_y) == 1:
-                chosen_node_index = argmin_y[0]
-            else:
-                chosen_node_index = argmin_y[np.argmax([xs[j] for j in argmin_y])]
-        else:
-            raise ValueError(start)
-        
-        debug = True
-
-    else:
         chosen_node_index = candidates_in_chull[0]
 
-        debug = False
+        activate_debug = False
 
-    chosen_node_index = candidate_coord.index(filtered_coord[chosen_node_index])
+        chosen_node_index = candidate_coord.index(filtered_coord[chosen_node_index])
 
-    if debug:
-        plot_choice_2(x_axis,y_axis,node,node_coord,candidate_nodes,candidate_coord,chosen_node_index)
+    else:
+
+        chosen_node_index = make_choice(None,x_axis,y_axis,chull,node,node_coord,nodes,coord,candidate_nodes,candidate_coord,
+                debug=False,scale_x=scale_x,scale_y=scale_y,txt_file=txt_file)
+
+        activate_debug = True
+    
+
+    if debug and activate_debug:
+        plot_choice_2(x_axis,y_axis,node,node_coord,candidate_nodes,candidate_coord,chosen_node_index,txt_file=txt_file)
 
     return chosen_node_index
 
 
 
 
-def build_tree(data,possible_values,x_axis,y_axis,initial_values,to_str_method,start="left",scale_x=1,scale_y=1):
+def build_tree(data,possible_values,x_axis,y_axis,initial_values,to_str_method,start="left",scale_x=1,scale_y=1,debug=True):
     """
     data = 
     |---------------|joules|data_bits/data_samples|  
@@ -382,8 +228,13 @@ def build_tree(data,possible_values,x_axis,y_axis,initial_values,to_str_method,s
         return '_'.join(map(lambda x: f"{x:03d}",widths))
     """
 
-    txt_file = open(f"transitions_{x_axis.replace('/','_over_')}_vs_{y_axis.replace('/','_over_')}.txt", 'w')
-    print(f"src_x,src_y,dst_x,dst_y,taken",file=txt_file)
+    if debug:
+        if not os.path.isdir("debug"):
+            os.mkdir("debug")
+        txt_file = open(f"debug/transitions_{x_axis.replace('/','_over_')}_vs_{y_axis.replace('/','_over_')}.txt", 'w')
+        print(f"src_x,src_y,dst_x,dst_y,taken",file=txt_file)
+    else:
+        txt_file = None
 
     print(f"(x_axis,y_axis) : ({x_axis},{y_axis})")
 
@@ -410,12 +261,10 @@ def build_tree(data,possible_values,x_axis,y_axis,initial_values,to_str_method,s
             data_p = data.loc[str(node_p),[x_axis,y_axis]].values.tolist()
             candidate_coord.append(data_p)
         
-        chosen_node_index = make_choice(data,x_axis,y_axis,
-            chull,node,node_coord,nodes,coord,candidate_nodes,candidate_coord,scale_x=scale_x,scale_y=scale_y,txt_file=txt_file)
-        # chosen_node_index = make_choice_2(data,x_axis,y_axis,
-        #     node,node_coord,candidate_nodes,candidate_coord)
-        # chosen_node_index = make_choice_3(x_axis,y_axis,chull,
-        #     node,node_coord,nodes,coord,candidate_nodes,candidate_coord,start)
+        # chosen_node_index = make_choice(data,x_axis,y_axis,
+        #     chull,node,node_coord,nodes,coord,candidate_nodes,candidate_coord,debug=debug,scale_x=scale_x,scale_y=scale_y,txt_file=txt_file)
+        chosen_node_index = make_choice_3(x_axis,y_axis,chull,
+            node,node_coord,nodes,coord,candidate_nodes,candidate_coord,start,scale_x=scale_x,scale_y=scale_y,txt_file=txt_file,debug=debug)
 
         if chosen_node_index == -1:
             break
@@ -428,10 +277,10 @@ def build_tree(data,possible_values,x_axis,y_axis,initial_values,to_str_method,s
 
         chull = min_max_convex_hull(coord,start=start)
 
-        candidates_in_chull = [i-len_nodes for i in chull if i >= len_nodes]
+        # candidates_in_chull = [i-len_nodes for i in chull if i >= len_nodes]
 
-        if (len(candidates_in_chull)>0) and (chosen_node_index not in candidates_in_chull):
-            chosen_node_index = candidates_in_chull[0]
+        # if (len(candidates_in_chull)>0) and (chosen_node_index not in candidates_in_chull):
+        #     chosen_node_index = candidates_in_chull[0]
 
         chosen_node = candidate_nodes[chosen_node_index]
 
@@ -441,7 +290,8 @@ def build_tree(data,possible_values,x_axis,y_axis,initial_values,to_str_method,s
         node = chosen_node
         node_coord = data.loc[str(node),[x_axis,y_axis]].values.tolist()
 
-    txt_file.close()
+    if debug:
+        txt_file.close()
 
     return root
 
