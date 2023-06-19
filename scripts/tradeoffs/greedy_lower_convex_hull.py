@@ -167,6 +167,37 @@ def make_choice(data,x_axis,y_axis,chull,node,node_coord,nodes,coord,candidate_n
     return chosen_node_index
 
 
+def make_choice_2(data,x_axis,y_axis,node,node_coord,candidate_nodes,candidate_coord):
+    """
+    Choose among children based on a local convex hull
+    
+    Params:
+        node: current source node
+        candidate_nodes: local nodes to choose from
+        candidate_coord: coordinates of the local nodes to choose from
+    
+    Returns:
+        chosen_node_index: index of the chosen local node.
+            -1 if all options are equal to the source node
+    """
+
+    if all([str(n) == str(node) for n in candidate_nodes]):
+        return -1
+
+    filtered_coord = [c for n,c in zip(candidate_nodes,candidate_coord) if str(n) != str(node)]
+
+    local_chull = convex_hull(filtered_coord)
+
+    i = candidate_coord.index(filtered_coord[local_chull[0]])
+
+    if len(local_chull) != 1:
+        # print(f"Draw between {[filtered_coord[i] for i in local_chull]}. Choosing the first one")        
+        # plot_choice(data,x_axis,y_axis,node,node_coord,candidate_nodes,candidate_coord,i)
+        plot_choice_2(x_axis,y_axis,node,node_coord,candidate_nodes,candidate_coord,i)
+
+    return i
+
+
 def make_choice_3(x_axis,y_axis,chull,node,node_coord,nodes,coord,candidate_nodes,candidate_coord,start,scale_x=1,scale_y=1,txt_file=None,debug=False):
 
     if all([str(n) == str(node) for n in candidate_nodes]):
@@ -182,20 +213,28 @@ def make_choice_3(x_axis,y_axis,chull,node,node_coord,nodes,coord,candidate_node
 
     candidates_in_chull = [i-len_nodes for i in chull if i >= len_nodes]
 
+    activate_debug = False
+
     if (len(candidates_in_chull)==1):
 
         chosen_node_index = candidates_in_chull[0]
-
-        activate_debug = False
 
         chosen_node_index = candidate_coord.index(filtered_coord[chosen_node_index])
 
     else:
 
-        chosen_node_index = make_choice(None,x_axis,y_axis,chull,node,node_coord,nodes,coord,candidate_nodes,candidate_coord,
-                debug=False,scale_x=scale_x,scale_y=scale_y,txt_file=txt_file)
+        local_chull = convex_hull(filtered_coord)
 
-        activate_debug = True
+        if len(local_chull) == 1:
+
+            chosen_node_index = candidate_coord.index(filtered_coord[local_chull[0]])
+        
+        else:
+
+            chosen_node_index = make_choice(None,x_axis,y_axis,chull,node,node_coord,nodes,coord,candidate_nodes,candidate_coord,
+                    debug=False,scale_x=scale_x,scale_y=scale_y,txt_file=txt_file)
+
+            activate_debug = True
     
 
     if debug and activate_debug:
@@ -206,7 +245,7 @@ def make_choice_3(x_axis,y_axis,chull,node,node_coord,nodes,coord,candidate_node
 
 
 
-def build_tree(data,possible_values,x_axis,y_axis,initial_values,to_str_method,start="left",scale_x=1,scale_y=1,debug=True):
+def build_tree(data,possible_values,x_axis,y_axis,initial_values,to_str_method,start="left",scale_x=1,scale_y=1,debug=False):
     """
     data = 
     |---------------|joules|data_bits/data_samples|  
@@ -229,8 +268,10 @@ def build_tree(data,possible_values,x_axis,y_axis,initial_values,to_str_method,s
     """
 
     if debug:
-        if not os.path.isdir("debug"):
-            os.mkdir("debug")
+        if os.path.isdir("debug"):
+            import shutil
+            shutil.rmtree("debug")
+        os.mkdir("debug")
         txt_file = open(f"debug/transitions_{x_axis.replace('/','_over_')}_vs_{y_axis.replace('/','_over_')}.txt", 'w')
         print(f"src_x,src_y,dst_x,dst_y,taken",file=txt_file)
     else:
