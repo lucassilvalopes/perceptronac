@@ -226,6 +226,9 @@ def make_choice_3(data,x_axis,y_axis,chull,node,node_coord,nodes,coord,candidate
 
     len_nodes = len(nodes)
 
+    prev_coord = coord
+    prev_chull = chull
+
     coord = coord + filtered_coord
 
     chull = min_max_convex_hull(coord,start=start)
@@ -248,6 +251,11 @@ def make_choice_3(data,x_axis,y_axis,chull,node,node_coord,nodes,coord,candidate
 
         local_chull = convex_hull(filtered_coord)
 
+        min_x = min([prev_coord[i][0] for i in prev_chull])
+        # min_y = min([prev_coord[i][1] for i in prev_chull])
+
+        min_x_pts = sorted([pt for pt in filtered_coord if pt[0] < min_x],key=lambda pt: pt[1])
+
         if (len(candidates_in_chull)==0) and (len(local_chull) == 1):
 
             chosen_node_index = candidate_coord.index(filtered_coord[local_chull[0]])
@@ -260,12 +268,18 @@ def make_choice_3(data,x_axis,y_axis,chull,node,node_coord,nodes,coord,candidate
 
             title = "case_3"
 
+        elif (len(candidates_in_chull)>0) and (len(min_x_pts) >0):
+
+            chosen_node_index = candidate_coord.index(min_x_pts[0])
+
+            title = "case_4"
+
         else:
 
             chosen_node_index = make_choice(None,x_axis,y_axis,chull,node,node_coord,nodes,coord,candidate_nodes,candidate_coord,
                     debug=False,scale_x=scale_x,scale_y=scale_y,txt_file=txt_file)
         
-            title = "case_4"
+            title = "case_5"
 
             activate_debug = True
     
