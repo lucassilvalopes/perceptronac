@@ -66,7 +66,7 @@ def dist_to_chull(chull,coord,pt,scale_x,scale_y):
 
     improv = pt[0] + pt[1]*(scale_x/scale_y)
 
-    # print(f"lambda {scale_x/scale_y}")
+    print(f"lambda {scale_x/scale_y}")
 
     return improv
 
@@ -645,7 +645,7 @@ def save_hull_points(file_name,true_hull_points,estimated_hull_points):
         print(estimated_hull_points,file=f)
 
 
-def glch_rate_vs_energy(csv_path,x_axis,y_axis,scale_x,scale_y,title,x_range=None,y_range=None,x_in_log_scale=False):
+def glch_rate_vs_energy(csv_path,x_axis,y_axis,title,scale_x=None,scale_y=None,x_range=None,y_range=None,x_in_log_scale=False):
 
     if "raw_values" in csv_path:
 
@@ -669,8 +669,10 @@ def glch_rate_vs_energy(csv_path,x_axis,y_axis,scale_x,scale_y,title,x_range=Non
     # data[x_axis] = data[x_axis].values/scale_x
     # data[y_axis] = data[y_axis].values/scale_y
 
-    scale_x = data.loc[["032_010_010_001","032_640_640_001"],x_axis].max() - data.loc[["032_010_010_001","032_640_640_001"],x_axis].min()
-    scale_y = data.loc[["032_010_010_001","032_640_640_001"],y_axis].max() - data.loc[["032_010_010_001","032_640_640_001"],y_axis].min()
+    if scale_x is None and scale_y is None:
+
+        scale_x = data.loc[["032_010_010_001","032_640_640_001"],x_axis].max() - data.loc[["032_010_010_001","032_640_640_001"],x_axis].min()
+        scale_y = data.loc[["032_010_010_001","032_640_640_001"],y_axis].max() - data.loc[["032_010_010_001","032_640_640_001"],y_axis].min()
 
     possible_values = {
         "h1": [10,20,40,80,160,320,640],
@@ -689,15 +691,17 @@ def glch_rate_vs_energy(csv_path,x_axis,y_axis,scale_x,scale_y,title,x_range=Non
 
 
 
-def glch_rate_vs_dist(csv_path,x_axis,y_axis,scale_x,scale_y,x_range=None,y_range=None,start="left"):
+def glch_rate_vs_dist(csv_path,x_axis,y_axis,scale_x=None,scale_y=None,x_range=None,y_range=None,start="left"):
 
     data = pd.read_csv(csv_path).set_index("labels")
 
     # data[x_axis] = data[x_axis].values/scale_x
     # data[y_axis] = data[y_axis].values/scale_y
 
-    scale_x = data.loc[["L5e-3N32M32","L2e-2N224M320"],x_axis].max() - data.loc[["L5e-3N32M32","L2e-2N224M320"],x_axis].min()
-    scale_y = data.loc[["L5e-3N32M32","L2e-2N224M320"],y_axis].max() - data.loc[["L5e-3N32M32","L2e-2N224M320"],y_axis].min()
+    if scale_x is None and scale_y is None:
+
+        scale_x = data.loc[["L5e-3N32M32","L2e-2N224M320"],x_axis].max() - data.loc[["L5e-3N32M32","L2e-2N224M320"],x_axis].min()
+        scale_y = data.loc[["L5e-3N32M32","L2e-2N224M320"],y_axis].max() - data.loc[["L5e-3N32M32","L2e-2N224M320"],y_axis].min()
 
     possible_values = {
         "L": ["5e-3", "1e-2", "2e-2"],
@@ -725,15 +729,17 @@ def glch_rate_vs_dist(csv_path,x_axis,y_axis,scale_x,scale_y,x_range=None,y_rang
     save_all_data(data,r,x_axis,y_axis,x_range,y_range,f'{x_axis}_vs_{y_axis}_start_{start}')
 
 
-def glch_rate_vs_dist_2(csv_path,x_axis,y_axis,scale_x,scale_y,x_range=None,y_range=None,start="left"):
+def glch_rate_vs_dist_2(csv_path,x_axis,y_axis,scale_x=None,scale_y=None,x_range=None,y_range=None,start="left"):
 
     data = pd.read_csv(csv_path).set_index("labels")
 
     # data[x_axis] = data[x_axis].values/scale_x
     # data[y_axis] = data[y_axis].values/scale_y
 
-    scale_x = data.loc[["L5e-3N32M32","L2e-2N224M320"],x_axis].max() - data.loc[["L5e-3N32M32","L2e-2N224M320"],x_axis].min()
-    scale_y = data.loc[["L5e-3N32M32","L2e-2N224M320"],y_axis].max() - data.loc[["L5e-3N32M32","L2e-2N224M320"],y_axis].min()
+    if scale_x is None and scale_y is None:
+
+        scale_x = data.loc[["L5e-3N32M32","L2e-2N224M320"],x_axis].max() - data.loc[["L5e-3N32M32","L2e-2N224M320"],x_axis].min()
+        scale_y = data.loc[["L5e-3N32M32","L2e-2N224M320"],y_axis].max() - data.loc[["L5e-3N32M32","L2e-2N224M320"],y_axis].min()
 
     brute_dict = {
         "L": ["5e-3", "1e-2", "2e-2"]
@@ -808,7 +814,7 @@ def glch_rate_vs_dist_2(csv_path,x_axis,y_axis,scale_x,scale_y,x_range=None,y_ra
     save_hull_points(f"hulls_fig_{exp_id}",true_hull_points,estimated_hull_points)
 
 
-def glch_model_bits_vs_data_bits(csv_path,x_axis,y_axis,scale_x,scale_y,x_range=None,y_range=None,x_in_log_scale=False):
+def glch_model_bits_vs_data_bits(csv_path,x_axis,y_axis,scale_x=None,scale_y=None,x_range=None,y_range=None,x_in_log_scale=False):
 
     data = pd.read_csv(csv_path)
 
@@ -816,8 +822,10 @@ def glch_model_bits_vs_data_bits(csv_path,x_axis,y_axis,scale_x,scale_y,x_range=
 
     data = data.set_index("idx")
 
-    scale_x = data.loc[["032_010_010_001_08b","032_640_640_001_32b"],x_axis].max() - data.loc[["032_010_010_001_08b","032_640_640_001_32b"],x_axis].min()
-    scale_y = data.loc[["032_010_010_001_08b","032_640_640_001_32b"],y_axis].max() - data.loc[["032_010_010_001_08b","032_640_640_001_32b"],y_axis].min()
+    if scale_x is None and scale_y is None:
+
+        scale_x = data.loc[["032_010_010_001_08b","032_640_640_001_32b"],x_axis].max() - data.loc[["032_010_010_001_08b","032_640_640_001_32b"],x_axis].min()
+        scale_y = data.loc[["032_010_010_001_08b","032_640_640_001_32b"],y_axis].max() - data.loc[["032_010_010_001_08b","032_640_640_001_32b"],y_axis].min()
 
     possible_values = {
         "h1": [10,20,40,80,160,320,640],
@@ -848,22 +856,27 @@ if __name__ == "__main__":
 
     glch_rate_vs_energy(
         "/home/lucas/Documents/perceptronac/results/exp_1676160746/exp_1676160746_static_rate_x_power_values.csv",
-        "joules","data_bits/data_samples",1,1,"rate_vs_energy"
+        "joules","data_bits/data_samples",
+        "rate_vs_energy",
+        # x_scale=1,y_scale=1,
         # x_range=[277,313],
         # y_range=[0.115,0.133]
     )
 
     glch_rate_vs_energy(
         "/home/lucas/Documents/perceptronac/results/exp_1676160746/exp_1676160746_raw_values.csv",
-        "joules","data_bits/data_samples",1,1,"rate_vs_energy_noisy"
+        "joules","data_bits/data_samples",
+        "rate_vs_energy_noisy",
+        # x_scale=1,y_scale=1,
         # x_range=[277,313],
         # y_range=[0.115,0.133]
     )
 
     glch_rate_vs_energy(
         "/home/lucas/Documents/perceptronac/results/exp_1676160746/exp_1676160746_static_rate_x_power_values.csv",
-        "params","data_bits/data_samples",1e6,1,
+        "params","data_bits/data_samples",
         "rate_vs_params",
+        # x_scale=1e6,y_scale=1,
         # x_range=None,
         # y_range=None,
         x_in_log_scale=True
@@ -871,7 +884,8 @@ if __name__ == "__main__":
 
     glch_rate_vs_dist(
         "/home/lucas/Documents/perceptronac/scripts/tradeoffs/bpp-mse-psnr-loss-flops-params_bmshj2018-factorized_10000-epochs_L-2e-2-1e-2-5e-3_N-32-64-96-128-160-192-224_M-32-64-96-128-160-192-224-256-288-320.csv",
-        "bpp_loss","mse_loss",1,1,
+        "bpp_loss","mse_loss",
+        # x_scale=1,y_scale=1,
         # x_range=[0.1,1.75],
         # y_range=[0.001,0.0045]
     )
@@ -886,21 +900,24 @@ if __name__ == "__main__":
 
     glch_rate_vs_dist(
         "/home/lucas/Documents/perceptronac/scripts/tradeoffs/bpp-mse-psnr-loss-flops-params_bmshj2018-factorized_10000-epochs_L-2e-2-1e-2-5e-3_N-32-64-96-128-160-192-224_M-32-64-96-128-160-192-224-256-288-320.csv",
-        "flops","loss",1e10,1,
+        "flops","loss",
+        # x_scale=1e10,y_scale=1,
         # x_range=[-0.2,3.75],
         # y_range=[1.1,3.1]
     )
 
     glch_rate_vs_dist(
         "/home/lucas/Documents/perceptronac/scripts/tradeoffs/bpp-mse-psnr-loss-flops-params_bmshj2018-factorized_10000-epochs_L-2e-2-1e-2-5e-3_N-32-64-96-128-160-192-224_M-32-64-96-128-160-192-224-256-288-320.csv",
-        "params","loss",1e6,1,
+        "params","loss",
+        # x_scale=1e6,y_scale=1,
         # x_range=[-0.1,4],
         # y_range=[1.1,3.1]
     )
 
     glch_model_bits_vs_data_bits(
         "/home/lucas/Documents/perceptronac/results/exp_1676160183/exp_1676160183_model_bits_x_data_bits_values.csv",
-        "model_bits/data_samples","data_bits/data_samples",1,1,
+        "model_bits/data_samples","data_bits/data_samples",
+        # x_scale=1,y_scale=1,
         # x_range=[-0.1,0.8],
         # y_range=None,
         x_in_log_scale=True
