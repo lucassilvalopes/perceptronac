@@ -64,9 +64,9 @@ def dist_to_chull(chull,coord,pt,scale_x,scale_y):
 
     # improv = (pt[0]-best_yet[0])/best_yet[0] + (pt[1]-best_yet[1])/best_yet[1]
 
-    improv = pt[0]/scale_x + pt[1]/scale_y
+    improv = pt[0] + pt[1]*(scale_x/scale_y)
 
-    print(f"lambda {scale_x/scale_y}")
+    # print(f"lambda {scale_x/scale_y}")
 
     return improv
 
@@ -264,11 +264,11 @@ def make_choice_3(data,x_axis,y_axis,chull,node,node_coord,nodes,coord,candidate
 
             title = "case_2"
         
-        elif (len(candidates_in_chull)==0) and (len(local_chull) != 1):
+        # elif (len(candidates_in_chull)==0) and (len(local_chull) != 1):
 
-            chosen_node_index = candidate_coord.index(filtered_coord[local_chull[1]])
+        #     chosen_node_index = candidate_coord.index(filtered_coord[local_chull[1]])
 
-            title = "case_3"
+        #     title = "case_3"
 
         # elif (len(candidates_in_chull)>0) and (len(min_x_pts) >0):
 
@@ -280,7 +280,7 @@ def make_choice_3(data,x_axis,y_axis,chull,node,node_coord,nodes,coord,candidate
 
             # chosen_node_index = candidate_coord.index(filtered_coord[local_chull[0]])
 
-            chosen_node_index = make_choice(None,x_axis,y_axis,chull,node,node_coord,nodes,coord,candidate_nodes,candidate_coord,
+            chosen_node_index = make_choice(None,x_axis,y_axis,prev_chull,node,node_coord,nodes,prev_coord,candidate_nodes,candidate_coord,
                     debug=False,scale_x=scale_x,scale_y=scale_y,txt_file=txt_file)
         
             title = "case_5"
@@ -668,8 +668,8 @@ def glch_rate_vs_energy(csv_path,x_axis,y_axis,scale_x,scale_y,title,x_range=Non
     # data[x_axis] = data[x_axis].values/scale_x
     # data[y_axis] = data[y_axis].values/scale_y
 
-    scale_x = data[x_axis].max()
-    scale_y = data[y_axis].max()
+    scale_x = data[x_axis].max() - data[x_axis].min()
+    scale_y = data[y_axis].max() - data[y_axis].min()
 
     possible_values = {
         "h1": [10,20,40,80,160,320,640],
@@ -695,8 +695,8 @@ def glch_rate_vs_dist(csv_path,x_axis,y_axis,scale_x,scale_y,x_range=None,y_rang
     # data[x_axis] = data[x_axis].values/scale_x
     # data[y_axis] = data[y_axis].values/scale_y
 
-    scale_x = data[x_axis].max()
-    scale_y = data[y_axis].max()
+    scale_x = data[x_axis].max() - data[x_axis].min()
+    scale_y = data[y_axis].max() - data[y_axis].min()
 
     possible_values = {
         "L": ["5e-3", "1e-2", "2e-2"],
@@ -731,8 +731,8 @@ def glch_rate_vs_dist_2(csv_path,x_axis,y_axis,scale_x,scale_y,x_range=None,y_ra
     # data[x_axis] = data[x_axis].values/scale_x
     # data[y_axis] = data[y_axis].values/scale_y
 
-    scale_x = data[x_axis].max()
-    scale_y = data[y_axis].max()
+    scale_x = data[x_axis].max() - data[x_axis].min()
+    scale_y = data[y_axis].max() - data[y_axis].min()
 
     brute_dict = {
         "L": ["5e-3", "1e-2", "2e-2"]
@@ -811,8 +811,8 @@ def glch_model_bits_vs_data_bits(csv_path,x_axis,y_axis,scale_x,scale_y,x_range=
 
     data = pd.read_csv(csv_path)
 
-    scale_x = data[x_axis].max()
-    scale_y = data[y_axis].max()
+    scale_x = data[x_axis].max() - data[x_axis].min()
+    scale_y = data[y_axis].max() - data[y_axis].min()
 
     data['idx'] = data.apply(lambda x: f"{x.topology}_{x.quantization_bits:02d}b", axis=1)
 
