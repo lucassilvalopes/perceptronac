@@ -632,6 +632,8 @@ def limit_energy_significant_digits(data):
     data[["joules","joules_std"]] = data[["joules","joules_std"]].apply(lambda x: pd.Series({
         "joules":limit_significant_digits(x["joules"],last_significant_digit_position),
         "joules_std":limit_significant_digits(x["joules_std"],last_significant_digit_position)
+        # "joules":limit_significant_digits(x["joules"],fexp(x["joules_std"])),
+        # "joules_std":limit_significant_digits(x["joules_std"],fexp(x["joules_std"]))
     },index=["joules","joules_std"]), axis=1)
     return data
 
