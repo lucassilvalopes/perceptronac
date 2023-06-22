@@ -8,6 +8,7 @@ sys.path.append(os.path.dirname(os.path.dirname(SCRIPT_DIR)))
 
 from perceptronac.convex_hull import convex_hull
 from perceptronac.power_consumption import estimate_joules
+from perceptronac.power_consumption import group_energy_measurements
 import numpy as np
 import math
 import matplotlib.pyplot as plt
@@ -643,26 +644,54 @@ def save_hull_points(file_name,true_hull_points,estimated_hull_points):
         print(estimated_hull_points,file=f)
 
 
-def glch_rate_vs_energy(csv_path,x_axis,y_axis,title,scale_x=None,scale_y=None,x_range=None,y_range=None,x_in_log_scale=False):
+def glch_rate_vs_energy(csv_path,x_axis,y_axis,title,scale_x=None,scale_y=None,x_range=None,y_range=None,x_in_log_scale=False,remove_noise=True):
 
-    if "raw_values" in csv_path:
+    data = pd.read_csv(csv_path)
 
-        data = pd.read_csv(csv_path).set_index("topology")
+    csv_path_2 = csv_path.replace("raw_values","power_draw")
 
-        csv_path_2 = csv_path.replace("raw_values","power_draw")
+    power_draw = np.loadtxt(csv_path_2)
 
-        power_draw = np.loadtxt(csv_path_2)
+    power_draw[:,1] = power_draw[:,1] - np.min(power_draw[:,1])
 
-        joules = estimate_joules(data,power_draw)
+    joules = estimate_joules(data,power_draw)
 
-        data["joules"] = joules
+    data["joules"] = joules
 
-        data = data[data["energy_measurement_iteration"]==0]
+    data = group_energy_measurements(data).set_index("topology")
 
-    else:
-        data = pd.read_csv(csv_path).set_index("topology")
+    if remove_noise:
 
         limit_energy_significant_digits(data)
+
+    # data[x_axis] = data[x_axis].values/scale_x
+    # data[y_axis] = data[y_axis].values/scale_y
+
+    if scale_x is None and scale_y is None:
+
+        scale_x = data.loc[["032_010_010_001","032_640_640_001"],x_axis].max() - data.loc[["032_010_010_001","032_640_640_001"],x_axis].min()
+        scale_y = data.loc[["032_010_010_001","032_640_640_001"],y_axis].max() - data.loc[["032_010_010_001","032_640_640_001"],y_axis].min()
+
+    possible_values = {
+        "h1": [10,20,40,80,160,320,640],
+        "h2": [10,20,40,80,160,320,640]
+    }
+
+    initial_values = {"h1":10,"h2":10}
+
+    def to_str_method(params):
+        widths = [32,params["h1"],params["h2"],1]
+        return '_'.join(map(lambda x: f"{x:03d}",widths))
+
+    r = build_tree(data,possible_values,x_axis,y_axis,initial_values,to_str_method,scale_x=scale_x,scale_y=scale_y)
+
+    save_all_data(data,r,x_axis,y_axis,x_range,y_range,title,x_in_log_scale)
+
+
+
+def glch_rate_vs_params(csv_path,x_axis,y_axis,title,scale_x=None,scale_y=None,x_range=None,y_range=None,x_in_log_scale=False):
+
+    data = pd.read_csv(csv_path).set_index("topology")
 
     # data[x_axis] = data[x_axis].values/scale_x
     # data[y_axis] = data[y_axis].values/scale_y
@@ -853,11 +882,11 @@ if __name__ == "__main__":
     os.mkdir("debug")
 
     glch_rate_vs_energy(
-        "/home/lucas/Documents/perceptronac/results/exp_1676160746/exp_1676160746_static_rate_x_power_values.csv",
+        "/home/lucas/Documents/perceptronac/results/exp_1676160746/exp_1676160746_raw_values.csv",
         "joules","data_bits/data_samples",
         "rate_vs_energy",
-        # x_scale=1,y_scale=1,
-        x_range=[277,313],
+        # scale_x=1,scale_y=1,
+        x_range=[125,165],
         y_range=[0.115,0.133]
     )
 
@@ -865,16 +894,17 @@ if __name__ == "__main__":
         "/home/lucas/Documents/perceptronac/results/exp_1676160746/exp_1676160746_raw_values.csv",
         "joules","data_bits/data_samples",
         "rate_vs_energy_noisy",
-        # x_scale=1,y_scale=1,
-        x_range=[250,290],
-        y_range=[0.115,0.135]
+        # scale_x=1,scale_y=1,
+        x_range=[125,165],
+        y_range=[0.115,0.133],
+        remove_noise=False
     )
 
-    glch_rate_vs_energy(
+    glch_rate_vs_params(
         "/home/lucas/Documents/perceptronac/results/exp_1676160746/exp_1676160746_static_rate_x_power_values.csv",
         "params","data_bits/data_samples",
         "rate_vs_params",
-        # x_scale=1e6,y_scale=1,
+        # scale_x=1e6,scale_y=1,
         x_range=None,
         y_range=None,
         x_in_log_scale=True
@@ -883,7 +913,7 @@ if __name__ == "__main__":
     glch_rate_vs_dist(
         "/home/lucas/Documents/perceptronac/scripts/tradeoffs/bpp-mse-psnr-loss-flops-params_bmshj2018-factorized_10000-epochs_L-2e-2-1e-2-5e-3_N-32-64-96-128-160-192-224_M-32-64-96-128-160-192-224-256-288-320.csv",
         "bpp_loss","mse_loss",
-        # x_scale=1,y_scale=1,
+        # scale_x=1,scale_y=1,
         x_range=[0.1,1.75],
         y_range=[0.001,0.0045]
     )
@@ -899,7 +929,7 @@ if __name__ == "__main__":
     glch_rate_vs_dist(
         "/home/lucas/Documents/perceptronac/scripts/tradeoffs/bpp-mse-psnr-loss-flops-params_bmshj2018-factorized_10000-epochs_L-2e-2-1e-2-5e-3_N-32-64-96-128-160-192-224_M-32-64-96-128-160-192-224-256-288-320.csv",
         "flops","loss",
-        # x_scale=1e10,y_scale=1,
+        # scale_x=1e10,scale_y=1,
         x_range=[-0.2*1e10,3.75*1e10],
         y_range=[1.1,3.1]
     )
@@ -907,7 +937,7 @@ if __name__ == "__main__":
     glch_rate_vs_dist(
         "/home/lucas/Documents/perceptronac/scripts/tradeoffs/bpp-mse-psnr-loss-flops-params_bmshj2018-factorized_10000-epochs_L-2e-2-1e-2-5e-3_N-32-64-96-128-160-192-224_M-32-64-96-128-160-192-224-256-288-320.csv",
         "params","loss",
-        # x_scale=1e6,y_scale=1,
+        # scale_x=1e6,scale_y=1,
         x_range=[-0.1*1e6,4*1e6],
         y_range=[1.1,3.1]
     )
@@ -915,7 +945,7 @@ if __name__ == "__main__":
     glch_model_bits_vs_data_bits(
         "/home/lucas/Documents/perceptronac/results/exp_1676160183/exp_1676160183_model_bits_x_data_bits_values.csv",
         "model_bits/data_samples","data_bits/data_samples",
-        # x_scale=1,y_scale=1,
+        # scale_x=1,scale_y=1,
         x_range=[-0.1,0.8],
         y_range=None,
         x_in_log_scale=True
