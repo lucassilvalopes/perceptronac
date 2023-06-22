@@ -626,9 +626,12 @@ def limit_significant_digits(value,last_significant_digit_position):
     return np.round(value/factor) * factor
 
 def limit_energy_significant_digits(data):
+
+    last_significant_digit_position = fexp(data["joules_std"].max())
+
     data[["joules","joules_std"]] = data[["joules","joules_std"]].apply(lambda x: pd.Series({
-        "joules":limit_significant_digits(x["joules"],fexp(x["joules_std"])),
-        "joules_std":limit_significant_digits(x["joules_std"],fexp(x["joules_std"]))
+        "joules":limit_significant_digits(x["joules"],last_significant_digit_position),
+        "joules_std":limit_significant_digits(x["joules_std"],last_significant_digit_position)
     },index=["joules","joules_std"]), axis=1)
     return data
 
@@ -662,7 +665,11 @@ def glch_rate_vs_energy(csv_path,x_axis,y_axis,title,scale_x=None,scale_y=None,x
 
     if remove_noise:
 
+        print(data[["joules","joules_std"]])
+
         limit_energy_significant_digits(data)
+
+        print(data[["joules","joules_std"]])
 
     # data[x_axis] = data[x_axis].values/scale_x
     # data[y_axis] = data[y_axis].values/scale_y
@@ -887,7 +894,7 @@ if __name__ == "__main__":
         "rate_vs_energy",
         # scale_x=1,scale_y=1,
         x_range=[125,165],
-        y_range=[0.115,0.133]
+        y_range=None
     )
 
     glch_rate_vs_energy(
@@ -896,7 +903,7 @@ if __name__ == "__main__":
         "rate_vs_energy_noisy",
         # scale_x=1,scale_y=1,
         x_range=[125,165],
-        y_range=[0.115,0.133],
+        y_range=None,
         remove_noise=False
     )
 
