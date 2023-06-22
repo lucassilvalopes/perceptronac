@@ -655,7 +655,7 @@ def glch_rate_vs_energy(csv_path,x_axis,y_axis,title,scale_x=None,scale_y=None,x
 
     power_draw = np.loadtxt(csv_path_2)
 
-    power_draw[:,1] = power_draw[:,1] - np.min(power_draw[:,1])
+    power_draw[:,1] = power_draw[:,1] - 16 # np.min(power_draw[:,1])
 
     joules = estimate_joules(data,power_draw)
 
@@ -665,11 +665,7 @@ def glch_rate_vs_energy(csv_path,x_axis,y_axis,title,scale_x=None,scale_y=None,x
 
     if remove_noise:
 
-        print(data[["joules","joules_std"]])
-
         limit_energy_significant_digits(data)
-
-        print(data[["joules","joules_std"]])
 
     # data[x_axis] = data[x_axis].values/scale_x
     # data[y_axis] = data[y_axis].values/scale_y
@@ -893,8 +889,8 @@ if __name__ == "__main__":
         "joules","data_bits/data_samples",
         "rate_vs_energy",
         # scale_x=1,scale_y=1,
-        x_range=[125,165],
-        y_range=None
+        x_range=[135,175],
+        y_range=[0.115,0.145]
     )
 
     glch_rate_vs_energy(
@@ -902,7 +898,7 @@ if __name__ == "__main__":
         "joules","data_bits/data_samples",
         "rate_vs_energy_noisy",
         # scale_x=1,scale_y=1,
-        x_range=[125,165],
+        x_range=[140,180],
         y_range=None,
         remove_noise=False
     )
