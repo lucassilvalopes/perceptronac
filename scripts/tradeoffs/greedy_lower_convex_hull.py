@@ -65,9 +65,11 @@ def dist_to_chull(chull,coord,pt,scale_x,scale_y):
 
     # improv = (pt[0]-best_yet[0])/best_yet[0] + (pt[1]-best_yet[1])/best_yet[1]
 
-    improv = pt[0] + pt[1]*(scale_x/scale_y)
+    lmbd = ((scale_x/scale_y)/6)
 
-    print(f"lambda {scale_x/scale_y}")
+    improv = pt[0] + pt[1]*lmbd
+
+    print(f"lambda {lmbd}")
 
     return improv
 
