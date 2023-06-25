@@ -537,7 +537,8 @@ def paint_hull(true_hull_points,estimated_hull_points,x_axis,y_axis,ax):
     y_axis = "data_bits/data_samples"
     """
     ax.plot(
-        estimated_hull_points[x_axis],estimated_hull_points[y_axis],linestyle="",color="black",marker="o",markerfacecolor='none')
+        estimated_hull_points[x_axis],estimated_hull_points[y_axis],linestyle="",color="black",marker="o",
+        markerfacecolor='none',markersize=8)
     # plt.scatter(
     #     estimated_hull_points[x_axis],estimated_hull_points[y_axis],facecolors='none', edgecolors='k')
 
