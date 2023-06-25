@@ -544,9 +544,15 @@ def paint_hull(true_hull_points,estimated_hull_points,x_axis,y_axis,ax):
 
 
 def paint_nodes(data,r,x_axis,y_axis,ax):
-    probe = data.loc[tree_nodes(r),:]
-    probexy = probe.loc[:,[x_axis,y_axis]]
-    ax.plot(probexy[x_axis],probexy[y_axis],linestyle="",color="orangered",marker=".")
+
+    all_nodes = tree_nodes(r, all_nodes = True)
+    selected_nodes = tree_nodes(r, all_nodes = False)
+    unselected_nodes = list(set(all_nodes) - set(selected_nodes))
+
+    selected_nodes_xy = data.loc[selected_nodes,:]
+    unselected_nodes_xy = data.loc[unselected_nodes,:]
+    ax.plot(selected_nodes_xy[x_axis],selected_nodes_xy[y_axis],linestyle="",color="green",marker=".")
+    ax.plot(unselected_nodes_xy[x_axis],unselected_nodes_xy[y_axis],linestyle="",color="firebrick",marker=".")
 
 
 def save_all_data(data,r,x_axis,y_axis,x_range,y_range,data_id,x_in_log_scale=False):
