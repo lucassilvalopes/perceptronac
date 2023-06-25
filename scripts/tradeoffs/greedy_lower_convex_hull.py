@@ -536,9 +536,10 @@ def paint_hull(true_hull_points,estimated_hull_points,x_axis,y_axis,ax):
     x_axis = "joules"
     y_axis = "data_bits/data_samples"
     """
-    # ax.plot(true_hull_points[x_axis],true_hull_points[y_axis],linestyle=(0, (5, 5)),color="orangered",marker=None)
     ax.plot(
-        estimated_hull_points[x_axis],estimated_hull_points[y_axis],linestyle="dotted",color="black",marker=None)
+        estimated_hull_points[x_axis],estimated_hull_points[y_axis],linestyle="",color="black",marker="o",markerfacecolor='none')
+    # plt.scatter(
+    #     estimated_hull_points[x_axis],estimated_hull_points[y_axis],facecolors='none', edgecolors='k')
 
 
 def paint_nodes(data,r,x_axis,y_axis,ax):
