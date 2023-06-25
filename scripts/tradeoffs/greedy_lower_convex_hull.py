@@ -531,6 +531,22 @@ def paint_hull_points(true_hull_points,x_axis,y_axis,ax):
     ax.plot(true_hull_points[x_axis],true_hull_points[y_axis],linestyle="",color="orangered",marker=".")
 
 
+def paint_hull(true_hull_points,estimated_hull_points,x_axis,y_axis,ax):
+    """
+    x_axis = "joules"
+    y_axis = "data_bits/data_samples"
+    """
+    # ax.plot(true_hull_points[x_axis],true_hull_points[y_axis],linestyle=(0, (5, 5)),color="orangered",marker=None)
+    ax.plot(
+        estimated_hull_points[x_axis],estimated_hull_points[y_axis],linestyle="dotted",color="black",marker=None)
+
+
+def paint_nodes(data,r,x_axis,y_axis,ax):
+    probe = data.loc[tree_nodes(r),:]
+    probexy = probe.loc[:,[x_axis,y_axis]]
+    ax.plot(probexy[x_axis],probexy[y_axis],linestyle="",color="orangered",marker=".")
+
+
 def save_all_data(data,r,x_axis,y_axis,x_range,y_range,data_id,x_in_log_scale=False):
 
     true_hull_points,estimated_hull_points,n_trained_networks = compute_hulls(data,[r],x_axis,y_axis)
@@ -543,13 +559,15 @@ def save_all_data(data,r,x_axis,y_axis,x_range,y_range,data_id,x_in_log_scale=Fa
     paint_cloud(data,x_axis,y_axis,ax,".")
     paint_root(data,r,x_axis,y_axis,ax)
     paint_tree(ax,data,r,x_axis,y_axis,x_range,y_range)
-    paint_hull_points(true_hull_points,x_axis,y_axis,ax)
+    # paint_hull_points(true_hull_points,x_axis,y_axis,ax)
+    paint_nodes(data,r,x_axis,y_axis,ax)
     adjust_axes(x_axis,y_axis,x_range,y_range,ax,x_in_log_scale)
     tree_fig.savefig(f"tree_fig_{data_id}.png", dpi=300, facecolor='w', bbox_inches = "tight")
 
     hulls_fig, ax = plt.subplots(nrows=1, ncols=1)
     paint_cloud(data,x_axis,y_axis,ax,"x")
-    paint_hulls(true_hull_points,estimated_hull_points,x_axis,y_axis,ax)
+    # paint_hulls(true_hull_points,estimated_hull_points,x_axis,y_axis,ax)
+    paint_hull(true_hull_points,estimated_hull_points,x_axis,y_axis,ax)
     adjust_axes(x_axis,y_axis,None,None,ax,x_in_log_scale)
     hulls_fig.savefig(f"hulls_fig_{data_id}.png", dpi=300, facecolor='w', bbox_inches = "tight")
 
@@ -836,14 +854,16 @@ def glch_rate_vs_dist_2(csv_path,x_axis,y_axis,scale_x=None,scale_y=None,x_range
     tree_file.close()
 
     for i in range(len(brute_dict["L"])):
-        paint_hull_points(true_hull_points,x_axis,y_axis,tree_fig.axes[i])
+        # paint_hull_points(true_hull_points,x_axis,y_axis,tree_fig.axes[i])
+        paint_nodes(data,rs[i],x_axis,y_axis,tree_fig.axes[i])
 
     tree_fig.savefig(f"tree_fig_{exp_id}.png", dpi=300, facecolor='w', bbox_inches = "tight")
 
     
     hulls_fig, ax = plt.subplots(nrows=1, ncols=1)
     paint_cloud(data,x_axis,y_axis,ax,"x")
-    paint_hulls(true_hull_points,estimated_hull_points,x_axis,y_axis,ax)
+    # paint_hulls(true_hull_points,estimated_hull_points,x_axis,y_axis,ax)
+    paint_hull(true_hull_points,estimated_hull_points,x_axis,y_axis,ax)
     adjust_axes(x_axis,y_axis,None,None,ax)
     hulls_fig.savefig(f"hulls_fig_{exp_id}.png", dpi=300, facecolor='w', bbox_inches = "tight")
 
