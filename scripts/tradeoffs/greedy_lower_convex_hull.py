@@ -59,25 +59,12 @@ class Node:
 
 # %%
 
-def dist_to_chull(chull,coord,pt,scale_x,scale_y):
 
-    # best_yet = np.max([coord[i] for i in chull],axis=0)
+def plot_choice_2(x_axis,y_axis,node,node_coord,candidate_nodes,candidate_coord,chosen_node_index,txt_file=None,title=None,first=False,last=False):
 
-    # improv = (pt[0]-best_yet[0])/best_yet[0] + (pt[1]-best_yet[1])/best_yet[1]
-
-    lmbd = ((scale_x/scale_y)/6)
-
-    # lmbd = (scale_x/scale_y)
-
-    improv = pt[0] + pt[1]*lmbd
-
-    print(f"lambda {lmbd}")
-
-    return improv
-
-
-
-def plot_choice_2(x_axis,y_axis,node,node_coord,candidate_nodes,candidate_coord,chosen_node_index,txt_file=None,title=None):
+    if first:
+        txt_file = open(f"debug/transitions_{x_axis.replace('/','_over_')}_vs_{y_axis.replace('/','_over_')}.txt", 'w')
+        print(f"src_x,src_y,dst_x,dst_y,taken",file=txt_file)
 
     fig, ax = plt.subplots(nrows=1, ncols=1)
 
@@ -108,8 +95,16 @@ def plot_choice_2(x_axis,y_axis,node,node_coord,candidate_nodes,candidate_coord,
             f"debug/{x_axis.replace('/','_over_')}_vs_{y_axis.replace('/','_over_')}-{'-'.join([str(c) for c in candidate_nodes])}.png", 
             dpi=300, facecolor='w', bbox_inches = "tight")
 
+    if last:
+        txt_file.close()
 
-def plot_choice(data,x_axis,y_axis,node,node_coord,candidate_nodes,candidate_coord,chosen_node_index,dists=None,txt_file=None,title=None):
+
+def plot_choice(
+    data,x_axis,y_axis,node,node_coord,candidate_nodes,candidate_coord,chosen_node_index,dists=None,txt_file=None,title=None,first=False,last=False):
+
+    if first:
+        txt_file = open(f"debug/transitions_{x_axis.replace('/','_over_')}_vs_{y_axis.replace('/','_over_')}.txt", 'w')
+        print(f"src_x,src_y,dst_x,dst_y,taken",file=txt_file)
 
     fig, ax = plt.subplots(nrows=1, ncols=1)
 
@@ -143,165 +138,34 @@ def plot_choice(data,x_axis,y_axis,node,node_coord,candidate_nodes,candidate_coo
         fig.savefig(
             f"debug/{x_axis.replace('/','_over_')}_vs_{y_axis.replace('/','_over_')}-{'-'.join([str(c) for c in candidate_nodes])}.png", 
             dpi=300, facecolor='w', bbox_inches = "tight")
-
-
-def make_choice(data,x_axis,y_axis,chull,node,node_coord,nodes,coord,candidate_nodes,candidate_coord,
-                debug=True,scale_x=1,scale_y=1,txt_file=None):
-    """
-    Params:
-        data: all data, used during plotting for debugging
-        x_axis: name of the x-axis
-        y_axis: name of the y-axis
-        chull: current global convex hull (actually not necessary)
-        node: current source node
-        node_coord: coordinates of the current source node
-        nodes: all nodes of the tree so far (actually not necessary)
-        coord: all the coordinates of the nodes of the tree so far (actually not necessary)
-        candidate_nodes: local nodes to choose from
-        candidate_coord: coordinates of the local nodes to choose from
-        debug: whether to plot something or not
     
-    Returns:
-        chosen_node_index: index of the chosen local node.
-            -1 if all options are equal to the source node
-    
-    """
-
-    if all([str(n) == str(node) for n in candidate_nodes]):
-        return -1
-
-    dists = []
-
-    for pt in candidate_coord:
-
-        dist = dist_to_chull(chull,coord,pt,scale_x,scale_y)
-        # dist = dist_to_chull_2(node_coord,pt)
-        # dist = dist_to_chull_3(chull,coord,pt)
-
-        dists.append(dist)
-    
-    idx = np.argsort(dists)
-
-    filtered_idx = [i for i in idx if str(candidate_nodes[i]) != str(node)]
-
-    chosen_node_index = filtered_idx[0]
-
-    if debug:
-        # plot_choice(data,x_axis,y_axis,node,node_coord,candidate_nodes,candidate_coord,chosen_node_index,dists)
-        plot_choice_2(x_axis,y_axis,node,node_coord,candidate_nodes,candidate_coord,chosen_node_index,txt_file=txt_file)
-
-    return chosen_node_index
-
-
-def make_choice_2(data,x_axis,y_axis,node,node_coord,candidate_nodes,candidate_coord):
-    """
-    Choose among children based on a local convex hull
-    
-    Params:
-        node: current source node
-        candidate_nodes: local nodes to choose from
-        candidate_coord: coordinates of the local nodes to choose from
-    
-    Returns:
-        chosen_node_index: index of the chosen local node.
-            -1 if all options are equal to the source node
-    """
-
-    if all([str(n) == str(node) for n in candidate_nodes]):
-        return -1
-
-    filtered_coord = [c for n,c in zip(candidate_nodes,candidate_coord) if str(n) != str(node)]
-
-    local_chull = convex_hull(filtered_coord)
-
-    i = candidate_coord.index(filtered_coord[local_chull[0]])
-
-    if len(local_chull) != 1:
-        # print(f"Draw between {[filtered_coord[i] for i in local_chull]}. Choosing the first one")        
-        # plot_choice(data,x_axis,y_axis,node,node_coord,candidate_nodes,candidate_coord,i)
-        plot_choice_2(x_axis,y_axis,node,node_coord,candidate_nodes,candidate_coord,i)
-
-    return i
-
-
-def make_choice_3(data,x_axis,y_axis,chull,node,node_coord,nodes,coord,candidate_nodes,candidate_coord,start,scale_x=1,scale_y=1,txt_file=None,debug=False):
-
-    if all([str(n) == str(node) for n in candidate_nodes]):
-        return -1
-
-    filtered_coord = [c for n,c in zip(candidate_nodes,candidate_coord) if str(n) != str(node)]
-
-    len_nodes = len(nodes)
-
-    prev_nodes = nodes
-    prev_coord = coord
-    prev_chull = chull
-
-    coord = coord + filtered_coord
-
-    chull = min_max_convex_hull(coord,start=start)
-
-    candidates_in_chull = [i-len_nodes for i in chull if i >= len_nodes]
-
-    activate_debug = False
-
-    title = None 
-
-    if (len(candidates_in_chull)==1):
-
-        chosen_node_index = candidates_in_chull[0]
-
-        chosen_node_index = candidate_coord.index(filtered_coord[chosen_node_index])
-
-        title = "case_1"
-
-    else:
-
-        # local_chull = convex_hull(filtered_coord)
-
-        # min_x = min([prev_coord[i][0] for i in prev_chull])
-        # # min_y = min([prev_coord[i][1] for i in prev_chull])
-
-        # min_x_pts = sorted([pt for pt in filtered_coord if pt[0] < min_x],key=lambda pt: pt[1])
-
-        # if (len(candidates_in_chull)==0) and (len(local_chull) == 1):
-
-        #     chosen_node_index = candidate_coord.index(filtered_coord[local_chull[0]])
-
-        #     title = "case_2"
-        
-        # elif (len(candidates_in_chull)==0) and (len(local_chull) != 1):
-
-        #     chosen_node_index = candidate_coord.index(filtered_coord[local_chull[1]])
-
-        #     title = "case_3"
-
-        # elif (len(candidates_in_chull)>0) and (len(min_x_pts) >0):
-
-        #     chosen_node_index = candidate_coord.index(min_x_pts[0])
-
-        #     title = "case_4"
-
-        # else:
-
-        chosen_node_index = make_choice(None,x_axis,y_axis,prev_chull,node,node_coord,prev_nodes,prev_coord,candidate_nodes,candidate_coord,
-                debug=False,scale_x=scale_x,scale_y=scale_y,txt_file=txt_file)
-    
-        title = "case_5"
-
-        activate_debug = True
-    
-
-    if debug and activate_debug:
-        plot_choice_2(x_axis,y_axis,node,node_coord,candidate_nodes,candidate_coord,chosen_node_index,txt_file=txt_file,title=title)
-        # plot_choice(data,x_axis,y_axis,node,node_coord,candidate_nodes,candidate_coord,chosen_node_index,dists=None,txt_file=txt_file,title=title)
-
-    return chosen_node_index
+    if last:
+        txt_file.close()
 
 
 class GLCH:
 
     def __init__(self,data,possible_values,x_axis,y_axis,initial_values,to_str_method,start="left",scale_x=1,scale_y=1,debug=True):
+        """
+        data = 
+        |---------------|joules|data_bits/data_samples|  
+        |---topology----|------|----------------------|
+        |032_010_010_001|420.00|0.99999999999999999999|
+
+        possible_values = {
+            "h1": [10,20,40,80,160,320,640],
+            "h2": [10,20,40,80,160,320,640]
+        }
+
+        x_axis = "joules"
+        y_axis = "data_bits/data_samples"
+
+        initial_values = {"h1":10,"h2":10}
+
+        def to_str_method(params):
+            widths = [32,params["h1"],params["h2"],1]
+            return '_'.join(map(lambda x: f"{x:03d}",widths))
+        """
         self.data = data
         self.possible_values = possible_values
         self.x_axis = x_axis
@@ -404,6 +268,15 @@ class GLCH:
 
 
     def make_choice(self,node,candidate_nodes):
+        """
+        Params:
+            node: current source node
+            candidate_nodes: local nodes to choose from
+        
+        Returns:
+            chosen_node_index: index of the chosen local node.
+                -1 if all options are equal to the source node
+        """
 
         if all([str(n) == str(node) for n in candidate_nodes]):
             return -1
@@ -428,93 +301,6 @@ class GLCH:
 def build_tree(data,possible_values,x_axis,y_axis,initial_values,to_str_method,start="left",scale_x=1,scale_y=1,debug=True):
     return GLCH(data,possible_values,x_axis,y_axis,initial_values,to_str_method,start,scale_x,scale_y,debug).build_tree()
 
-
-def build_tree_old(data,possible_values,x_axis,y_axis,initial_values,to_str_method,start="left",scale_x=1,scale_y=1,debug=True):
-    """
-    data = 
-    |---------------|joules|data_bits/data_samples|  
-    |---topology----|------|----------------------|
-    |032_010_010_001|420.00|0.99999999999999999999|
-
-    possible_values = {
-        "h1": [10,20,40,80,160,320,640],
-        "h2": [10,20,40,80,160,320,640]
-    }
-
-    x_axis = "joules"
-    y_axis = "data_bits/data_samples"
-
-    initial_values = {"h1":10,"h2":10}
-
-    def to_str_method(params):
-        widths = [32,params["h1"],params["h2"],1]
-        return '_'.join(map(lambda x: f"{x:03d}",widths))
-    """
-
-    if debug:
-        txt_file = open(f"debug/transitions_{x_axis.replace('/','_over_')}_vs_{y_axis.replace('/','_over_')}.txt", 'w')
-        print(f"src_x,src_y,dst_x,dst_y,taken",file=txt_file)
-    else:
-        txt_file = None
-
-    print(f"(x_axis,y_axis) : ({x_axis},{y_axis})")
-
-    # data[x_axis] = MinMaxScaler().fit_transform(data[x_axis].values.reshape(-1,1))
-    # data[y_axis] = MinMaxScaler().fit_transform(data[y_axis].values.reshape(-1,1))
-
-    root = Node(**initial_values)
-    root.set_to_str_method(to_str_method)
-
-    node = root
-
-    nodes = [node]
-    node_coord = data.loc[str(node),[x_axis,y_axis]].values.tolist()
-    coord = [node_coord]
-    chull = [0]
-
-    while True:
-
-        candidate_coord = []
-        candidate_nodes = []
-        for p in sorted(possible_values.keys()):
-            node_p = node.auto_increment(p,possible_values)
-            candidate_nodes.append(node_p)
-            data_p = data.loc[str(node_p),[x_axis,y_axis]].values.tolist()
-            candidate_coord.append(data_p)
-        
-        # chosen_node_index = make_choice(data,x_axis,y_axis,
-        #     chull,node,node_coord,nodes,coord,candidate_nodes,candidate_coord,debug=debug,scale_x=scale_x,scale_y=scale_y,txt_file=txt_file)
-        chosen_node_index = make_choice_3(data,x_axis,y_axis,chull,
-            node,node_coord,nodes,coord,candidate_nodes,candidate_coord,start,scale_x=scale_x,scale_y=scale_y,txt_file=txt_file,debug=debug)
-
-        if chosen_node_index == -1:
-            break
-
-        len_nodes = len(nodes)
-        len_coord = len(coord)
-
-        nodes = nodes + candidate_nodes
-        coord = coord + candidate_coord
-
-        chull = min_max_convex_hull(coord,start=start)
-
-        # candidates_in_chull = [i-len_nodes for i in chull if i >= len_nodes]
-
-        # if (len(candidates_in_chull)>0) and (chosen_node_index not in candidates_in_chull):
-        #     chosen_node_index = candidates_in_chull[0]
-
-        chosen_node = candidate_nodes[chosen_node_index]
-
-        node.children = candidate_nodes
-
-        node.chosen_child_index = chosen_node_index
-        node = chosen_node
-        node_coord = data.loc[str(node),[x_axis,y_axis]].values.tolist()
-
-    if debug:
-        txt_file.close()
-
-    return root
 
 
 # %%
