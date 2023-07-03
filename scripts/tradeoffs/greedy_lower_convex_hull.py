@@ -299,9 +299,137 @@ def make_choice_3(data,x_axis,y_axis,chull,node,node_coord,nodes,coord,candidate
     return chosen_node_index
 
 
+class GLCH:
+
+    def __init__(self,data,possible_values,x_axis,y_axis,initial_values,to_str_method,start="left",scale_x=1,scale_y=1,debug=True):
+        self.data = data
+        self.possible_values = possible_values
+        self.x_axis = x_axis
+        self.y_axis = y_axis
+        self.initial_values = initial_values
+        self.to_str_method = to_str_method
+        self.start = start
+        self.scale_x = scale_x
+        self.scale_y = scale_y
+        self.debug = debug
+
+    def get_node_coord(self,node):
+        if isinstance(node,list):
+            return [self.data.loc[str(n),[self.x_axis,self.y_axis]].values.tolist() for n in node]
+        else:
+            return self.data.loc[str(node),[self.x_axis,self.y_axis]].values.tolist()
+
+    def setup_build_tree(self):
+
+        root = Node(**self.initial_values)
+        root.set_to_str_method(self.to_str_method)
+        self.nodes = [root]
+        return root
+
+        # self.chull = [0]
+    
+    # def teardown_build_tree(self):
+
+    def build_tree(self):
+
+        root = self.setup_build_tree()
+
+        node = root
+
+        while True:
+
+            candidate_nodes = []
+            for p in sorted(self.possible_values.keys()):
+                node_p = node.auto_increment(p,self.possible_values)
+                candidate_nodes.append(node_p)
+            
+            chosen_node_index = self.make_choice(node,candidate_nodes)
+
+            self.nodes += candidate_nodes 
+
+            if chosen_node_index == -1:
+                break
+
+            chosen_node = candidate_nodes[chosen_node_index]
+
+            node.children = candidate_nodes
+
+            node.chosen_child_index = chosen_node_index
+            node = chosen_node
+
+        return root
+
+    def find_candidates_in_chull(self,candidate_nodes):
+
+        len_nodes = len(self.nodes)
+
+        coord = self.get_node_coord(self.nodes) + self.get_node_coord(candidate_nodes)
+
+        chull = min_max_convex_hull(coord,start=self.start)
+
+        candidates_in_chull = [i-len_nodes for i in chull if i >= len_nodes]
+
+        return candidates_in_chull
+
+
+    def dist_to_chull(self,pt):
+
+        lmbd = ((self.scale_x/self.scale_y)/6)
+
+        improv = pt[0] + pt[1]*lmbd
+
+        return improv
+
+
+    def make_choice_tie_break(self,node,candidate_nodes):
+
+        if all([str(n) == str(node) for n in candidate_nodes]):
+            return -1
+
+        dists = []
+
+        for pt in self.get_node_coord(candidate_nodes):
+
+            dist = self.dist_to_chull(pt)
+
+            dists.append(dist)
+        
+        idx = np.argsort(dists)
+
+        filtered_idx = [i for i in idx if str(candidate_nodes[i]) != str(node)]
+
+        chosen_node_index = filtered_idx[0]
+
+        return chosen_node_index
+
+
+    def make_choice(self,node,candidate_nodes):
+
+        if all([str(n) == str(node) for n in candidate_nodes]):
+            return -1
+
+        filtered_nodes = [n for n in candidate_nodes if str(n) != str(node)]
+
+        candidates_in_chull = self.find_candidates_in_chull(filtered_nodes)
+
+        if (len(candidates_in_chull)==1):
+
+            chosen_node_index = candidates_in_chull[0]
+
+            chosen_node_index = candidate_nodes.index(filtered_nodes[chosen_node_index])
+
+        else:
+
+            chosen_node_index = self.make_choice_tie_break(node,candidate_nodes)
+
+        return chosen_node_index
 
 
 def build_tree(data,possible_values,x_axis,y_axis,initial_values,to_str_method,start="left",scale_x=1,scale_y=1,debug=True):
+    return GLCH(data,possible_values,x_axis,y_axis,initial_values,to_str_method,start,scale_x,scale_y,debug).build_tree()
+
+
+def build_tree_old(data,possible_values,x_axis,y_axis,initial_values,to_str_method,start="left",scale_x=1,scale_y=1,debug=True):
     """
     data = 
     |---------------|joules|data_bits/data_samples|  
