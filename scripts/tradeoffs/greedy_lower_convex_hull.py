@@ -59,12 +59,15 @@ class Node:
 
 # %%
 
+def open_debug_txt_file(x_axis,y_axis):
+    txt_file = open(f"debug/transitions_{x_axis.replace('/','_over_')}_vs_{y_axis.replace('/','_over_')}.txt", 'w')
+    print(f"src_x,src_y,dst_x,dst_y,taken",file=txt_file)
+    return txt_file
 
-def plot_choice_2(x_axis,y_axis,node,node_coord,candidate_nodes,candidate_coord,chosen_node_index,txt_file=None,title=None,first=False,last=False):
+def close_debug_txt_file(txt_file):
+    txt_file.close()
 
-    if first:
-        txt_file = open(f"debug/transitions_{x_axis.replace('/','_over_')}_vs_{y_axis.replace('/','_over_')}.txt", 'w')
-        print(f"src_x,src_y,dst_x,dst_y,taken",file=txt_file)
+def plot_choice_2(x_axis,y_axis,node,node_coord,candidate_nodes,candidate_coord,chosen_node_index,txt_file=None,title=None):
 
     fig, ax = plt.subplots(nrows=1, ncols=1)
 
@@ -95,16 +98,8 @@ def plot_choice_2(x_axis,y_axis,node,node_coord,candidate_nodes,candidate_coord,
             f"debug/{x_axis.replace('/','_over_')}_vs_{y_axis.replace('/','_over_')}-{'-'.join([str(c) for c in candidate_nodes])}.png", 
             dpi=300, facecolor='w', bbox_inches = "tight")
 
-    if last:
-        txt_file.close()
 
-
-def plot_choice(
-    data,x_axis,y_axis,node,node_coord,candidate_nodes,candidate_coord,chosen_node_index,dists=None,txt_file=None,title=None,first=False,last=False):
-
-    if first:
-        txt_file = open(f"debug/transitions_{x_axis.replace('/','_over_')}_vs_{y_axis.replace('/','_over_')}.txt", 'w')
-        print(f"src_x,src_y,dst_x,dst_y,taken",file=txt_file)
+def plot_choice(data,x_axis,y_axis,node,node_coord,candidate_nodes,candidate_coord,chosen_node_index,dists=None,txt_file=None,title=None):
 
     fig, ax = plt.subplots(nrows=1, ncols=1)
 
@@ -138,9 +133,6 @@ def plot_choice(
         fig.savefig(
             f"debug/{x_axis.replace('/','_over_')}_vs_{y_axis.replace('/','_over_')}-{'-'.join([str(c) for c in candidate_nodes])}.png", 
             dpi=300, facecolor='w', bbox_inches = "tight")
-    
-    if last:
-        txt_file.close()
 
 
 class GLCH:
