@@ -36,7 +36,11 @@ class Node:
     def __init__(self,**kwargs):
         self.params = kwargs
         self.children = []
+        self.parent = None
         self.chosen_child_index = -1
+
+    def set_parent(self,node):
+        self.parent = node
 
     def set_to_str_method(self,to_str_method):
         self.to_str_method = to_str_method
@@ -44,6 +48,7 @@ class Node:
     def auto_increment(self,param_name,possible_values):
         node = Node(**self.params.copy())
         node.set_to_str_method(self.to_str_method)
+        node.set_parent(self)
         param_value = node.params[param_name]
         new_param_value = param_value
         i = possible_values[param_name].index(param_value)
@@ -192,26 +197,32 @@ class GLCH:
 
         node = root
 
+        prev_candidate_nodes = []
+
         while True:
 
             candidate_nodes = []
             for p in sorted(self.possible_values.keys()):
                 node_p = node.auto_increment(p,self.possible_values)
                 candidate_nodes.append(node_p)
-            
-            chosen_node_index = self.make_choice(node,candidate_nodes)
-
-            self.nodes += candidate_nodes 
-
-            if chosen_node_index == -1:
-                break
-
-            chosen_node = candidate_nodes[chosen_node_index]
-
             node.children = candidate_nodes
 
-            node.chosen_child_index = chosen_node_index
+            if all([str(n) == str(node) for n in candidate_nodes]):
+                break
+
+            chosen_node_index = self.make_choice(node,prev_candidate_nodes,candidate_nodes)
+
+            if chosen_node_index >= len(prev_candidate_nodes):
+                chosen_node = candidate_nodes[chosen_node_index - len(prev_candidate_nodes)]
+            else:
+                chosen_node = prev_candidate_nodes[chosen_node_index]
+
+            self.nodes += candidate_nodes
+
+            chosen_node.parent.chosen_child_index = chosen_node.parent.children.index(chosen_node)
             node = chosen_node
+
+            prev_candidate_nodes += [n for n in candidate_nodes if str(n) != str(chosen_node)]
 
         return root
 
@@ -259,7 +270,7 @@ class GLCH:
         return chosen_node_index
 
 
-    def make_choice(self,node,candidate_nodes):
+    def make_choice(self,node,prev_candidate_nodes,candidate_nodes):
         """
         Params:
             node: current source node
@@ -287,7 +298,7 @@ class GLCH:
 
             chosen_node_index = self.make_choice_tie_break(node,candidate_nodes)
 
-        return chosen_node_index
+        return len(prev_candidate_nodes) + chosen_node_index
 
 
 def build_tree(data,possible_values,x_axis,y_axis,initial_values,to_str_method,start="left",scale_x=1,scale_y=1,debug=True):
