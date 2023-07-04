@@ -197,6 +197,8 @@ class GLCH:
 
         node = root
 
+        ref_node = root
+
         prev_candidate_nodes = []
 
         while True:
@@ -210,7 +212,7 @@ class GLCH:
             if all([str(n) == str(node) for n in candidate_nodes]):
                 break
 
-            chosen_node_index = self.make_choice(node,prev_candidate_nodes,candidate_nodes)
+            chosen_node_index,update_ref_node = self.make_choice(ref_node,prev_candidate_nodes,candidate_nodes)
 
             if chosen_node_index >= len(prev_candidate_nodes):
                 chosen_node = candidate_nodes[chosen_node_index - len(prev_candidate_nodes)]
@@ -222,9 +224,82 @@ class GLCH:
             chosen_node.parent.chosen_child_index = chosen_node.parent.children.index(chosen_node)
             node = chosen_node
 
+            if update_ref_node:
+                ref_node = chosen_node
+
+            prev_candidate_nodes = [n for n in prev_candidate_nodes if str(n) != str(chosen_node)]
             prev_candidate_nodes += [n for n in candidate_nodes if str(n) != str(chosen_node)]
 
         return root
+
+
+    def make_choice_2(self,node,prev_candidate_nodes,candidate_nodes):
+
+        candidate_nodes = prev_candidate_nodes + candidate_nodes
+
+        coord = self.get_node_coord(node)
+
+        candidate_coord = self.get_node_coord(candidate_nodes)
+
+        n_candidates = len(candidate_coord)
+
+        deltacs = [(pt[0] - coord[0]) for pt in candidate_coord]
+        deltars = [(pt[1] - coord[1]) for pt in candidate_coord]
+        
+        ne = [i for i in range(n_candidates) if deltacs[i]>=0 and deltars[i]>=0 and str(candidate_nodes[i]) != str(node)]
+        nw = [i for i in range(n_candidates) if deltacs[i]<0 and deltars[i]>0 and str(candidate_nodes[i]) != str(node)]
+        sw = [i for i in range(n_candidates) if deltacs[i]<0 and deltars[i]<=0 and str(candidate_nodes[i]) != str(node)]
+        se = [i for i in range(n_candidates) if deltacs[i]>=0 and deltars[i]<0 and str(candidate_nodes[i]) != str(node)]
+
+        if (len(sw + se)) > 0:
+
+            filtered_idx = self.sorted_deltac_over_minus_deltar(
+                self,(sw+se),deltacs,deltars)
+
+            chosen_node_index = filtered_idx[0]
+
+            update_ref_node = True
+
+        elif len(nw) > 0 :
+
+            filtered_idx = self.sorted_deltac_over_minus_deltar(
+                nw,deltacs,deltars)
+
+            chosen_node_index = filtered_idx[-1]
+
+            update_ref_node = False
+
+        else:
+
+            filtered_idx = self.sorted_deltac_over_minus_deltar(
+                ne,deltacs,deltars)
+
+            chosen_node_index = filtered_idx[0]
+
+            update_ref_node = False             
+
+        return chosen_node_index, update_ref_node
+
+
+    def sorted_deltac_over_minus_deltar(self,ii,deltacs,deltars):
+
+        dists = []
+
+        for i in (ii):
+
+            if (np.sign(deltacs[i]) == np.sign(deltars[i])) and (deltars[i] == 0):
+                dist = np.inf
+            elif (np.sign(deltacs[i]) != np.sign(deltars[i])) and (deltars[i] == 0):
+                dist = - np.inf
+            else:
+                dist = (deltacs[i])/(-deltars[i])
+
+            dists.append(dist)
+    
+        idx = np.argsort(dists)
+    
+        return idx
+
 
     def find_candidates_in_chull(self,candidate_nodes):
 
@@ -249,9 +324,6 @@ class GLCH:
 
 
     def make_choice_tie_break(self,node,candidate_nodes):
-
-        if all([str(n) == str(node) for n in candidate_nodes]):
-            return -1
 
         dists = []
 
@@ -281,9 +353,6 @@ class GLCH:
                 -1 if all options are equal to the source node
         """
 
-        if all([str(n) == str(node) for n in candidate_nodes]):
-            return -1
-
         filtered_nodes = [n for n in candidate_nodes if str(n) != str(node)]
 
         candidates_in_chull = self.find_candidates_in_chull(filtered_nodes)
@@ -298,7 +367,7 @@ class GLCH:
 
             chosen_node_index = self.make_choice_tie_break(node,candidate_nodes)
 
-        return len(prev_candidate_nodes) + chosen_node_index
+        return len(prev_candidate_nodes) + chosen_node_index, True
 
 
 def build_tree(data,possible_values,x_axis,y_axis,initial_values,to_str_method,start="left",scale_x=1,scale_y=1,debug=True):
