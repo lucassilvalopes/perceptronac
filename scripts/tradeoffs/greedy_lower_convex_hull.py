@@ -209,10 +209,12 @@ class GLCH:
                 candidate_nodes.append(node_p)
             node.children = candidate_nodes
 
+            print(str(node),[str(n) for n in candidate_nodes ])
+
             if all([str(n) == str(node) for n in candidate_nodes]):
                 break
 
-            chosen_node_index,update_ref_node = self.make_choice(ref_node,prev_candidate_nodes,candidate_nodes)
+            chosen_node_index,update_ref_node = self.make_choice_2(ref_node,prev_candidate_nodes,candidate_nodes)
 
             if chosen_node_index >= len(prev_candidate_nodes):
                 chosen_node = candidate_nodes[chosen_node_index - len(prev_candidate_nodes)]
@@ -254,7 +256,7 @@ class GLCH:
         if (len(sw + se)) > 0:
 
             filtered_idx = self.sorted_deltac_over_minus_deltar(
-                self,(sw+se),deltacs,deltars)
+                (sw+se),deltacs,deltars)
 
             chosen_node_index = filtered_idx[0]
 
