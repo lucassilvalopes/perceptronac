@@ -209,8 +209,6 @@ class GLCH:
                 candidate_nodes.append(node_p)
             node.children = candidate_nodes
 
-            print(str(node),[str(n) for n in candidate_nodes ])
-
             if all([str(n) == str(node) for n in candidate_nodes]):
                 break
 
@@ -256,7 +254,7 @@ class GLCH:
         if (len(sw + se)) > 0:
 
             filtered_idx = self.sorted_deltac_over_minus_deltar(
-                (sw+se),deltacs,deltars)
+                (sw+se),deltacs,deltars,False)
 
             chosen_node_index = filtered_idx[0]
 
@@ -265,7 +263,7 @@ class GLCH:
         elif len(nw) > 0 :
 
             filtered_idx = self.sorted_deltac_over_minus_deltar(
-                nw,deltacs,deltars)
+                nw,deltacs,deltars,True)
 
             chosen_node_index = filtered_idx[-1]
 
@@ -274,7 +272,7 @@ class GLCH:
         else:
 
             filtered_idx = self.sorted_deltac_over_minus_deltar(
-                ne,deltacs,deltars)
+                ne,deltacs,deltars,True)
 
             chosen_node_index = filtered_idx[0]
 
@@ -283,16 +281,22 @@ class GLCH:
         return chosen_node_index, update_ref_node
 
 
-    def sorted_deltac_over_minus_deltar(self,ii,deltacs,deltars):
+    def sorted_deltac_over_minus_deltar(self,ii,deltacs,deltars,top_half):
 
         dists = []
 
         for i in (ii):
 
-            if (np.sign(deltacs[i]) == np.sign(deltars[i])) and (deltars[i] == 0):
-                dist = np.inf
-            elif (np.sign(deltacs[i]) != np.sign(deltars[i])) and (deltars[i] == 0):
-                dist = - np.inf
+            if deltacs[i]<0 and (deltars[i] == 0):
+                if top_half:
+                    dist = np.inf
+                else:
+                    dist = -np.inf
+            elif deltacs[i]>0 and (deltars[i] == 0):
+                if top_half:
+                    dist = -np.inf
+                else:
+                    dist = np.inf
             else:
                 dist = (deltacs[i])/(-deltars[i])
 
@@ -381,16 +385,20 @@ def build_tree(data,possible_values,x_axis,y_axis,initial_values,to_str_method,s
 def print_tree(node,file=None):
     # print("parent", node)
 
+    if len(node.children) == 0:
+        return
+
     children_str = ""
     for i,c in enumerate(node.children):
         prefix = "!" if i == node.chosen_child_index else ""
         children_str += f"{prefix}{c} "
-    # print("children",children_str,file=file)
+
     print(node,children_str,file=file)
 
     print("\n",file=file)
-    if node.chosen_child_index != -1:
-        print_tree(node.children[node.chosen_child_index],file=file)
+    
+    for i,c in enumerate(node.children):
+        print_tree(node.children[i],file=file)
 
 
 # %%
@@ -405,6 +413,9 @@ def paint_tree(ax,data,node,x_axis,y_axis,x_range,y_range):
 
     https://stackoverflow.com/questions/34017866/arrow-on-a-line-plot-with-matplotlib
     """
+
+    if len(node.children) == 0:
+        return
 
     for i,c in enumerate(node.children):
         color = "green" if i == node.chosen_child_index else "firebrick"
@@ -429,26 +440,43 @@ def paint_tree(ax,data,node,x_axis,y_axis,x_range,y_range):
                 # size=size
             )
 
-    if node.chosen_child_index != -1:
-        paint_tree(ax,data,node.children[node.chosen_child_index],x_axis,y_axis,x_range,y_range)
+    # if node.chosen_child_index != -1:
+    #     paint_tree(ax,data,node.children[node.chosen_child_index],x_axis,y_axis,x_range,y_range)
+    
+    for i,c in enumerate(node.children):
+        paint_tree(ax,data,node.children[i],x_axis,y_axis,x_range,y_range)
 
 # %%
 
-def tree_nodes(r, all_nodes = True):
+# def tree_nodes(r, all_nodes = True):
 
-    new_points = [str(r)]
+#     new_points = [str(r)]
 
-    n = r
-    while True:
-        for i,c in enumerate(n.children):
-            if (all_nodes) or (n.chosen_child_index == i):
-                new_points.append(str(c))
-        if n.chosen_child_index != -1:
-            n = n.children[n.chosen_child_index]
-        else:
-            break
+#     n = r
+#     while True:
+#         for i,c in enumerate(n.children):
+#             if (all_nodes) or (n.chosen_child_index == i):
+#                 new_points.append(str(c))
+#         if n.chosen_child_index != -1:
+#             n = n.children[n.chosen_child_index]
+#         else:
+#             break
 
-    return new_points
+#     return new_points
+
+
+def tree_nodes(n, new_points, all_nodes = True):
+
+    for i,c in enumerate(n.children):
+        if (all_nodes) or (n.chosen_child_index == i):
+            new_points.append(str(c))
+
+    for i,c in enumerate(n.children):
+        tree_nodes(n.children[i],new_points,all_nodes=all_nodes)
+
+
+
+
 
 # %%
 
@@ -495,7 +523,9 @@ def compute_hulls(data,rs,x_axis,y_axis):
     
     new_points = []
     for r in rs:
-        new_points += tree_nodes(r)
+        new_points_r = [str(r)]
+        tree_nodes(r,new_points_r)
+        new_points += new_points_r
     probe = data.loc[new_points,:]
     estimated_hull_points = probe.iloc[min_max_convex_hull(probe.loc[:,[x_axis,y_axis]].values.tolist()),:]
 
@@ -533,8 +563,10 @@ def paint_hull(true_hull_points,estimated_hull_points,x_axis,y_axis,ax):
 
 def paint_nodes(data,r,x_axis,y_axis,ax):
 
-    all_nodes = tree_nodes(r, all_nodes = True)
-    selected_nodes = tree_nodes(r, all_nodes = False)
+    all_nodes = [str(r)]
+    tree_nodes(r,all_nodes, all_nodes = True)
+    selected_nodes = [str(r)]
+    tree_nodes(r,selected_nodes, all_nodes = False)
     unselected_nodes = list(set(all_nodes) - set(selected_nodes))
 
     selected_nodes_xy = data.loc[selected_nodes,:]
@@ -906,24 +938,24 @@ if __name__ == "__main__":
         shutil.rmtree("debug")
     os.mkdir("debug")
 
-    glch_rate_vs_energy(
-        "/home/lucas/Documents/perceptronac/results/exp_1676160746/exp_1676160746_raw_values.csv",
-        "joules","data_bits/data_samples",
-        "rate_vs_energy",
-        # scale_x=1,scale_y=1,
-        # x_range=[135,175],
-        # y_range=[0.115,0.145]
-    )
+    # glch_rate_vs_energy(
+    #     "/home/lucas/Documents/perceptronac/results/exp_1676160746/exp_1676160746_raw_values.csv",
+    #     "joules","data_bits/data_samples",
+    #     "rate_vs_energy",
+    #     # scale_x=1,scale_y=1,
+    #     # x_range=[135,175],
+    #     # y_range=[0.115,0.145]
+    # )
 
-    glch_rate_vs_energy(
-        "/home/lucas/Documents/perceptronac/results/exp_1676160746/exp_1676160746_raw_values.csv",
-        "joules","data_bits/data_samples",
-        "rate_vs_energy_noisy",
-        # scale_x=1,scale_y=1,
-        # x_range=[140,180],
-        # y_range=None,
-        remove_noise=False
-    )
+    # glch_rate_vs_energy(
+    #     "/home/lucas/Documents/perceptronac/results/exp_1676160746/exp_1676160746_raw_values.csv",
+    #     "joules","data_bits/data_samples",
+    #     "rate_vs_energy_noisy",
+    #     # scale_x=1,scale_y=1,
+    #     # x_range=[140,180],
+    #     # y_range=None,
+    #     remove_noise=False
+    # )
 
     glch_rate_vs_params(
         "/home/lucas/Documents/perceptronac/results/exp_1676160746/exp_1676160746_static_rate_x_power_values.csv",
@@ -935,46 +967,46 @@ if __name__ == "__main__":
         x_in_log_scale=True
     )
 
-    glch_rate_vs_dist(
-        "/home/lucas/Documents/perceptronac/scripts/tradeoffs/bpp-mse-psnr-loss-flops-params_bmshj2018-factorized_10000-epochs_L-2e-2-1e-2-5e-3_N-32-64-96-128-160-192-224_M-32-64-96-128-160-192-224-256-288-320.csv",
-        "bpp_loss","mse_loss",
-        # scale_x=1,scale_y=1,
-        # x_range=[0.1,1.75],
-        # y_range=[0.001,0.0045]
-    )
+    # glch_rate_vs_dist(
+    #     "/home/lucas/Documents/perceptronac/scripts/tradeoffs/bpp-mse-psnr-loss-flops-params_bmshj2018-factorized_10000-epochs_L-2e-2-1e-2-5e-3_N-32-64-96-128-160-192-224_M-32-64-96-128-160-192-224-256-288-320.csv",
+    #     "bpp_loss","mse_loss",
+    #     # scale_x=1,scale_y=1,
+    #     # x_range=[0.1,1.75],
+    #     # y_range=[0.001,0.0045]
+    # )
 
-    glch_rate_vs_dist_2(
-        "/home/lucas/Documents/perceptronac/scripts/tradeoffs/bpp-mse-psnr-loss-flops-params_bmshj2018-factorized_10000-epochs_L-2e-2-1e-2-5e-3_N-32-64-96-128-160-192-224_M-32-64-96-128-160-192-224-256-288-320.csv",
-        "bpp_loss","mse_loss",#1,1,
-        # x_range=[0.1,1.75],
-        # y_range=[0.001,0.0045],
-        start="right"
-    )
+    # glch_rate_vs_dist_2(
+    #     "/home/lucas/Documents/perceptronac/scripts/tradeoffs/bpp-mse-psnr-loss-flops-params_bmshj2018-factorized_10000-epochs_L-2e-2-1e-2-5e-3_N-32-64-96-128-160-192-224_M-32-64-96-128-160-192-224-256-288-320.csv",
+    #     "bpp_loss","mse_loss",#1,1,
+    #     # x_range=[0.1,1.75],
+    #     # y_range=[0.001,0.0045],
+    #     start="right"
+    # )
 
-    glch_rate_vs_dist(
-        "/home/lucas/Documents/perceptronac/scripts/tradeoffs/bpp-mse-psnr-loss-flops-params_bmshj2018-factorized_10000-epochs_L-2e-2-1e-2-5e-3_N-32-64-96-128-160-192-224_M-32-64-96-128-160-192-224-256-288-320.csv",
-        "flops","loss",
-        # scale_x=1e10,scale_y=1,
-        # x_range=[-0.2*1e10,3.75*1e10],
-        # y_range=[1.1,3.1]
-    )
+    # glch_rate_vs_dist(
+    #     "/home/lucas/Documents/perceptronac/scripts/tradeoffs/bpp-mse-psnr-loss-flops-params_bmshj2018-factorized_10000-epochs_L-2e-2-1e-2-5e-3_N-32-64-96-128-160-192-224_M-32-64-96-128-160-192-224-256-288-320.csv",
+    #     "flops","loss",
+    #     # scale_x=1e10,scale_y=1,
+    #     # x_range=[-0.2*1e10,3.75*1e10],
+    #     # y_range=[1.1,3.1]
+    # )
 
-    glch_rate_vs_dist(
-        "/home/lucas/Documents/perceptronac/scripts/tradeoffs/bpp-mse-psnr-loss-flops-params_bmshj2018-factorized_10000-epochs_L-2e-2-1e-2-5e-3_N-32-64-96-128-160-192-224_M-32-64-96-128-160-192-224-256-288-320.csv",
-        "params","loss",
-        # scale_x=1e6,scale_y=1,
-        # x_range=[-0.1*1e6,4*1e6],
-        # y_range=[1.1,3.1]
-    )
+    # glch_rate_vs_dist(
+    #     "/home/lucas/Documents/perceptronac/scripts/tradeoffs/bpp-mse-psnr-loss-flops-params_bmshj2018-factorized_10000-epochs_L-2e-2-1e-2-5e-3_N-32-64-96-128-160-192-224_M-32-64-96-128-160-192-224-256-288-320.csv",
+    #     "params","loss",
+    #     # scale_x=1e6,scale_y=1,
+    #     # x_range=[-0.1*1e6,4*1e6],
+    #     # y_range=[1.1,3.1]
+    # )
 
-    glch_model_bits_vs_data_bits(
-        "/home/lucas/Documents/perceptronac/results/exp_1676160183/exp_1676160183_model_bits_x_data_bits_values.csv",
-        "model_bits/data_samples","data_bits/data_samples",
-        # scale_x=1,scale_y=1,
-        # x_range=[-0.1,0.8],
-        # y_range=None,
-        x_in_log_scale=True
-    )
+    # glch_model_bits_vs_data_bits(
+    #     "/home/lucas/Documents/perceptronac/results/exp_1676160183/exp_1676160183_model_bits_x_data_bits_values.csv",
+    #     "model_bits/data_samples","data_bits/data_samples",
+    #     # scale_x=1,scale_y=1,
+    #     # x_range=[-0.1,0.8],
+    #     # y_range=None,
+    #     x_in_log_scale=True
+    # )
 
 
 
