@@ -191,6 +191,18 @@ class GLCH:
     
     # def teardown_build_tree(self):
 
+    def plot_choice(self,node,prev_candidate_nodes,candidate_nodes,chosen_node_index):
+        if chosen_node_index >= len(prev_candidate_nodes):
+            chosen_node_index = chosen_node_index - len(prev_candidate_nodes)
+        else:
+            candidate_nodes = [prev_candidate_nodes[chosen_node_index]] + candidate_nodes
+            chosen_node_index = 0
+        node_coord = self.get_node_coord(node)
+        candidate_coord = self.get_node_coord(candidate_nodes)
+        plot_choice(
+            self.data,self.x_axis,self.y_axis,
+            node,node_coord,candidate_nodes,candidate_coord,chosen_node_index)
+
     def build_tree(self):
 
         root = self.setup_build_tree()
@@ -213,6 +225,9 @@ class GLCH:
                 break
 
             chosen_node_index,update_ref_node = self.make_choice_2(ref_node,prev_candidate_nodes,candidate_nodes)
+
+            if self.debug:
+                self.plot_choice(node,prev_candidate_nodes,candidate_nodes,chosen_node_index)
 
             if chosen_node_index >= len(prev_candidate_nodes):
                 chosen_node = candidate_nodes[chosen_node_index - len(prev_candidate_nodes)]
