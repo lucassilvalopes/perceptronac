@@ -191,7 +191,9 @@ class GLCH:
     
     # def teardown_build_tree(self):
 
-    def plot_choice(self,node,prev_candidate_nodes,candidate_nodes,chosen_node_index):
+    def print_debug(self,node,prev_candidate_nodes,candidate_nodes,chosen_node_index):
+        if not self.debug:
+            return
         if chosen_node_index >= len(prev_candidate_nodes):
             chosen_node_index = chosen_node_index - len(prev_candidate_nodes)
         else:
@@ -201,9 +203,23 @@ class GLCH:
         candidate_coord = self.get_node_coord(candidate_nodes)
         plot_choice(
             self.data,self.x_axis,self.y_axis,
-            node,node_coord,candidate_nodes,candidate_coord,chosen_node_index)
+            node,node_coord,candidate_nodes,candidate_coord,chosen_node_index,txt_file=self.txt_file)
+
+    def begin_debug(self):
+        if not self.debug:
+            return
+        self.txt_file = open_debug_txt_file(self.x_axis,self.y_axis)
+        if not os.path.isdir("debug"):
+            os.mkdir("debug")
+
+    def end_debug(self):
+        if not self.debug:
+            return
+        close_debug_txt_file(self.txt_file)
 
     def build_tree(self):
+
+        self.begin_debug()
 
         root = self.setup_build_tree()
 
@@ -227,7 +243,7 @@ class GLCH:
             chosen_node_index,update_ref_node = self.make_choice_2(ref_node,prev_candidate_nodes,candidate_nodes)
 
             if self.debug:
-                self.plot_choice(node,prev_candidate_nodes,candidate_nodes,chosen_node_index)
+                self.print_debug(node,prev_candidate_nodes,candidate_nodes,chosen_node_index)
 
             if chosen_node_index >= len(prev_candidate_nodes):
                 chosen_node = candidate_nodes[chosen_node_index - len(prev_candidate_nodes)]
@@ -244,6 +260,8 @@ class GLCH:
 
             prev_candidate_nodes = [n for n in prev_candidate_nodes if str(n) != str(chosen_node)]
             prev_candidate_nodes += [n for n in candidate_nodes if str(n) != str(chosen_node)]
+
+        self.end_debug()
 
         return root
 
