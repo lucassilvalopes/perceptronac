@@ -86,6 +86,9 @@ def plot_choice_2(x_axis,y_axis,node,node_coord,candidate_nodes,candidate_coord,
 
     for i in (sorted(set(range(npts)) - {chosen_node_index}) + [chosen_node_index]):
 
+        if str(candidate_nodes[i]) == str(node):
+            continue
+
         pt = candidate_coord[i]
 
         clr = ("g" if i == chosen_node_index else "r")
@@ -124,6 +127,9 @@ def plot_choice(data,x_axis,y_axis,node,node_coord,candidate_nodes,candidate_coo
     npts = len(candidate_coord)
 
     for i in (sorted(set(range(npts)) - {chosen_node_index}) + [chosen_node_index]):
+
+        if str(candidate_nodes[i]) == str(node):
+            continue
 
         pt = candidate_coord[i]
 
