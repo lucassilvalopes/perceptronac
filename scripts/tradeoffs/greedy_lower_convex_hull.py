@@ -76,19 +76,26 @@ def plot_choice_2(x_axis,y_axis,node,node_coord,candidate_nodes,candidate_coord,
 
     fig, ax = plt.subplots(nrows=1, ncols=1)
 
-    ax.text(x=node_coord[0],y=node_coord[1],s=str(node))
+    ax.text(x=node_coord[0],y=node_coord[1],s=str(node),color="black")
 
     print(f"-1,-1,-1,-1,-1",file=txt_file)
 
-    ax.plot([node_coord[0]],[node_coord[1]],linestyle="",color="yellow",marker="o")
+    ax.plot([node_coord[0]],[node_coord[1]],linestyle="",color="black",marker="o")
 
-    for i,pt in enumerate(candidate_coord):
+    npts = len(candidate_coord)
+
+    for i in (sorted(set(range(npts)) - {chosen_node_index}) + [chosen_node_index]):
+
+        pt = candidate_coord[i]
+
+        clr = ("g" if i == chosen_node_index else "r")
+
         ax.plot(
             [node_coord[0],pt[0]],
             [node_coord[1],pt[1]],
-            color=("g" if i == chosen_node_index else "r") )
+            color= clr)
         
-        ax.text(x=pt[0],y=pt[1],s=f"{str(candidate_nodes[i])}")
+        ax.text(x=pt[0],y=pt[1],s=f"{str(candidate_nodes[i])}",color=clr)
 
         print(f"{node_coord[0]},{node_coord[1]},{pt[0]},{pt[1]},{(1 if i == chosen_node_index else 0)}",file=txt_file)
     ax.set_xlabel(x_axis)
@@ -108,20 +115,27 @@ def plot_choice(data,x_axis,y_axis,node,node_coord,candidate_nodes,candidate_coo
 
     ax.plot(data[x_axis].values, data[y_axis].values,marker="x",linestyle="")
 
-    ax.text(x=node_coord[0],y=node_coord[1],s=str(node))
+    ax.text(x=node_coord[0],y=node_coord[1],s=str(node),color="black")
 
     print(f"-1,-1,-1,-1,-1",file=txt_file)
 
-    ax.plot([node_coord[0]],[node_coord[1]],linestyle="",color="yellow",marker="o")
+    ax.plot([node_coord[0]],[node_coord[1]],linestyle="",color="black",marker="o")
 
-    for i,pt in enumerate(candidate_coord):
+    npts = len(candidate_coord)
+
+    for i in (sorted(set(range(npts)) - {chosen_node_index}) + [chosen_node_index]):
+
+        pt = candidate_coord[i]
+
+        clr = ("g" if i == chosen_node_index else "r")
+
         ax.plot(
             [node_coord[0],pt[0]],
             [node_coord[1],pt[1]],
-            color=("g" if i == chosen_node_index else "r") )
+            color= clr)
 
         ax.text(x=pt[0],y=pt[1],s=f"{str(candidate_nodes[i])}" + \
-                (f",d={dists[i]}" if (dists is not None) else ""))
+                (f",d={dists[i]}" if (dists is not None) else ""),color=clr)
 
         print(f"{node_coord[0]},{node_coord[1]},{pt[0]},{pt[1]},{(1 if i == chosen_node_index else 0)}",file=txt_file)
 
