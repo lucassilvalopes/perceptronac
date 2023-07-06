@@ -37,7 +37,7 @@ class Node:
         self.params = kwargs
         self.children = []
         self.parent = None
-        self.chosen_child_index = -1
+        self.chosen_child_indices = []
 
     def set_parent(self,node):
         self.parent = node
@@ -80,6 +80,8 @@ def plot_choice_2(x_axis,y_axis,node,node_coord,candidate_nodes,candidate_coord,
 
     print(f"-1,-1,-1,-1,-1",file=txt_file)
 
+    ax.plot([node_coord[0]],[node_coord[1]],linestyle="",color="yellow",marker="o")
+
     for i,pt in enumerate(candidate_coord):
         ax.plot(
             [node_coord[0],pt[0]],
@@ -92,15 +94,11 @@ def plot_choice_2(x_axis,y_axis,node,node_coord,candidate_nodes,candidate_coord,
     ax.set_xlabel(x_axis)
     ax.set_ylabel(y_axis)
 
-    if title is not None:
-        ax.set_title(title)
-
-    # fig.show()
-
-    if len([n for n in candidate_nodes if (str(n) != str(node))]) > 1:
-
+    if title is None:
+        fig.show()
+    else:
         fig.savefig(
-            f"debug/{x_axis.replace('/','_over_')}_vs_{y_axis.replace('/','_over_')}-{'-'.join([str(c) for c in candidate_nodes])}.png", 
+            f"debug/{x_axis.replace('/','_over_')}_vs_{y_axis.replace('/','_over_')}_{title}.png", 
             dpi=300, facecolor='w', bbox_inches = "tight")
 
 
@@ -113,6 +111,8 @@ def plot_choice(data,x_axis,y_axis,node,node_coord,candidate_nodes,candidate_coo
     ax.text(x=node_coord[0],y=node_coord[1],s=str(node))
 
     print(f"-1,-1,-1,-1,-1",file=txt_file)
+
+    ax.plot([node_coord[0]],[node_coord[1]],linestyle="",color="yellow",marker="o")
 
     for i,pt in enumerate(candidate_coord):
         ax.plot(
@@ -128,15 +128,11 @@ def plot_choice(data,x_axis,y_axis,node,node_coord,candidate_nodes,candidate_coo
     ax.set_xlabel(x_axis)
     ax.set_ylabel(y_axis)
 
-    if title is not None:
-        ax.set_title(title)
-
-    # fig.show()
-
-    if len([n for n in candidate_nodes if (str(n) != str(node))]) > 1:
-
+    if title is None:
+        fig.show()
+    else:
         fig.savefig(
-            f"debug/{x_axis.replace('/','_over_')}_vs_{y_axis.replace('/','_over_')}-{'-'.join([str(c) for c in candidate_nodes])}.png", 
+            f"debug/{x_axis.replace('/','_over_')}_vs_{y_axis.replace('/','_over_')}_{title}.png", 
             dpi=300, facecolor='w', bbox_inches = "tight")
 
 
@@ -191,7 +187,7 @@ class GLCH:
     
     # def teardown_build_tree(self):
 
-    def print_debug(self,node,prev_candidate_nodes,candidate_nodes,chosen_node_index):
+    def print_debug(self,node,prev_candidate_nodes,candidate_nodes,chosen_node_index,iteration):
         if not self.debug:
             return
         if chosen_node_index >= len(prev_candidate_nodes):
@@ -203,7 +199,7 @@ class GLCH:
         candidate_coord = self.get_node_coord(candidate_nodes)
         plot_choice(
             self.data,self.x_axis,self.y_axis,
-            node,node_coord,candidate_nodes,candidate_coord,chosen_node_index,txt_file=self.txt_file)
+            node,node_coord,candidate_nodes,candidate_coord,chosen_node_index,txt_file=self.txt_file,title=iteration)
 
     def begin_debug(self):
         if not self.debug:
@@ -229,6 +225,8 @@ class GLCH:
 
         prev_candidate_nodes = []
 
+        iteration = 0
+
         while True:
 
             candidate_nodes = []
@@ -242,8 +240,7 @@ class GLCH:
 
             chosen_node_index,update_ref_node = self.make_choice_2(ref_node,prev_candidate_nodes,candidate_nodes)
 
-            if self.debug:
-                self.print_debug(node,prev_candidate_nodes,candidate_nodes,chosen_node_index)
+            self.print_debug(node,prev_candidate_nodes,candidate_nodes,chosen_node_index,iteration)
 
             if chosen_node_index >= len(prev_candidate_nodes):
                 chosen_node = candidate_nodes[chosen_node_index - len(prev_candidate_nodes)]
@@ -252,7 +249,7 @@ class GLCH:
 
             self.nodes += candidate_nodes
 
-            chosen_node.parent.chosen_child_index = chosen_node.parent.children.index(chosen_node)
+            chosen_node.parent.chosen_child_indices.append( chosen_node.parent.children.index(chosen_node) )
             node = chosen_node
 
             if update_ref_node:
@@ -260,6 +257,8 @@ class GLCH:
 
             prev_candidate_nodes = [n for n in prev_candidate_nodes if str(n) != str(chosen_node)]
             prev_candidate_nodes += [n for n in candidate_nodes if str(n) != str(chosen_node)]
+
+            iteration += 1
 
         self.end_debug()
 
@@ -283,6 +282,9 @@ class GLCH:
         nw = [i for i in range(n_candidates) if deltacs[i]<0 and deltars[i]>0 and str(candidate_nodes[i]) != str(node)]
         sw = [i for i in range(n_candidates) if deltacs[i]<0 and deltars[i]<=0 and str(candidate_nodes[i]) != str(node)]
         se = [i for i in range(n_candidates) if deltacs[i]>=0 and deltars[i]<0 and str(candidate_nodes[i]) != str(node)]
+
+        ne = [i for i in ne if i >= len(prev_candidate_nodes)]
+        nw = [i for i in nw if i >= len(prev_candidate_nodes)]
 
         if (len(sw + se)) > 0:
 
@@ -335,7 +337,9 @@ class GLCH:
 
             dists.append(dist)
     
-        idx = np.argsort(dists)
+        # idx = np.argsort(dists)
+
+        idx = [z[0] for z in sorted(list(zip(ii,dists)),key=lambda x: x[1])]
     
         return idx
 
@@ -423,7 +427,7 @@ def print_tree(node,file=None):
 
     children_str = ""
     for i,c in enumerate(node.children):
-        prefix = "!" if i == node.chosen_child_index else ""
+        prefix = "!" if i in node.chosen_child_indices else ""
         children_str += f"{prefix}{c} "
 
     print(node,children_str,file=file)
@@ -451,7 +455,7 @@ def paint_tree(ax,data,node,x_axis,y_axis,x_range,y_range):
         return
 
     for i,c in enumerate(node.children):
-        color = "green" if i == node.chosen_child_index else "firebrick"
+        color = "green" if i in node.chosen_child_indices else "firebrick"
         line_x_vec = data.loc[[str(node), str(c)],x_axis].values
         line_y_vec = data.loc[[str(node), str(c)],y_axis].values
 
@@ -472,36 +476,16 @@ def paint_tree(ax,data,node,x_axis,y_axis,x_range,y_range):
                 arrowprops=dict(arrowstyle="->", color=color),
                 # size=size
             )
-
-    # if node.chosen_child_index != -1:
-    #     paint_tree(ax,data,node.children[node.chosen_child_index],x_axis,y_axis,x_range,y_range)
     
     for i,c in enumerate(node.children):
         paint_tree(ax,data,node.children[i],x_axis,y_axis,x_range,y_range)
 
 # %%
 
-# def tree_nodes(r, all_nodes = True):
-
-#     new_points = [str(r)]
-
-#     n = r
-#     while True:
-#         for i,c in enumerate(n.children):
-#             if (all_nodes) or (n.chosen_child_index == i):
-#                 new_points.append(str(c))
-#         if n.chosen_child_index != -1:
-#             n = n.children[n.chosen_child_index]
-#         else:
-#             break
-
-#     return new_points
-
-
 def tree_nodes(n, new_points, all_nodes = True):
 
     for i,c in enumerate(n.children):
-        if (all_nodes) or (n.chosen_child_index == i):
+        if (all_nodes) or (i in n.chosen_child_indices):
             new_points.append(str(c))
 
     for i,c in enumerate(n.children):
