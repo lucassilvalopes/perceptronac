@@ -64,8 +64,8 @@ class Node:
 
 # %%
 
-def open_debug_txt_file(x_axis,y_axis):
-    txt_file = open(f"debug/transitions_{x_axis.replace('/','_over_')}_vs_{y_axis.replace('/','_over_')}.txt", 'w')
+def open_debug_txt_file(title):
+    txt_file = open(f"debug/transitions_{title}.txt", 'w')
     print(f"src_x,src_y,dst_x,dst_y,taken",file=txt_file)
     return txt_file
 
@@ -108,7 +108,7 @@ def plot_choice_2(x_axis,y_axis,node,node_coord,candidate_nodes,candidate_coord,
         fig.show()
     else:
         fig.savefig(
-            f"debug/{x_axis.replace('/','_over_')}_vs_{y_axis.replace('/','_over_')}_{title}.png", 
+            f"debug/{title}.png", 
             dpi=300, facecolor='w', bbox_inches = "tight")
 
 
@@ -152,13 +152,16 @@ def plot_choice(data,x_axis,y_axis,node,node_coord,candidate_nodes,candidate_coo
         fig.show()
     else:
         fig.savefig(
-            f"debug/{x_axis.replace('/','_over_')}_vs_{y_axis.replace('/','_over_')}_{title}.png", 
+            f"debug/{title}.png", 
             dpi=300, facecolor='w', bbox_inches = "tight")
 
 
 class GLCH:
 
-    def __init__(self,data,possible_values,x_axis,y_axis,initial_values,to_str_method,start="left",scale_x=1,scale_y=1,debug=True):
+    def __init__(
+        self,data,possible_values,x_axis,y_axis,initial_values,to_str_method,start="left",scale_x=1,scale_y=1,debug=True,
+        title=None
+    ):
         """
         data = 
         |---------------|joules|data_bits/data_samples|  
@@ -189,6 +192,10 @@ class GLCH:
         self.scale_x = scale_x
         self.scale_y = scale_y
         self.debug = debug
+        if title is None:
+            self.title = f"{x_axis.replace('/','_over_')}_vs_{y_axis.replace('/','_over_')}"
+        else:
+            self.title=title
 
     def get_node_coord(self,node):
         if isinstance(node,list):
@@ -219,12 +226,13 @@ class GLCH:
         candidate_coord = self.get_node_coord(candidate_nodes)
         plot_choice(
             self.data,self.x_axis,self.y_axis,
-            node,node_coord,candidate_nodes,candidate_coord,chosen_node_index,txt_file=self.txt_file,title=iteration)
+            node,node_coord,candidate_nodes,candidate_coord,chosen_node_index,txt_file=self.txt_file,
+            title=f"{self.title}_{iteration}")
 
     def begin_debug(self):
         if not self.debug:
             return
-        self.txt_file = open_debug_txt_file(self.x_axis,self.y_axis)
+        self.txt_file = open_debug_txt_file(self.title)
         if not os.path.isdir("debug"):
             os.mkdir("debug")
 
@@ -433,8 +441,8 @@ class GLCH:
         return len(prev_candidate_nodes) + chosen_node_index, True
 
 
-def build_tree(data,possible_values,x_axis,y_axis,initial_values,to_str_method,start="left",scale_x=1,scale_y=1,debug=True):
-    return GLCH(data,possible_values,x_axis,y_axis,initial_values,to_str_method,start,scale_x,scale_y,debug).build_tree()
+def build_tree(data,possible_values,x_axis,y_axis,initial_values,to_str_method,start="left",scale_x=1,scale_y=1,debug=True,title=None):
+    return GLCH(data,possible_values,x_axis,y_axis,initial_values,to_str_method,start,scale_x,scale_y,debug,title).build_tree()
 
 
 
@@ -775,7 +783,7 @@ def glch_rate_vs_energy(csv_path,x_axis,y_axis,title,scale_x=None,scale_y=None,x
         widths = [32,params["h1"],params["h2"],1]
         return '_'.join(map(lambda x: f"{x:03d}",widths))
 
-    r = build_tree(data,possible_values,x_axis,y_axis,initial_values,to_str_method,scale_x=scale_x,scale_y=scale_y)
+    r = build_tree(data,possible_values,x_axis,y_axis,initial_values,to_str_method,scale_x=scale_x,scale_y=scale_y,title=title)
 
     save_all_data(data,r,x_axis,y_axis,x_range,y_range,title,x_in_log_scale)
 
@@ -804,7 +812,7 @@ def glch_rate_vs_params(csv_path,x_axis,y_axis,title,scale_x=None,scale_y=None,x
         widths = [32,params["h1"],params["h2"],1]
         return '_'.join(map(lambda x: f"{x:03d}",widths))
 
-    r = build_tree(data,possible_values,x_axis,y_axis,initial_values,to_str_method,scale_x=scale_x,scale_y=scale_y)
+    r = build_tree(data,possible_values,x_axis,y_axis,initial_values,to_str_method,scale_x=scale_x,scale_y=scale_y,title=title)
 
     save_all_data(data,r,x_axis,y_axis,x_range,y_range,title,x_in_log_scale)
 
@@ -975,24 +983,24 @@ if __name__ == "__main__":
         shutil.rmtree("debug")
     os.mkdir("debug")
 
-    # glch_rate_vs_energy(
-    #     "/home/lucas/Documents/perceptronac/results/exp_1676160746/exp_1676160746_raw_values.csv",
-    #     "joules","data_bits/data_samples",
-    #     "rate_vs_energy",
-    #     # scale_x=1,scale_y=1,
-    #     # x_range=[135,175],
-    #     # y_range=[0.115,0.145]
-    # )
+    glch_rate_vs_energy(
+        "/home/lucas/Documents/perceptronac/results/exp_1676160746/exp_1676160746_raw_values.csv",
+        "joules","data_bits/data_samples",
+        "rate_vs_energy",
+        # scale_x=1,scale_y=1,
+        # x_range=[135,175],
+        # y_range=[0.115,0.145]
+    )
 
-    # glch_rate_vs_energy(
-    #     "/home/lucas/Documents/perceptronac/results/exp_1676160746/exp_1676160746_raw_values.csv",
-    #     "joules","data_bits/data_samples",
-    #     "rate_vs_energy_noisy",
-    #     # scale_x=1,scale_y=1,
-    #     # x_range=[140,180],
-    #     # y_range=None,
-    #     remove_noise=False
-    # )
+    glch_rate_vs_energy(
+        "/home/lucas/Documents/perceptronac/results/exp_1676160746/exp_1676160746_raw_values.csv",
+        "joules","data_bits/data_samples",
+        "rate_vs_energy_noisy",
+        # scale_x=1,scale_y=1,
+        # x_range=[140,180],
+        # y_range=None,
+        remove_noise=False
+    )
 
     glch_rate_vs_params(
         "/home/lucas/Documents/perceptronac/results/exp_1676160746/exp_1676160746_static_rate_x_power_values.csv",
@@ -1004,13 +1012,13 @@ if __name__ == "__main__":
         x_in_log_scale=True
     )
 
-    # glch_rate_vs_dist(
-    #     "/home/lucas/Documents/perceptronac/scripts/tradeoffs/bpp-mse-psnr-loss-flops-params_bmshj2018-factorized_10000-epochs_L-2e-2-1e-2-5e-3_N-32-64-96-128-160-192-224_M-32-64-96-128-160-192-224-256-288-320.csv",
-    #     "bpp_loss","mse_loss",
-    #     # scale_x=1,scale_y=1,
-    #     # x_range=[0.1,1.75],
-    #     # y_range=[0.001,0.0045]
-    # )
+    glch_rate_vs_dist(
+        "/home/lucas/Documents/perceptronac/scripts/tradeoffs/bpp-mse-psnr-loss-flops-params_bmshj2018-factorized_10000-epochs_L-2e-2-1e-2-5e-3_N-32-64-96-128-160-192-224_M-32-64-96-128-160-192-224-256-288-320.csv",
+        "bpp_loss","mse_loss",
+        # scale_x=1,scale_y=1,
+        # x_range=[0.1,1.75],
+        # y_range=[0.001,0.0045]
+    )
 
     # glch_rate_vs_dist_2(
     #     "/home/lucas/Documents/perceptronac/scripts/tradeoffs/bpp-mse-psnr-loss-flops-params_bmshj2018-factorized_10000-epochs_L-2e-2-1e-2-5e-3_N-32-64-96-128-160-192-224_M-32-64-96-128-160-192-224-256-288-320.csv",
@@ -1020,30 +1028,30 @@ if __name__ == "__main__":
     #     start="right"
     # )
 
-    # glch_rate_vs_dist(
-    #     "/home/lucas/Documents/perceptronac/scripts/tradeoffs/bpp-mse-psnr-loss-flops-params_bmshj2018-factorized_10000-epochs_L-2e-2-1e-2-5e-3_N-32-64-96-128-160-192-224_M-32-64-96-128-160-192-224-256-288-320.csv",
-    #     "flops","loss",
-    #     # scale_x=1e10,scale_y=1,
-    #     # x_range=[-0.2*1e10,3.75*1e10],
-    #     # y_range=[1.1,3.1]
-    # )
+    glch_rate_vs_dist(
+        "/home/lucas/Documents/perceptronac/scripts/tradeoffs/bpp-mse-psnr-loss-flops-params_bmshj2018-factorized_10000-epochs_L-2e-2-1e-2-5e-3_N-32-64-96-128-160-192-224_M-32-64-96-128-160-192-224-256-288-320.csv",
+        "flops","loss",
+        # scale_x=1e10,scale_y=1,
+        # x_range=[-0.2*1e10,3.75*1e10],
+        # y_range=[1.1,3.1]
+    )
 
-    # glch_rate_vs_dist(
-    #     "/home/lucas/Documents/perceptronac/scripts/tradeoffs/bpp-mse-psnr-loss-flops-params_bmshj2018-factorized_10000-epochs_L-2e-2-1e-2-5e-3_N-32-64-96-128-160-192-224_M-32-64-96-128-160-192-224-256-288-320.csv",
-    #     "params","loss",
-    #     # scale_x=1e6,scale_y=1,
-    #     # x_range=[-0.1*1e6,4*1e6],
-    #     # y_range=[1.1,3.1]
-    # )
+    glch_rate_vs_dist(
+        "/home/lucas/Documents/perceptronac/scripts/tradeoffs/bpp-mse-psnr-loss-flops-params_bmshj2018-factorized_10000-epochs_L-2e-2-1e-2-5e-3_N-32-64-96-128-160-192-224_M-32-64-96-128-160-192-224-256-288-320.csv",
+        "params","loss",
+        # scale_x=1e6,scale_y=1,
+        # x_range=[-0.1*1e6,4*1e6],
+        # y_range=[1.1,3.1]
+    )
 
-    # glch_model_bits_vs_data_bits(
-    #     "/home/lucas/Documents/perceptronac/results/exp_1676160183/exp_1676160183_model_bits_x_data_bits_values.csv",
-    #     "model_bits/data_samples","data_bits/data_samples",
-    #     # scale_x=1,scale_y=1,
-    #     # x_range=[-0.1,0.8],
-    #     # y_range=None,
-    #     x_in_log_scale=True
-    # )
+    glch_model_bits_vs_data_bits(
+        "/home/lucas/Documents/perceptronac/results/exp_1676160183/exp_1676160183_model_bits_x_data_bits_values.csv",
+        "model_bits/data_samples","data_bits/data_samples",
+        # scale_x=1,scale_y=1,
+        # x_range=[-0.1,0.8],
+        # y_range=None,
+        x_in_log_scale=True
+    )
 
 
 
