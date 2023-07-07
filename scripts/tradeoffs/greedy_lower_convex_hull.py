@@ -286,7 +286,8 @@ class GLCH:
                 ref_node = chosen_node
 
             prev_candidate_nodes = [n for n in prev_candidate_nodes if str(n) != str(chosen_node)]
-            prev_candidate_nodes += [n for n in candidate_nodes if str(n) != str(chosen_node)]
+            blacklist = {str(n) for n in prev_candidate_nodes}
+            prev_candidate_nodes += [n for n in candidate_nodes if (str(n) not in blacklist)]
 
             iteration += 1
 
