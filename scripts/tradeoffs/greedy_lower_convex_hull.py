@@ -463,7 +463,11 @@ def print_tree(node,file=None):
 
     children_str = ""
     for i,c in enumerate(node.children):
-        prefix = "!" if i in node.chosen_child_indices else ""
+        if i in node.chosen_child_indices:
+            prefix = ''.join(["!"] * (node.chosen_child_indices.index(i)+1) )
+        else:
+            prefix = ""
+        
         children_str += f"{prefix}{c} "
 
     print(node,children_str,file=file)
@@ -491,7 +495,13 @@ def paint_tree(ax,data,node,x_axis,y_axis,x_range,y_range):
         return
 
     for i,c in enumerate(node.children):
-        color = "green" if i in node.chosen_child_indices else "firebrick"
+        if i in node.chosen_child_indices:
+            if node.chosen_child_indices.index(i) == 0:
+                color = "green"
+            else:
+                color = "darkgoldenrod"
+        else:
+            color = "firebrick"
         line_x_vec = data.loc[[str(node), str(c)],x_axis].values
         line_y_vec = data.loc[[str(node), str(c)],y_axis].values
 
@@ -518,15 +528,24 @@ def paint_tree(ax,data,node,x_axis,y_axis,x_range,y_range):
 
 # %%
 
-def tree_nodes(n, new_points, all_nodes = True):
+def tree_nodes(n, points, mode):
 
     for i,c in enumerate(n.children):
-        if (all_nodes) or (i in n.chosen_child_indices):
-            new_points.append(str(c))
+        if mode == "all":
+            points.append(str(c))
+        elif mode == "first":
+            if (len(n.chosen_child_indices) > 0) and (i == n.chosen_child_indices[0]):
+                points.append(str(c))
+        elif mode == "second":
+            if (i in n.chosen_child_indices) and (i != n.chosen_child_indices[0]):
+                points.append(str(c))
+        else:
+            raise ValueError(mode)
 
     for i,c in enumerate(n.children):
-        tree_nodes(n.children[i],new_points,all_nodes=all_nodes)
+        tree_nodes(n.children[i],points,mode)
 
+    return points
 
 
 
@@ -576,9 +595,8 @@ def compute_hulls(data,rs,x_axis,y_axis):
     
     new_points = []
     for r in rs:
-        new_points_r = [str(r)]
-        tree_nodes(r,new_points_r)
-        new_points += new_points_r
+        new_points += [str(r)]
+        new_points += tree_nodes(r,[],"all")
     probe = data.loc[new_points,:]
     estimated_hull_points = probe.iloc[min_max_convex_hull(probe.loc[:,[x_axis,y_axis]].values.tolist()),:]
 
@@ -616,15 +634,17 @@ def paint_hull(true_hull_points,estimated_hull_points,x_axis,y_axis,ax):
 
 def paint_nodes(data,r,x_axis,y_axis,ax):
 
-    all_nodes = [str(r)]
-    tree_nodes(r,all_nodes, all_nodes = True)
-    selected_nodes = [str(r)]
-    tree_nodes(r,selected_nodes, all_nodes = False)
-    unselected_nodes = list(set(all_nodes) - set(selected_nodes))
+    all_nodes = [str(r)] + tree_nodes(r,[], "all")
+    first_selected_nodes = [str(r)] + tree_nodes(r,[], "first")
+    second_selected_nodes = tree_nodes(r,[], "second")
+    
+    unselected_nodes = list((set(all_nodes) - set(first_selected_nodes)) - set(second_selected_nodes) )
 
-    selected_nodes_xy = data.loc[selected_nodes,:]
+    first_selected_nodes_xy = data.loc[first_selected_nodes,:]
+    second_selected_nodes_xy = data.loc[second_selected_nodes,:]
     unselected_nodes_xy = data.loc[unselected_nodes,:]
-    ax.plot(selected_nodes_xy[x_axis],selected_nodes_xy[y_axis],linestyle="",color="green",marker=".")
+    ax.plot(first_selected_nodes_xy[x_axis],first_selected_nodes_xy[y_axis],linestyle="",color="green",marker=".")
+    ax.plot(second_selected_nodes_xy[x_axis],second_selected_nodes_xy[y_axis],linestyle="",color="darkgoldenrod",marker=".")
     ax.plot(unselected_nodes_xy[x_axis],unselected_nodes_xy[y_axis],linestyle="",color="firebrick",marker=".")
 
 
