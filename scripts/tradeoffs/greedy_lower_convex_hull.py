@@ -148,6 +148,8 @@ def plot_choice(data,x_axis,y_axis,node,node_coord,candidate_nodes,candidate_coo
     ax.set_xlabel(x_axis)
     ax.set_ylabel(y_axis)
 
+    ax.set_title(f"{chosen_node_index} {str(candidate_nodes[chosen_node_index])}")
+
     if title is None:
         fig.show()
     else:
@@ -266,7 +268,7 @@ class GLCH:
             if all([str(n) == str(node) for n in candidate_nodes]):
                 break
 
-            chosen_node_index,update_ref_node = self.make_choice_2(ref_node,prev_candidate_nodes,candidate_nodes)
+            chosen_node_index,update_ref_node = self.make_choice_2(ref_node,node,prev_candidate_nodes,candidate_nodes)
 
             self.print_debug(node,prev_candidate_nodes,candidate_nodes,chosen_node_index,iteration)
 
@@ -293,53 +295,59 @@ class GLCH:
         return root
 
 
-    def make_choice_2(self,node,prev_candidate_nodes,candidate_nodes):
+    def make_choice_2(self,ref_node,node,prev_candidate_nodes,candidate_nodes):
 
-        candidate_nodes = prev_candidate_nodes + candidate_nodes
+        filtered_nodes = [n for n in candidate_nodes if str(n) != str(node)]
 
-        coord = self.get_node_coord(node)
+        all_candidate_nodes = prev_candidate_nodes + filtered_nodes
 
-        candidate_coord = self.get_node_coord(candidate_nodes)
+        coord = self.get_node_coord(ref_node)
+
+        candidate_coord = self.get_node_coord(all_candidate_nodes)
 
         n_candidates = len(candidate_coord)
 
         deltacs = [(pt[0] - coord[0]) for pt in candidate_coord]
         deltars = [(pt[1] - coord[1]) for pt in candidate_coord]
         
-        ne = [i for i in range(n_candidates) if deltacs[i]>=0 and deltars[i]>=0 and str(candidate_nodes[i]) != str(node)]
-        nw = [i for i in range(n_candidates) if deltacs[i]<0 and deltars[i]>0 and str(candidate_nodes[i]) != str(node)]
-        sw = [i for i in range(n_candidates) if deltacs[i]<0 and deltars[i]<=0 and str(candidate_nodes[i]) != str(node)]
-        se = [i for i in range(n_candidates) if deltacs[i]>=0 and deltars[i]<0 and str(candidate_nodes[i]) != str(node)]
+        ne = [i for i in range(n_candidates) if deltacs[i]>=0 and deltars[i]>=0]
+        nw = [i for i in range(n_candidates) if deltacs[i]<0 and deltars[i]>0]
+        sw = [i for i in range(n_candidates) if deltacs[i]<0 and deltars[i]<=0]
+        se = [i for i in range(n_candidates) if deltacs[i]>=0 and deltars[i]<0]
 
         ne = [i for i in ne if i >= len(prev_candidate_nodes)]
         nw = [i for i in nw if i >= len(prev_candidate_nodes)]
 
         if (len(sw + se)) > 0:
 
-            filtered_idx = self.sorted_deltac_over_minus_deltar(
+            sorted_idx = self.sorted_deltac_over_minus_deltar(
                 (sw+se),deltacs,deltars,False)
 
-            chosen_node_index = filtered_idx[0]
+            chosen_node_index = sorted_idx[0]
 
             update_ref_node = True
 
         elif len(nw) > 0 :
 
-            filtered_idx = self.sorted_deltac_over_minus_deltar(
+            sorted_idx = self.sorted_deltac_over_minus_deltar(
                 nw,deltacs,deltars,True)
 
-            chosen_node_index = filtered_idx[-1]
+            chosen_node_index = sorted_idx[-1]
 
             update_ref_node = False
 
         else:
 
-            filtered_idx = self.sorted_deltac_over_minus_deltar(
+            sorted_idx = self.sorted_deltac_over_minus_deltar(
                 ne,deltacs,deltars,True)
 
-            chosen_node_index = filtered_idx[0]
+            chosen_node_index = sorted_idx[0]
 
-            update_ref_node = False             
+            update_ref_node = False
+
+        if chosen_node_index >= len(prev_candidate_nodes):
+            chosen_node_index = len(prev_candidate_nodes) + \
+                candidate_nodes.index(filtered_nodes[chosen_node_index-len(prev_candidate_nodes)])
 
         return chosen_node_index, update_ref_node
 
