@@ -38,12 +38,16 @@ class Node:
         self.children = []
         self.parent = None
         self.chosen_child_indices = []
+        self.color = "red"
 
     def set_parent(self,node):
         self.parent = node
 
     def set_to_str_method(self,to_str_method):
         self.to_str_method = to_str_method
+    
+    def set_color(self,color):
+        self.color = color
 
     def auto_increment(self,param_name,possible_values):
         node = Node(**self.params.copy())
@@ -262,6 +266,8 @@ class GLCH:
             candidate_nodes = []
             for p in sorted(self.possible_values.keys()):
                 node_p = node.auto_increment(p,self.possible_values)
+                if str(node_p) == str(node):
+                    node_p.color = "green"
                 candidate_nodes.append(node_p)
             node.children = candidate_nodes
 
@@ -277,17 +283,17 @@ class GLCH:
             else:
                 chosen_node = prev_candidate_nodes[chosen_node_index]
 
-            self.nodes += candidate_nodes
+            self.nodes += candidate_nodes # TODO : what happens in case of duplicacy ?
 
+            chosen_node.color = "green"
             chosen_node.parent.chosen_child_indices.append( chosen_node.parent.children.index(chosen_node) )
             node = chosen_node
 
             if update_ref_node:
                 ref_node = chosen_node
 
-            prev_candidate_nodes = [n for n in prev_candidate_nodes if str(n) != str(chosen_node)]
-            blacklist = {str(n) for n in prev_candidate_nodes}
-            prev_candidate_nodes += [n for n in candidate_nodes if (str(n) not in blacklist)]
+            prev_candidate_nodes += candidate_nodes
+            # [n for i,n in enumerate(candidate_nodes) if i+len(prev_candidate_nodes) != chosen_node_index]
 
             iteration += 1
 
@@ -300,7 +306,11 @@ class GLCH:
 
         filtered_nodes = [n for n in candidate_nodes if str(n) != str(node)]
 
-        all_candidate_nodes = prev_candidate_nodes + filtered_nodes
+        blacklist = [str(n) for n in filtered_nodes]
+
+        filt_prev_candidate_nodes = [n for n in prev_candidate_nodes if (n.color == "red") and (str(n) not in blacklist)]
+
+        all_candidate_nodes = filt_prev_candidate_nodes + filtered_nodes
 
         coord = self.get_node_coord(ref_node)
 
@@ -316,8 +326,8 @@ class GLCH:
         sw = [i for i in range(n_candidates) if deltacs[i]<0 and deltars[i]<=0]
         se = [i for i in range(n_candidates) if deltacs[i]>=0 and deltars[i]<0]
 
-        ne = [i for i in ne if i >= len(prev_candidate_nodes)]
-        nw = [i for i in nw if i >= len(prev_candidate_nodes)]
+        ne = [i for i in ne if i >= len(filt_prev_candidate_nodes)]
+        nw = [i for i in nw if i >= len(filt_prev_candidate_nodes)]
 
         if (len(sw + se)) > 0:
 
@@ -346,9 +356,11 @@ class GLCH:
 
             update_ref_node = False
 
-        if chosen_node_index >= len(prev_candidate_nodes):
+        if chosen_node_index >= len(filt_prev_candidate_nodes):
             chosen_node_index = len(prev_candidate_nodes) + \
-                candidate_nodes.index(filtered_nodes[chosen_node_index-len(prev_candidate_nodes)])
+                candidate_nodes.index(filtered_nodes[chosen_node_index-len(filt_prev_candidate_nodes)])
+        else:
+            chosen_node_index = prev_candidate_nodes.index(filt_prev_candidate_nodes[chosen_node_index])
 
         return chosen_node_index, update_ref_node
 
