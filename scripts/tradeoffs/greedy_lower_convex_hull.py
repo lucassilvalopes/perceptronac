@@ -285,6 +285,9 @@ class GLCH:
 
             self.nodes += candidate_nodes # TODO : what happens in case of duplicacy ?
 
+            if chosen_node_index < len(prev_candidate_nodes):
+                node.chosen_child_indices.append(None)
+
             chosen_node.color = "green"
             chosen_node.parent.chosen_child_indices.append( chosen_node.parent.children.index(chosen_node) )
             node = chosen_node
