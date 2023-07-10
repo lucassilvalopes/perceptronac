@@ -247,6 +247,10 @@ class GLCH:
             return
         close_debug_txt_file(self.txt_file)
 
+    def has_point_below(self,ref_node,prev_candidate_nodes):
+        coord = self.get_node_coord(ref_node)
+        return len([c for c in self.get_node_coord(prev_candidate_nodes) if c[1] < coord[1] ]) > 0
+
     def build_tree(self):
 
         self.begin_debug()
@@ -263,16 +267,20 @@ class GLCH:
 
         while True:
 
-            candidate_nodes = []
-            for p in sorted(self.possible_values.keys()):
-                node_p = node.auto_increment(p,self.possible_values)
-                if str(node_p) == str(node):
-                    node_p.color = "green"
-                candidate_nodes.append(node_p)
-            node.children = candidate_nodes
+            has_point_below_flag = self.has_point_below(ref_node,prev_candidate_nodes)
 
-            if all([str(n) == str(node) for n in candidate_nodes]):
-                break
+            candidate_nodes = []
+
+            if not has_point_below_flag:
+                for p in sorted(self.possible_values.keys()):
+                    node_p = node.auto_increment(p,self.possible_values)
+                    if str(node_p) == str(node):
+                        node_p.color = "green"
+                    candidate_nodes.append(node_p)
+                node.children = candidate_nodes
+
+                if all([str(n) == str(node) for n in candidate_nodes]):
+                    break
 
             chosen_node_index,update_ref_node = self.make_choice_2(ref_node,node,prev_candidate_nodes,candidate_nodes)
 
@@ -285,8 +293,9 @@ class GLCH:
 
             self.nodes += candidate_nodes # TODO : what happens in case of duplicacy ?
 
-            if chosen_node_index < len(prev_candidate_nodes):
-                node.chosen_child_indices.append(None)
+            if not has_point_below_flag:
+                if chosen_node_index < len(prev_candidate_nodes):
+                    node.chosen_child_indices.append(None)
 
             chosen_node.color = "green"
             chosen_node.parent.chosen_child_indices.append( chosen_node.parent.children.index(chosen_node) )
