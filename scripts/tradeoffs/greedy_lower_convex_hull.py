@@ -434,7 +434,7 @@ class GLCH:
 
     def dist_to_chull(self,pt):
 
-        lmbd = 0 #((self.scale_x/self.scale_y)/6)
+        lmbd = ((self.scale_x/self.scale_y)/6)
 
         improv = pt[0] + pt[1]*lmbd
 
