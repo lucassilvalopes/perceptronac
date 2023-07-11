@@ -13,480 +13,9 @@ import numpy as np
 import math
 import matplotlib.pyplot as plt
 from sklearn.preprocessing import MinMaxScaler
+from glch_utils import min_max_convex_hull
 
-def min_max_convex_hull(data,start="left"):
-    """
-    start : either "left" or "right"
-    """
-    scaler = MinMaxScaler()
-    data = scaler.fit_transform(data)
-    if start=="right":
-        data = data[:,::-1]
-    return convex_hull(data.tolist())
-
-
-
-# %%
-class Node:
-    """
-    https://runestone.academy/ns/books/published/pythonds/Trees/ListofListsRepresentation.html
-    https://stackoverflow.com/questions/2358045/how-can-i-implement-a-tree-in-python
-    """
-
-    def __init__(self,**kwargs):
-        self.params = kwargs
-        self.children = []
-        self.parent = None
-        self.chosen_child_indices = []
-        self.color = "red"
-
-    def set_parent(self,node):
-        self.parent = node
-
-    def set_to_str_method(self,to_str_method):
-        self.to_str_method = to_str_method
-    
-    def set_color(self,color):
-        self.color = color
-
-    def auto_increment(self,param_name,possible_values):
-        node = Node(**self.params.copy())
-        node.set_to_str_method(self.to_str_method)
-        node.set_parent(self)
-        param_value = node.params[param_name]
-        new_param_value = param_value
-        i = possible_values[param_name].index(param_value)
-        if i+1 < len(possible_values[param_name]):
-            new_param_value = possible_values[param_name][i+1]
-        node.params[param_name] = new_param_value
-        return node
-
-    def __str__(self):
-        return self.to_str_method(self.params)
-
-    
-
-# %%
-
-def open_debug_txt_file(title):
-    txt_file = open(f"debug/transitions_{title}.txt", 'w')
-    print(f"src_x,src_y,dst_x,dst_y,taken",file=txt_file)
-    return txt_file
-
-def close_debug_txt_file(txt_file):
-    txt_file.close()
-
-def plot_choice_2(x_axis,y_axis,node,node_coord,candidate_nodes,candidate_coord,chosen_node_index,txt_file=None,title=None):
-
-    fig, ax = plt.subplots(nrows=1, ncols=1)
-
-    ax.text(x=node_coord[0],y=node_coord[1],s=str(node),color="black")
-
-    print(f"-1,-1,-1,-1,-1",file=txt_file)
-
-    ax.plot([node_coord[0]],[node_coord[1]],linestyle="",color="black",marker="o")
-
-    npts = len(candidate_coord)
-
-    for i in (sorted(set(range(npts)) - {chosen_node_index}) + [chosen_node_index]):
-
-        if str(candidate_nodes[i]) == str(node):
-            continue
-
-        pt = candidate_coord[i]
-
-        clr = ("g" if i == chosen_node_index else "r")
-
-        ax.plot(
-            [node_coord[0],pt[0]],
-            [node_coord[1],pt[1]],
-            color= clr)
-        
-        ax.text(x=pt[0],y=pt[1],s=f"{str(candidate_nodes[i])}",color=clr)
-
-        print(f"{node_coord[0]},{node_coord[1]},{pt[0]},{pt[1]},{(1 if i == chosen_node_index else 0)}",file=txt_file)
-    ax.set_xlabel(x_axis)
-    ax.set_ylabel(y_axis)
-
-    if title is None:
-        fig.show()
-    else:
-        fig.savefig(
-            f"debug/{title}.png", 
-            dpi=300, facecolor='w', bbox_inches = "tight")
-
-
-def plot_choice(data,x_axis,y_axis,node,node_coord,candidate_nodes,candidate_coord,chosen_node_index,dists=None,txt_file=None,title=None):
-
-    fig, ax = plt.subplots(nrows=1, ncols=1)
-
-    ax.plot(data[x_axis].values, data[y_axis].values,marker="x",linestyle="")
-
-    ax.text(x=node_coord[0],y=node_coord[1],s=str(node),color="black")
-
-    print(f"-1,-1,-1,-1,-1",file=txt_file)
-
-    ax.plot([node_coord[0]],[node_coord[1]],linestyle="",color="black",marker="o")
-
-    npts = len(candidate_coord)
-
-    for i in (sorted(set(range(npts)) - {chosen_node_index}) + [chosen_node_index]):
-
-        if str(candidate_nodes[i]) == str(node):
-            continue
-
-        pt = candidate_coord[i]
-
-        clr = ("g" if i == chosen_node_index else "r")
-
-        ax.plot(
-            [node_coord[0],pt[0]],
-            [node_coord[1],pt[1]],
-            color= clr)
-
-        ax.text(x=pt[0],y=pt[1],s=f"{str(candidate_nodes[i])}" + \
-                (f",d={dists[i]}" if (dists is not None) else ""),color=clr)
-
-        print(f"{node_coord[0]},{node_coord[1]},{pt[0]},{pt[1]},{(1 if i == chosen_node_index else 0)}",file=txt_file)
-
-    ax.set_xlabel(x_axis)
-    ax.set_ylabel(y_axis)
-
-    ax.set_title(f"{chosen_node_index} {str(candidate_nodes[chosen_node_index])}")
-
-    if title is None:
-        fig.show()
-    else:
-        fig.savefig(
-            f"debug/{title}.png", 
-            dpi=300, facecolor='w', bbox_inches = "tight")
-
-
-class GLCH:
-
-    def __init__(
-        self,data,possible_values,x_axis,y_axis,initial_values,to_str_method,start="left",scale_x=1,scale_y=1,debug=True,
-        title=None
-    ):
-        """
-        data = 
-        |---------------|joules|data_bits/data_samples|  
-        |---topology----|------|----------------------|
-        |032_010_010_001|420.00|0.99999999999999999999|
-
-        possible_values = {
-            "h1": [10,20,40,80,160,320,640],
-            "h2": [10,20,40,80,160,320,640]
-        }
-
-        x_axis = "joules"
-        y_axis = "data_bits/data_samples"
-
-        initial_values = {"h1":10,"h2":10}
-
-        def to_str_method(params):
-            widths = [32,params["h1"],params["h2"],1]
-            return '_'.join(map(lambda x: f"{x:03d}",widths))
-        """
-        self.data = data
-        self.possible_values = possible_values
-        self.x_axis = x_axis
-        self.y_axis = y_axis
-        self.initial_values = initial_values
-        self.to_str_method = to_str_method
-        self.start = start
-        self.scale_x = scale_x
-        self.scale_y = scale_y
-        self.debug = debug
-        if title is None:
-            self.title = f"{x_axis.replace('/','_over_')}_vs_{y_axis.replace('/','_over_')}"
-        else:
-            self.title=title
-
-    def get_node_coord(self,node):
-        if isinstance(node,list):
-            return [self.data.loc[str(n),[self.x_axis,self.y_axis]].values.tolist() for n in node]
-        else:
-            return self.data.loc[str(node),[self.x_axis,self.y_axis]].values.tolist()
-
-    def setup_build_tree(self):
-
-        root = Node(**self.initial_values)
-        root.set_to_str_method(self.to_str_method)
-        self.nodes = [root]
-        return root
-
-        # self.chull = [0]
-    
-    # def teardown_build_tree(self):
-
-    def print_debug(self,node,prev_candidate_nodes,candidate_nodes,chosen_node_index,iteration):
-        if not self.debug:
-            return
-        if chosen_node_index >= len(prev_candidate_nodes):
-            chosen_node_index = chosen_node_index - len(prev_candidate_nodes)
-        else:
-            candidate_nodes = [prev_candidate_nodes[chosen_node_index]] + candidate_nodes
-            chosen_node_index = 0
-        node_coord = self.get_node_coord(node)
-        candidate_coord = self.get_node_coord(candidate_nodes)
-        plot_choice(
-            self.data,self.x_axis,self.y_axis,
-            node,node_coord,candidate_nodes,candidate_coord,chosen_node_index,txt_file=self.txt_file,
-            title=f"{self.title}_{iteration}")
-
-    def begin_debug(self):
-        if not self.debug:
-            return
-        self.txt_file = open_debug_txt_file(self.title)
-        if not os.path.isdir("debug"):
-            os.mkdir("debug")
-
-    def end_debug(self):
-        if not self.debug:
-            return
-        close_debug_txt_file(self.txt_file)
-
-    def has_point_below(self,ref_node,prev_candidate_nodes):
-        coord = self.get_node_coord(ref_node)
-        red_prev_candidate_nodes = [n for n in prev_candidate_nodes if (n.color == "red")]
-        return len([c for c in self.get_node_coord(red_prev_candidate_nodes) if c[1] < coord[1] ]) > 0
-
-    def build_tree(self):
-
-        self.begin_debug()
-
-        root = self.setup_build_tree()
-
-        node = root
-
-        ref_node = root
-
-        prev_candidate_nodes = []
-
-        picked_nodes = [root]
-
-        iteration = 0
-
-        while True:
-
-            has_prev_point_below = self.has_point_below(ref_node,prev_candidate_nodes)
-
-            candidate_nodes = []
-
-            if not has_prev_point_below:
-                node = sorted([(n,self.dist_to_chull(pt)) for n,pt in zip(picked_nodes,self.get_node_coord(picked_nodes))],key=lambda x: x[1])[0][0]
-
-                for p in sorted(self.possible_values.keys()):
-                    node_p = node.auto_increment(p,self.possible_values)
-                    if str(node_p) == str(node):
-                        node_p.color = "green"
-                    candidate_nodes.append(node_p)
-                node.children = candidate_nodes
-
-                if all([str(n) == str(node) for n in candidate_nodes]):
-                    break
-
-            chosen_node_index,update_ref_node = self.make_choice_2(ref_node,node,prev_candidate_nodes,candidate_nodes)
-
-            self.print_debug(node,prev_candidate_nodes,candidate_nodes,chosen_node_index,iteration)
-
-            if chosen_node_index >= len(prev_candidate_nodes):
-                chosen_node = candidate_nodes[chosen_node_index - len(prev_candidate_nodes)]
-            else:
-                chosen_node = prev_candidate_nodes[chosen_node_index]
-
-            self.nodes += candidate_nodes # TODO : what happens in case of duplicacy ?
-
-            # if not has_prev_point_below:
-            #     # Actually this condition never happens , we can safely remove it
-            #     # if has_prev_point_below is False then chosen_node_index >= len(prev_candidate_nodes) is True
-            #     if chosen_node_index < len(prev_candidate_nodes):
-            #         node.chosen_child_indices.append(None)
-
-            chosen_node.color = "green"
-            chosen_node.parent.chosen_child_indices.append( chosen_node.parent.children.index(chosen_node) )
-
-            if has_prev_point_below:
-                picked_nodes.append(chosen_node)
-            else:
-                node = chosen_node
-                picked_nodes = [chosen_node]
-
-            if has_prev_point_below:
-                ref_node = ref_node
-            else:
-                if update_ref_node:
-                    ref_node = chosen_node
-
-            # prev_candidate_nodes += candidate_nodes
-            prev_candidate_nodes = candidate_nodes
-
-            iteration += 1
-
-        self.end_debug()
-
-        return root
-
-
-    def make_choice_2(self,ref_node,node,prev_candidate_nodes,candidate_nodes):
-
-        filtered_nodes = [n for n in candidate_nodes if str(n) != str(node)]
-
-        blacklist = [str(n) for n in filtered_nodes]
-
-        filt_prev_candidate_nodes = [n for n in prev_candidate_nodes if (n.color == "red") and (str(n) not in blacklist)]
-
-        all_candidate_nodes = filt_prev_candidate_nodes + filtered_nodes
-
-        coord = self.get_node_coord(ref_node)
-
-        candidate_coord = self.get_node_coord(all_candidate_nodes)
-
-        n_candidates = len(candidate_coord)
-
-        deltacs = [(pt[0] - coord[0]) for pt in candidate_coord]
-        deltars = [(pt[1] - coord[1]) for pt in candidate_coord]
-        
-        ne = [i for i in range(n_candidates) if deltacs[i]>=0 and deltars[i]>=0]
-        nw = [i for i in range(n_candidates) if deltacs[i]<0 and deltars[i]>0]
-        sw = [i for i in range(n_candidates) if deltacs[i]<0 and deltars[i]<=0]
-        se = [i for i in range(n_candidates) if deltacs[i]>=0 and deltars[i]<0]
-
-        ne = [i for i in ne if i >= len(filt_prev_candidate_nodes)]
-        nw = [i for i in nw if i >= len(filt_prev_candidate_nodes)]
-
-        if (len(sw + se)) > 0:
-
-            sorted_idx = self.sorted_deltac_over_minus_deltar(
-                (sw+se),deltacs,deltars,False)
-
-            chosen_node_index = sorted_idx[0]
-
-            update_ref_node = True
-
-        elif len(nw) > 0 :
-
-            sorted_idx = self.sorted_deltac_over_minus_deltar(
-                nw,deltacs,deltars,True)
-
-            chosen_node_index = sorted_idx[-1]
-
-            update_ref_node = False
-
-        else:
-
-            sorted_idx = self.sorted_deltac_over_minus_deltar(
-                ne,deltacs,deltars,True)
-
-            chosen_node_index = sorted_idx[0]
-
-            update_ref_node = False
-
-        if chosen_node_index >= len(filt_prev_candidate_nodes):
-            chosen_node_index = len(prev_candidate_nodes) + \
-                candidate_nodes.index(filtered_nodes[chosen_node_index-len(filt_prev_candidate_nodes)])
-        else:
-            chosen_node_index = prev_candidate_nodes.index(filt_prev_candidate_nodes[chosen_node_index])
-
-        return chosen_node_index, update_ref_node
-
-
-    def sorted_deltac_over_minus_deltar(self,ii,deltacs,deltars,top_half):
-
-        dists = []
-
-        for i in (ii):
-
-            if deltacs[i]<0 and (deltars[i] == 0):
-                if top_half:
-                    dist = np.inf
-                else:
-                    dist = -np.inf
-            elif deltacs[i]>0 and (deltars[i] == 0):
-                if top_half:
-                    dist = -np.inf
-                else:
-                    dist = np.inf
-            else:
-                dist = (deltacs[i])/(-deltars[i])
-
-            dists.append(dist)
-    
-        # idx = np.argsort(dists)
-
-        idx = [z[0] for z in sorted(list(zip(ii,dists)),key=lambda x: x[1])]
-    
-        return idx
-
-
-    def find_candidates_in_chull(self,candidate_nodes):
-
-        len_nodes = len(self.nodes)
-
-        coord = self.get_node_coord(self.nodes) + self.get_node_coord(candidate_nodes)
-
-        chull = min_max_convex_hull(coord,start=self.start)
-
-        candidates_in_chull = [i-len_nodes for i in chull if i >= len_nodes]
-
-        return candidates_in_chull
-
-
-    def dist_to_chull(self,pt):
-
-        lmbd = ((self.scale_x/self.scale_y)/6)
-
-        improv = pt[0] + pt[1]*lmbd
-
-        return improv
-
-
-    def make_choice_tie_break(self,node,candidate_nodes):
-
-        dists = []
-
-        for pt in self.get_node_coord(candidate_nodes):
-
-            dist = self.dist_to_chull(pt)
-
-            dists.append(dist)
-        
-        idx = np.argsort(dists)
-
-        filtered_idx = [i for i in idx if str(candidate_nodes[i]) != str(node)]
-
-        chosen_node_index = filtered_idx[0]
-
-        return chosen_node_index
-
-
-    def make_choice(self,node,prev_candidate_nodes,candidate_nodes):
-        """
-        Params:
-            node: current source node
-            candidate_nodes: local nodes to choose from
-        
-        Returns:
-            chosen_node_index: index of the chosen local node.
-                -1 if all options are equal to the source node
-        """
-
-        filtered_nodes = [n for n in candidate_nodes if str(n) != str(node)]
-
-        candidates_in_chull = self.find_candidates_in_chull(filtered_nodes)
-
-        if (len(candidates_in_chull)==1):
-
-            chosen_node_index = candidates_in_chull[0]
-
-            chosen_node_index = candidate_nodes.index(filtered_nodes[chosen_node_index])
-
-        else:
-
-            chosen_node_index = self.make_choice_tie_break(node,candidate_nodes)
-
-        return len(prev_candidate_nodes) + chosen_node_index, True
+from glch import GLCH
 
 
 def build_tree(data,possible_values,x_axis,y_axis,initial_values,to_str_method,start="left",scale_x=1,scale_y=1,debug=True,title=None):
@@ -692,7 +221,7 @@ def save_all_data(data,r,x_axis,y_axis,x_range,y_range,data_id,x_in_log_scale=Fa
 
     true_hull_points,estimated_hull_points,n_trained_networks = compute_hulls(data,[r],x_axis,y_axis)
 
-    with open(f'tree_{data_id}.txt', 'w') as f:
+    with open(f'glch_results/tree_{data_id}.txt', 'w') as f:
         print_tree(r,file=f)
         print(f"number of trained networks : {n_trained_networks}",file=f)
 
@@ -703,16 +232,16 @@ def save_all_data(data,r,x_axis,y_axis,x_range,y_range,data_id,x_in_log_scale=Fa
     # paint_hull_points(true_hull_points,x_axis,y_axis,ax)
     paint_nodes(data,r,x_axis,y_axis,ax)
     adjust_axes(x_axis,y_axis,x_range,y_range,ax,x_in_log_scale)
-    tree_fig.savefig(f"tree_fig_{data_id}.png", dpi=300, facecolor='w', bbox_inches = "tight")
+    tree_fig.savefig(f"glch_results/tree_fig_{data_id}.png", dpi=300, facecolor='w', bbox_inches = "tight")
 
     hulls_fig, ax = plt.subplots(nrows=1, ncols=1)
     paint_cloud(data,x_axis,y_axis,ax,"x")
     # paint_hulls(true_hull_points,estimated_hull_points,x_axis,y_axis,ax)
     paint_hull(true_hull_points,estimated_hull_points,x_axis,y_axis,ax)
     adjust_axes(x_axis,y_axis,None,None,ax,x_in_log_scale)
-    hulls_fig.savefig(f"hulls_fig_{data_id}.png", dpi=300, facecolor='w', bbox_inches = "tight")
+    hulls_fig.savefig(f"glch_results/hulls_fig_{data_id}.png", dpi=300, facecolor='w', bbox_inches = "tight")
 
-    save_hull_points(f"hulls_{data_id}",true_hull_points,estimated_hull_points)
+    save_hull_points(f"glch_results/hulls_{data_id}",true_hull_points,estimated_hull_points)
 
 
 
@@ -964,7 +493,7 @@ def glch_rate_vs_dist_2(csv_path,x_axis,y_axis,scale_x=None,scale_y=None,x_range
     exp_id = f"{x_axis}_vs_{y_axis}_brute_{brute_keys}_greedy_{greedy_keys}_start_{start}"
 
     rs = []
-    tree_file = open(f'tree_{exp_id}.txt', 'w')
+    tree_file = open(f'glch_results/tree_{exp_id}.txt', 'w')
 
     tree_fig, ax = plt.subplots(nrows=1, ncols=len(brute_dict["L"]))
 
@@ -998,7 +527,7 @@ def glch_rate_vs_dist_2(csv_path,x_axis,y_axis,scale_x=None,scale_y=None,x_range
         # paint_hull_points(true_hull_points,x_axis,y_axis,tree_fig.axes[i])
         paint_nodes(data,rs[i],x_axis,y_axis,tree_fig.axes[i])
 
-    tree_fig.savefig(f"tree_fig_{exp_id}.png", dpi=300, facecolor='w', bbox_inches = "tight")
+    tree_fig.savefig(f"glch_results/tree_fig_{exp_id}.png", dpi=300, facecolor='w', bbox_inches = "tight")
 
     
     hulls_fig, ax = plt.subplots(nrows=1, ncols=1)
@@ -1006,9 +535,9 @@ def glch_rate_vs_dist_2(csv_path,x_axis,y_axis,scale_x=None,scale_y=None,x_range
     # paint_hulls(true_hull_points,estimated_hull_points,x_axis,y_axis,ax)
     paint_hull(true_hull_points,estimated_hull_points,x_axis,y_axis,ax)
     adjust_axes(x_axis,y_axis,None,None,ax)
-    hulls_fig.savefig(f"hulls_fig_{exp_id}.png", dpi=300, facecolor='w', bbox_inches = "tight")
+    hulls_fig.savefig(f"glch_results/hulls_fig_{exp_id}.png", dpi=300, facecolor='w', bbox_inches = "tight")
 
-    save_hull_points(f"hulls_fig_{exp_id}",true_hull_points,estimated_hull_points)
+    save_hull_points(f"glch_results/hulls_fig_{exp_id}",true_hull_points,estimated_hull_points)
 
 
 def glch_model_bits_vs_data_bits(csv_path,x_axis,y_axis,scale_x=None,scale_y=None,x_range=None,y_range=None,x_in_log_scale=False):
@@ -1045,6 +574,11 @@ def glch_model_bits_vs_data_bits(csv_path,x_axis,y_axis,scale_x=None,scale_y=Non
 
 
 if __name__ == "__main__":
+
+    if os.path.isdir("glch_results"):
+        import shutil
+        shutil.rmtree("glch_results")
+    os.mkdir("glch_results")
 
     if os.path.isdir("debug"):
         import shutil
