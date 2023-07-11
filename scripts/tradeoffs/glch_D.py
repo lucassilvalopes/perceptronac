@@ -119,7 +119,6 @@ class GLCH:
             candidate_nodes = []
 
             if not has_prev_point_below:
-                node = sorted([(n,self.dist_to_chull(pt)) for n,pt in zip(picked_nodes,self.get_node_coord(picked_nodes))],key=lambda x: x[1])[0][0]
 
                 for p in sorted(self.possible_values.keys()):
                     node_p = node.auto_increment(p,self.possible_values)
@@ -150,21 +149,12 @@ class GLCH:
 
             chosen_node.color = "green"
             chosen_node.parent.chosen_child_indices.append( chosen_node.parent.children.index(chosen_node) )
+            node = chosen_node
 
-            if has_prev_point_below:
-                picked_nodes.append(chosen_node)
-            else:
-                node = chosen_node
-                picked_nodes = [chosen_node]
+            if update_ref_node:
+                ref_node = chosen_node
 
-            if has_prev_point_below:
-                ref_node = ref_node
-            else:
-                if update_ref_node:
-                    ref_node = chosen_node
-
-            # prev_candidate_nodes += candidate_nodes
-            prev_candidate_nodes = candidate_nodes
+            prev_candidate_nodes += candidate_nodes
 
             iteration += 1
 
@@ -263,11 +253,3 @@ class GLCH:
     
         return idx
 
-
-    def dist_to_chull(self,pt):
-
-        lmbd = ((self.scale_x/self.scale_y)/6)
-
-        improv = pt[0] + pt[1]*lmbd
-
-        return improv
