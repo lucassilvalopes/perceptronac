@@ -108,8 +108,6 @@ class GLCH:
 
         prev_candidate_nodes = []
 
-        picked_nodes = [root]
-
         iteration = 0
 
         while True:

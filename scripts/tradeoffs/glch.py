@@ -120,7 +120,7 @@ class GLCH:
             if all([str(n) == str(node) for n in candidate_nodes]):
                 break
 
-            chosen_node_index,update_ref_node = self.make_choice_2(ref_node,node,prev_candidate_nodes,candidate_nodes)
+            chosen_node_index,update_ref_node = self.make_choice(ref_node,node,prev_candidate_nodes,candidate_nodes)
 
             self.print_debug(node,prev_candidate_nodes,candidate_nodes,chosen_node_index,iteration)
 
@@ -150,93 +150,71 @@ class GLCH:
         return root
 
 
-    def make_choice_2(self,ref_node,node,prev_candidate_nodes,candidate_nodes):
+    def find_candidates_in_chull(self,candidate_nodes):
 
-        filtered_nodes = [n for n in candidate_nodes if str(n) != str(node)]
+        len_nodes = len(self.nodes)
 
-        blacklist = [str(n) for n in filtered_nodes]
+        coord = self.get_node_coord(self.nodes) + self.get_node_coord(candidate_nodes)
 
-        filt_prev_candidate_nodes = [n for n in prev_candidate_nodes if (n.color == "red") and (str(n) not in blacklist)]
+        chull = min_max_convex_hull(coord,start=self.start)
 
-        all_candidate_nodes = filt_prev_candidate_nodes + filtered_nodes
+        candidates_in_chull = [i-len_nodes for i in chull if i >= len_nodes]
 
-        coord = self.get_node_coord(ref_node)
-
-        candidate_coord = self.get_node_coord(all_candidate_nodes)
-
-        n_candidates = len(candidate_coord)
-
-        deltacs = [(pt[0] - coord[0]) for pt in candidate_coord]
-        deltars = [(pt[1] - coord[1]) for pt in candidate_coord]
-        
-        ne = [i for i in range(n_candidates) if deltacs[i]>=0 and deltars[i]>=0]
-        nw = [i for i in range(n_candidates) if deltacs[i]<0 and deltars[i]>0]
-        sw = [i for i in range(n_candidates) if deltacs[i]<0 and deltars[i]<=0]
-        se = [i for i in range(n_candidates) if deltacs[i]>=0 and deltars[i]<0]
-
-        ne = [i for i in ne if i >= len(filt_prev_candidate_nodes)]
-        nw = [i for i in nw if i >= len(filt_prev_candidate_nodes)]
-
-        if (len(sw + se)) > 0:
-
-            sorted_idx = self.sorted_deltac_over_minus_deltar(
-                (sw+se),deltacs,deltars,False)
-
-            chosen_node_index = sorted_idx[0]
-
-            update_ref_node = True
-
-        elif len(nw) > 0 :
-
-            sorted_idx = self.sorted_deltac_over_minus_deltar(
-                nw,deltacs,deltars,True)
-
-            chosen_node_index = sorted_idx[-1]
-
-            update_ref_node = False
-
-        else:
-
-            sorted_idx = self.sorted_deltac_over_minus_deltar(
-                ne,deltacs,deltars,True)
-
-            chosen_node_index = sorted_idx[0]
-
-            update_ref_node = False
-
-        if chosen_node_index >= len(filt_prev_candidate_nodes):
-            chosen_node_index = len(prev_candidate_nodes) + \
-                candidate_nodes.index(filtered_nodes[chosen_node_index-len(filt_prev_candidate_nodes)])
-        else:
-            chosen_node_index = prev_candidate_nodes.index(filt_prev_candidate_nodes[chosen_node_index])
-
-        return chosen_node_index, update_ref_node
+        return candidates_in_chull
 
 
-    def sorted_deltac_over_minus_deltar(self,ii,deltacs,deltars,top_half):
+    def dist_to_chull(self,pt):
+
+        lmbd = ((self.scale_x/self.scale_y)/6)
+
+        improv = pt[0] + pt[1]*lmbd
+
+        return improv
+
+
+    def make_choice_tie_break(self,node,candidate_nodes):
 
         dists = []
 
-        for i in (ii):
+        for pt in self.get_node_coord(candidate_nodes):
 
-            if deltacs[i]<0 and (deltars[i] == 0):
-                if top_half:
-                    dist = np.inf
-                else:
-                    dist = -np.inf
-            elif deltacs[i]>0 and (deltars[i] == 0):
-                if top_half:
-                    dist = -np.inf
-                else:
-                    dist = np.inf
-            else:
-                dist = (deltacs[i])/(-deltars[i])
+            dist = self.dist_to_chull(pt)
 
             dists.append(dist)
-    
-        # idx = np.argsort(dists)
+        
+        idx = np.argsort(dists)
 
-        idx = [z[0] for z in sorted(list(zip(ii,dists)),key=lambda x: x[1])]
-    
-        return idx
+        filtered_idx = [i for i in idx if str(candidate_nodes[i]) != str(node)]
+
+        chosen_node_index = filtered_idx[0]
+
+        return chosen_node_index
+
+
+    def make_choice(self,ref_node,node,prev_candidate_nodes,candidate_nodes):
+        """
+        Params:
+            node: current source node
+            candidate_nodes: local nodes to choose from
+        
+        Returns:
+            chosen_node_index: index of the chosen local node.
+                -1 if all options are equal to the source node
+        """
+
+        filtered_nodes = [n for n in candidate_nodes if str(n) != str(node)]
+
+        candidates_in_chull = self.find_candidates_in_chull(filtered_nodes)
+
+        if (len(candidates_in_chull)==1):
+
+            chosen_node_index = candidates_in_chull[0]
+
+            chosen_node_index = candidate_nodes.index(filtered_nodes[chosen_node_index])
+
+        else:
+
+            chosen_node_index = self.make_choice_tie_break(node,candidate_nodes)
+
+        return len(prev_candidate_nodes) + chosen_node_index, True
 
