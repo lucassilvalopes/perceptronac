@@ -319,7 +319,8 @@ class GLCH:
                 if update_ref_node:
                     ref_node = chosen_node
 
-            prev_candidate_nodes += candidate_nodes
+            # prev_candidate_nodes += candidate_nodes
+            prev_candidate_nodes = candidate_nodes
 
             iteration += 1
 
