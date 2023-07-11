@@ -2,6 +2,7 @@
 import pandas as pd
 import sys
 import os
+import re
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.dirname(os.path.dirname(SCRIPT_DIR)))
@@ -169,7 +170,7 @@ def compute_hulls(data,rs,x_axis,y_axis):
     probe = data.loc[new_points,:]
     estimated_hull_points = probe.iloc[min_max_convex_hull(probe.loc[:,[x_axis,y_axis]].values.tolist()),:]
 
-    n_trained_networks = len(set(new_points))
+    n_trained_networks = len(set([re.sub(r'_[\d]{2}b','',pt) for pt in new_points]))
 
     return true_hull_points,estimated_hull_points,n_trained_networks
 
