@@ -16,7 +16,7 @@ import matplotlib.pyplot as plt
 from sklearn.preprocessing import MinMaxScaler
 from glch_utils import min_max_convex_hull
 
-from glch import GLCH
+from glch_BandD import GLCH
 
 
 def build_tree(data,possible_values,x_axis,y_axis,initial_values,to_str_method,start="left",scale_x=1,scale_y=1,debug=True,title=None):
@@ -449,7 +449,10 @@ def glch_rate_vs_dist(csv_path,x_axis,y_axis,scale_x=None,scale_y=None,x_range=N
     def to_str_method(params):
         return f"L{params['L']}N{params['N']}M{params['M']}"
     
-    r = build_tree(data,possible_values,x_axis,y_axis,initial_values,to_str_method,scale_x=scale_x,scale_y=scale_y)
+    if start == "right":
+        r = build_tree(data,possible_values,y_axis,x_axis,initial_values,to_str_method,scale_x=scale_y,scale_y=scale_x)
+    else:
+        r = build_tree(data,possible_values,x_axis,y_axis,initial_values,to_str_method,scale_x=scale_x,scale_y=scale_y)
 
     save_all_data(data,r,x_axis,y_axis,x_range,y_range,f'{x_axis}_vs_{y_axis}_start_{start}')
 
@@ -503,9 +506,11 @@ def glch_rate_vs_dist_2(csv_path,x_axis,y_axis,scale_x=None,scale_y=None,x_range
         to_str_method = to_str_method_factory({"L":L})
 
         current_data = data.iloc[[i for i,lbl in enumerate(data.index) if f"L{L}" in lbl],:]
+        if start == "right":
+            r = build_tree(current_data,greedy_dict,y_axis,x_axis,initial_state,to_str_method,scale_x=scale_y,scale_y=scale_x)
+        else:
+            r = build_tree(current_data,greedy_dict,x_axis,y_axis,initial_state,to_str_method,scale_x=scale_x,scale_y=scale_y)
         
-        r = build_tree(current_data,greedy_dict,x_axis,y_axis,initial_state,to_str_method,scale_x=scale_x,scale_y=scale_y)
-
         rs.append(r)
 
         print_tree(r,file=tree_file)
@@ -623,13 +628,13 @@ if __name__ == "__main__":
         # y_range=[0.001,0.0045]
     )
 
-    # glch_rate_vs_dist_2(
-    #     "/home/lucas/Documents/perceptronac/scripts/tradeoffs/bpp-mse-psnr-loss-flops-params_bmshj2018-factorized_10000-epochs_L-2e-2-1e-2-5e-3_N-32-64-96-128-160-192-224_M-32-64-96-128-160-192-224-256-288-320.csv",
-    #     "bpp_loss","mse_loss",#1,1,
-    #     # x_range=[0.1,1.75],
-    #     # y_range=[0.001,0.0045],
-    #     start="right"
-    # )
+    glch_rate_vs_dist_2(
+        "/home/lucas/Documents/perceptronac/scripts/tradeoffs/bpp-mse-psnr-loss-flops-params_bmshj2018-factorized_10000-epochs_L-2e-2-1e-2-5e-3_N-32-64-96-128-160-192-224_M-32-64-96-128-160-192-224-256-288-320.csv",
+        "bpp_loss","mse_loss",#1,1,
+        # x_range=[0.1,1.75],
+        # y_range=[0.001,0.0045],
+        start="right"
+    )
 
     glch_rate_vs_dist(
         "/home/lucas/Documents/perceptronac/scripts/tradeoffs/bpp-mse-psnr-loss-flops-params_bmshj2018-factorized_10000-epochs_L-2e-2-1e-2-5e-3_N-32-64-96-128-160-192-224_M-32-64-96-128-160-192-224-256-288-320.csv",
