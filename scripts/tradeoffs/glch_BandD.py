@@ -140,6 +140,7 @@ class GLCH:
 
             if update_ref_node:
                 ref_node = chosen_node
+                ref_node.lch = True
 
             prev_candidate_nodes += candidate_nodes
 

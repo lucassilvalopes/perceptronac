@@ -109,6 +109,9 @@ def tree_nodes(n, points, mode):
         elif mode == "second":
             if (i in n.chosen_child_indices) and (i != n.chosen_child_indices[0]):
                 points.append(str(c))
+        elif mode == "lch":
+            if c.lch:
+                points.append(str(c))
         else:
             raise ValueError(mode)
 
@@ -204,17 +207,16 @@ def paint_hull(true_hull_points,estimated_hull_points,x_axis,y_axis,ax):
 
 def paint_nodes(data,r,x_axis,y_axis,ax,is_hulls_fig=False):
 
-    first_selected_nodes = [str(r)] + tree_nodes(r,[], "first")
-    second_selected_nodes = tree_nodes(r,[], "second")
-    first_selected_nodes_xy = data.loc[first_selected_nodes,:]
-    second_selected_nodes_xy = data.loc[second_selected_nodes,:]
-
     if is_hulls_fig:
-        ax.plot(first_selected_nodes_xy[x_axis],first_selected_nodes_xy[y_axis],linestyle="",color="black",marker="o",
-                markerfacecolor='none',markersize=8)
-        ax.plot(second_selected_nodes_xy[x_axis],second_selected_nodes_xy[y_axis],linestyle="",color="black",marker="o",
+        lch_nodes = [str(r)] + tree_nodes(r,[], "lch")
+        lch_nodes_xy = data.loc[lch_nodes,:]
+        ax.plot(lch_nodes_xy[x_axis],lch_nodes_xy[y_axis],linestyle="",color="black",marker="o",
                 markerfacecolor='none',markersize=8)
     else:
+        first_selected_nodes = [str(r)] + tree_nodes(r,[], "first")
+        second_selected_nodes = tree_nodes(r,[], "second")
+        first_selected_nodes_xy = data.loc[first_selected_nodes,:]
+        second_selected_nodes_xy = data.loc[second_selected_nodes,:]
         all_nodes = [str(r)] + tree_nodes(r,[], "all")
         unselected_nodes = list((set(all_nodes) - set(first_selected_nodes)) - set(second_selected_nodes) )
         unselected_nodes_xy = data.loc[unselected_nodes,:]

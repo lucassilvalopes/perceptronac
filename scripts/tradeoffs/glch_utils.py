@@ -36,6 +36,7 @@ class Node:
         self.parent = None
         self.chosen_child_indices = []
         self.color = "red"
+        self.lch = False
 
     def set_parent(self,node):
         self.parent = node
@@ -45,6 +46,9 @@ class Node:
     
     def set_color(self,color):
         self.color = color
+
+    def set_lch(self,lch):
+        self.lch = lch
 
     def auto_increment(self,param_name,possible_values):
         node = Node(**self.params.copy())
