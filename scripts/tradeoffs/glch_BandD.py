@@ -47,6 +47,7 @@ class GLCH:
         else:
             self.title=title
         self.constrained = True
+        self.simplified_lch = True
 
     def get_node_coord(self,node):
         if isinstance(node,list):
@@ -121,7 +122,10 @@ class GLCH:
             if all([str(n) == str(node) for n in candidate_nodes]):
                 break
 
-            chosen_node_index,update_ref_node = self.make_choice(ref_node,node,prev_candidate_nodes,candidate_nodes)
+            if self.simplified_lch:
+                chosen_node_index,update_ref_node = self.make_choice_2(ref_node,node,prev_candidate_nodes,candidate_nodes)
+            else:
+                chosen_node_index,update_ref_node = self.make_choice(ref_node,node,prev_candidate_nodes,candidate_nodes)
 
             self.print_debug(node,prev_candidate_nodes,candidate_nodes,chosen_node_index,iteration)
 
