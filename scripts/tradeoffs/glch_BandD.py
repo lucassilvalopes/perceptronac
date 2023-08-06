@@ -46,6 +46,7 @@ class GLCH:
             self.title = f"{x_axis.replace('/','_over_')}_vs_{y_axis.replace('/','_over_')}"
         else:
             self.title=title
+        self.constrained = True
 
     def get_node_coord(self,node):
         if isinstance(node,list):
@@ -57,7 +58,7 @@ class GLCH:
 
         root = Node(**self.initial_values)
         root.set_to_str_method(self.to_str_method)
-        self.nodes = [root]
+        # self.nodes = [root]
         return root
 
         # self.chull = [0]
@@ -129,7 +130,7 @@ class GLCH:
             else:
                 chosen_node = prev_candidate_nodes[chosen_node_index]
 
-            self.nodes += candidate_nodes # TODO : what happens in case of duplicacy ?
+            # self.nodes += candidate_nodes # TODO : what happens in case of duplicacy ?
 
             if chosen_node_index < len(prev_candidate_nodes):
                 node.chosen_child_indices.append(None)
@@ -142,7 +143,8 @@ class GLCH:
                 ref_node = chosen_node
                 ref_node.lch = True
 
-            prev_candidate_nodes += candidate_nodes
+            if not self.constrained:
+                prev_candidate_nodes += candidate_nodes
 
             iteration += 1
 
