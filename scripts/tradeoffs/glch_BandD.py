@@ -121,7 +121,7 @@ class GLCH:
             if all([str(n) == str(node) for n in candidate_nodes]):
                 break
 
-            chosen_node_index,update_ref_node = self.make_choice_2(ref_node,node,prev_candidate_nodes,candidate_nodes)
+            chosen_node_index,update_ref_node = self.make_choice(ref_node,node,prev_candidate_nodes,candidate_nodes)
 
             self.print_debug(node,prev_candidate_nodes,candidate_nodes,chosen_node_index,iteration)
 
@@ -151,6 +151,23 @@ class GLCH:
         self.end_debug()
 
         return root
+
+
+    def make_choice(self,ref_node,node,prev_candidate_nodes,candidate_nodes):
+
+        filtered_nodes = [n for n in candidate_nodes if str(n) != str(node)]
+
+        candidates_in_chull = min_max_convex_hull(self.get_node_coord([node]+filtered_nodes),start=self.start)
+
+        if len(candidates_in_chull) == 1 and candidates_in_chull[0] == 0:
+            candidates_in_chull = min_max_convex_hull(self.get_node_coord(filtered_nodes),start=self.start)
+            chosen_node_index = candidates_in_chull[0]
+            chosen_node_index = candidate_nodes.index(filtered_nodes[chosen_node_index])
+        else:
+            chosen_node_index = [i for i in candidates_in_chull if i != 0][0]
+            chosen_node_index = candidate_nodes.index(([node]+filtered_nodes)[chosen_node_index])
+
+        return len(prev_candidate_nodes) + chosen_node_index, True
 
 
     def make_choice_2(self,ref_node,node,prev_candidate_nodes,candidate_nodes):
