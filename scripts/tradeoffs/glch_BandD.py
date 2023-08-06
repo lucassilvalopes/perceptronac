@@ -123,7 +123,7 @@ class GLCH:
                 break
 
             if self.simplified_lch:
-                chosen_node_index,update_ref_node = self.make_choice_2(ref_node,node,prev_candidate_nodes,candidate_nodes)
+                chosen_node_index,update_ref_node = self.make_choice_3(ref_node,node,prev_candidate_nodes,candidate_nodes)
             else:
                 chosen_node_index,update_ref_node = self.make_choice(ref_node,node,prev_candidate_nodes,candidate_nodes)
 
@@ -266,3 +266,94 @@ class GLCH:
     
         return idx
 
+
+    def make_choice_3(self,ref_node,node,prev_candidate_nodes,candidate_nodes):
+
+        filtered_nodes = [n for n in candidate_nodes if str(n) != str(node)]
+
+        blacklist = [str(n) for n in filtered_nodes]
+
+        filt_prev_candidate_nodes = [n for n in prev_candidate_nodes if (n.color == "red") and (str(n) not in blacklist)]
+
+        all_candidate_nodes = filt_prev_candidate_nodes + filtered_nodes
+
+        coord = self.get_node_coord(ref_node)
+
+        candidate_coord = self.get_node_coord(all_candidate_nodes)
+
+        n_candidates = len(candidate_coord)
+
+        deltacs = [(pt[0] - coord[0]) for pt in candidate_coord]
+        deltars = [(pt[1] - coord[1]) for pt in candidate_coord]
+        
+        ne = [i for i in range(n_candidates) if deltacs[i]>=0 and deltars[i]>=0]
+        nw = [i for i in range(n_candidates) if deltacs[i]<0 and deltars[i]>0]
+        sw = [i for i in range(n_candidates) if deltacs[i]<0 and deltars[i]<=0]
+        se = [i for i in range(n_candidates) if deltacs[i]>=0 and deltars[i]<0]
+
+        ne = [i for i in ne if i >= len(filt_prev_candidate_nodes)]
+        nw = [i for i in nw if i >= len(filt_prev_candidate_nodes)]
+
+        update_ref_node = (len(sw + se) > 0)
+
+        if len(sw) > 0:
+
+            sorted_idx = self.sorted_deltac_deltar(
+                sw,deltacs,deltars)
+
+            chosen_node_index = sorted_idx[0]
+
+        elif len(se) > 0:
+
+            sorted_idx = self.sorted_minus_deltar_over_deltac(
+                se,deltacs,deltars)
+
+            chosen_node_index = sorted_idx[-1]
+
+        elif len(nw) > 0 :
+
+            sorted_idx = self.sorted_deltac_deltar(
+                nw,deltacs,deltars)
+
+            chosen_node_index = sorted_idx[0]
+
+        else:
+
+            sorted_idx = self.sorted_minus_deltar_over_deltac(
+                ne,deltacs,deltars)
+
+            chosen_node_index = sorted_idx[-1]
+
+        if chosen_node_index >= len(filt_prev_candidate_nodes):
+            chosen_node_index = len(prev_candidate_nodes) + \
+                candidate_nodes.index(filtered_nodes[chosen_node_index-len(filt_prev_candidate_nodes)])
+        else:
+            chosen_node_index = prev_candidate_nodes.index(filt_prev_candidate_nodes[chosen_node_index])
+
+        return chosen_node_index, update_ref_node
+
+
+    def sorted_minus_deltar_over_deltac(self,ii,deltacs,deltars):
+
+        dists = []
+
+        for i in (ii):
+
+            if deltars[i]<0 and (deltacs[i] == 0):
+                dist = -np.inf
+            elif deltars[i]>0 and (deltacs[i] == 0):
+                dist = np.inf
+            else:
+                dist = -deltars[i]/deltacs[i]
+            
+            dists.append(dist)
+    
+        idx = [z[0] for z in sorted(list(zip(ii,dists)),key=lambda x: x[1])]
+    
+        return idx
+    
+    def sorted_deltac_deltar(self,ii,deltacs,deltars):
+    
+        idx = [z[0] for z in sorted([[i,deltacs[i],deltars[i]] for i in (ii)],key=lambda x: (x[1], x[2]))]
+    
+        return idx  
