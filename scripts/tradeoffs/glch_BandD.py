@@ -46,8 +46,8 @@ class GLCH:
             self.title = f"{x_axis.replace('/','_over_')}_vs_{y_axis.replace('/','_over_')}"
         else:
             self.title=title
-        self.constrained = False
-        self.select_function = "gift_wrapping" # gift_wrapping, angle_rule, corrected_angle_rule
+        self.constrained = True
+        self.select_function = "corrected_angle_rule" # gift_wrapping, angle_rule, corrected_angle_rule
 
     def get_node_coord(self,node):
         if isinstance(node,list):
