@@ -340,9 +340,9 @@ class GLCH:
         for i in (ii):
 
             if deltars[i]<0 and (deltacs[i] == 0):
-                dist = -np.inf
+                dist = -(-np.inf)
             elif deltars[i]>0 and (deltacs[i] == 0):
-                dist = np.inf
+                dist = -(np.inf)
             else:
                 dist = -deltars[i]/deltacs[i]
             
