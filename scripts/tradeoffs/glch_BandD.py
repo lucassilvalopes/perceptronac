@@ -46,8 +46,8 @@ class GLCH:
             self.title = f"{x_axis.replace('/','_over_')}_vs_{y_axis.replace('/','_over_')}"
         else:
             self.title=title
-        self.constrained = True
-        self.simplified_lch = True
+        self.constrained = False
+        self.select_function = "gift_wrapping" # gift_wrapping, angle_rule, corrected_angle_rule
 
     def get_node_coord(self,node):
         if isinstance(node,list):
@@ -122,10 +122,14 @@ class GLCH:
             if all([str(n) == str(node) for n in candidate_nodes]):
                 break
 
-            if self.simplified_lch:
+            if self.select_function == "gift_wrapping":
+                chosen_node_index,update_ref_node = self.make_choice(ref_node,node,prev_candidate_nodes,candidate_nodes)
+            elif self.select_function == "angle_rule":
+                chosen_node_index,update_ref_node = self.make_choice_2(ref_node,node,prev_candidate_nodes,candidate_nodes)
+            elif self.select_function == "corrected_angle_rule":
                 chosen_node_index,update_ref_node = self.make_choice_3(ref_node,node,prev_candidate_nodes,candidate_nodes)
             else:
-                chosen_node_index,update_ref_node = self.make_choice(ref_node,node,prev_candidate_nodes,candidate_nodes)
+                raise ValueError(f"unknown select function {self.select_function}")
 
             self.print_debug(node,prev_candidate_nodes,candidate_nodes,chosen_node_index,iteration)
 
@@ -161,19 +165,50 @@ class GLCH:
 
         filtered_nodes = [n for n in candidate_nodes if str(n) != str(node)]
 
-        candidates_in_chull = min_max_convex_hull(self.get_node_coord([node]+filtered_nodes),start=self.start)
+        blacklist = [str(n) for n in filtered_nodes]
+
+        filt_prev_candidate_nodes = [n for n in prev_candidate_nodes if (n.color == "red") and (str(n) not in blacklist)]
+
+        all_candidate_nodes = filt_prev_candidate_nodes + filtered_nodes
+
+        coord_chull = self.get_node_coord([ref_node]+all_candidate_nodes)
+
+        candidates_in_chull = min_max_convex_hull(coord_chull,start=self.start)
 
         if len(candidates_in_chull) == 1 and candidates_in_chull[0] == 0:
+
             candidates_in_chull = min_max_convex_hull(self.get_node_coord(filtered_nodes),start=self.start)
             chosen_node_index = candidates_in_chull[-1]
-            chosen_node_index = candidate_nodes.index(filtered_nodes[chosen_node_index])
-            update_ref_node = False
-        else:
-            chosen_node_index = [i for i in candidates_in_chull if i != 0][0]
-            chosen_node_index = candidate_nodes.index(([node]+filtered_nodes)[chosen_node_index])
-            update_ref_node = True
 
-        return len(prev_candidate_nodes) + chosen_node_index, update_ref_node
+            update_ref_node = False
+
+            chosen_node_index = len(prev_candidate_nodes) + candidate_nodes.index(filtered_nodes[chosen_node_index])
+
+        else:
+
+            no_nw = [i for i in candidates_in_chull if ((coord_chull[i][1] <= coord_chull[0][1]) and i != 0)]
+
+            if len(no_nw) == 0:
+
+                candidates_in_chull = min_max_convex_hull(self.get_node_coord(filtered_nodes),start=self.start)
+                chosen_node_index = candidates_in_chull[-1]
+
+                update_ref_node = False
+
+                chosen_node_index = len(prev_candidate_nodes) + candidate_nodes.index(filtered_nodes[chosen_node_index])
+
+
+            else:
+                chosen_node_index = no_nw[0]
+                update_ref_node = True
+
+                if chosen_node_index >= len(filt_prev_candidate_nodes)+1:
+                    chosen_node_index = len(prev_candidate_nodes) + \
+                        candidate_nodes.index(filtered_nodes[chosen_node_index-len(filt_prev_candidate_nodes)-1])
+                else:
+                    chosen_node_index = prev_candidate_nodes.index(filt_prev_candidate_nodes[chosen_node_index-1])
+
+        return chosen_node_index, update_ref_node
 
 
     def make_choice_2(self,ref_node,node,prev_candidate_nodes,candidate_nodes):
