@@ -43,6 +43,7 @@ from compressai.datasets import ImageFolder
 from compressai.losses import RateDistortionLoss
 from compressai.optimizers import net_aux_optimizer
 from compressai.models import FactorizedPrior
+from vae_model import CustomFactorizedPrior
 import pandas as pd
 
 
@@ -181,6 +182,12 @@ def parse_args(argv):
         help="M (default: %(default)s)",
     )
     parser.add_argument(
+        "--D",
+        type=int,
+        default=4,
+        help="D (default: %(default)s)",
+    )
+    parser.add_argument(
         "-d", "--dataset", type=str, required=True, help="Training dataset"
     )
     parser.add_argument(
@@ -286,7 +293,7 @@ def main(argv):
         pin_memory=(device == "cuda"),
     )
 
-    net = FactorizedPrior(args.N,args.M)
+    net = CustomFactorizedPrior(args.N,args.M,args.D)
     net = net.to(device)
 
     if args.cuda and torch.cuda.device_count() > 1:
@@ -345,7 +352,7 @@ def main(argv):
                     "lr_scheduler": lr_scheduler.state_dict(),
                 },
                 is_best,
-                filename=f"N{args.N}_M{args.M}_checkpoint"
+                filename=f"D{args.D}_L{args.lmbda}_N{args.N}_M{args.M}_checkpoint"
             )
     return train_history, test_history
 
@@ -362,20 +369,23 @@ if __name__ == "__main__":
 
     dataset_path = sys.argv[1]
 
-    for N in [32, 64, 96, 128, 160, 192, 224]:
-        for M in [32, 64, 96, 128, 160, 192, 224, 256, 288, 320]:
-            argv = [
-                "-d", dataset_path,
-                "--lambda","0.02",
-                "--batch-size","16",
-                "-lr","1e-4",
-                "--save",
-                "--cuda",
-                "--N",str(N),
-                "--M",str(M),
-                "--epochs","10000",
-            ]
-            train_history, test_history = main(argv)
-            save_history_data(pd.DataFrame(train_history),f"N{N}_M{M}_train_history")
-            save_history_data(pd.DataFrame(test_history),f"N{N}_M{M}_test_history")
+    for lmbda in ["5e-3","1e-2","2e-2"]:
+        for D in [2,3,4]:
+            for N in [32, 64, 96, 128, 160, 192, 224]:
+                for M in [32, 64, 96, 128, 160, 192, 224, 256, 288, 320]:
+                    argv = [
+                        "-d", dataset_path,
+                        "--lambda",lmbda,
+                        "--batch-size","16",
+                        "-lr","1e-4",
+                        "--save",
+                        "--cuda",
+                        "--N",str(N),
+                        "--M",str(M),
+                        "--D",str(D),
+                        "--epochs","10000",
+                    ]
+                    train_history, test_history = main(argv)
+                    save_history_data(pd.DataFrame(train_history),f"D{D}_L{lmbda}_N{N}_M{M}_train_history")
+                    save_history_data(pd.DataFrame(test_history),f"D{D}_L{lmbda}_N{N}_M{M}_test_history")
 
