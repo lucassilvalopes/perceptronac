@@ -1,4 +1,5 @@
 
+import re
 import torch.nn as nn
 
 from compressai.entropy_models import EntropyBottleneck
@@ -73,7 +74,9 @@ class CustomFactorizedPrior(CompressionModel):
         """Return a new model instance from `state_dict`."""
         N = state_dict["g_a.0.weight"].size(0)
         M = state_dict["g_s.0.weight"].size(0)
-        net = cls(N, M)
+        compiled_regex = re.compile('g_a\.[\d]+\.weight')
+        L = len(list(filter(compiled_regex.search,state_dict.keys())))
+        net = cls(N, M, L)
         net.load_state_dict(state_dict)
         return net
 
