@@ -11,4 +11,3 @@ pip install pandas
 pip install compressai==1.2.4
 cd ~
 mkdir results_vae
-cd results_vae
