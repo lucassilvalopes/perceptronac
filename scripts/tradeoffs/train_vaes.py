@@ -214,8 +214,8 @@ def parse_args(argv):
     parser.add_argument(
         "--lambda",
         dest="lmbda",
-        type=float,
-        default=1e-2,
+        type=str,
+        default="1e-2",
         help="Bit-rate distortion parameter (default: %(default)s)",
     )
     parser.add_argument(
@@ -301,7 +301,7 @@ def main(argv):
 
     optimizer, aux_optimizer = configure_optimizers(net, args)
     lr_scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, "min")
-    criterion = RateDistortionLoss(lmbda=args.lmbda)
+    criterion = RateDistortionLoss(lmbda=float(args.lmbda))
 
     last_epoch = 0
     if args.checkpoint:  # load from previous checkpoint
