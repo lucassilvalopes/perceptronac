@@ -134,7 +134,7 @@ def paint_root(data,r,x_axis,y_axis,ax):
     ax.plot([data.loc[str(r),x_axis]],[data.loc[str(r),y_axis]],linestyle="",color="yellow",marker="o")
 
 
-def adjust_axes(x_axis,y_axis,x_range,y_range,ax,x_in_log_scale=False):
+def adjust_axes(x_axis,y_axis,x_range,y_range,ax,x_in_log_scale=False,x_alias=None,y_alias=None):
     """
     x_axis = "joules"
     y_axis = "data_bits/data_samples"
@@ -151,9 +151,8 @@ def adjust_axes(x_axis,y_axis,x_range,y_range,ax,x_in_log_scale=False):
         # ax.set_xticks(xvalues)
         # ax.set_xticklabels(xvalues)
 
-
-    ax.set_xlabel(x_axis)
-    ax.set_ylabel(y_axis)
+    ax.set_xlabel(x_alias if x_alias else x_axis)
+    ax.set_ylabel(y_alias if y_alias else y_axis)
     if x_range:
         ax.set_xlim(x_range[0],x_range[1])
     if y_range:
@@ -225,7 +224,7 @@ def paint_nodes(data,r,x_axis,y_axis,ax,is_hulls_fig=False):
         ax.plot(unselected_nodes_xy[x_axis],unselected_nodes_xy[y_axis],linestyle="",color="firebrick",marker=".")
 
 
-def save_all_data(data,r,x_axis,y_axis,x_range,y_range,data_id,x_in_log_scale=False):
+def save_all_data(data,r,x_axis,y_axis,x_range,y_range,data_id,x_in_log_scale=False,x_alias=None,y_alias=None):
 
     true_hull_points,estimated_hull_points,n_trained_networks = compute_hulls(data,[r],x_axis,y_axis)
 
@@ -239,7 +238,7 @@ def save_all_data(data,r,x_axis,y_axis,x_range,y_range,data_id,x_in_log_scale=Fa
     paint_tree(ax,data,r,x_axis,y_axis,x_range,y_range)
     # paint_hull_points(true_hull_points,x_axis,y_axis,ax)
     paint_nodes(data,r,x_axis,y_axis,ax)
-    adjust_axes(x_axis,y_axis,x_range,y_range,ax,x_in_log_scale)
+    adjust_axes(x_axis,y_axis,x_range,y_range,ax,x_in_log_scale,x_alias,y_alias)
     tree_fig.savefig(f"glch_results/tree_fig_{data_id}.png", dpi=300, facecolor='w', bbox_inches = "tight")
 
     hulls_fig, ax = plt.subplots(nrows=1, ncols=1)
@@ -247,7 +246,7 @@ def save_all_data(data,r,x_axis,y_axis,x_range,y_range,data_id,x_in_log_scale=Fa
     # paint_hulls(true_hull_points,estimated_hull_points,x_axis,y_axis,ax)
     # paint_hull(true_hull_points,estimated_hull_points,x_axis,y_axis,ax)
     paint_nodes(data,r,x_axis,y_axis,ax,is_hulls_fig=True)
-    adjust_axes(x_axis,y_axis,None,None,ax,x_in_log_scale)
+    adjust_axes(x_axis,y_axis,None,None,ax,x_in_log_scale,x_alias,y_alias)
     hulls_fig.savefig(f"glch_results/hulls_fig_{data_id}.png", dpi=300, facecolor='w', bbox_inches = "tight")
 
     save_hull_points(f"glch_results/hulls_{data_id}",true_hull_points,estimated_hull_points)
@@ -350,7 +349,13 @@ def save_hull_points(file_name,true_hull_points,estimated_hull_points):
         print(estimated_hull_points,file=f)
 
 
-def glch_rate_vs_energy(csv_path,x_axis,y_axis,title,scale_x=None,scale_y=None,x_range=None,y_range=None,x_in_log_scale=False,remove_noise=True):
+def glch_rate_vs_energy(
+        csv_path,x_axis,y_axis,title,
+        scale_x=None,scale_y=None,
+        x_range=None,y_range=None,
+        x_in_log_scale=False,remove_noise=True,
+        x_alias=None,y_alias=None
+    ):
 
     data = pd.read_csv(csv_path)
 
@@ -391,11 +396,18 @@ def glch_rate_vs_energy(csv_path,x_axis,y_axis,title,scale_x=None,scale_y=None,x
 
     r = build_tree(data,possible_values,x_axis,y_axis,initial_values,to_str_method,scale_x=scale_x,scale_y=scale_y,title=title)
 
-    save_all_data(data,r,x_axis,y_axis,x_range,y_range,title,x_in_log_scale)
+    save_all_data(data,r,x_axis,y_axis,x_range,y_range,title,
+        x_in_log_scale=x_in_log_scale,x_alias=x_alias,y_alias=y_alias)
 
 
 
-def glch_rate_vs_params(csv_path,x_axis,y_axis,title,scale_x=None,scale_y=None,x_range=None,y_range=None,x_in_log_scale=False):
+def glch_rate_vs_params(
+        csv_path,x_axis,y_axis,title,
+        scale_x=None,scale_y=None,
+        x_range=None,y_range=None,
+        x_in_log_scale=False,
+        x_alias=None,y_alias=None
+    ):
 
     data = pd.read_csv(csv_path).set_index("topology")
 
@@ -420,11 +432,18 @@ def glch_rate_vs_params(csv_path,x_axis,y_axis,title,scale_x=None,scale_y=None,x
 
     r = build_tree(data,possible_values,x_axis,y_axis,initial_values,to_str_method,scale_x=scale_x,scale_y=scale_y,title=title)
 
-    save_all_data(data,r,x_axis,y_axis,x_range,y_range,title,x_in_log_scale)
+    save_all_data(data,r,x_axis,y_axis,x_range,y_range,title,
+        x_in_log_scale=x_in_log_scale,x_alias=x_alias,y_alias=y_alias)
 
 
 
-def glch_rate_vs_dist(csv_path,x_axis,y_axis,scale_x=None,scale_y=None,x_range=None,y_range=None,start="left"):
+def glch_rate_vs_dist(
+        csv_path,x_axis,y_axis,
+        scale_x=None,scale_y=None,
+        x_range=None,y_range=None,
+        start="left",
+        x_alias=None,y_alias=None
+    ):
 
     data = pd.read_csv(csv_path).set_index("labels")
 
@@ -462,7 +481,8 @@ def glch_rate_vs_dist(csv_path,x_axis,y_axis,scale_x=None,scale_y=None,x_range=N
     else:
         r = build_tree(data,possible_values,x_axis,y_axis,initial_values,to_str_method,scale_x=scale_x,scale_y=scale_y)
 
-    save_all_data(data,r,x_axis,y_axis,x_range,y_range,f'{x_axis}_vs_{y_axis}_start_{start}')
+    save_all_data(data,r,x_axis,y_axis,x_range,y_range,f'{x_axis}_vs_{y_axis}_start_{start}',
+        x_alias=x_alias,y_alias=y_alias)
 
 
 def glch_rate_vs_dist_2(csv_path,x_axis,y_axis,scale_x=None,scale_y=None,x_range=None,y_range=None,start="left"):
@@ -556,7 +576,13 @@ def glch_rate_vs_dist_2(csv_path,x_axis,y_axis,scale_x=None,scale_y=None,x_range
     save_hull_points(f"glch_results/hulls_fig_{exp_id}",true_hull_points,estimated_hull_points)
 
 
-def glch_model_bits_vs_data_bits(csv_path,x_axis,y_axis,scale_x=None,scale_y=None,x_range=None,y_range=None,x_in_log_scale=False):
+def glch_model_bits_vs_data_bits(
+        csv_path,x_axis,y_axis,
+        scale_x=None,scale_y=None,
+        x_range=None,y_range=None,
+        x_in_log_scale=False,
+        x_alias=None,y_alias=None
+    ):
 
     data = pd.read_csv(csv_path)
 
@@ -586,7 +612,8 @@ def glch_model_bits_vs_data_bits(csv_path,x_axis,y_axis,scale_x=None,scale_y=Non
 
     r = build_tree(data,possible_values,x_axis,y_axis,initial_values,to_str_method,scale_x=scale_x,scale_y=scale_y)
 
-    save_all_data(data,r,x_axis,y_axis,x_range,y_range,'model_bits_vs_data_bits',x_in_log_scale)
+    save_all_data(data,r,x_axis,y_axis,x_range,y_range,'model_bits_vs_data_bits',
+        x_in_log_scale=x_in_log_scale,x_alias=x_alias,y_alias=y_alias)
 
 
 if __name__ == "__main__":
@@ -627,7 +654,8 @@ if __name__ == "__main__":
         # scale_x=1e6,scale_y=1,
         # x_range=None,
         # y_range=None,
-        x_in_log_scale=True
+        x_in_log_scale=True,
+        x_alias="multiply-add operations per pixel"
     )
 
     glch_rate_vs_dist(
