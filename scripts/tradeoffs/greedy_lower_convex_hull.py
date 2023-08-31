@@ -485,6 +485,14 @@ def glch_rate_vs_dist(
         x_alias=x_alias,y_alias=y_alias)
 
 
+def get_x_range_y_range(data,x_axis,y_axis):
+
+    tmp_fig, tmp_ax = plt.subplots(nrows=1, ncols=1)
+    paint_cloud(data,x_axis,y_axis,tmp_ax,".")
+    x_range,y_range = tmp_ax.get_xlim(),tmp_ax.get_ylim()
+    return x_range,y_range
+
+
 def glch_rate_vs_dist_2(csv_path,x_axis,y_axis,scale_x=None,scale_y=None,x_range=None,y_range=None,start="left"):
 
     data = pd.read_csv(csv_path).set_index("labels")
@@ -529,6 +537,10 @@ def glch_rate_vs_dist_2(csv_path,x_axis,y_axis,scale_x=None,scale_y=None,x_range
 
     tree_fig, ax = plt.subplots(nrows=1, ncols=len(brute_dict["L"]))
 
+
+    if (x_range is None) and (y_range is None):
+        x_range,y_range = get_x_range_y_range(data,x_axis,y_axis)
+
     for i,L in enumerate(brute_dict["L"]):
 
         to_str_method = to_str_method_factory({"L":L})
@@ -544,7 +556,8 @@ def glch_rate_vs_dist_2(csv_path,x_axis,y_axis,scale_x=None,scale_y=None,x_range
         print_tree(r,file=tree_file)
 
         paint_root(data,r,x_axis,y_axis,tree_fig.axes[i])
-        paint_cloud(data,x_axis,y_axis,tree_fig.axes[i],".")
+        # paint_cloud(data,x_axis,y_axis,tree_fig.axes[i],".")
+        paint_cloud(current_data,x_axis,y_axis,tree_fig.axes[i],".")
         paint_tree(tree_fig.axes[i],data,r,x_axis,y_axis,x_range,y_range)
         adjust_axes(x_axis,y_axis,x_range,y_range,tree_fig.axes[i])
 
@@ -671,7 +684,7 @@ if __name__ == "__main__":
         "bpp_loss","mse_loss",#1,1,
         # x_range=[0.1,1.75],
         # y_range=[0.001,0.0045],
-        start="right"
+        start="left" # start="right"
     )
 
     glch_rate_vs_dist(
