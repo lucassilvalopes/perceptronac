@@ -1,7 +1,18 @@
 
 from scipy import interpolate
+import ast
+from PIL import Image
 import numpy as np
 import pandas as pd
+
+
+def get_n_pixels(conf_path):
+    conf = pd.read_csv(conf_path,index_col=0,header=0)
+    n_pixels = 0
+    for im_path in ast.literal_eval(conf.loc['validation_set','value']):
+        im = Image.open(im_path)
+        n_pixels += (im.size[0]*im.size[1])
+    return n_pixels
 
 
 def group_energy_measurements(data):

@@ -8,7 +8,7 @@ SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.dirname(os.path.dirname(SCRIPT_DIR)))
 
 from perceptronac.convex_hull import convex_hull
-from perceptronac.power_consumption import estimate_joules
+from perceptronac.power_consumption import estimate_joules, get_n_pixels
 from perceptronac.power_consumption import group_energy_measurements
 import numpy as np
 import math
@@ -368,6 +368,12 @@ def glch_rate_vs_energy(
     joules = estimate_joules(data,power_draw)
 
     data["joules"] = joules
+
+    csv_path_3 = csv_path.replace("raw_values","conf")
+
+    n_pixels = get_n_pixels(csv_path_3)
+
+    data["joules"] = data["joules"] / n_pixels
 
     data = group_energy_measurements(data).set_index("topology")
 
