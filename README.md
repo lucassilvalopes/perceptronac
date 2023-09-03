@@ -11,6 +11,8 @@ These instructions will get you a copy of the project up and running on your loc
 - Python >= 3.6
 - Pip
 - jbigkit (`sudo apt install jbigkit-bin` in ubuntu)
+- texlive (`sudo apt install texlive-latex-extra` in ubuntu)
+- texlive-science (`sudo apt install texlive-science`in ubuntu)
 
 ### Installing
 

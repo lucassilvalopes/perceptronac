@@ -12,11 +12,18 @@ from perceptronac.power_consumption import estimate_joules, get_n_pixels
 from perceptronac.power_consumption import group_energy_measurements
 import numpy as np
 import math
+import matplotlib
 import matplotlib.pyplot as plt
 from sklearn.preprocessing import MinMaxScaler
 from glch_utils import min_max_convex_hull
 
 from glch_BandD import GLCH
+
+
+
+matplotlib.use("pgf")
+matplotlib.rcParams.update({"pgf.texsystem": "pdflatex","pgf.preamble": [r"\usepackage{siunitx}"]})
+
 
 
 def build_tree(data,possible_values,x_axis,y_axis,initial_values,to_str_method,start="left",scale_x=1,scale_y=1,debug=True,title=None):
@@ -325,16 +332,19 @@ def limit_significant_digits(value,last_significant_digit_position):
     factor = 10**last_significant_digit_position
     return np.round(value/factor) * factor
 
-def limit_energy_significant_digits(data):
+def limit_energy_significant_digits(data,x_axis):
 
-    last_significant_digit_position = fexp(data["joules_std"].max())
+    mean_col=x_axis
+    std_col=f"{x_axis}_std"
 
-    data[["joules","joules_std"]] = data[["joules","joules_std"]].apply(lambda x: pd.Series({
-        "joules":limit_significant_digits(x["joules"],last_significant_digit_position),
-        "joules_std":limit_significant_digits(x["joules_std"],last_significant_digit_position)
-        # "joules":limit_significant_digits(x["joules"],fexp(x["joules_std"])),
-        # "joules_std":limit_significant_digits(x["joules_std"],fexp(x["joules_std"]))
-    },index=["joules","joules_std"]), axis=1)
+    last_significant_digit_position = fexp(data[std_col].max())
+
+    data[[mean_col,std_col]] = data[[mean_col,std_col]].apply(lambda x: pd.Series({
+        mean_col:limit_significant_digits(x[mean_col],last_significant_digit_position),
+        std_col:limit_significant_digits(x[std_col],last_significant_digit_position)
+        # mean_col:limit_significant_digits(x[mean_col],fexp(x[std_col])),
+        # std_col:limit_significant_digits(x[std_col],fexp(x[std_col]))
+    },index=[mean_col,std_col]), axis=1)
     return data
 
 # %%
@@ -369,17 +379,23 @@ def glch_rate_vs_energy(
 
     data["joules"] = joules
 
+    data = group_energy_measurements(data).set_index("topology")
+
     csv_path_3 = csv_path.replace("raw_values","conf")
 
     n_pixels = get_n_pixels(csv_path_3)
 
-    data["joules"] = data["joules"] / n_pixels
+    data["joules_per_pixel"] = data["joules"] / n_pixels
 
-    data = group_energy_measurements(data).set_index("topology")
+    data["joules_per_pixel_std"] = data["joules_std"] / n_pixels
+
+    data["micro_joules_per_pixel"] = data["joules_per_pixel"] / 1e-6
+
+    data["micro_joules_per_pixel_std"] = data["joules_per_pixel_std"] / 1e-6
 
     if remove_noise:
 
-        limit_energy_significant_digits(data)
+        limit_energy_significant_digits(data,x_axis)
 
     # data[x_axis] = data[x_axis].values/scale_x
     # data[y_axis] = data[y_axis].values/scale_y
@@ -649,74 +665,78 @@ if __name__ == "__main__":
 
     glch_rate_vs_energy(
         "/home/lucas/Documents/perceptronac/results/exp_1676160746/exp_1676160746_raw_values.csv",
-        "joules","data_bits/data_samples",
+        "micro_joules_per_pixel", # "joules_per_pixel", # "joules",
+        "data_bits/data_samples",
         "rate_vs_energy",
         # scale_x=1,scale_y=1,
         # x_range=[135,175],
-        # y_range=[0.115,0.145]
+        # y_range=[0.115,0.145],
+        x_alias="$\SI{}{\mu\joule}$ per pixel"
     )
 
     glch_rate_vs_energy(
         "/home/lucas/Documents/perceptronac/results/exp_1676160746/exp_1676160746_raw_values.csv",
-        "joules","data_bits/data_samples",
+        "micro_joules_per_pixel", # "joules_per_pixel", # "joules",
+        "data_bits/data_samples",
         "rate_vs_energy_noisy",
         # scale_x=1,scale_y=1,
         # x_range=[140,180],
         # y_range=None,
-        remove_noise=False
+        remove_noise=False,
+        x_alias="$\SI{}{\mu\joule}$ per pixel"
     )
 
-    glch_rate_vs_params(
-        "/home/lucas/Documents/perceptronac/results/exp_1676160746/exp_1676160746_static_rate_x_power_values.csv",
-        "params","data_bits/data_samples",
-        "rate_vs_params",
-        # scale_x=1e6,scale_y=1,
-        # x_range=None,
-        # y_range=None,
-        x_in_log_scale=True,
-        x_alias="multiply-add operations per pixel"
-    )
+    # glch_rate_vs_params(
+    #     "/home/lucas/Documents/perceptronac/results/exp_1676160746/exp_1676160746_static_rate_x_power_values.csv",
+    #     "params","data_bits/data_samples",
+    #     "rate_vs_params",
+    #     # scale_x=1e6,scale_y=1,
+    #     # x_range=None,
+    #     # y_range=None,
+    #     x_in_log_scale=True,
+    #     x_alias="multiply-add operations per pixel"
+    # )
 
-    glch_rate_vs_dist(
-        "/home/lucas/Documents/perceptronac/scripts/tradeoffs/bpp-mse-psnr-loss-flops-params_bmshj2018-factorized_10000-epochs_L-2e-2-1e-2-5e-3_N-32-64-96-128-160-192-224_M-32-64-96-128-160-192-224-256-288-320.csv",
-        "bpp_loss","mse_loss",
-        # scale_x=1,scale_y=1,
-        # x_range=[0.1,1.75],
-        # y_range=[0.001,0.0045]
-    )
+    # glch_rate_vs_dist(
+    #     "/home/lucas/Documents/perceptronac/scripts/tradeoffs/bpp-mse-psnr-loss-flops-params_bmshj2018-factorized_10000-epochs_L-2e-2-1e-2-5e-3_N-32-64-96-128-160-192-224_M-32-64-96-128-160-192-224-256-288-320.csv",
+    #     "bpp_loss","mse_loss",
+    #     # scale_x=1,scale_y=1,
+    #     # x_range=[0.1,1.75],
+    #     # y_range=[0.001,0.0045]
+    # )
 
-    glch_rate_vs_dist_2(
-        "/home/lucas/Documents/perceptronac/scripts/tradeoffs/bpp-mse-psnr-loss-flops-params_bmshj2018-factorized_10000-epochs_L-2e-2-1e-2-5e-3_N-32-64-96-128-160-192-224_M-32-64-96-128-160-192-224-256-288-320.csv",
-        "bpp_loss","mse_loss",#1,1,
-        # x_range=[0.1,1.75],
-        # y_range=[0.001,0.0045],
-        start="left" # start="right"
-    )
+    # glch_rate_vs_dist_2(
+    #     "/home/lucas/Documents/perceptronac/scripts/tradeoffs/bpp-mse-psnr-loss-flops-params_bmshj2018-factorized_10000-epochs_L-2e-2-1e-2-5e-3_N-32-64-96-128-160-192-224_M-32-64-96-128-160-192-224-256-288-320.csv",
+    #     "bpp_loss","mse_loss",#1,1,
+    #     # x_range=[0.1,1.75],
+    #     # y_range=[0.001,0.0045],
+    #     start="left" # start="right"
+    # )
 
-    glch_rate_vs_dist(
-        "/home/lucas/Documents/perceptronac/scripts/tradeoffs/bpp-mse-psnr-loss-flops-params_bmshj2018-factorized_10000-epochs_L-2e-2-1e-2-5e-3_N-32-64-96-128-160-192-224_M-32-64-96-128-160-192-224-256-288-320.csv",
-        "flops","loss",
-        # scale_x=1e10,scale_y=1,
-        # x_range=[-0.2*1e10,3.75*1e10],
-        # y_range=[1.1,3.1]
-    )
+    # glch_rate_vs_dist(
+    #     "/home/lucas/Documents/perceptronac/scripts/tradeoffs/bpp-mse-psnr-loss-flops-params_bmshj2018-factorized_10000-epochs_L-2e-2-1e-2-5e-3_N-32-64-96-128-160-192-224_M-32-64-96-128-160-192-224-256-288-320.csv",
+    #     "flops","loss",
+    #     # scale_x=1e10,scale_y=1,
+    #     # x_range=[-0.2*1e10,3.75*1e10],
+    #     # y_range=[1.1,3.1]
+    # )
 
-    glch_rate_vs_dist(
-        "/home/lucas/Documents/perceptronac/scripts/tradeoffs/bpp-mse-psnr-loss-flops-params_bmshj2018-factorized_10000-epochs_L-2e-2-1e-2-5e-3_N-32-64-96-128-160-192-224_M-32-64-96-128-160-192-224-256-288-320.csv",
-        "params","loss",
-        # scale_x=1e6,scale_y=1,
-        # x_range=[-0.1*1e6,4*1e6],
-        # y_range=[1.1,3.1]
-    )
+    # glch_rate_vs_dist(
+    #     "/home/lucas/Documents/perceptronac/scripts/tradeoffs/bpp-mse-psnr-loss-flops-params_bmshj2018-factorized_10000-epochs_L-2e-2-1e-2-5e-3_N-32-64-96-128-160-192-224_M-32-64-96-128-160-192-224-256-288-320.csv",
+    #     "params","loss",
+    #     # scale_x=1e6,scale_y=1,
+    #     # x_range=[-0.1*1e6,4*1e6],
+    #     # y_range=[1.1,3.1]
+    # )
 
-    glch_model_bits_vs_data_bits(
-        "/home/lucas/Documents/perceptronac/results/exp_1676160183/exp_1676160183_model_bits_x_data_bits_values.csv",
-        "model_bits/data_samples","data_bits/data_samples",
-        # scale_x=1,scale_y=1,
-        # x_range=[-0.1,0.8],
-        # y_range=None,
-        x_in_log_scale=True
-    )
+    # glch_model_bits_vs_data_bits(
+    #     "/home/lucas/Documents/perceptronac/results/exp_1676160183/exp_1676160183_model_bits_x_data_bits_values.csv",
+    #     "model_bits/data_samples","data_bits/data_samples",
+    #     # scale_x=1,scale_y=1,
+    #     # x_range=[-0.1,0.8],
+    #     # y_range=None,
+    #     x_in_log_scale=True
+    # )
 
 
 
