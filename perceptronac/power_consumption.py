@@ -27,7 +27,10 @@ def group_energy_measurements(data):
             "params": x["params"].iloc[0],
             "quantization_bits": x["quantization_bits"].iloc[0],
             "joules": x["joules"].mean(),
-            "joules_std": x["joules"].std()
+            "joules_std": x["joules"].std(),
+            "start_time": x["start_time"].mean(),
+            "end_time": x["end_time"].mean(),
+            "time": x["end_time"].mean() - x["start_time"].mean()
         },index=[
             "data_bits/data_samples",
             "(data_bits+model_bits)/data_samples",
@@ -37,7 +40,10 @@ def group_energy_measurements(data):
             "params",
             "quantization_bits",
             "joules",
-            "joules_std"
+            "joules_std",
+            "start_time",
+            "end_time",
+            "time"
         ]))
     
     static_data = data.loc[data["quantization_bits"]==32,:].drop(

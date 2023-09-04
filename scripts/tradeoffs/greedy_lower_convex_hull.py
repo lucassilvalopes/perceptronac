@@ -359,13 +359,7 @@ def save_hull_points(file_name,true_hull_points,estimated_hull_points):
         print(estimated_hull_points,file=f)
 
 
-def glch_rate_vs_energy(
-        csv_path,x_axis,y_axis,title,
-        scale_x=None,scale_y=None,
-        x_range=None,y_range=None,
-        x_in_log_scale=False,remove_noise=True,
-        x_alias=None,y_alias=None
-    ):
+def get_energy_data(csv_path,remove_noise):
 
     data = pd.read_csv(csv_path)
 
@@ -392,46 +386,25 @@ def glch_rate_vs_energy(
     data["micro_joules_per_pixel"] = data["joules_per_pixel"] / 1e-6
 
     data["micro_joules_per_pixel_std"] = data["joules_per_pixel_std"] / 1e-6
-
+    
     if remove_noise:
 
-        limit_energy_significant_digits(data,x_axis)
+        limit_energy_significant_digits(data,"joules")
+        limit_energy_significant_digits(data,"joules_per_pixel")
+        limit_energy_significant_digits(data,"micro_joules_per_pixel")
 
-    # data[x_axis] = data[x_axis].values/scale_x
-    # data[y_axis] = data[y_axis].values/scale_y
-
-    if scale_x is None and scale_y is None:
-
-        scale_x = data.loc[["032_010_010_001","032_640_640_001"],x_axis].max() - data.loc[["032_010_010_001","032_640_640_001"],x_axis].min()
-        scale_y = data.loc[["032_010_010_001","032_640_640_001"],y_axis].max() - data.loc[["032_010_010_001","032_640_640_001"],y_axis].min()
-
-    possible_values = {
-        "h1": [10,20,40,80,160,320,640],
-        "h2": [10,20,40,80,160,320,640]
-    }
-
-    initial_values = {"h1":10,"h2":10}
-
-    def to_str_method(params):
-        widths = [32,params["h1"],params["h2"],1]
-        return '_'.join(map(lambda x: f"{x:03d}",widths))
-
-    r = build_tree(data,possible_values,x_axis,y_axis,initial_values,to_str_method,scale_x=scale_x,scale_y=scale_y,title=title)
-
-    save_all_data(data,r,x_axis,y_axis,x_range,y_range,title,
-        x_in_log_scale=x_in_log_scale,x_alias=x_alias,y_alias=y_alias)
+    return data
 
 
-
-def glch_rate_vs_params(
+def glch_rate_vs_energy(
         csv_path,x_axis,y_axis,title,
         scale_x=None,scale_y=None,
         x_range=None,y_range=None,
-        x_in_log_scale=False,
+        x_in_log_scale=False,remove_noise=True,
         x_alias=None,y_alias=None
     ):
 
-    data = pd.read_csv(csv_path).set_index("topology")
+    data = get_energy_data(csv_path,remove_noise)
 
     # data[x_axis] = data[x_axis].values/scale_x
     # data[y_axis] = data[y_axis].values/scale_y
@@ -456,6 +429,49 @@ def glch_rate_vs_params(
 
     save_all_data(data,r,x_axis,y_axis,x_range,y_range,title,
         x_in_log_scale=x_in_log_scale,x_alias=x_alias,y_alias=y_alias)
+
+
+def glch_rate_vs_time(*args,**kwargs):
+    glch_rate_vs_energy(*args,**kwargs)
+
+
+def glch_rate_vs_params(*args,**kwargs):
+    glch_rate_vs_energy(*args,**kwargs)
+
+
+# def glch_rate_vs_params(
+#         csv_path,x_axis,y_axis,title,
+#         scale_x=None,scale_y=None,
+#         x_range=None,y_range=None,
+#         x_in_log_scale=False,
+#         x_alias=None,y_alias=None
+#     ):
+
+#     data = pd.read_csv(csv_path).set_index("topology")
+
+#     # data[x_axis] = data[x_axis].values/scale_x
+#     # data[y_axis] = data[y_axis].values/scale_y
+
+#     if scale_x is None and scale_y is None:
+
+#         scale_x = data.loc[["032_010_010_001","032_640_640_001"],x_axis].max() - data.loc[["032_010_010_001","032_640_640_001"],x_axis].min()
+#         scale_y = data.loc[["032_010_010_001","032_640_640_001"],y_axis].max() - data.loc[["032_010_010_001","032_640_640_001"],y_axis].min()
+
+#     possible_values = {
+#         "h1": [10,20,40,80,160,320,640],
+#         "h2": [10,20,40,80,160,320,640]
+#     }
+
+#     initial_values = {"h1":10,"h2":10}
+
+#     def to_str_method(params):
+#         widths = [32,params["h1"],params["h2"],1]
+#         return '_'.join(map(lambda x: f"{x:03d}",widths))
+
+#     r = build_tree(data,possible_values,x_axis,y_axis,initial_values,to_str_method,scale_x=scale_x,scale_y=scale_y,title=title)
+
+#     save_all_data(data,r,x_axis,y_axis,x_range,y_range,title,
+#         x_in_log_scale=x_in_log_scale,x_alias=x_alias,y_alias=y_alias)
 
 
 
@@ -687,7 +703,8 @@ if __name__ == "__main__":
     )
 
     glch_rate_vs_params(
-        "/home/lucas/Documents/perceptronac/results/exp_1676160746/exp_1676160746_static_rate_x_power_values.csv",
+        "/home/lucas/Documents/perceptronac/results/exp_1676160746/exp_1676160746_raw_values.csv",
+        # "/home/lucas/Documents/perceptronac/results/exp_1676160746/exp_1676160746_static_rate_x_power_values.csv",
         "params","data_bits/data_samples",
         "rate_vs_params",
         # scale_x=1e6,scale_y=1,
@@ -695,6 +712,17 @@ if __name__ == "__main__":
         # y_range=None,
         x_in_log_scale=True,
         x_alias="multiply-add operations per pixel"
+    )
+
+    glch_rate_vs_time(
+        "/home/lucas/Documents/perceptronac/results/exp_1676160746/exp_1676160746_raw_values.csv",
+        "time","data_bits/data_samples",
+        "rate_vs_time",
+        # scale_x=1e6,scale_y=1,
+        # x_range=None,
+        # y_range=None,
+        x_in_log_scale=False,
+        x_alias="time (s)"
     )
 
     glch_rate_vs_dist(
