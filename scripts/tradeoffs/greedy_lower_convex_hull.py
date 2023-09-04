@@ -389,6 +389,7 @@ def get_energy_data(csv_path,remove_noise):
     
     if remove_noise:
 
+        limit_energy_significant_digits(data,"time")
         limit_energy_significant_digits(data,"joules")
         limit_energy_significant_digits(data,"joules_per_pixel")
         limit_energy_significant_digits(data,"micro_joules_per_pixel")
@@ -721,6 +722,7 @@ if __name__ == "__main__":
         # scale_x=1e6,scale_y=1,
         # x_range=None,
         # y_range=None,
+        remove_noise=False,
         x_in_log_scale=False,
         x_alias="time (s)"
     )
