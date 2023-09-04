@@ -715,6 +715,11 @@ if __name__ == "__main__":
         x_alias="multiply-add operations per pixel"
     )
 
+    # TODO: the time measurements right now are too comprehensive.
+    # They are measuring more than just the network computations.
+    # They are also measuring the time taken to load the data, etc.
+    # I could try to restrict the time measurements a bit more.
+    # In other words, the measurements seem a little biased.
     glch_rate_vs_time(
         "/home/lucas/Documents/perceptronac/results/exp_1676160746/exp_1676160746_raw_values.csv",
         "time","data_bits/data_samples",
