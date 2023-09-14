@@ -22,7 +22,12 @@ from glch_BandD import GLCH
 
 
 matplotlib.use("pgf")
-matplotlib.rcParams.update({"pgf.texsystem": "pdflatex","pgf.preamble": [r"\usepackage{siunitx}"]})
+matplotlib.rcParams.update({
+    "pgf.texsystem": "pdflatex",
+    "legend.fontsize": 12,
+    "xtick.labelsize": 12,
+    "ytick.labelsize": 12,
+    "pgf.preamble": [r"\usepackage{siunitx}"]})
 
 
 
@@ -158,8 +163,8 @@ def adjust_axes(x_axis,y_axis,x_range,y_range,ax,x_in_log_scale=False,x_alias=No
         # ax.set_xticks(xvalues)
         # ax.set_xticklabels(xvalues)
 
-    ax.set_xlabel(x_alias if x_alias else x_axis, fontsize=12)
-    ax.set_ylabel(y_alias if y_alias else y_axis, fontsize=12)
+    ax.set_xlabel(x_alias if x_alias else x_axis, fontsize=14)
+    ax.set_ylabel(y_alias if y_alias else y_axis, fontsize=14)
     if x_range:
         ax.set_xlim(x_range[0],x_range[1])
     if y_range:
