@@ -638,6 +638,8 @@ def glch_model_bits_vs_data_bits(
 
     data = pd.read_csv(csv_path)
 
+    data["model_bits"] = data["model_bits/data_samples"] * data["data_samples"]
+
     data['idx'] = data.apply(lambda x: f"{x.topology}_{x.quantization_bits:02d}b", axis=1)
 
     data = data.set_index("idx")
@@ -653,8 +655,8 @@ def glch_model_bits_vs_data_bits(
         "qb": [8,16,32]
     }
 
-    x_axis = "model_bits/data_samples"
-    y_axis = "data_bits/data_samples"
+    # x_axis = "model_bits/data_samples"
+    # y_axis = "data_bits/data_samples"
 
     initial_values = {"h1":10,"h2":10,"qb":8}
 
@@ -688,7 +690,8 @@ if __name__ == "__main__":
         # scale_x=1,scale_y=1,
         # x_range=[135,175],
         # y_range=[0.115,0.145],
-        x_alias="$\SI{}{\mu\joule}$ per pixel"
+        x_alias="Complexity ($\SI{}{\mu\joule}$ per pixel)",
+        y_alias="Rate (bits per pixel)"
     )
 
     glch_rate_vs_energy(
@@ -700,7 +703,8 @@ if __name__ == "__main__":
         # x_range=[140,180],
         # y_range=None,
         remove_noise=False,
-        x_alias="$\SI{}{\mu\joule}$ per pixel"
+        x_alias="Complexity ($\SI{}{\mu\joule}$ per pixel)",
+        y_alias="Rate (bits per pixel)"
     )
 
     glch_rate_vs_params(
@@ -712,7 +716,8 @@ if __name__ == "__main__":
         # x_range=None,
         # y_range=None,
         x_in_log_scale=True,
-        x_alias="multiply-add operations per pixel"
+        x_alias="Complexity (multiply/adds per pixel)",
+        y_alias="Rate (bits per pixel)"
     )
 
     # TODO: the time measurements right now are too comprehensive.
@@ -729,7 +734,8 @@ if __name__ == "__main__":
         # y_range=None,
         remove_noise=False,
         x_in_log_scale=False,
-        x_alias="time (s)"
+        x_alias="Complexity (seconds)",
+        y_alias="Rate (bits per pixel)"
     )
 
     glch_rate_vs_dist(
@@ -766,11 +772,13 @@ if __name__ == "__main__":
 
     glch_model_bits_vs_data_bits(
         "/home/lucas/Documents/perceptronac/results/exp_1676160183/exp_1676160183_model_bits_x_data_bits_values.csv",
-        "model_bits/data_samples","data_bits/data_samples",
+        "model_bits","data_bits/data_samples",
         # scale_x=1,scale_y=1,
         # x_range=[-0.1,0.8],
         # y_range=None,
-        x_in_log_scale=True
+        x_in_log_scale=True,
+        x_alias="Complexity (encoded model bits)",
+        y_alias="Rate (bits per pixel)"
     )
 
 
