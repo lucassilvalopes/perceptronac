@@ -486,10 +486,13 @@ def glch_rate_vs_dist(
         scale_x=None,scale_y=None,
         x_range=None,y_range=None,
         start="left",
-        x_alias=None,y_alias=None
+        x_alias=None,y_alias=None,
+        lambdas=[]
     ):
 
     data = pd.read_csv(csv_path).set_index("labels")
+
+    data = data[data["labels"].apply(lambda x: any([(lmbd in x) for lmbd in lambdas]) )]
 
     # data[x_axis] = data[x_axis].values/scale_x
     # data[y_axis] = data[y_axis].values/scale_y
@@ -500,7 +503,7 @@ def glch_rate_vs_dist(
         scale_y = data.loc[["L5e-3N32M32","L2e-2N224M320"],y_axis].max() - data.loc[["L5e-3N32M32","L2e-2N224M320"],y_axis].min()
 
     possible_values = {
-        "L": ["5e-3", "1e-2", "2e-2"],
+        "L": ["5e-3", "1e-2", "2e-2"] if len(lambdas) == 0 else lambdas,
         "N": [32, 64, 96, 128, 160, 192, 224],
         "M": [32, 64, 96, 128, 160, 192, 224, 256, 288, 320]
     }
@@ -525,7 +528,9 @@ def glch_rate_vs_dist(
     else:
         r = build_tree(data,possible_values,x_axis,y_axis,initial_values,to_str_method,scale_x=scale_x,scale_y=scale_y)
 
-    save_all_data(data,r,x_axis,y_axis,x_range,y_range,f'{x_axis}_vs_{y_axis}_start_{start}',
+    formatted_lambdas = "" if len(lambdas)==0 else "_" + "-".join([lambdas[i] for i in np.argsort(list(map(float,lambdas)))])
+
+    save_all_data(data,r,x_axis,y_axis,x_range,y_range,f'{x_axis}_vs_{y_axis}_start_{start}{formatted_lambdas}',
         x_alias=x_alias,y_alias=y_alias)
 
 
@@ -764,7 +769,8 @@ if __name__ == "__main__":
         "flops","loss",
         # scale_x=1e10,scale_y=1,
         # x_range=[-0.2*1e10,3.75*1e10],
-        # y_range=[1.1,3.1]
+        # y_range=[1.1,3.1],
+        lambdas=["5e-3"]
     )
 
     glch_rate_vs_dist(
@@ -772,7 +778,8 @@ if __name__ == "__main__":
         "params","loss",
         # scale_x=1e6,scale_y=1,
         # x_range=[-0.1*1e6,4*1e6],
-        # y_range=[1.1,3.1]
+        # y_range=[1.1,3.1],
+        lambdas=["5e-3"]
     )
 
     glch_model_bits_vs_data_bits(
