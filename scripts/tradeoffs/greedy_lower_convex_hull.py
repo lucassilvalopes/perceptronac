@@ -216,24 +216,28 @@ def paint_hull(true_hull_points,estimated_hull_points,x_axis,y_axis,ax):
     #     estimated_hull_points[x_axis],estimated_hull_points[y_axis],facecolors='none', edgecolors='k')
 
 
-def paint_nodes(data,r,x_axis,y_axis,ax,is_hulls_fig=False):
 
-    if is_hulls_fig:
-        lch_nodes = [str(r)] + tree_nodes(r,[], "lch")
-        lch_nodes_xy = data.loc[lch_nodes,:]
-        ax.plot(lch_nodes_xy[x_axis],lch_nodes_xy[y_axis],linestyle="",color="black",marker="o",
-                markerfacecolor='none',markersize=8)
-    else:
-        first_selected_nodes = [str(r)] + tree_nodes(r,[], "first")
-        second_selected_nodes = tree_nodes(r,[], "second")
-        first_selected_nodes_xy = data.loc[first_selected_nodes,:]
-        second_selected_nodes_xy = data.loc[second_selected_nodes,:]
-        all_nodes = [str(r)] + tree_nodes(r,[], "all")
-        unselected_nodes = list((set(all_nodes) - set(first_selected_nodes)) - set(second_selected_nodes) )
-        unselected_nodes_xy = data.loc[unselected_nodes,:]
-        ax.plot(first_selected_nodes_xy[x_axis],first_selected_nodes_xy[y_axis],linestyle="",color="green",marker=".")
-        ax.plot(second_selected_nodes_xy[x_axis],second_selected_nodes_xy[y_axis],linestyle="",color="darkgoldenrod",marker=".")
-        ax.plot(unselected_nodes_xy[x_axis],unselected_nodes_xy[y_axis],linestyle="",color="firebrick",marker=".")
+
+def paint_hull_nodes(data,r,x_axis,y_axis,ax):
+
+    lch_nodes = [str(r)] + tree_nodes(r,[], "lch")
+    lch_nodes_xy = data.loc[lch_nodes,:]
+    ax.plot(lch_nodes_xy[x_axis],lch_nodes_xy[y_axis],linestyle="",color="black",marker="o",
+            markerfacecolor='none',markersize=8)
+
+
+def paint_tree_nodes(data,r,x_axis,y_axis,ax):
+
+    first_selected_nodes = [str(r)] + tree_nodes(r,[], "first")
+    second_selected_nodes = tree_nodes(r,[], "second")
+    first_selected_nodes_xy = data.loc[first_selected_nodes,:]
+    second_selected_nodes_xy = data.loc[second_selected_nodes,:]
+    all_nodes = [str(r)] + tree_nodes(r,[], "all")
+    unselected_nodes = list((set(all_nodes) - set(first_selected_nodes)) - set(second_selected_nodes) )
+    unselected_nodes_xy = data.loc[unselected_nodes,:]
+    ax.plot(first_selected_nodes_xy[x_axis],first_selected_nodes_xy[y_axis],linestyle="",color="green",marker=".")
+    ax.plot(second_selected_nodes_xy[x_axis],second_selected_nodes_xy[y_axis],linestyle="",color="darkgoldenrod",marker=".")
+    ax.plot(unselected_nodes_xy[x_axis],unselected_nodes_xy[y_axis],linestyle="",color="firebrick",marker=".")
 
 
 def save_all_data(data,r,x_axis,y_axis,x_range,y_range,data_id,x_in_log_scale=False,x_alias=None,y_alias=None):
@@ -249,7 +253,7 @@ def save_all_data(data,r,x_axis,y_axis,x_range,y_range,data_id,x_in_log_scale=Fa
     paint_root(data,r,x_axis,y_axis,ax)
     paint_tree(ax,data,r,x_axis,y_axis,x_range,y_range)
     # paint_hull_points(true_hull_points,x_axis,y_axis,ax)
-    paint_nodes(data,r,x_axis,y_axis,ax)
+    paint_tree_nodes(data,r,x_axis,y_axis,ax)
     adjust_axes(x_axis,y_axis,x_range,y_range,ax,x_in_log_scale,x_alias,y_alias)
     tree_fig.savefig(f"glch_results/tree_fig_{data_id}.png", dpi=300, facecolor='w', bbox_inches = "tight")
 
@@ -257,7 +261,7 @@ def save_all_data(data,r,x_axis,y_axis,x_range,y_range,data_id,x_in_log_scale=Fa
     paint_cloud(data,x_axis,y_axis,ax,"x")
     # paint_hulls(true_hull_points,estimated_hull_points,x_axis,y_axis,ax)
     # paint_hull(true_hull_points,estimated_hull_points,x_axis,y_axis,ax)
-    paint_nodes(data,r,x_axis,y_axis,ax,is_hulls_fig=True)
+    paint_hull_nodes(data,r,x_axis,y_axis,ax)
     adjust_axes(x_axis,y_axis,None,None,ax,x_in_log_scale,x_alias,y_alias)
     hulls_fig.savefig(f"glch_results/hulls_fig_{data_id}.png", dpi=300, facecolor='w', bbox_inches = "tight")
 
@@ -539,7 +543,7 @@ def glch_rate_vs_dist_2(csv_path,x_axis,y_axis,scale_x=None,scale_y=None,x_range
 
     for i in range(len(brute_dict["L"])):
         # paint_hull_points(true_hull_points,x_axis,y_axis,tree_fig.axes[i])
-        paint_nodes(data,rs[i],x_axis,y_axis,tree_fig.axes[i])
+        paint_tree_nodes(data,rs[i],x_axis,y_axis,tree_fig.axes[i])
 
     tree_fig.savefig(f"glch_results/tree_fig_{exp_id}.png", dpi=300, facecolor='w', bbox_inches = "tight")
 
@@ -549,7 +553,7 @@ def glch_rate_vs_dist_2(csv_path,x_axis,y_axis,scale_x=None,scale_y=None,x_range
     # paint_hulls(true_hull_points,estimated_hull_points,x_axis,y_axis,ax)
     # paint_hull(true_hull_points,estimated_hull_points,x_axis,y_axis,ax)
     for i in range(len(brute_dict["L"])):
-        paint_nodes(data,rs[i],x_axis,y_axis,ax,is_hulls_fig=True)
+        paint_hull_nodes(data,rs[i],x_axis,y_axis,ax)
     adjust_axes(x_axis,y_axis,None,None,ax)
     hulls_fig.savefig(f"glch_results/hulls_fig_{exp_id}.png", dpi=300, facecolor='w', bbox_inches = "tight")
 
