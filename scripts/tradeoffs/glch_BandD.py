@@ -9,8 +9,8 @@ from glch_utils import Node, min_max_convex_hull
 class GLCH:
 
     def __init__(
-        self,data,possible_values,x_axis,y_axis,initial_values,to_str_method,start="left",scale_x=1,scale_y=1,debug=True,
-        title=None
+        self,data,possible_values,x_axis,y_axis,initial_values,to_str_method,start="left",debug=True,
+        title=None, constrained=True, select_function="corrected_angle_rule", lmbda = 1
     ):
         """
         data = 
@@ -31,6 +31,12 @@ class GLCH:
         def to_str_method(params):
             widths = [32,params["h1"],params["h2"],1]
             return '_'.join(map(lambda x: f"{x:03d}",widths))
+        
+        select_function:
+            gift_wrapping, 
+            angle_rule, 
+            corrected_angle_rule, 
+            point
         """
         self.data = data
         self.possible_values = possible_values
@@ -39,15 +45,14 @@ class GLCH:
         self.initial_values = initial_values
         self.to_str_method = to_str_method
         self.start = start
-        self.scale_x = scale_x
-        self.scale_y = scale_y
         self.debug = debug
         if title is None:
             self.title = f"{x_axis.replace('/','_over_')}_vs_{y_axis.replace('/','_over_')}"
         else:
             self.title=title
-        self.constrained = True
-        self.select_function = "corrected_angle_rule" # gift_wrapping, angle_rule, corrected_angle_rule
+        self.constrained = constrained
+        self.select_function = select_function
+        self.lmbda = lmbda
 
     def get_node_coord(self,node):
         if isinstance(node,list):
@@ -128,6 +133,8 @@ class GLCH:
                 chosen_node_index,update_ref_node = self.make_choice_2(ref_node,node,prev_candidate_nodes,candidate_nodes)
             elif self.select_function == "corrected_angle_rule":
                 chosen_node_index,update_ref_node = self.make_choice_3(ref_node,node,prev_candidate_nodes,candidate_nodes)
+            elif self.select_function == "point":
+                chosen_node_index,update_ref_node = self.make_choice_4(ref_node,node,prev_candidate_nodes,candidate_nodes)
             else:
                 raise ValueError(f"unknown select function {self.select_function}")
 
@@ -392,3 +399,43 @@ class GLCH:
         idx = [z[0] for z in sorted([[i,deltacs[i],deltars[i]] for i in (ii)],key=lambda x: (x[1], x[2]))]
     
         return idx  
+
+
+    def get_best_point(self,coord):
+        rate_axis = [c[0] for c in coord]
+        dist_axis = [c[1] for c in coord]
+        best_point = np.argmin(np.array(rate_axis) + self.lmbda * np.array(dist_axis))
+        return best_point
+
+
+    def make_choice_4(self,ref_node,node,prev_candidate_nodes,candidate_nodes):
+
+        filtered_nodes = [n for n in candidate_nodes if str(n) != str(node)]
+
+        blacklist = [str(n) for n in filtered_nodes]
+
+        filt_prev_candidate_nodes = [n for n in prev_candidate_nodes if (n.color == "red") and (str(n) not in blacklist)]
+
+        all_candidate_nodes = filt_prev_candidate_nodes + filtered_nodes
+
+        chosen_node_index = self.get_best_point(self.get_node_coord([ref_node]+all_candidate_nodes))
+
+        if chosen_node_index == 0:
+
+            chosen_node_index = self.get_best_point(self.get_node_coord(filtered_nodes))
+
+            update_ref_node = False
+
+            chosen_node_index = len(prev_candidate_nodes) + candidate_nodes.index(filtered_nodes[chosen_node_index])
+
+        else:
+
+            update_ref_node = True
+
+            if chosen_node_index >= len(filt_prev_candidate_nodes)+1:
+                chosen_node_index = len(prev_candidate_nodes) + \
+                    candidate_nodes.index(filtered_nodes[chosen_node_index-len(filt_prev_candidate_nodes)-1])
+            else:
+                chosen_node_index = prev_candidate_nodes.index(filt_prev_candidate_nodes[chosen_node_index-1])
+
+        return chosen_node_index, update_ref_node
