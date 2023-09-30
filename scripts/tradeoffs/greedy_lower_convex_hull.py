@@ -780,7 +780,7 @@ if __name__ == "__main__":
         # scale_x=1e10,scale_y=1,
         # x_range=[-0.2*1e10,3.75*1e10],
         # y_range=[1.1,3.1],
-        lambdas=["5e-3"]
+        lambdas=["2e-2"]
     )
 
     glch_rate_vs_dist(
@@ -789,7 +789,7 @@ if __name__ == "__main__":
         # scale_x=1e6,scale_y=1,
         # x_range=[-0.1*1e6,4*1e6],
         # y_range=[1.1,3.1],
-        lambdas=["5e-3"]
+        lambdas=["2e-2"]
     )
 
     glch_model_bits_vs_data_bits(
