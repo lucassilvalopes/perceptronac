@@ -202,10 +202,10 @@ if __name__ == "__main__":
     joint_labels = join_Ls_data(labels)
 
     fig_name_template = "{}_{}-epochs_D-{}_L-{}_N-{}_M-{}"
-    formatted_Ds = '-'.join(list(map(str,list(set(partial_D)))))
-    formatted_Ls = '-'.join(list(set(partial_L)))
-    formatted_Ns = '-'.join(list(map(str,list(set(partial_N)))))
-    formatted_Ms = '-'.join(list(map(str,list(set(partial_M)))))
+    formatted_Ds = '-'.join(map(str,sorted(set(partial_D))))
+    formatted_Ls = '-'.join([all_L[i] for i in np.argsort(list(map(float,all_L)))[::-1] if all_L[i] in set(partial_L)])
+    formatted_Ns = '-'.join(map(str,sorted(set(partial_N))))
+    formatted_Ms = '-'.join(map(str,sorted(set(partial_M))))
 
     for L in all_L:
         fig_name = fig_name_template.format(model,str(epochs),formatted_Ds,L,formatted_Ns,formatted_Ms)
