@@ -490,17 +490,23 @@ def glch_rate_vs_dist(
         lambdas=[]
     ):
 
-    data = pd.read_csv(csv_path).set_index("labels")
+    data = pd.read_csv(csv_path)
 
-    data = data[data["labels"].apply(lambda x: any([(lmbd in x) for lmbd in lambdas]) )]
+    if len(lambdas) == 0:
+        data = data.set_index("labels")
+    else:
+        data = data[data["labels"].apply(lambda x: any([(lmbd in x) for lmbd in lambdas]) )].set_index("labels")
 
     # data[x_axis] = data[x_axis].values/scale_x
     # data[y_axis] = data[y_axis].values/scale_y
 
     if scale_x is None and scale_y is None:
 
-        scale_x = data.loc[["L5e-3N32M32","L2e-2N224M320"],x_axis].max() - data.loc[["L5e-3N32M32","L2e-2N224M320"],x_axis].min()
-        scale_y = data.loc[["L5e-3N32M32","L2e-2N224M320"],y_axis].max() - data.loc[["L5e-3N32M32","L2e-2N224M320"],y_axis].min()
+        simplest = "L{}N32M32".format("5e-3" if len(lambdas) == 0 else lambdas[np.argmin(list(map(float,lambdas)))])
+        most_complex = "L{}N224M320".format("2e-2" if len(lambdas) == 0 else lambdas[np.argmax(list(map(float,lambdas)))])
+
+        scale_x = data.loc[[simplest,most_complex],x_axis].max() - data.loc[[simplest,most_complex],x_axis].min()
+        scale_y = data.loc[[simplest,most_complex],y_axis].max() - data.loc[[simplest,most_complex],y_axis].min()
 
     possible_values = {
         "L": ["5e-3", "1e-2", "2e-2"] if len(lambdas) == 0 else lambdas,
@@ -749,7 +755,7 @@ if __name__ == "__main__":
     )
 
     glch_rate_vs_dist(
-        "/home/lucas/Documents/perceptronac/scripts/tradeoffs/bpp-mse-psnr-loss-flops-params_bmshj2018-factorized_10000-epochs_L-2e-2-1e-2-5e-3_N-32-64-96-128-160-192-224_M-32-64-96-128-160-192-224-256-288-320.csv",
+        "/home/lucas/Documents/perceptronac/scripts/tradeoffs/bpp-mse-psnr-loss-flops-params_bmshj2018-factorized_10000-epochs_D-4_L-2e-2-1e-2-5e-3_N-32-64-96-128-160-192-224_M-32-64-96-128-160-192-224-256-288-320.csv",
         "bpp_loss","mse_loss",
         # scale_x=1,scale_y=1,
         # x_range=[0.1,1.75],
@@ -757,7 +763,7 @@ if __name__ == "__main__":
     )
 
     glch_rate_vs_dist_2(
-        "/home/lucas/Documents/perceptronac/scripts/tradeoffs/bpp-mse-psnr-loss-flops-params_bmshj2018-factorized_10000-epochs_L-2e-2-1e-2-5e-3_N-32-64-96-128-160-192-224_M-32-64-96-128-160-192-224-256-288-320.csv",
+        "/home/lucas/Documents/perceptronac/scripts/tradeoffs/bpp-mse-psnr-loss-flops-params_bmshj2018-factorized_10000-epochs_D-4_L-2e-2-1e-2-5e-3_N-32-64-96-128-160-192-224_M-32-64-96-128-160-192-224-256-288-320.csv",
         "bpp_loss","mse_loss",#1,1,
         # x_range=[0.1,1.75],
         # y_range=[0.001,0.0045],
@@ -765,7 +771,7 @@ if __name__ == "__main__":
     )
 
     glch_rate_vs_dist(
-        "/home/lucas/Documents/perceptronac/scripts/tradeoffs/bpp-mse-psnr-loss-flops-params_bmshj2018-factorized_10000-epochs_L-2e-2-1e-2-5e-3_N-32-64-96-128-160-192-224_M-32-64-96-128-160-192-224-256-288-320.csv",
+        "/home/lucas/Documents/perceptronac/scripts/tradeoffs/bpp-mse-psnr-loss-flops-params_bmshj2018-factorized_10000-epochs_D-4_L-2e-2-1e-2-5e-3_N-32-64-96-128-160-192-224_M-32-64-96-128-160-192-224-256-288-320.csv",
         "flops","loss",
         # scale_x=1e10,scale_y=1,
         # x_range=[-0.2*1e10,3.75*1e10],
@@ -774,7 +780,7 @@ if __name__ == "__main__":
     )
 
     glch_rate_vs_dist(
-        "/home/lucas/Documents/perceptronac/scripts/tradeoffs/bpp-mse-psnr-loss-flops-params_bmshj2018-factorized_10000-epochs_L-2e-2-1e-2-5e-3_N-32-64-96-128-160-192-224_M-32-64-96-128-160-192-224-256-288-320.csv",
+        "/home/lucas/Documents/perceptronac/scripts/tradeoffs/bpp-mse-psnr-loss-flops-params_bmshj2018-factorized_10000-epochs_D-4_L-2e-2-1e-2-5e-3_N-32-64-96-128-160-192-224_M-32-64-96-128-160-192-224-256-288-320.csv",
         "params","loss",
         # scale_x=1e6,scale_y=1,
         # x_range=[-0.1*1e6,4*1e6],
