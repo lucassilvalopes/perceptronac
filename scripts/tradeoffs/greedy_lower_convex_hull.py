@@ -184,9 +184,16 @@ def compute_hulls(data,rs,x_axis,y_axis):
     probe = data.loc[new_points,:]
     estimated_hull_points = probe.iloc[min_max_convex_hull(probe.loc[:,[x_axis,y_axis]].values.tolist()),:]
 
-    n_trained_networks = len(set([re.sub(r'_[\d]{2}b','',pt) for pt in new_points]))
+    return true_hull_points,estimated_hull_points
 
-    return true_hull_points,estimated_hull_points,n_trained_networks
+
+def get_n_trained_networks(rs):
+    new_points = []
+    for r in rs:
+        new_points += [str(r)]
+        new_points += tree_nodes(r,[],"all")
+    n_trained_networks = len(set([re.sub(r'_[\d]{2}b','',pt) for pt in new_points]))
+    return n_trained_networks
 
 
 def paint_hulls(true_hull_points,estimated_hull_points,x_axis,y_axis,ax):
@@ -240,9 +247,9 @@ def paint_tree_nodes(data,r,x_axis,y_axis,ax):
     ax.plot(unselected_nodes_xy[x_axis],unselected_nodes_xy[y_axis],linestyle="",color="firebrick",marker=".")
 
 
-def save_all_data(data,r,x_axis,y_axis,x_range,y_range,data_id,x_in_log_scale=False,x_alias=None,y_alias=None):
+def save_tree_data(data,r,x_axis,y_axis,x_range,y_range,data_id,x_in_log_scale=False,x_alias=None,y_alias=None):
 
-    true_hull_points,estimated_hull_points,n_trained_networks = compute_hulls(data,[r],x_axis,y_axis)
+    n_trained_networks = get_n_trained_networks([r])
 
     with open(f'glch_results/tree_{data_id}.txt', 'w') as f:
         print_tree(r,file=f)
@@ -256,6 +263,11 @@ def save_all_data(data,r,x_axis,y_axis,x_range,y_range,data_id,x_in_log_scale=Fa
     paint_tree_nodes(data,r,x_axis,y_axis,ax)
     adjust_axes(x_axis,y_axis,x_range,y_range,ax,x_in_log_scale,x_alias,y_alias)
     tree_fig.savefig(f"glch_results/tree_fig_{data_id}.png", dpi=300, facecolor='w', bbox_inches = "tight")
+
+
+def save_hull_data(data,r,x_axis,y_axis,x_range,y_range,data_id,x_in_log_scale=False,x_alias=None,y_alias=None):
+
+    true_hull_points,estimated_hull_points = compute_hulls(data,[r],x_axis,y_axis)
 
     hulls_fig, ax = plt.subplots(nrows=1, ncols=1)
     paint_cloud(data,x_axis,y_axis,ax,"x")
@@ -380,9 +392,10 @@ def glch_rate_vs_energy(
 
     r = build_tree(data,possible_values,x_axis,y_axis,initial_values,to_str_method,scale_x=scale_x,scale_y=scale_y,title=title)
 
-    save_all_data(data,r,x_axis,y_axis,x_range,y_range,title,
+    save_tree_data(data,r,x_axis,y_axis,x_range,y_range,title,
         x_in_log_scale=x_in_log_scale,x_alias=x_alias,y_alias=y_alias)
-
+    save_hull_data(data,r,x_axis,y_axis,x_range,y_range,title,
+        x_in_log_scale=x_in_log_scale,x_alias=x_alias,y_alias=y_alias)
 
 def glch_rate_vs_time(*args,**kwargs):
     glch_rate_vs_energy(*args,**kwargs)
@@ -450,9 +463,10 @@ def glch_rate_vs_dist(
 
     formatted_lambdas = "" if len(lambdas)==0 else "_" + "-".join([lambdas[i] for i in np.argsort(list(map(float,lambdas)))])
 
-    save_all_data(data,r,x_axis,y_axis,x_range,y_range,f'{x_axis}_vs_{y_axis}_start_{start}{formatted_lambdas}',
+    save_tree_data(data,r,x_axis,y_axis,x_range,y_range,f'{x_axis}_vs_{y_axis}_start_{start}{formatted_lambdas}',
         x_alias=x_alias,y_alias=y_alias)
-
+    save_hull_data(data,r,x_axis,y_axis,x_range,y_range,f'{x_axis}_vs_{y_axis}_start_{start}{formatted_lambdas}',
+        x_alias=x_alias,y_alias=y_alias)
 
 def get_x_range_y_range(data,x_axis,y_axis):
 
@@ -598,7 +612,9 @@ def glch_model_bits_vs_data_bits(
 
     r = build_tree(data,possible_values,x_axis,y_axis,initial_values,to_str_method,scale_x=scale_x,scale_y=scale_y)
 
-    save_all_data(data,r,x_axis,y_axis,x_range,y_range,'model_bits_vs_data_bits',
+    save_tree_data(data,r,x_axis,y_axis,x_range,y_range,'model_bits_vs_data_bits',
+        x_in_log_scale=x_in_log_scale,x_alias=x_alias,y_alias=y_alias)
+    save_hull_data(data,r,x_axis,y_axis,x_range,y_range,'model_bits_vs_data_bits',
         x_in_log_scale=x_in_log_scale,x_alias=x_alias,y_alias=y_alias)
 
 
