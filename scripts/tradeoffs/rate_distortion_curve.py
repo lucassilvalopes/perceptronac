@@ -133,7 +133,7 @@ if __name__ == "__main__":
     all_L = ["1e-2", "5e-3", "2e-2"]
     all_N = [32, 64, 96, 128, 160, 192, 224]
     all_M = [32, 64, 96, 128, 160, 192, 224, 256, 288, 320]
-    all_D = [3] #[3,4]
+    all_D = [3,4]
 
     dist_axis = {L:[] for L in all_L}
     rate_axis = {L:[] for L in all_L}

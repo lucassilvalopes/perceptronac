@@ -502,13 +502,14 @@ def glch_rate_vs_dist(
 
     if scale_x is None and scale_y is None:
 
-        simplest = "L{}N32M32".format("5e-3" if len(lambdas) == 0 else lambdas[np.argmin(list(map(float,lambdas)))])
-        most_complex = "L{}N224M320".format("2e-2" if len(lambdas) == 0 else lambdas[np.argmax(list(map(float,lambdas)))])
+        simplest = "D3L{}N32M32".format("5e-3" if len(lambdas) == 0 else lambdas[np.argmin(list(map(float,lambdas)))])
+        most_complex = "D4L{}N224M320".format("2e-2" if len(lambdas) == 0 else lambdas[np.argmax(list(map(float,lambdas)))])
 
         scale_x = data.loc[[simplest,most_complex],x_axis].max() - data.loc[[simplest,most_complex],x_axis].min()
         scale_y = data.loc[[simplest,most_complex],y_axis].max() - data.loc[[simplest,most_complex],y_axis].min()
 
     possible_values = {
+        "D": [3,4],
         "L": ["5e-3", "1e-2", "2e-2"] if len(lambdas) == 0 else lambdas,
         "N": [32, 64, 96, 128, 160, 192, 224],
         "M": [32, 64, 96, 128, 160, 192, 224, 256, 288, 320]
@@ -521,13 +522,14 @@ def glch_rate_vs_dist(
         possible_values = {k:v[::-1] for k,v in possible_values.items()}
 
     initial_values = {
+        "D":possible_values["D"][0], 
         "L":possible_values["L"][0], 
         "N":possible_values["N"][0],
         "M":possible_values["M"][0]
     }
 
     def to_str_method(params):
-        return f"L{params['L']}N{params['N']}M{params['M']}"
+        return f"D{params['D']}L{params['L']}N{params['N']}M{params['M']}"
     
     if start == "right":
         r = build_tree(data,possible_values,y_axis,x_axis,initial_values,to_str_method,scale_x=scale_y,scale_y=scale_x)
@@ -557,14 +559,15 @@ def glch_rate_vs_dist_2(csv_path,x_axis,y_axis,scale_x=None,scale_y=None,x_range
 
     if scale_x is None and scale_y is None:
 
-        scale_x = data.loc[["L5e-3N32M32","L2e-2N224M320"],x_axis].max() - data.loc[["L5e-3N32M32","L2e-2N224M320"],x_axis].min()
-        scale_y = data.loc[["L5e-3N32M32","L2e-2N224M320"],y_axis].max() - data.loc[["L5e-3N32M32","L2e-2N224M320"],y_axis].min()
+        scale_x = data.loc[["D3L5e-3N32M32","D4L2e-2N224M320"],x_axis].max() - data.loc[["D3L5e-3N32M32","D4L2e-2N224M320"],x_axis].min()
+        scale_y = data.loc[["D3L5e-3N32M32","D4L2e-2N224M320"],y_axis].max() - data.loc[["D3L5e-3N32M32","D4L2e-2N224M320"],y_axis].min()
 
     brute_dict = {
         "L": ["5e-3", "1e-2", "2e-2"]
     }
 
     greedy_dict = {
+        "D": [3,4],
         "N": [32, 64, 96, 128, 160, 192, 224],
         "M": [32, 64, 96, 128, 160, 192, 224, 256, 288, 320]
     }
@@ -573,13 +576,14 @@ def glch_rate_vs_dist_2(csv_path,x_axis,y_axis,scale_x=None,scale_y=None,x_range
         greedy_dict = {k:v[::-1] for k,v in greedy_dict.items()}
 
     initial_state = {
+        "D":greedy_dict["D"][0],
         "N":greedy_dict["N"][0],
         "M":greedy_dict["M"][0]
     }
 
     def to_str_method_factory(brute_params):
         def to_str_method(greedy_params):
-            return f"L{brute_params['L']}N{greedy_params['N']}M{greedy_params['M']}"
+            return f"D{greedy_params['D']}L{brute_params['L']}N{greedy_params['N']}M{greedy_params['M']}"
         return to_str_method
 
 
@@ -755,7 +759,7 @@ if __name__ == "__main__":
     )
 
     glch_rate_vs_dist(
-        "/home/lucas/Documents/perceptronac/scripts/tradeoffs/bpp-mse-psnr-loss-flops-params_bmshj2018-factorized_10000-epochs_D-4_L-2e-2-1e-2-5e-3_N-32-64-96-128-160-192-224_M-32-64-96-128-160-192-224-256-288-320.csv",
+        "/home/lucas/Documents/perceptronac/scripts/tradeoffs/bpp-mse-psnr-loss-flops-params_bmshj2018-factorized_10000-epochs_D-3-4_L-2e-2-1e-2-5e-3_N-32-64-96-128-160-192-224_M-32-64-96-128-160-192-224-256-288-320.csv",
         "bpp_loss","mse_loss",
         # scale_x=1,scale_y=1,
         # x_range=[0.1,1.75],
@@ -763,7 +767,7 @@ if __name__ == "__main__":
     )
 
     glch_rate_vs_dist_2(
-        "/home/lucas/Documents/perceptronac/scripts/tradeoffs/bpp-mse-psnr-loss-flops-params_bmshj2018-factorized_10000-epochs_D-4_L-2e-2-1e-2-5e-3_N-32-64-96-128-160-192-224_M-32-64-96-128-160-192-224-256-288-320.csv",
+        "/home/lucas/Documents/perceptronac/scripts/tradeoffs/bpp-mse-psnr-loss-flops-params_bmshj2018-factorized_10000-epochs_D-3-4_L-2e-2-1e-2-5e-3_N-32-64-96-128-160-192-224_M-32-64-96-128-160-192-224-256-288-320.csv",
         "bpp_loss","mse_loss",#1,1,
         # x_range=[0.1,1.75],
         # y_range=[0.001,0.0045],
@@ -771,7 +775,7 @@ if __name__ == "__main__":
     )
 
     glch_rate_vs_dist(
-        "/home/lucas/Documents/perceptronac/scripts/tradeoffs/bpp-mse-psnr-loss-flops-params_bmshj2018-factorized_10000-epochs_D-4_L-2e-2-1e-2-5e-3_N-32-64-96-128-160-192-224_M-32-64-96-128-160-192-224-256-288-320.csv",
+        "/home/lucas/Documents/perceptronac/scripts/tradeoffs/bpp-mse-psnr-loss-flops-params_bmshj2018-factorized_10000-epochs_D-3-4_L-2e-2-1e-2-5e-3_N-32-64-96-128-160-192-224_M-32-64-96-128-160-192-224-256-288-320.csv",
         "flops","loss",
         # scale_x=1e10,scale_y=1,
         # x_range=[-0.2*1e10,3.75*1e10],
@@ -780,7 +784,7 @@ if __name__ == "__main__":
     )
 
     glch_rate_vs_dist(
-        "/home/lucas/Documents/perceptronac/scripts/tradeoffs/bpp-mse-psnr-loss-flops-params_bmshj2018-factorized_10000-epochs_D-4_L-2e-2-1e-2-5e-3_N-32-64-96-128-160-192-224_M-32-64-96-128-160-192-224-256-288-320.csv",
+        "/home/lucas/Documents/perceptronac/scripts/tradeoffs/bpp-mse-psnr-loss-flops-params_bmshj2018-factorized_10000-epochs_D-3-4_L-2e-2-1e-2-5e-3_N-32-64-96-128-160-192-224_M-32-64-96-128-160-192-224-256-288-320.csv",
         "params","loss",
         # scale_x=1e6,scale_y=1,
         # x_range=[-0.1*1e6,4*1e6],
