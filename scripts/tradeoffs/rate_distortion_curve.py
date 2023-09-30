@@ -181,6 +181,9 @@ if __name__ == "__main__":
                     partial_M.append(M)
                     partial_D.append(D)
 
+                    actual_lmbd = (overall_loss - bpp_loss)/(255**2 * mse_loss)
+                    print(f"D={D} L={L} N={N} M={M} actual lambda: {str(actual_lmbd)}",file=log_file)
+
     log_file.close()
 
     line_axes = []
