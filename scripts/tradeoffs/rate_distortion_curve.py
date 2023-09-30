@@ -206,7 +206,10 @@ if __name__ == "__main__":
 
     for L in all_L:
         fig_name = fig_name_template.format(model,str(epochs),formatted_Ds,L,formatted_Ns,formatted_Ms)
-        save_L_curve(rate_axis[L],dist_axis[L],labels[L],f"{figs_folder}/rate-dist-lmbd_{fig_name}","rate (bpp)","mse",L)
+        save_L_curve(rate_axis[L],dist_axis[L],labels[L],f"{figs_folder}/rate-dist-fixed-lmbd_{fig_name}","rate (bpp)","mse",L)
+        save_curve(rate_axis[L],list(map(mse2psnr,dist_axis[L])),labels[L],f"{figs_folder}/rate-psnr-fixed-lmbd_{fig_name}","rate (bpp)","psnr (db)")
+        save_curve(params_axis[L],loss_axis[L],labels[L],f"{figs_folder}/params-loss-fixed-lmbd_{fig_name}","params","R+lambda*D")
+        save_curve(flops_axis[L],loss_axis[L],labels[L],f"{figs_folder}/flops-loss-fixed-lmbd_{fig_name}","FLOPs","R+lambda*D")
 
     fig_name = fig_name_template.format(model,str(epochs),formatted_Ds,formatted_Ls,formatted_Ns,formatted_Ms)
     save_curve(joint_rate_axis,joint_dist_axis,joint_labels,f"{figs_folder}/rate-dist_{fig_name}","rate (bpp)","mse",line_axes=line_axes)
