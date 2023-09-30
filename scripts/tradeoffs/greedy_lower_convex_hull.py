@@ -264,63 +264,6 @@ def save_all_data(data,r,x_axis,y_axis,x_range,y_range,data_id,x_in_log_scale=Fa
     save_hull_points(f"glch_results/hulls_{data_id}",true_hull_points,estimated_hull_points)
 
 
-
-# %%
-# from scipy.sparse.csgraph import connected_components
-
-
-# def labaled_points_figure(data):
-
-#     fig, ax = plt.subplots(nrows=1, ncols=1)
-#     fig.set_size_inches(27.9,21.6)
-#     ax.plot(data.loc[:,"joules"].values,data.loc[:,"data_bits/data_samples"].values,linestyle="",marker="x")
-#     ax.set_xlabel("joules")
-#     ax.set_ylabel("data_bits/data_samples")
-
-#     X = data.loc[:,["joules","data_bits/data_samples"]].values
-#     adj_mtx = np.logical_and(
-#         np.sum((np.expand_dims(X,1) - np.expand_dims(X,0))**2,axis=2) > 0,
-#         np.logical_and(
-#             np.abs(np.expand_dims(X[:,0],1) - np.expand_dims(X[:,0],0)) < 0.5,
-#             np.abs(np.expand_dims(X[:,1],1) - np.expand_dims(X[:,1],0)) < 0.0003,
-#         )
-#     )
-
-#     n_conn_comp, conn_comp_mask = connected_components(adj_mtx)
-
-#     points_to_merge =[]
-#     for cc in range(n_conn_comp):
-#         if np.sum(conn_comp_mask == cc) > 1:
-#             points_to_merge.append(data.index.values[conn_comp_mask == cc].tolist())
-
-#     for top,row in data.loc[:,["joules","data_bits/data_samples"]].iterrows():
-#         normal_point = True
-#         for g in points_to_merge:
-#             if top in g:
-#                 normal_point = False
-#         if normal_point:
-#             ax.text(
-#                 x=row["joules"], #+0.5,
-#                 y=row["data_bits/data_samples"]-0.0003,
-#                 s=",".join(list(map(lambda x: str(int(x)),top.split("_")[1:3]))), 
-#                 # fontdict=dict(color='black',size=8),
-#                 # bbox=dict(facecolor='yellow',alpha=0.5)
-#             )
-
-#     for g in points_to_merge:
-#         sorted_i = np.argsort(data.loc[g,"joules"].values)
-#         ax.text(
-#             x=data.loc[g[sorted_i[0]],"joules"], #+0.5,
-#             y=data.loc[g[sorted_i[0]],"data_bits/data_samples"]-0.0003,
-#             s="/".join(list(map(lambda y: ",".join(list(map(lambda x: str(int(x)),y.split("_")[1:3]))) , np.array(g)[sorted_i].tolist()))), 
-#             # fontdict=dict(color='black',size=8),
-#             # bbox=dict(facecolor='yellow',alpha=0.5)
-#         )
-
-#     # fig.savefig('test2png.png', dpi=300, facecolor='w', bbox_inches = "tight")
-
-#     return fig
-
 # %%
 from decimal import Decimal
 
@@ -443,41 +386,6 @@ def glch_rate_vs_time(*args,**kwargs):
 
 def glch_rate_vs_params(*args,**kwargs):
     glch_rate_vs_energy(*args,**kwargs)
-
-
-# def glch_rate_vs_params(
-#         csv_path,x_axis,y_axis,title,
-#         scale_x=None,scale_y=None,
-#         x_range=None,y_range=None,
-#         x_in_log_scale=False,
-#         x_alias=None,y_alias=None
-#     ):
-
-#     data = pd.read_csv(csv_path).set_index("topology")
-
-#     # data[x_axis] = data[x_axis].values/scale_x
-#     # data[y_axis] = data[y_axis].values/scale_y
-
-#     if scale_x is None and scale_y is None:
-
-#         scale_x = data.loc[["032_010_010_001","032_640_640_001"],x_axis].max() - data.loc[["032_010_010_001","032_640_640_001"],x_axis].min()
-#         scale_y = data.loc[["032_010_010_001","032_640_640_001"],y_axis].max() - data.loc[["032_010_010_001","032_640_640_001"],y_axis].min()
-
-#     possible_values = {
-#         "h1": [10,20,40,80,160,320,640],
-#         "h2": [10,20,40,80,160,320,640]
-#     }
-
-#     initial_values = {"h1":10,"h2":10}
-
-#     def to_str_method(params):
-#         widths = [32,params["h1"],params["h2"],1]
-#         return '_'.join(map(lambda x: f"{x:03d}",widths))
-
-#     r = build_tree(data,possible_values,x_axis,y_axis,initial_values,to_str_method,scale_x=scale_x,scale_y=scale_y,title=title)
-
-#     save_all_data(data,r,x_axis,y_axis,x_range,y_range,title,
-#         x_in_log_scale=x_in_log_scale,x_alias=x_alias,y_alias=y_alias)
 
 
 
