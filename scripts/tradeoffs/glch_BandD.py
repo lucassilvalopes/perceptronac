@@ -10,7 +10,7 @@ class GLCH:
 
     def __init__(
         self,data,possible_values,x_axis,y_axis,initial_values,to_str_method,start="left",debug=True,
-        title=None, constrained=True, select_function="corrected_angle_rule", lmbda = 1
+        title=None, constrained=True, select_function="corrected_angle_rule", lmbda = 1, debug_folder="debug"
     ):
         """
         data = 
@@ -53,6 +53,7 @@ class GLCH:
         self.constrained = constrained
         self.select_function = select_function
         self.lmbda = lmbda
+        self.debug_folder = debug_folder
 
     def get_node_coord(self,node):
         if isinstance(node,list):
@@ -84,14 +85,14 @@ class GLCH:
         plot_choice(
             self.data,self.x_axis,self.y_axis,
             node,node_coord,candidate_nodes,candidate_coord,chosen_node_index,txt_file=self.txt_file,
-            title=f"{self.title}_{iteration}")
+            title=f"{self.title}_{iteration}",fldr=self.debug_folder)
 
     def begin_debug(self):
         if not self.debug:
             return
-        self.txt_file = open_debug_txt_file(self.title)
-        if not os.path.isdir("debug"):
-            os.mkdir("debug")
+        if not os.path.isdir(self.debug_folder):
+            os.mkdir(self.debug_folder)
+        self.txt_file = open_debug_txt_file(self.title,self.debug_folder)
 
     def end_debug(self):
         if not self.debug:

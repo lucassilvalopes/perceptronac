@@ -7,49 +7,63 @@ from glch_functions import (
 
 if __name__ == "__main__":
 
-    if os.path.isdir("glch_results"):
-        import shutil
-        shutil.rmtree("glch_results")
-    os.mkdir("glch_results")
+    results_folder = "glch_results"
+    debug_folder = "glch_debug"
 
-    if os.path.isdir("debug"):
+    if os.path.isdir(results_folder):
         import shutil
-        shutil.rmtree("debug")
-    os.mkdir("debug")
+        shutil.rmtree(results_folder)
+    os.mkdir(results_folder)
+
+    if os.path.isdir(debug_folder):
+        import shutil
+        shutil.rmtree(debug_folder)
+    os.mkdir(debug_folder)
 
     glch_rate_vs_energy(
         "/home/lucas/Documents/perceptronac/results/exp_1676160746/exp_1676160746_raw_values.csv",
-        "micro_joules_per_pixel", # "joules_per_pixel", # "joules",
+        "micro_joules_per_pixel",
         "data_bits/data_samples",
         "rate_vs_energy",
         # x_range=[135,175],
         # y_range=[0.115,0.145],
         x_alias="Complexity ($\SI{}{\mu\joule}$ per pixel)",
-        y_alias="Rate (bits per pixel)"
+        y_alias="Rate (bits per pixel)",
+        algo="glch",
+        constrained=True,
+        fldr=results_folder,
+        debug_folder=debug_folder
     )
 
     glch_rate_vs_energy(
         "/home/lucas/Documents/perceptronac/results/exp_1676160746/exp_1676160746_raw_values.csv",
-        "micro_joules_per_pixel", # "joules_per_pixel", # "joules",
+        "micro_joules_per_pixel",
         "data_bits/data_samples",
         "rate_vs_energy_noisy",
         # x_range=[140,180],
         # y_range=None,
         remove_noise=False,
         x_alias="Complexity ($\SI{}{\mu\joule}$ per pixel)",
-        y_alias="Rate (bits per pixel)"
+        y_alias="Rate (bits per pixel)",
+        algo="glch",
+        constrained=True,
+        fldr=results_folder,
+        debug_folder=debug_folder
     )
 
     glch_rate_vs_params(
         "/home/lucas/Documents/perceptronac/results/exp_1676160746/exp_1676160746_raw_values.csv",
-        # "/home/lucas/Documents/perceptronac/results/exp_1676160746/exp_1676160746_static_rate_x_power_values.csv",
         "params","data_bits/data_samples",
         "rate_vs_params",
         # x_range=None,
         # y_range=None,
         x_in_log_scale=True,
         x_alias="Complexity (multiply/adds per pixel)",
-        y_alias="Rate (bits per pixel)"
+        y_alias="Rate (bits per pixel)",
+        algo="glch",
+        constrained=True,
+        fldr=results_folder,
+        debug_folder=debug_folder
     )
 
     # TODO: the time measurements right now are too comprehensive.
@@ -66,7 +80,11 @@ if __name__ == "__main__":
         remove_noise=False,
         x_in_log_scale=False,
         x_alias="Complexity (seconds)",
-        y_alias="Rate (bits per pixel)"
+        y_alias="Rate (bits per pixel)",
+        algo="glch",
+        constrained=True,
+        fldr=results_folder,
+        debug_folder=debug_folder
     )
 
     glch_rate_vs_dist(
@@ -74,6 +92,10 @@ if __name__ == "__main__":
         "bpp_loss","mse_loss",
         # x_range=[0.1,1.75],
         # y_range=[0.001,0.0045]
+        algo="glch",
+        constrained=True,
+        fldr=results_folder,
+        debug_folder=debug_folder
     )
 
     glch_rate_vs_dist_2(
@@ -81,7 +103,10 @@ if __name__ == "__main__":
         "bpp_loss","mse_loss",#1,1,
         # x_range=[0.1,1.75],
         # y_range=[0.001,0.0045],
-        start="left" # start="right"
+        start="left",
+        constrained=True,
+        fldr=results_folder,
+        debug_folder=debug_folder
     )
 
     glch_rate_vs_dist(
@@ -89,7 +114,11 @@ if __name__ == "__main__":
         "flops","loss",
         # x_range=[-0.2*1e10,3.75*1e10],
         # y_range=[1.1,3.1],
-        lambdas=["2e-2"]
+        lambdas=["2e-2"],
+        algo="glch",
+        constrained=True,
+        fldr=results_folder,
+        debug_folder=debug_folder
     )
 
     glch_rate_vs_dist(
@@ -97,7 +126,11 @@ if __name__ == "__main__":
         "params","loss",
         # x_range=[-0.1*1e6,4*1e6],
         # y_range=[1.1,3.1],
-        lambdas=["2e-2"]
+        lambdas=["2e-2"],
+        algo="glch",
+        constrained=True,
+        fldr=results_folder,
+        debug_folder=debug_folder
     )
 
     glch_model_bits_vs_data_bits(
@@ -107,5 +140,9 @@ if __name__ == "__main__":
         # y_range=None,
         x_in_log_scale=True,
         x_alias="Complexity (encoded model bits)",
-        y_alias="Rate (bits per pixel)"
+        y_alias="Rate (bits per pixel)",
+        algo="glch",
+        constrained=True,
+        fldr=results_folder,
+        debug_folder=debug_folder
     )

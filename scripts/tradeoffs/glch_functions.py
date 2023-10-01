@@ -11,21 +11,21 @@ from glch_utils import save_tree_data, save_hull_data, save_trees_data, save_hul
 
 def build_glch_tree(
     data,possible_values,x_axis,y_axis,initial_values,to_str_method,start="left",debug=True,title=None,
-    constrained=True
+    constrained=True, debug_folder="debug"
 ):
     return GLCH(
         data,possible_values,x_axis,y_axis,initial_values,to_str_method,start,debug,title,
-        constrained, "corrected_angle_rule", 1
+        constrained, "corrected_angle_rule", 1, debug_folder
     ).build_tree()
 
 
 def build_gho_tree(
     data,possible_values,x_axis,y_axis,initial_values,to_str_method,start="left",debug=True,title=None,
-    constrained=True,lmbda=1
+    constrained=True,lmbda=1, debug_folder="debug"
 ):
     return GLCH(
         data,possible_values,x_axis,y_axis,initial_values,to_str_method,start,debug,title,
-        constrained, "point", lmbda
+        constrained, "point", lmbda, debug_folder
     ).build_tree()
 
 
@@ -108,7 +108,8 @@ def glch_rate_vs_energy(
         algo="glch",
         constrained=True,
         lmbda=1,
-        fldr="glch_results"
+        fldr="glch_results",
+        debug_folder="debug"
     ):
 
     data = get_energy_data(csv_path,remove_noise)
@@ -126,10 +127,10 @@ def glch_rate_vs_energy(
 
     if algo == "glch":
         r = build_glch_tree(data,possible_values,x_axis,y_axis,initial_values,to_str_method,title=title,
-            constrained=constrained)
+            constrained=constrained,debug_folder=debug_folder)
     elif algo == "gho":
         r = build_gho_tree(data,possible_values,x_axis,y_axis,initial_values,to_str_method,title=title,
-            constrained=constrained,lmbda=lmbda)
+            constrained=constrained,lmbda=lmbda,debug_folder=debug_folder)
     else:
         ValueError(algo)
 
@@ -157,7 +158,8 @@ def glch_rate_vs_dist(
         algo="glch",
         constrained=True,
         lmbda=1,
-        fldr="glch_results"
+        fldr="glch_results",
+        debug_folder="debug"
     ):
 
     data = pd.read_csv(csv_path)
@@ -193,13 +195,13 @@ def glch_rate_vs_dist(
     if algo == "glch":
         if start == "right":
             r = build_glch_tree(data,possible_values,y_axis,x_axis,initial_values,to_str_method,
-                constrained=constrained)
+                constrained=constrained,debug_folder=debug_folder)
         else:
             r = build_glch_tree(data,possible_values,x_axis,y_axis,initial_values,to_str_method,
-                constrained=constrained)
+                constrained=constrained,debug_folder=debug_folder)
     elif algo == "gho":
         r = build_gho_tree(data,possible_values,x_axis,y_axis,initial_values,to_str_method,
-            constrained=constrained,lmbda=lmbda)
+            constrained=constrained,lmbda=lmbda,debug_folder=debug_folder)
     else:
         ValueError(algo)
 
@@ -213,7 +215,7 @@ def glch_rate_vs_dist(
 
 
 def glch_rate_vs_dist_2(
-    csv_path,x_axis,y_axis,x_range=None,y_range=None,start="left",constrained=True,fldr="glch_results"):
+    csv_path,x_axis,y_axis,x_range=None,y_range=None,start="left",constrained=True,fldr="glch_results",debug_folder="debug"):
     """only for glch algo"""
 
     data = pd.read_csv(csv_path).set_index("labels")
@@ -255,10 +257,10 @@ def glch_rate_vs_dist_2(
         current_data = data.iloc[[i for i,lbl in enumerate(data.index) if f"L{L}" in lbl],:]
         if start == "right":
             r = build_glch_tree(current_data,greedy_dict,y_axis,x_axis,initial_state,to_str_method,
-                constrained=constrained)
+                constrained=constrained,debug_folder=debug_folder)
         else:
             r = build_glch_tree(current_data,greedy_dict,x_axis,y_axis,initial_state,to_str_method,
-                constrained=constrained)
+                constrained=constrained,debug_folder=debug_folder)
         
         rs.append(r)
 
@@ -274,7 +276,8 @@ def glch_model_bits_vs_data_bits(
         algo="glch",
         constrained=True,
         lmbda=1,
-        fldr="glch_results"
+        fldr="glch_results",
+        debug_folder="debug"
     ):
 
     data = pd.read_csv(csv_path)
@@ -303,11 +306,11 @@ def glch_model_bits_vs_data_bits(
     if algo == "glch":
         r = build_glch_tree(
             data,possible_values,x_axis,y_axis,initial_values,to_str_method,
-            constrained=constrained)
+            constrained=constrained,debug_folder=debug_folder)
     elif algo == "gho":
         r = build_gho_tree(
             data,possible_values,x_axis,y_axis,initial_values,to_str_method,
-            constrained=constrained,lmbda=lmbda)
+            constrained=constrained,lmbda=lmbda,debug_folder=debug_folder)
     else:
         ValueError(algo)
 

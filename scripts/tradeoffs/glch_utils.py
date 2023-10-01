@@ -70,15 +70,15 @@ class Node:
         return self.to_str_method(self.params)
 
 
-def open_debug_txt_file(title):
-    txt_file = open(f"debug/transitions_{title}.txt", 'w')
+def open_debug_txt_file(title,fldr="debug"):
+    txt_file = open(f"{fldr}/transitions_{title}.txt", 'w')
     print(f"src_x,src_y,dst_x,dst_y,taken",file=txt_file)
     return txt_file
 
 def close_debug_txt_file(txt_file):
     txt_file.close()
 
-def plot_choice_2(x_axis,y_axis,node,node_coord,candidate_nodes,candidate_coord,chosen_node_index,txt_file=None,title=None):
+def plot_choice_2(x_axis,y_axis,node,node_coord,candidate_nodes,candidate_coord,chosen_node_index,txt_file=None,title=None,fldr="debug"):
 
     fig, ax = plt.subplots(nrows=1, ncols=1)
 
@@ -114,11 +114,12 @@ def plot_choice_2(x_axis,y_axis,node,node_coord,candidate_nodes,candidate_coord,
         fig.show()
     else:
         fig.savefig(
-            f"debug/{title}.png", 
+            f"{fldr}/{title}.png", 
             dpi=300, facecolor='w', bbox_inches = "tight")
 
 
-def plot_choice(data,x_axis,y_axis,node,node_coord,candidate_nodes,candidate_coord,chosen_node_index,dists=None,txt_file=None,title=None):
+def plot_choice(
+    data,x_axis,y_axis,node,node_coord,candidate_nodes,candidate_coord,chosen_node_index,dists=None,txt_file=None,title=None,fldr="debug"):
 
     fig, ax = plt.subplots(nrows=1, ncols=1)
 
@@ -160,7 +161,7 @@ def plot_choice(data,x_axis,y_axis,node,node_coord,candidate_nodes,candidate_coo
         fig.show()
     else:
         fig.savefig(
-            f"debug/{title}.png", 
+            f"{fldr}/{title}.png", 
             dpi=300, facecolor='w', bbox_inches = "tight")
 
 
