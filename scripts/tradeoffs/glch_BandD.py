@@ -9,7 +9,7 @@ from glch_utils import Node, min_max_convex_hull
 class GLCH:
 
     def __init__(
-        self,data,possible_values,x_axis,y_axis,initial_values,to_str_method,start="left",scale_x=1,scale_y=1,debug=True,
+        self,data,possible_values,x_axis,y_axis,initial_values,to_str_method,start="left",debug=True,
         title=None, constrained=True, select_function="corrected_angle_rule", lmbda = 1
     ):
         """

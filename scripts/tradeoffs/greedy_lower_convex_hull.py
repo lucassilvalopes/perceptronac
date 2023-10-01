@@ -32,21 +32,21 @@ matplotlib.rcParams.update({
 
 
 def build_glch_tree(
-    data,possible_values,x_axis,y_axis,initial_values,to_str_method,start="left",scale_x=1,scale_y=1,debug=True,title=None,
+    data,possible_values,x_axis,y_axis,initial_values,to_str_method,start="left",debug=True,title=None,
     constrained=True
 ):
     return GLCH(
-        data,possible_values,x_axis,y_axis,initial_values,to_str_method,start,scale_x,scale_y,debug,title,
+        data,possible_values,x_axis,y_axis,initial_values,to_str_method,start,debug,title,
         constrained, "corrected_angle_rule", 1
     ).build_tree()
 
 
 def build_gho_tree(
-    data,possible_values,x_axis,y_axis,initial_values,to_str_method,start="left",scale_x=1,scale_y=1,debug=True,title=None,
+    data,possible_values,x_axis,y_axis,initial_values,to_str_method,start="left",debug=True,title=None,
     constrained=True,lmbda=1
 ):
     return GLCH(
-        data,possible_values,x_axis,y_axis,initial_values,to_str_method,start,scale_x,scale_y,debug,title,
+        data,possible_values,x_axis,y_axis,initial_values,to_str_method,start,debug,title,
         constrained, "point", lmbda
     ).build_tree()
 
@@ -262,11 +262,11 @@ def paint_tree_nodes(data,r,x_axis,y_axis,ax):
     ax.plot(unselected_nodes_xy[x_axis],unselected_nodes_xy[y_axis],linestyle="",color="firebrick",marker=".")
 
 
-def save_tree_data(data,r,x_axis,y_axis,x_range,y_range,data_id,x_in_log_scale=False,x_alias=None,y_alias=None):
+def save_tree_data(data,r,x_axis,y_axis,x_range,y_range,data_id,x_in_log_scale=False,x_alias=None,y_alias=None,fldr="glch_results"):
 
     n_trained_networks = get_n_trained_networks([r])
 
-    with open(f'glch_results/tree_{data_id}.txt', 'w') as f:
+    with open(f'{fldr}/tree_{data_id}.txt', 'w') as f:
         print_tree(r,file=f)
         print(f"number of trained networks : {n_trained_networks}",file=f)
 
@@ -277,10 +277,10 @@ def save_tree_data(data,r,x_axis,y_axis,x_range,y_range,data_id,x_in_log_scale=F
     # paint_hull_points(true_hull_points,x_axis,y_axis,ax)
     paint_tree_nodes(data,r,x_axis,y_axis,ax)
     adjust_axes(x_axis,y_axis,x_range,y_range,ax,x_in_log_scale,x_alias,y_alias)
-    tree_fig.savefig(f"glch_results/tree_fig_{data_id}.png", dpi=300, facecolor='w', bbox_inches = "tight")
+    tree_fig.savefig(f"{fldr}/tree_fig_{data_id}.png", dpi=300, facecolor='w', bbox_inches = "tight")
 
 
-def save_hull_data(data,r,x_axis,y_axis,x_range,y_range,data_id,x_in_log_scale=False,x_alias=None,y_alias=None):
+def save_hull_data(data,r,x_axis,y_axis,x_range,y_range,data_id,x_in_log_scale=False,x_alias=None,y_alias=None,fldr="glch_results"):
 
     true_hull_points,estimated_hull_points = compute_hulls(data,[r],x_axis,y_axis)
 
@@ -290,9 +290,9 @@ def save_hull_data(data,r,x_axis,y_axis,x_range,y_range,data_id,x_in_log_scale=F
     # paint_hull(true_hull_points,estimated_hull_points,x_axis,y_axis,ax)
     paint_hull_nodes(data,r,x_axis,y_axis,ax)
     adjust_axes(x_axis,y_axis,None,None,ax,x_in_log_scale,x_alias,y_alias)
-    hulls_fig.savefig(f"glch_results/hulls_fig_{data_id}.png", dpi=300, facecolor='w', bbox_inches = "tight")
+    hulls_fig.savefig(f"{fldr}/hulls_fig_{data_id}.png", dpi=300, facecolor='w', bbox_inches = "tight")
 
-    save_hull_points(f"glch_results/hulls_{data_id}",true_hull_points,estimated_hull_points)
+    save_hull_points(f"{fldr}/hulls_{data_id}",true_hull_points,estimated_hull_points)
 
 
 # %%
@@ -378,24 +378,16 @@ def get_energy_data(csv_path,remove_noise):
 
 def glch_rate_vs_energy(
         csv_path,x_axis,y_axis,title,
-        scale_x=None,scale_y=None,
         x_range=None,y_range=None,
         x_in_log_scale=False,remove_noise=True,
         x_alias=None,y_alias=None,
         algo="glch",
         constrained=True,
-        lmbda=1
+        lmbda=1,
+        fldr="glch_results"
     ):
 
     data = get_energy_data(csv_path,remove_noise)
-
-    # data[x_axis] = data[x_axis].values/scale_x
-    # data[y_axis] = data[y_axis].values/scale_y
-
-    if scale_x is None and scale_y is None:
-
-        scale_x = data.loc[["032_010_010_001","032_640_640_001"],x_axis].max() - data.loc[["032_010_010_001","032_640_640_001"],x_axis].min()
-        scale_y = data.loc[["032_010_010_001","032_640_640_001"],y_axis].max() - data.loc[["032_010_010_001","032_640_640_001"],y_axis].min()
 
     possible_values = {
         "h1": [10,20,40,80,160,320,640],
@@ -409,19 +401,19 @@ def glch_rate_vs_energy(
         return '_'.join(map(lambda x: f"{x:03d}",widths))
 
     if algo == "glch":
-        r = build_glch_tree(data,possible_values,x_axis,y_axis,initial_values,to_str_method,scale_x=scale_x,scale_y=scale_y,title=title,
+        r = build_glch_tree(data,possible_values,x_axis,y_axis,initial_values,to_str_method,title=title,
             constrained=constrained)
     elif algo == "gho":
-        r = build_gho_tree(data,possible_values,x_axis,y_axis,initial_values,to_str_method,scale_x=scale_x,scale_y=scale_y,title=title,
+        r = build_gho_tree(data,possible_values,x_axis,y_axis,initial_values,to_str_method,title=title,
             constrained=constrained,lmbda=lmbda)
     else:
         ValueError(algo)
 
     save_tree_data(data,r,x_axis,y_axis,x_range,y_range,title,
-        x_in_log_scale=x_in_log_scale,x_alias=x_alias,y_alias=y_alias)
+        x_in_log_scale=x_in_log_scale,x_alias=x_alias,y_alias=y_alias,fldr=fldr)
     if algo == "glch":
         save_hull_data(data,r,x_axis,y_axis,x_range,y_range,title,
-            x_in_log_scale=x_in_log_scale,x_alias=x_alias,y_alias=y_alias)
+            x_in_log_scale=x_in_log_scale,x_alias=x_alias,y_alias=y_alias,fldr=fldr)
 
 
 def glch_rate_vs_time(*args,**kwargs):
@@ -435,14 +427,14 @@ def glch_rate_vs_params(*args,**kwargs):
 
 def glch_rate_vs_dist(
         csv_path,x_axis,y_axis,
-        scale_x=None,scale_y=None,
         x_range=None,y_range=None,
         start="left",
         x_alias=None,y_alias=None,
         lambdas=[],
         algo="glch",
         constrained=True,
-        lmbda=1
+        lmbda=1,
+        fldr="glch_results"
     ):
 
     data = pd.read_csv(csv_path)
@@ -451,17 +443,6 @@ def glch_rate_vs_dist(
         data = data.set_index("labels")
     else:
         data = data[data["labels"].apply(lambda x: any([(lmbd in x) for lmbd in lambdas]) )].set_index("labels")
-
-    # data[x_axis] = data[x_axis].values/scale_x
-    # data[y_axis] = data[y_axis].values/scale_y
-
-    if scale_x is None and scale_y is None:
-
-        simplest = "D3L{}N32M32".format("5e-3" if len(lambdas) == 0 else lambdas[np.argmin(list(map(float,lambdas)))])
-        most_complex = "D4L{}N224M320".format("2e-2" if len(lambdas) == 0 else lambdas[np.argmax(list(map(float,lambdas)))])
-
-        scale_x = data.loc[[simplest,most_complex],x_axis].max() - data.loc[[simplest,most_complex],x_axis].min()
-        scale_y = data.loc[[simplest,most_complex],y_axis].max() - data.loc[[simplest,most_complex],y_axis].min()
 
     possible_values = {
         "D": [3,4],
@@ -488,13 +469,13 @@ def glch_rate_vs_dist(
     
     if algo == "glch":
         if start == "right":
-            r = build_glch_tree(data,possible_values,y_axis,x_axis,initial_values,to_str_method,scale_x=scale_y,scale_y=scale_x,
+            r = build_glch_tree(data,possible_values,y_axis,x_axis,initial_values,to_str_method,
                 constrained=constrained)
         else:
-            r = build_glch_tree(data,possible_values,x_axis,y_axis,initial_values,to_str_method,scale_x=scale_x,scale_y=scale_y,
+            r = build_glch_tree(data,possible_values,x_axis,y_axis,initial_values,to_str_method,
                 constrained=constrained)
     elif algo == "gho":
-        r = build_gho_tree(data,possible_values,x_axis,y_axis,initial_values,to_str_method,scale_x=scale_x,scale_y=scale_y,
+        r = build_gho_tree(data,possible_values,x_axis,y_axis,initial_values,to_str_method,
             constrained=constrained,lmbda=lmbda)
     else:
         ValueError(algo)
@@ -502,10 +483,10 @@ def glch_rate_vs_dist(
     formatted_lambdas = "" if len(lambdas)==0 else "_" + "-".join([lambdas[i] for i in np.argsort(list(map(float,lambdas)))])
 
     save_tree_data(data,r,x_axis,y_axis,x_range,y_range,f'{x_axis}_vs_{y_axis}_start_{start}{formatted_lambdas}',
-        x_alias=x_alias,y_alias=y_alias)
+        x_alias=x_alias,y_alias=y_alias,fldr=fldr)
     if algo == "glch":
         save_hull_data(data,r,x_axis,y_axis,x_range,y_range,f'{x_axis}_vs_{y_axis}_start_{start}{formatted_lambdas}',
-            x_alias=x_alias,y_alias=y_alias)
+            x_alias=x_alias,y_alias=y_alias,fldr=fldr)
 
 
 def get_x_range_y_range(data,x_axis,y_axis):
@@ -516,18 +497,11 @@ def get_x_range_y_range(data,x_axis,y_axis):
     return x_range,y_range
 
 
-def glch_rate_vs_dist_2(csv_path,x_axis,y_axis,scale_x=None,scale_y=None,x_range=None,y_range=None,start="left",constrained=True):
+def glch_rate_vs_dist_2(
+    csv_path,x_axis,y_axis,x_range=None,y_range=None,start="left",constrained=True,fldr="glch_results"):
     """only for glch algo"""
 
     data = pd.read_csv(csv_path).set_index("labels")
-
-    # data[x_axis] = data[x_axis].values/scale_x
-    # data[y_axis] = data[y_axis].values/scale_y
-
-    if scale_x is None and scale_y is None:
-
-        scale_x = data.loc[["D3L5e-3N32M32","D4L2e-2N224M320"],x_axis].max() - data.loc[["D3L5e-3N32M32","D4L2e-2N224M320"],x_axis].min()
-        scale_y = data.loc[["D3L5e-3N32M32","D4L2e-2N224M320"],y_axis].max() - data.loc[["D3L5e-3N32M32","D4L2e-2N224M320"],y_axis].min()
 
     brute_dict = {
         "L": ["5e-3", "1e-2", "2e-2"]
@@ -559,7 +533,7 @@ def glch_rate_vs_dist_2(csv_path,x_axis,y_axis,scale_x=None,scale_y=None,x_range
     exp_id = f"{x_axis}_vs_{y_axis}_brute_{brute_keys}_greedy_{greedy_keys}_start_{start}"
 
     rs = []
-    tree_file = open(f'glch_results/tree_{exp_id}.txt', 'w')
+    tree_file = open(f'{fldr}/tree_{exp_id}.txt', 'w')
 
     tree_fig, ax = plt.subplots(nrows=1, ncols=len(brute_dict["L"]))
 
@@ -573,10 +547,10 @@ def glch_rate_vs_dist_2(csv_path,x_axis,y_axis,scale_x=None,scale_y=None,x_range
 
         current_data = data.iloc[[i for i,lbl in enumerate(data.index) if f"L{L}" in lbl],:]
         if start == "right":
-            r = build_glch_tree(current_data,greedy_dict,y_axis,x_axis,initial_state,to_str_method,scale_x=scale_y,scale_y=scale_x,
+            r = build_glch_tree(current_data,greedy_dict,y_axis,x_axis,initial_state,to_str_method,
                 constrained=constrained)
         else:
-            r = build_glch_tree(current_data,greedy_dict,x_axis,y_axis,initial_state,to_str_method,scale_x=scale_x,scale_y=scale_y,
+            r = build_glch_tree(current_data,greedy_dict,x_axis,y_axis,initial_state,to_str_method,
                 constrained=constrained)
         
         rs.append(r)
@@ -602,7 +576,7 @@ def glch_rate_vs_dist_2(csv_path,x_axis,y_axis,scale_x=None,scale_y=None,x_range
         # paint_hull_points(true_hull_points,x_axis,y_axis,tree_fig.axes[i])
         paint_tree_nodes(data,rs[i],x_axis,y_axis,tree_fig.axes[i])
 
-    tree_fig.savefig(f"glch_results/tree_fig_{exp_id}.png", dpi=300, facecolor='w', bbox_inches = "tight")
+    tree_fig.savefig(f"{fldr}/tree_fig_{exp_id}.png", dpi=300, facecolor='w', bbox_inches = "tight")
 
     
     hulls_fig, ax = plt.subplots(nrows=1, ncols=1)
@@ -612,20 +586,20 @@ def glch_rate_vs_dist_2(csv_path,x_axis,y_axis,scale_x=None,scale_y=None,x_range
     for i in range(len(brute_dict["L"])):
         paint_hull_nodes(data,rs[i],x_axis,y_axis,ax)
     adjust_axes(x_axis,y_axis,None,None,ax)
-    hulls_fig.savefig(f"glch_results/hulls_fig_{exp_id}.png", dpi=300, facecolor='w', bbox_inches = "tight")
+    hulls_fig.savefig(f"{fldr}/hulls_fig_{exp_id}.png", dpi=300, facecolor='w', bbox_inches = "tight")
 
-    save_hull_points(f"glch_results/hulls_fig_{exp_id}",true_hull_points,estimated_hull_points)
+    save_hull_points(f"{fldr}/hulls_fig_{exp_id}",true_hull_points,estimated_hull_points)
 
 
 def glch_model_bits_vs_data_bits(
         csv_path,x_axis,y_axis,
-        scale_x=None,scale_y=None,
         x_range=None,y_range=None,
         x_in_log_scale=False,
         x_alias=None,y_alias=None,
         algo="glch",
         constrained=True,
-        lmbda=1
+        lmbda=1,
+        fldr="glch_results"
     ):
 
     data = pd.read_csv(csv_path)
@@ -635,11 +609,6 @@ def glch_model_bits_vs_data_bits(
     data['idx'] = data.apply(lambda x: f"{x.topology}_{x.quantization_bits:02d}b", axis=1)
 
     data = data.set_index("idx")
-
-    if scale_x is None and scale_y is None:
-
-        scale_x = data.loc[["032_010_010_001_08b","032_640_640_001_32b"],x_axis].max() - data.loc[["032_010_010_001_08b","032_640_640_001_32b"],x_axis].min()
-        scale_y = data.loc[["032_010_010_001_08b","032_640_640_001_32b"],y_axis].max() - data.loc[["032_010_010_001_08b","032_640_640_001_32b"],y_axis].min()
 
     possible_values = {
         "h1": [10,20,40,80,160,320,640],
@@ -658,21 +627,21 @@ def glch_model_bits_vs_data_bits(
 
     if algo == "glch":
         r = build_glch_tree(
-            data,possible_values,x_axis,y_axis,initial_values,to_str_method,scale_x=scale_x,scale_y=scale_y,
+            data,possible_values,x_axis,y_axis,initial_values,to_str_method,
             constrained=constrained)
     elif algo == "gho":
         r = build_gho_tree(
-            data,possible_values,x_axis,y_axis,initial_values,to_str_method,scale_x=scale_x,scale_y=scale_y,
+            data,possible_values,x_axis,y_axis,initial_values,to_str_method,
             constrained=constrained,lmbda=lmbda)
     else:
         ValueError(algo)
 
     save_tree_data(data,r,x_axis,y_axis,x_range,y_range,'model_bits_vs_data_bits',
-        x_in_log_scale=x_in_log_scale,x_alias=x_alias,y_alias=y_alias)
+        x_in_log_scale=x_in_log_scale,x_alias=x_alias,y_alias=y_alias,fldr=fldr)
 
     if algo == "glch":
         save_hull_data(data,r,x_axis,y_axis,x_range,y_range,'model_bits_vs_data_bits',
-            x_in_log_scale=x_in_log_scale,x_alias=x_alias,y_alias=y_alias)
+            x_in_log_scale=x_in_log_scale,x_alias=x_alias,y_alias=y_alias,fldr=fldr)
 
 
 if __name__ == "__main__":
@@ -692,7 +661,6 @@ if __name__ == "__main__":
         "micro_joules_per_pixel", # "joules_per_pixel", # "joules",
         "data_bits/data_samples",
         "rate_vs_energy",
-        # scale_x=1,scale_y=1,
         # x_range=[135,175],
         # y_range=[0.115,0.145],
         x_alias="Complexity ($\SI{}{\mu\joule}$ per pixel)",
@@ -704,7 +672,6 @@ if __name__ == "__main__":
         "micro_joules_per_pixel", # "joules_per_pixel", # "joules",
         "data_bits/data_samples",
         "rate_vs_energy_noisy",
-        # scale_x=1,scale_y=1,
         # x_range=[140,180],
         # y_range=None,
         remove_noise=False,
@@ -717,7 +684,6 @@ if __name__ == "__main__":
         # "/home/lucas/Documents/perceptronac/results/exp_1676160746/exp_1676160746_static_rate_x_power_values.csv",
         "params","data_bits/data_samples",
         "rate_vs_params",
-        # scale_x=1e6,scale_y=1,
         # x_range=None,
         # y_range=None,
         x_in_log_scale=True,
@@ -734,7 +700,6 @@ if __name__ == "__main__":
         "/home/lucas/Documents/perceptronac/results/exp_1676160746/exp_1676160746_raw_values.csv",
         "time","data_bits/data_samples",
         "rate_vs_time",
-        # scale_x=1e6,scale_y=1,
         # x_range=None,
         # y_range=None,
         remove_noise=False,
@@ -746,7 +711,6 @@ if __name__ == "__main__":
     glch_rate_vs_dist(
         "/home/lucas/Documents/perceptronac/scripts/tradeoffs/bpp-mse-psnr-loss-flops-params_bmshj2018-factorized_10000-epochs_D-3-4_L-2e-2-1e-2-5e-3_N-32-64-96-128-160-192-224_M-32-64-96-128-160-192-224-256-288-320.csv",
         "bpp_loss","mse_loss",
-        # scale_x=1,scale_y=1,
         # x_range=[0.1,1.75],
         # y_range=[0.001,0.0045]
     )
@@ -762,7 +726,6 @@ if __name__ == "__main__":
     glch_rate_vs_dist(
         "/home/lucas/Documents/perceptronac/scripts/tradeoffs/bpp-mse-psnr-loss-flops-params_bmshj2018-factorized_10000-epochs_D-3-4_L-2e-2-1e-2-5e-3_N-32-64-96-128-160-192-224_M-32-64-96-128-160-192-224-256-288-320.csv",
         "flops","loss",
-        # scale_x=1e10,scale_y=1,
         # x_range=[-0.2*1e10,3.75*1e10],
         # y_range=[1.1,3.1],
         lambdas=["2e-2"]
@@ -771,7 +734,6 @@ if __name__ == "__main__":
     glch_rate_vs_dist(
         "/home/lucas/Documents/perceptronac/scripts/tradeoffs/bpp-mse-psnr-loss-flops-params_bmshj2018-factorized_10000-epochs_D-3-4_L-2e-2-1e-2-5e-3_N-32-64-96-128-160-192-224_M-32-64-96-128-160-192-224-256-288-320.csv",
         "params","loss",
-        # scale_x=1e6,scale_y=1,
         # x_range=[-0.1*1e6,4*1e6],
         # y_range=[1.1,3.1],
         lambdas=["2e-2"]
@@ -780,7 +742,6 @@ if __name__ == "__main__":
     glch_model_bits_vs_data_bits(
         "/home/lucas/Documents/perceptronac/results/exp_1676160183/exp_1676160183_model_bits_x_data_bits_values.csv",
         "model_bits","data_bits/data_samples",
-        # scale_x=1,scale_y=1,
         # x_range=[-0.1,0.8],
         # y_range=None,
         x_in_log_scale=True,
