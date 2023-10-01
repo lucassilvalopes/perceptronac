@@ -409,7 +409,7 @@ def save_trees_data(data,rs,ls,x_axis,y_axis,x_range,y_range,exp_id,fldr="glch_r
     if (x_range is None) and (y_range is None):
         x_range,y_range = get_x_range_y_range(data,x_axis,y_axis)
 
-    for r,L in zip(rs,ls):
+    for i,r,L in zip(range(len(rs)),rs,ls):
 
         current_data = data.iloc[[i for i,lbl in enumerate(data.index) if f"L{L}" in lbl],:]
 
@@ -425,7 +425,7 @@ def save_trees_data(data,rs,ls,x_axis,y_axis,x_range,y_range,exp_id,fldr="glch_r
             tree_fig.axes[i].set_yticks([])
             tree_fig.axes[i].set_ylabel('')
     
-    n_trained_networks = n_trained_networks(rs)
+    n_trained_networks = get_n_trained_networks(rs)
 
     print(f"number of trained networks : {n_trained_networks}",file=tree_file)
     tree_file.close()
