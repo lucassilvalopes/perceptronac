@@ -5,8 +5,8 @@ https://github.com/bayesian-optimization/BayesianOptimization/blob/master/exampl
 """
 
 import pandas as pd
-from bayes_opt import BayesianOptimization
-# from bayesian_optim_custom import BOCustom as BayesianOptimization
+# from bayes_opt import BayesianOptimization
+from bayesian_optim_custom import BOCustom as BayesianOptimization
 
 class BayesOptRateDist:
 
@@ -109,7 +109,7 @@ def bayes_opt_rate_dist(csv_path,axes,weights,lambdas=[],random_state=1,init_poi
     )
 
     print(
-        lbl, bayesOptRateDist.get_label_coord(lbl)
+        lbl, bayesOptRateDist.get_label_coord(lbl), optimizer.max["target"]
     )
 
 if __name__ == "__main__":

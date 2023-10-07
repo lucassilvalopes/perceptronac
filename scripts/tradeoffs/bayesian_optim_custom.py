@@ -14,13 +14,15 @@ from warnings import simplefilter
 
 class BOCustom:
 	
-    def __init__(self,f,pbounds,**kwargs):
+    def __init__(self,f,pbounds,verbose=None,random_state=None):
         self.f = f
         self.pbounds = pbounds
         self.model = GaussianProcessRegressor()
         self.exploration_exploitation_tredeoff = 1
         self.max = None
         self.res = []
+        if random_state is not None:
+            random.seed(random_state)
 
     def surrogate(self, X):
         with catch_warnings():
