@@ -40,6 +40,12 @@ class BayesOptRateDist:
 
     def black_box_function(self,D,L,N,M):
         """receives hyperparameters and outputs -J = -(R + lambda * D + gamma * C)"""
+
+        D = self.round_to_possible_values(D,self.possible_values["D"])
+        L = self.round_to_possible_values(L,self.possible_values["L"])
+        N = self.round_to_possible_values(N,self.possible_values["N"])
+        M = self.round_to_possible_values(M,self.possible_values["M"])
+
         x,y = self.get_label_coord(self.to_str_method(D,L,N,M))
         return -(x + self.lmbda * y)
 
