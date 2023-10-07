@@ -5,8 +5,8 @@ https://github.com/bayesian-optimization/BayesianOptimization/blob/master/exampl
 """
 
 import pandas as pd
-from bayes_opt import BayesianOptimization
-
+# from bayes_opt import BayesianOptimization
+from bayesian_optim_custom import BOCustom as BayesianOptimization
 
 class BayesOptRateDist:
 

@@ -14,11 +14,13 @@ from warnings import simplefilter
 
 class BOCustom:
 	
-    def __init__(self,f,pbounds):
+    def __init__(self,f,pbounds,**kwargs):
         self.f = f
         self.pbounds = pbounds
         self.model = GaussianProcessRegressor()
         self.exploration_exploitation_tredeoff = 1
+        self.max = None
+        self.res = []
 
     def surrogate(self, X):
         with catch_warnings():
@@ -45,11 +47,19 @@ class BOCustom:
         Xsamples = self.random(100)
         scores = self.acquisition(Xsamples)
         ix = np.argmax(scores)
-        return Xsamples[ix, :]
+        x = Xsamples[ix, :]
+        actual = self.f(*x)
+        self.res.append(self.format_res(x, actual))
+        return x
+    
+    def format_res(self,x,y):
+        return {"params": dict(zip(self.f.__code__.co_varnames,x)), "target": y}
 
     def maximize(self,init_points=5,n_iter=25):
         X = self.random(init_points)
         y = np.asarray([self.f(*x) for x in X]).reshape(len(y), 1)
+        for i in range(len(y)):
+            self.res.append(self.format_res(X[i, :],y[i]))
         self.model.fit(X, y)
         for i in range(n_iter):
             x = self.opt_acquisition()
@@ -58,5 +68,5 @@ class BOCustom:
             y = np.vstack((y, [[actual]]))
             self.model.fit(X, y)
         ix = np.argmax(y)
-        return {**dict(zip(self.f.__code__.co_varnames,X[ix])), "target": y[ix]}
+        self.max= self.format_res(X[ix], y[ix])
 
