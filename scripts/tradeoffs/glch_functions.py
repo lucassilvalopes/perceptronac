@@ -3,7 +3,7 @@ import pandas as pd
 import numpy as np
 from perceptronac.power_consumption import estimate_joules, get_n_pixels
 from perceptronac.power_consumption import group_energy_measurements
-from glch import GLCHGiftWrapping,GLCHAngleRule,GHO2D
+from glch import GLCHGiftWrapping,GLCHAngleRule,GHO2D,GHO
 from decimal import Decimal
 from glch_utils import save_tree_data, save_hull_data, save_trees_data, save_hulls_data, tree_nodes
 
@@ -11,28 +11,38 @@ from glch_utils import save_tree_data, save_hull_data, save_trees_data, save_hul
 
 def build_glch_tree(
     data,possible_values,x_axis,y_axis,initial_values,to_str_method,start="left",debug=True,title=None,
-    constrained=True, debug_folder="debug"
+    constrained=True, debug_folder="debug",select_function="corrected_angle_rule"
 ):
-    
-    return GLCHGiftWrapping(
-        data,possible_values,[x_axis,y_axis],initial_values,to_str_method,constrained,
-        debug,title,debug_folder,start
-    ).build_tree()
-
-    # return GLCHAngleRule(
-    #     data,possible_values,[x_axis,y_axis],initial_values,to_str_method,constrained,
-    #     debug,title,debug_folder
-    # ).build_tree()
+    if select_function == "gift_wrapping":
+        return GLCHGiftWrapping(
+            data,possible_values,[x_axis,y_axis],initial_values,to_str_method,constrained,
+            debug,title,debug_folder,start
+        ).build_tree()
+    elif select_function == "corrected_angle_rule":
+        return GLCHAngleRule(
+            data,possible_values,[x_axis,y_axis],initial_values,to_str_method,constrained,
+            debug,title,debug_folder
+        ).build_tree()
+    else:
+        ValueError(select_function)
 
 
 def build_gho_tree(
     data,possible_values,x_axis,y_axis,initial_values,to_str_method,start="left",debug=True,title=None,
-    constrained=True,lmbda=1, debug_folder="debug"
+    constrained=True,lmbda=1, debug_folder="debug",version="multidimensional"
 ):
-    return GHO2D(
-        data,possible_values,[x_axis,y_axis],initial_values,to_str_method,constrained,
-        debug,title,debug_folder,lmbda
-    ).build_tree()
+    if version== "2D":
+        return GHO2D(
+            data,possible_values,[x_axis,y_axis],initial_values,to_str_method,constrained,
+            debug,title,debug_folder,lmbda
+        ).build_tree()
+    elif version== "multidimensional":
+        return GHO(
+            data,possible_values,[x_axis,y_axis],initial_values,to_str_method,constrained,
+            [1,lmbda]
+        ).build_tree()
+    else:
+        ValueError(version)
 
 
 def fexp(number):

@@ -11,7 +11,7 @@ from glch_utils import Node, min_max_convex_hull
 class GreedyAlgorithmsBaseClass(ABC):
 
     def __init__(
-        self,data,possible_values,axes,initial_values,to_str_method,constrained=True,
+        self,data,possible_values,axes,initial_values,to_str_method,constrained,
     ):
         """
         data = 
@@ -52,15 +52,12 @@ class GreedyAlgorithmsBaseClass(ABC):
         root.set_to_str_method(self.to_str_method)
         return root
 
-    @abstractmethod
     def begin_debug(self):
         pass
 
-    @abstractmethod
-    def print_debug(node,prev_candidate_nodes,candidate_nodes,chosen_node_index,iteration):
+    def print_debug(self,node,prev_candidate_nodes,candidate_nodes,chosen_node_index,iteration):
         pass
 
-    @abstractmethod
     def end_debug(self):
         pass
 
@@ -129,7 +126,7 @@ class GreedyAlgorithmsBaseClass(ABC):
 class Greedy2DAlgorithmsBaseClass(GreedyAlgorithmsBaseClass):
 
     def __init__(
-        self,data,possible_values,axes,initial_values,to_str_method,constrained=True,
+        self,data,possible_values,axes,initial_values,to_str_method,constrained,
         debug=True,title=None, debug_folder="debug"
     ):
         self.debug = debug
@@ -172,7 +169,7 @@ class Greedy2DAlgorithmsBaseClass(GreedyAlgorithmsBaseClass):
 class GLCHGiftWrapping(Greedy2DAlgorithmsBaseClass):
 
     def __init__(
-        self,data,possible_values,axes,initial_values,to_str_method,constrained=True,
+        self,data,possible_values,axes,initial_values,to_str_method,constrained,
         debug=True,title=None, debug_folder="debug",start="left"
     ):
         self.start = start
@@ -328,7 +325,7 @@ class GHO2D(Greedy2DAlgorithmsBaseClass):
 
 
     def __init__(
-        self,data,possible_values,axes,initial_values,to_str_method,constrained=True,
+        self,data,possible_values,axes,initial_values,to_str_method,constrained,
         debug=True,title=None, debug_folder="debug",lmbda=1
     ):
         self.lmbda = lmbda
@@ -340,6 +337,54 @@ class GHO2D(Greedy2DAlgorithmsBaseClass):
         rate_axis = [c[0] for c in coord]
         dist_axis = [c[1] for c in coord]
         best_point = np.argmin(np.array(rate_axis) + self.lmbda * np.array(dist_axis))
+        return best_point
+
+
+    def make_choice_func(self,ref_node,node,prev_candidate_nodes,candidate_nodes):
+
+        filtered_nodes = [n for n in candidate_nodes if str(n) != str(node)]
+
+        blacklist = [str(n) for n in filtered_nodes]
+
+        filt_prev_candidate_nodes = [n for n in prev_candidate_nodes if (n.color == "red") and (str(n) not in blacklist)]
+
+        all_candidate_nodes = filt_prev_candidate_nodes + filtered_nodes
+
+        chosen_node_index = self.get_best_point(self.get_node_coord([ref_node]+all_candidate_nodes))
+
+        if chosen_node_index == 0:
+
+            chosen_node_index = self.get_best_point(self.get_node_coord(filtered_nodes))
+
+            update_ref_node = False
+
+            chosen_node_index = len(prev_candidate_nodes) + candidate_nodes.index(filtered_nodes[chosen_node_index])
+
+        else:
+
+            update_ref_node = True
+
+            if chosen_node_index >= len(filt_prev_candidate_nodes)+1:
+                chosen_node_index = len(prev_candidate_nodes) + \
+                    candidate_nodes.index(filtered_nodes[chosen_node_index-len(filt_prev_candidate_nodes)-1])
+            else:
+                chosen_node_index = prev_candidate_nodes.index(filt_prev_candidate_nodes[chosen_node_index-1])
+
+        return chosen_node_index, update_ref_node
+
+
+class GHO(GreedyAlgorithmsBaseClass):
+
+
+    def __init__(
+        self,data,possible_values,axes,initial_values,to_str_method,constrained,weights
+    ):
+        self.weights = weights
+        super().__init__(data,possible_values,axes,initial_values,to_str_method,constrained)
+
+
+    def get_best_point(self,coord):
+        best_point = np.argmin([ sum([c*w for c,w in zip(xyzetc,self.weights)]) for xyzetc in coord ])
         return best_point
 
 
