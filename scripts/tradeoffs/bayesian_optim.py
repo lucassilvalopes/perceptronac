@@ -5,16 +5,16 @@ https://github.com/bayesian-optimization/BayesianOptimization/blob/master/exampl
 """
 
 import pandas as pd
-# from bayes_opt import BayesianOptimization
-from bayesian_optim_custom import BOCustom as BayesianOptimization
+from bayes_opt import BayesianOptimization
+# from bayesian_optim_custom import BOCustom as BayesianOptimization
 
 class BayesOptRateDist:
 
-    def __init__(self,csv_path,x_axis,y_axis,lambdas=[],lmbda=1):
+    def __init__(self,csv_path,axes,weights,lambdas=[]):
 
         self.data = self.read_data(csv_path,lambdas)
-        self.x_axis = x_axis
-        self.y_axis = y_axis
+        self.axes = axes
+        self.weights = weights
         self.possible_values = {
             "D": [3,4],
             "L": ["5e-3", "1e-2", "2e-2"] if len(lambdas) == 0 else lambdas,
@@ -22,7 +22,6 @@ class BayesOptRateDist:
             "M": [32, 64, 96, 128, 160, 192, 224, 256, 288, 320]
         }
         self.pbounds = {k:(float(v[0]),float(v[-1])) for k,v in self.possible_values.items()}
-        self.lmbda = lmbda
 
     @staticmethod
     def read_data(csv_path,lambdas):
@@ -37,15 +36,16 @@ class BayesOptRateDist:
         return f"D{D}L{L}N{N}M{M}"
 
     def get_label_coord(self,label):
-        return self.data.loc[label,[self.x_axis,self.y_axis]].values.tolist()
+        return self.data.loc[label,self.axes].values.tolist()
 
     def black_box_function(self,D,L,N,M):
         """receives hyperparameters and outputs -J = -(R + lambda * D + gamma * C)"""
 
         D,L,N,M = self.round_to_possible_values(D,L,N,M)
 
-        x,y = self.get_label_coord(self.to_str_method(D,L,N,M))
-        return -(x + self.lmbda * y)
+        coord = self.get_label_coord(self.to_str_method(D,L,N,M))
+        J = sum([c*w for c,w in zip(coord,self.weights)])
+        return -J
 
     def round_to_possible_values(self,D,L,N,M):
     
@@ -77,9 +77,9 @@ if __name__ == "__main__":
 
     bayesOptRateDist = BayesOptRateDist(
         "/home/lucas/Documents/perceptronac/scripts/tradeoffs/bpp-mse-psnr-loss-flops-params_bmshj2018-factorized_10000-epochs_D-3-4_L-2e-2-1e-2-5e-3_N-32-64-96-128-160-192-224_M-32-64-96-128-160-192-224-256-288-320.csv",
-        "bpp_loss","mse_loss",
-        lambdas=["2e-2"],
-        lmbda=2e-2*(255**2)
+        ["bpp_loss","mse_loss"],
+        [1,2e-2*(255**2)],
+        lambdas=["2e-2"]
     )
 
 
