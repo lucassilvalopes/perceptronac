@@ -2,15 +2,16 @@
 
 import os
 import numpy as np
+from abc import ABC, abstractmethod
 from glch_utils import plot_choice, plot_choice_2, open_debug_txt_file, close_debug_txt_file
 from glch_utils import Node, min_max_convex_hull
 
 
-class GLCH:
+
+class GreedyAlgorithmsBaseClass(ABC):
 
     def __init__(
-        self,data,possible_values,x_axis,y_axis,initial_values,to_str_method,start="left",debug=True,
-        title=None, constrained=True, select_function="corrected_angle_rule", lmbda = 1, debug_folder="debug"
+        self,data,possible_values,x_axis,y_axis,initial_values,to_str_method,constrained=True,
     ):
         """
         data = 
@@ -32,11 +33,6 @@ class GLCH:
             widths = [32,params["h1"],params["h2"],1]
             return '_'.join(map(lambda x: f"{x:03d}",widths))
         
-        select_function:
-            gift_wrapping, 
-            angle_rule, 
-            corrected_angle_rule, 
-            point
         """
         self.data = data
         self.possible_values = possible_values
@@ -44,16 +40,7 @@ class GLCH:
         self.y_axis = y_axis
         self.initial_values = initial_values
         self.to_str_method = to_str_method
-        self.start = start
-        self.debug = debug
-        if title is None:
-            self.title = f"{x_axis.replace('/','_over_')}_vs_{y_axis.replace('/','_over_')}"
-        else:
-            self.title=title
         self.constrained = constrained
-        self.select_function = select_function
-        self.lmbda = lmbda
-        self.debug_folder = debug_folder
 
     def get_node_coord(self,node):
         if isinstance(node,list):
@@ -65,40 +52,23 @@ class GLCH:
 
         root = Node(**self.initial_values)
         root.set_to_str_method(self.to_str_method)
-        # self.nodes = [root]
         return root
 
-        # self.chull = [0]
-    
-    # def teardown_build_tree(self):
-
-    def print_debug(self,node,prev_candidate_nodes,candidate_nodes,chosen_node_index,iteration):
-        if not self.debug:
-            return
-        if chosen_node_index >= len(prev_candidate_nodes):
-            chosen_node_index = chosen_node_index - len(prev_candidate_nodes)
-        else:
-            candidate_nodes = [prev_candidate_nodes[chosen_node_index]] + candidate_nodes
-            chosen_node_index = 0
-        node_coord = self.get_node_coord(node)
-        candidate_coord = self.get_node_coord(candidate_nodes)
-        plot_choice(
-            self.data,self.x_axis,self.y_axis,
-            node,node_coord,candidate_nodes,candidate_coord,chosen_node_index,txt_file=self.txt_file,
-            title=f"{self.title}_{iteration}",fldr=self.debug_folder)
-
+    @abstractmethod
     def begin_debug(self):
-        if not self.debug:
-            return
-        if not os.path.isdir(self.debug_folder):
-            os.mkdir(self.debug_folder)
-        self.txt_file = open_debug_txt_file(self.title,self.debug_folder)
+        pass
 
+    @abstractmethod
+    def print_debug(node,prev_candidate_nodes,candidate_nodes,chosen_node_index,iteration):
+        pass
+
+    @abstractmethod
     def end_debug(self):
-        if not self.debug:
-            return
-        close_debug_txt_file(self.txt_file)
+        pass
 
+    @abstractmethod
+    def make_choice_func(self,ref_node,node,prev_candidate_nodes,candidate_nodes):
+        pass
 
     def build_tree(self):
 
@@ -128,16 +98,7 @@ class GLCH:
             if all([str(n) == str(node) for n in candidate_nodes]):
                 break
 
-            if self.select_function == "gift_wrapping":
-                chosen_node_index,update_ref_node = self.make_choice(ref_node,node,prev_candidate_nodes,candidate_nodes)
-            elif self.select_function == "angle_rule":
-                chosen_node_index,update_ref_node = self.make_choice_2(ref_node,node,prev_candidate_nodes,candidate_nodes)
-            elif self.select_function == "corrected_angle_rule":
-                chosen_node_index,update_ref_node = self.make_choice_3(ref_node,node,prev_candidate_nodes,candidate_nodes)
-            elif self.select_function == "point":
-                chosen_node_index,update_ref_node = self.make_choice_4(ref_node,node,prev_candidate_nodes,candidate_nodes)
-            else:
-                raise ValueError(f"unknown select function {self.select_function}")
+            chosen_node_index,update_ref_node = self.make_choice_func(ref_node,node,prev_candidate_nodes,candidate_nodes)
 
             self.print_debug(node,prev_candidate_nodes,candidate_nodes,chosen_node_index,iteration)
 
@@ -145,8 +106,6 @@ class GLCH:
                 chosen_node = candidate_nodes[chosen_node_index - len(prev_candidate_nodes)]
             else:
                 chosen_node = prev_candidate_nodes[chosen_node_index]
-
-            # self.nodes += candidate_nodes # TODO : what happens in case of duplicacy ?
 
             if chosen_node_index < len(prev_candidate_nodes):
                 node.chosen_child_indices.append(None)
@@ -169,7 +128,61 @@ class GLCH:
         return root
 
 
-    def make_choice(self,ref_node,node,prev_candidate_nodes,candidate_nodes):
+class Greedy2DAlgorithmsBaseClass(GreedyAlgorithmsBaseClass):
+
+    def __init__(
+        self,data,possible_values,x_axis,y_axis,initial_values,to_str_method,constrained=True,
+        debug=True,title=None, debug_folder="debug"
+    ):
+        self.debug = debug
+        if title is None:
+            self.title = f"{x_axis.replace('/','_over_')}_vs_{y_axis.replace('/','_over_')}"
+        else:
+            self.title=title
+        self.debug_folder = debug_folder
+        super().__init__(data,possible_values,x_axis,y_axis,initial_values,to_str_method,constrained)
+
+
+    def print_debug(self,node,prev_candidate_nodes,candidate_nodes,chosen_node_index,iteration):
+        if not self.debug:
+            return
+        if chosen_node_index >= len(prev_candidate_nodes):
+            chosen_node_index = chosen_node_index - len(prev_candidate_nodes)
+        else:
+            candidate_nodes = [prev_candidate_nodes[chosen_node_index]] + candidate_nodes
+            chosen_node_index = 0
+        node_coord = self.get_node_coord(node)
+        candidate_coord = self.get_node_coord(candidate_nodes)
+        plot_choice(
+            self.data,self.x_axis,self.y_axis,
+            node,node_coord,candidate_nodes,candidate_coord,chosen_node_index,txt_file=self.txt_file,
+            title=f"{self.title}_{iteration}",fldr=self.debug_folder)
+
+    def begin_debug(self):
+        if not self.debug:
+            return
+        if not os.path.isdir(self.debug_folder):
+            os.mkdir(self.debug_folder)
+        self.txt_file = open_debug_txt_file(self.title,self.debug_folder)
+
+    def end_debug(self):
+        if not self.debug:
+            return
+        close_debug_txt_file(self.txt_file)
+
+
+class GLCHGiftWrapping(Greedy2DAlgorithmsBaseClass):
+
+    def __init__(
+        self,data,possible_values,x_axis,y_axis,initial_values,to_str_method,constrained=True,
+        debug=True,title=None, debug_folder="debug",start="left"
+    ):
+        self.start = start
+        super().__init__(data,possible_values,x_axis,y_axis,initial_values,to_str_method,constrained,
+            debug,title, debug_folder)
+
+
+    def make_choice_func(self,ref_node,node,prev_candidate_nodes,candidate_nodes):
 
         filtered_nodes = [n for n in candidate_nodes if str(n) != str(node)]
 
@@ -219,98 +232,9 @@ class GLCH:
         return chosen_node_index, update_ref_node
 
 
-    def make_choice_2(self,ref_node,node,prev_candidate_nodes,candidate_nodes):
+class GLCHAngleRule(Greedy2DAlgorithmsBaseClass):
 
-        filtered_nodes = [n for n in candidate_nodes if str(n) != str(node)]
-
-        blacklist = [str(n) for n in filtered_nodes]
-
-        filt_prev_candidate_nodes = [n for n in prev_candidate_nodes if (n.color == "red") and (str(n) not in blacklist)]
-
-        all_candidate_nodes = filt_prev_candidate_nodes + filtered_nodes
-
-        coord = self.get_node_coord(ref_node)
-
-        candidate_coord = self.get_node_coord(all_candidate_nodes)
-
-        n_candidates = len(candidate_coord)
-
-        deltacs = [(pt[0] - coord[0]) for pt in candidate_coord]
-        deltars = [(pt[1] - coord[1]) for pt in candidate_coord]
-        
-        ne = [i for i in range(n_candidates) if deltacs[i]>=0 and deltars[i]>=0]
-        nw = [i for i in range(n_candidates) if deltacs[i]<0 and deltars[i]>0]
-        sw = [i for i in range(n_candidates) if deltacs[i]<0 and deltars[i]<=0]
-        se = [i for i in range(n_candidates) if deltacs[i]>=0 and deltars[i]<0]
-
-        ne = [i for i in ne if i >= len(filt_prev_candidate_nodes)]
-        nw = [i for i in nw if i >= len(filt_prev_candidate_nodes)]
-
-        if (len(sw + se)) > 0:
-
-            sorted_idx = self.sorted_deltac_over_minus_deltar(
-                (sw+se),deltacs,deltars,False)
-
-            chosen_node_index = sorted_idx[0]
-
-            update_ref_node = True
-
-        elif len(nw) > 0 :
-
-            sorted_idx = self.sorted_deltac_over_minus_deltar(
-                nw,deltacs,deltars,True)
-
-            chosen_node_index = sorted_idx[-1]
-
-            update_ref_node = False
-
-        else:
-
-            sorted_idx = self.sorted_deltac_over_minus_deltar(
-                ne,deltacs,deltars,True)
-
-            chosen_node_index = sorted_idx[0]
-
-            update_ref_node = False
-
-        if chosen_node_index >= len(filt_prev_candidate_nodes):
-            chosen_node_index = len(prev_candidate_nodes) + \
-                candidate_nodes.index(filtered_nodes[chosen_node_index-len(filt_prev_candidate_nodes)])
-        else:
-            chosen_node_index = prev_candidate_nodes.index(filt_prev_candidate_nodes[chosen_node_index])
-
-        return chosen_node_index, update_ref_node
-
-
-    def sorted_deltac_over_minus_deltar(self,ii,deltacs,deltars,top_half):
-
-        dists = []
-
-        for i in (ii):
-
-            if deltacs[i]<0 and (deltars[i] == 0):
-                if top_half:
-                    dist = np.inf
-                else:
-                    dist = -np.inf
-            elif deltacs[i]>0 and (deltars[i] == 0):
-                if top_half:
-                    dist = -np.inf
-                else:
-                    dist = np.inf
-            else:
-                dist = (deltacs[i])/(-deltars[i])
-
-            dists.append(dist)
-    
-        # idx = np.argsort(dists)
-
-        idx = [z[0] for z in sorted(list(zip(ii,dists)),key=lambda x: x[1])]
-    
-        return idx
-
-
-    def make_choice_3(self,ref_node,node,prev_candidate_nodes,candidate_nodes):
+    def make_choice_func(self,ref_node,node,prev_candidate_nodes,candidate_nodes):
 
         filtered_nodes = [n for n in candidate_nodes if str(n) != str(node)]
 
@@ -402,6 +326,18 @@ class GLCH:
         return idx  
 
 
+class GHO2D(Greedy2DAlgorithmsBaseClass):
+
+
+    def __init__(
+        self,data,possible_values,x_axis,y_axis,initial_values,to_str_method,constrained=True,
+        debug=True,title=None, debug_folder="debug",lmbda=1
+    ):
+        self.lmbda = lmbda
+        super().__init__(data,possible_values,x_axis,y_axis,initial_values,to_str_method,constrained,
+            debug,title, debug_folder)
+
+
     def get_best_point(self,coord):
         rate_axis = [c[0] for c in coord]
         dist_axis = [c[1] for c in coord]
@@ -409,7 +345,7 @@ class GLCH:
         return best_point
 
 
-    def make_choice_4(self,ref_node,node,prev_candidate_nodes,candidate_nodes):
+    def make_choice_func(self,ref_node,node,prev_candidate_nodes,candidate_nodes):
 
         filtered_nodes = [n for n in candidate_nodes if str(n) != str(node)]
 
