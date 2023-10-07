@@ -87,7 +87,7 @@ if __name__ == "__main__":
         f=bayesOptRateDist.black_box_function,
         pbounds=bayesOptRateDist.pbounds,
         verbose=2,
-        random_state=42,
+        random_state=1,
     )
     # optimizer.set_gp_params(alpha=1e-3)
 
@@ -96,8 +96,8 @@ if __name__ == "__main__":
     # init_points: How many steps of random exploration you want to perform.
     # total iterations = n_iter + init_points
     optimizer.maximize(
-        init_points=2,
-        n_iter=10,
+        init_points=5, # default
+        n_iter=25, # default
     )
 
     # best combination of parameters and target value found
