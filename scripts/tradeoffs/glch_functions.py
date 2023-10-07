@@ -5,7 +5,7 @@ from perceptronac.power_consumption import estimate_joules, get_n_pixels
 from perceptronac.power_consumption import group_energy_measurements
 from glch import GLCH
 from decimal import Decimal
-from glch_utils import save_tree_data, save_hull_data, save_trees_data, save_hulls_data
+from glch_utils import save_tree_data, save_hull_data, save_trees_data, save_hulls_data, tree_nodes
 
 
 
@@ -212,6 +212,15 @@ def glch_rate_vs_dist(
     if algo == "glch":
         save_hull_data(data,r,x_axis,y_axis,x_range,y_range,f'{x_axis}_vs_{y_axis}_start_{start}{formatted_lambdas}',
             x_alias=x_alias,y_alias=y_alias,fldr=fldr)
+    elif algo == "gho":
+        new_points = []
+        new_points += [str(r)]
+        new_points += tree_nodes(r,[],"all")
+        probe = data.loc[new_points,:].loc[:,[x_axis,y_axis]].values.tolist()
+        print(data.index.values.tolist()[np.argmin([x + lmbda * y for x,y in probe])])
+        
+    else:
+        ValueError(algo)
 
 
 def glch_rate_vs_dist_2(
