@@ -15,12 +15,12 @@ def build_glch_tree(
 ):
     
     return GLCHGiftWrapping(
-        data,possible_values,x_axis,y_axis,initial_values,to_str_method,constrained,
+        data,possible_values,[x_axis,y_axis],initial_values,to_str_method,constrained,
         debug,title,debug_folder,start
     ).build_tree()
 
     # return GLCHAngleRule(
-    #     data,possible_values,x_axis,y_axis,initial_values,to_str_method,constrained,
+    #     data,possible_values,[x_axis,y_axis],initial_values,to_str_method,constrained,
     #     debug,title,debug_folder
     # ).build_tree()
 
@@ -30,7 +30,7 @@ def build_gho_tree(
     constrained=True,lmbda=1, debug_folder="debug"
 ):
     return GHO2D(
-        data,possible_values,x_axis,y_axis,initial_values,to_str_method,constrained,
+        data,possible_values,[x_axis,y_axis],initial_values,to_str_method,constrained,
         debug,title,debug_folder,lmbda
     ).build_tree()
 

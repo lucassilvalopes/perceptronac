@@ -11,7 +11,7 @@ from glch_utils import Node, min_max_convex_hull
 class GreedyAlgorithmsBaseClass(ABC):
 
     def __init__(
-        self,data,possible_values,x_axis,y_axis,initial_values,to_str_method,constrained=True,
+        self,data,possible_values,axes,initial_values,to_str_method,constrained=True,
     ):
         """
         data = 
@@ -24,8 +24,7 @@ class GreedyAlgorithmsBaseClass(ABC):
             "h2": [10,20,40,80,160,320,640]
         }
 
-        x_axis = "joules"
-        y_axis = "data_bits/data_samples"
+        axes = ["joules","data_bits/data_samples"]
 
         initial_values = {"h1":10,"h2":10}
 
@@ -36,17 +35,16 @@ class GreedyAlgorithmsBaseClass(ABC):
         """
         self.data = data
         self.possible_values = possible_values
-        self.x_axis = x_axis
-        self.y_axis = y_axis
+        self.axes = axes
         self.initial_values = initial_values
         self.to_str_method = to_str_method
         self.constrained = constrained
 
     def get_node_coord(self,node):
         if isinstance(node,list):
-            return [self.data.loc[str(n),[self.x_axis,self.y_axis]].values.tolist() for n in node]
+            return [self.data.loc[str(n),self.axes].values.tolist() for n in node]
         else:
-            return self.data.loc[str(node),[self.x_axis,self.y_axis]].values.tolist()
+            return self.data.loc[str(node),self.axes].values.tolist()
 
     def setup_build_tree(self):
 
@@ -131,16 +129,16 @@ class GreedyAlgorithmsBaseClass(ABC):
 class Greedy2DAlgorithmsBaseClass(GreedyAlgorithmsBaseClass):
 
     def __init__(
-        self,data,possible_values,x_axis,y_axis,initial_values,to_str_method,constrained=True,
+        self,data,possible_values,axes,initial_values,to_str_method,constrained=True,
         debug=True,title=None, debug_folder="debug"
     ):
         self.debug = debug
         if title is None:
-            self.title = f"{x_axis.replace('/','_over_')}_vs_{y_axis.replace('/','_over_')}"
+            self.title = f"{axes[0].replace('/','_over_')}_vs_{axes[1].replace('/','_over_')}"
         else:
             self.title=title
         self.debug_folder = debug_folder
-        super().__init__(data,possible_values,x_axis,y_axis,initial_values,to_str_method,constrained)
+        super().__init__(data,possible_values,axes,initial_values,to_str_method,constrained)
 
 
     def print_debug(self,node,prev_candidate_nodes,candidate_nodes,chosen_node_index,iteration):
@@ -154,7 +152,7 @@ class Greedy2DAlgorithmsBaseClass(GreedyAlgorithmsBaseClass):
         node_coord = self.get_node_coord(node)
         candidate_coord = self.get_node_coord(candidate_nodes)
         plot_choice(
-            self.data,self.x_axis,self.y_axis,
+            self.data,self.axes[0],self.axes[1],
             node,node_coord,candidate_nodes,candidate_coord,chosen_node_index,txt_file=self.txt_file,
             title=f"{self.title}_{iteration}",fldr=self.debug_folder)
 
@@ -174,11 +172,11 @@ class Greedy2DAlgorithmsBaseClass(GreedyAlgorithmsBaseClass):
 class GLCHGiftWrapping(Greedy2DAlgorithmsBaseClass):
 
     def __init__(
-        self,data,possible_values,x_axis,y_axis,initial_values,to_str_method,constrained=True,
+        self,data,possible_values,axes,initial_values,to_str_method,constrained=True,
         debug=True,title=None, debug_folder="debug",start="left"
     ):
         self.start = start
-        super().__init__(data,possible_values,x_axis,y_axis,initial_values,to_str_method,constrained,
+        super().__init__(data,possible_values,axes,initial_values,to_str_method,constrained,
             debug,title, debug_folder)
 
 
@@ -330,11 +328,11 @@ class GHO2D(Greedy2DAlgorithmsBaseClass):
 
 
     def __init__(
-        self,data,possible_values,x_axis,y_axis,initial_values,to_str_method,constrained=True,
+        self,data,possible_values,axes,initial_values,to_str_method,constrained=True,
         debug=True,title=None, debug_folder="debug",lmbda=1
     ):
         self.lmbda = lmbda
-        super().__init__(data,possible_values,x_axis,y_axis,initial_values,to_str_method,constrained,
+        super().__init__(data,possible_values,axes,initial_values,to_str_method,constrained,
             debug,title, debug_folder)
 
 
