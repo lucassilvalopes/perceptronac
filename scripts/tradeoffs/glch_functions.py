@@ -216,8 +216,9 @@ def glch_rate_vs_dist(
         new_points = []
         new_points += [str(r)]
         new_points += tree_nodes(r,[],"all")
-        probe = data.loc[new_points,:].loc[:,[x_axis,y_axis]].values.tolist()
-        print(data.index.values.tolist()[np.argmin([x + lmbda * y for x,y in probe])])
+        probe = data.loc[new_points,:].loc[:,[x_axis,y_axis]]
+        print(probe.iloc[[np.argmin([x + lmbda * y for x,y in probe.values.tolist()])],:].reset_index(
+            ).loc[:,["labels",x_axis,y_axis]])
         
     else:
         ValueError(algo)
