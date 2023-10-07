@@ -3,7 +3,7 @@ import pandas as pd
 import numpy as np
 from perceptronac.power_consumption import estimate_joules, get_n_pixels
 from perceptronac.power_consumption import group_energy_measurements
-from glch import GLCH
+from glch import GLCHGiftWrapping,GLCHAngleRule,GHO2D
 from decimal import Decimal
 from glch_utils import save_tree_data, save_hull_data, save_trees_data, save_hulls_data, tree_nodes
 
@@ -13,19 +13,25 @@ def build_glch_tree(
     data,possible_values,x_axis,y_axis,initial_values,to_str_method,start="left",debug=True,title=None,
     constrained=True, debug_folder="debug"
 ):
-    return GLCH(
-        data,possible_values,x_axis,y_axis,initial_values,to_str_method,start,debug,title,
-        constrained, "corrected_angle_rule", 1, debug_folder
+    
+    return GLCHGiftWrapping(
+        data,possible_values,x_axis,y_axis,initial_values,to_str_method,constrained,
+        debug,title,debug_folder,start
     ).build_tree()
+
+    # return GLCHAngleRule(
+    #     data,possible_values,x_axis,y_axis,initial_values,to_str_method,constrained,
+    #     debug,title,debug_folder
+    # ).build_tree()
 
 
 def build_gho_tree(
     data,possible_values,x_axis,y_axis,initial_values,to_str_method,start="left",debug=True,title=None,
     constrained=True,lmbda=1, debug_folder="debug"
 ):
-    return GLCH(
-        data,possible_values,x_axis,y_axis,initial_values,to_str_method,start,debug,title,
-        constrained, "point", lmbda, debug_folder
+    return GHO2D(
+        data,possible_values,x_axis,y_axis,initial_values,to_str_method,constrained,
+        debug,title,debug_folder,lmbda
     ).build_tree()
 
 
