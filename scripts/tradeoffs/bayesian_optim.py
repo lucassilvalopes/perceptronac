@@ -42,15 +42,21 @@ class BayesOptRateDist:
     def black_box_function(self,D,L,N,M):
         """receives hyperparameters and outputs -J = -(R + lambda * D + gamma * C)"""
 
-        D = self.round_to_possible_values(D,self.possible_values["D"])
-        L = self.round_to_possible_values(L,self.possible_values["L"])
-        N = self.round_to_possible_values(N,self.possible_values["N"])
-        M = self.round_to_possible_values(M,self.possible_values["M"])
+        D,L,N,M = self.round_to_possible_values(D,L,N,M)
 
         x,y = self.get_label_coord(self.to_str_method(D,L,N,M))
         return -(x + self.lmbda * y)
 
-    def round_to_possible_values(self,P,P_list):
+    def round_to_possible_values(self,D,L,N,M):
+    
+        D = self.round_param_to_possible_values(D,self.possible_values["D"])
+        L = self.round_param_to_possible_values(L,self.possible_values["L"])
+        N = self.round_param_to_possible_values(N,self.possible_values["N"])
+        M = self.round_param_to_possible_values(M,self.possible_values["M"])
+    
+        return D,L,N,M
+
+    def round_param_to_possible_values(self,P,P_list):
         if P >= float(P_list[-1]):
             return P_list[-1]
         if P < float(P_list[0]):
@@ -83,10 +89,10 @@ if __name__ == "__main__":
         verbose=2,
         random_state=1,
     )
-    optimizer.set_gp_params(alpha=1e-3)
+    # optimizer.set_gp_params(alpha=1e-3)
     optimizer.maximize(
-        init_points=2,
-        n_iter=3,
+        # init_points=2,
+        # n_iter=3,
     )
 
     print(optimizer.max)
@@ -94,3 +100,15 @@ if __name__ == "__main__":
     for i, res in enumerate(optimizer.res):
         print("Iteration {}: \n\t{}".format(i, res))
 
+    lbl = bayesOptRateDist.to_str_method(
+        *bayesOptRateDist.round_to_possible_values(
+            optimizer.max["params"]["D"],
+            optimizer.max["params"]["L"],
+            optimizer.max["params"]["N"],
+            optimizer.max["params"]["M"]
+        )
+    )
+
+    print(
+        lbl, bayesOptRateDist.get_label_coord(lbl)
+    )
