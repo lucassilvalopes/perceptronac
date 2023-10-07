@@ -70,24 +70,16 @@ class BayesOptRateDist:
                     return P_list[i+1]
 
 
+def bayes_opt_rate_dist(csv_path,axes,weights,lambdas=[],random_state=1,init_points=5,n_iter=25):
 
-
-
-if __name__ == "__main__":
-
-    bayesOptRateDist = BayesOptRateDist(
-        "/home/lucas/Documents/perceptronac/scripts/tradeoffs/bpp-mse-psnr-loss-flops-params_bmshj2018-factorized_10000-epochs_D-3-4_L-2e-2-1e-2-5e-3_N-32-64-96-128-160-192-224_M-32-64-96-128-160-192-224-256-288-320.csv",
-        ["bpp_loss","mse_loss"],
-        [1,2e-2*(255**2)],
-        lambdas=["2e-2"]
-    )
+    bayesOptRateDist = BayesOptRateDist(csv_path,axes,weights,lambdas=lambdas)
 
 
     optimizer = BayesianOptimization(
         f=bayesOptRateDist.black_box_function,
         pbounds=bayesOptRateDist.pbounds,
         verbose=2,
-        random_state=1,
+        random_state=random_state,
     )
     # optimizer.set_gp_params(alpha=1e-3)
 
@@ -96,8 +88,8 @@ if __name__ == "__main__":
     # init_points: How many steps of random exploration you want to perform.
     # total iterations = n_iter + init_points
     optimizer.maximize(
-        init_points=5, # default
-        n_iter=25, # default
+        init_points=init_points, # default: 5
+        n_iter=n_iter, # default: 25
     )
 
     # best combination of parameters and target value found
@@ -118,4 +110,13 @@ if __name__ == "__main__":
 
     print(
         lbl, bayesOptRateDist.get_label_coord(lbl)
+    )
+
+if __name__ == "__main__":
+
+    bayes_opt_rate_dist(
+        "/home/lucas/Documents/perceptronac/scripts/tradeoffs/bpp-mse-psnr-loss-flops-params_bmshj2018-factorized_10000-epochs_D-3-4_L-2e-2-1e-2-5e-3_N-32-64-96-128-160-192-224_M-32-64-96-128-160-192-224-256-288-320.csv",
+        ["bpp_loss","mse_loss"],
+        [1,2e-2*(255**2)],
+        lambdas=["2e-2"]
     )
