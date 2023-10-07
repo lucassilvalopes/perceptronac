@@ -24,6 +24,7 @@ class BayesOptRateDist:
         self.pbounds = {k:(float(v[0]),float(v[-1])) for k,v in self.possible_values.items()}
         self.lmbda = lmbda
 
+    @staticmethod
     def read_data(csv_path,lambdas):
         data = pd.read_csv(csv_path)
         if len(lambdas) > 0:
