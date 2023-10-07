@@ -87,16 +87,23 @@ if __name__ == "__main__":
         f=bayesOptRateDist.black_box_function,
         pbounds=bayesOptRateDist.pbounds,
         verbose=2,
-        random_state=1,
+        random_state=42,
     )
     # optimizer.set_gp_params(alpha=1e-3)
+
+
+    # n_iter: How many steps of bayesian optimization you want to perform.
+    # init_points: How many steps of random exploration you want to perform.
+    # total iterations = n_iter + init_points
     optimizer.maximize(
-        # init_points=2,
-        # n_iter=3,
+        init_points=2,
+        n_iter=10,
     )
 
+    # best combination of parameters and target value found
     print(optimizer.max)
 
+    # list of all parameters probed and their corresponding target values 
     for i, res in enumerate(optimizer.res):
         print("Iteration {}: \n\t{}".format(i, res))
 
