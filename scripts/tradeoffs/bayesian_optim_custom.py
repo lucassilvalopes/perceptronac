@@ -30,13 +30,17 @@ class BOCustom:
     def acquisition(self, Xsamples):
         # upper confidence bound acquisition function
         mu, std = self.surrogate(Xsamples)
-        # mu = mu[:, 0]
+        mu = mu[:, 0]
         a = mu + self.exploration_exploitation_tredeoff * std
         return a
 
+    def list_func_args(self):
+        return [
+            a for a in self.f.__code__.co_varnames[:self.f.__code__.co_argcount] if a !="self"]
+
     def random(self,n_samples):
         features = []
-        for i,k in enumerate(self.f.__code__.co_varnames):
+        for i,k in enumerate(self.list_func_args()):
             features.append(
                 [random.uniform(self.pbounds[k][0], self.pbounds[k][1]) for _ in range(n_samples)]
             )
@@ -53,11 +57,12 @@ class BOCustom:
         return x
     
     def format_res(self,x,y):
-        return {"params": dict(zip(self.f.__code__.co_varnames,x)), "target": y}
+        return {"params": dict(zip(self.list_func_args(),x)), "target": y}
 
     def maximize(self,init_points=5,n_iter=25):
         X = self.random(init_points)
-        y = np.asarray([self.f(*x) for x in X]).reshape(len(y), 1)
+        y = np.asarray([self.f(*x) for x in X])
+        y = y.reshape(len(y), 1)
         for i in range(len(y)):
             self.res.append(self.format_res(X[i, :],y[i]))
         self.model.fit(X, y)
