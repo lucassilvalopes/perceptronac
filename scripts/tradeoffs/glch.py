@@ -135,7 +135,7 @@ class Greedy2DAlgorithmsBaseClass(GreedyAlgorithmsBaseClass):
         else:
             self.title=title
         self.debug_folder = debug_folder
-        super().__init__(data,possible_values,axes,initial_values,to_str_method,constrained)
+        GreedyAlgorithmsBaseClass.__init__(self,data,possible_values,axes,initial_values,to_str_method,constrained)
 
 
     def print_debug(self,node,prev_candidate_nodes,candidate_nodes,chosen_node_index,iteration):
@@ -173,7 +173,7 @@ class GLCHGiftWrapping(Greedy2DAlgorithmsBaseClass):
         debug=True,title=None, debug_folder="debug",start="left"
     ):
         self.start = start
-        super().__init__(data,possible_values,axes,initial_values,to_str_method,constrained,
+        Greedy2DAlgorithmsBaseClass.__init__(self,data,possible_values,axes,initial_values,to_str_method,constrained,
             debug,title, debug_folder)
 
 
@@ -321,58 +321,6 @@ class GLCHAngleRule(Greedy2DAlgorithmsBaseClass):
         return idx  
 
 
-class GHO2D(Greedy2DAlgorithmsBaseClass):
-
-
-    def __init__(
-        self,data,possible_values,axes,initial_values,to_str_method,constrained,
-        debug=True,title=None, debug_folder="debug",lmbda=1
-    ):
-        self.lmbda = lmbda
-        super().__init__(data,possible_values,axes,initial_values,to_str_method,constrained,
-            debug,title, debug_folder)
-
-
-    def get_best_point(self,coord):
-        rate_axis = [c[0] for c in coord]
-        dist_axis = [c[1] for c in coord]
-        best_point = np.argmin(np.array(rate_axis) + self.lmbda * np.array(dist_axis))
-        return best_point
-
-
-    def make_choice_func(self,ref_node,node,prev_candidate_nodes,candidate_nodes):
-
-        filtered_nodes = [n for n in candidate_nodes if str(n) != str(node)]
-
-        blacklist = [str(n) for n in filtered_nodes]
-
-        filt_prev_candidate_nodes = [n for n in prev_candidate_nodes if (n.color == "red") and (str(n) not in blacklist)]
-
-        all_candidate_nodes = filt_prev_candidate_nodes + filtered_nodes
-
-        chosen_node_index = self.get_best_point(self.get_node_coord([ref_node]+all_candidate_nodes))
-
-        if chosen_node_index == 0:
-
-            chosen_node_index = self.get_best_point(self.get_node_coord(filtered_nodes))
-
-            update_ref_node = False
-
-            chosen_node_index = len(prev_candidate_nodes) + candidate_nodes.index(filtered_nodes[chosen_node_index])
-
-        else:
-
-            update_ref_node = True
-
-            if chosen_node_index >= len(filt_prev_candidate_nodes)+1:
-                chosen_node_index = len(prev_candidate_nodes) + \
-                    candidate_nodes.index(filtered_nodes[chosen_node_index-len(filt_prev_candidate_nodes)-1])
-            else:
-                chosen_node_index = prev_candidate_nodes.index(filt_prev_candidate_nodes[chosen_node_index-1])
-
-        return chosen_node_index, update_ref_node
-
-
 class GHO(GreedyAlgorithmsBaseClass):
 
 
@@ -380,7 +328,7 @@ class GHO(GreedyAlgorithmsBaseClass):
         self,data,possible_values,axes,initial_values,to_str_method,constrained,weights
     ):
         self.weights = weights
-        super().__init__(data,possible_values,axes,initial_values,to_str_method,constrained)
+        GreedyAlgorithmsBaseClass.__init__(self,data,possible_values,axes,initial_values,to_str_method,constrained)
 
 
     def get_best_point(self,coord):
@@ -419,3 +367,18 @@ class GHO(GreedyAlgorithmsBaseClass):
                 chosen_node_index = prev_candidate_nodes.index(filt_prev_candidate_nodes[chosen_node_index-1])
 
         return chosen_node_index, update_ref_node
+
+
+class GHO2D(Greedy2DAlgorithmsBaseClass,GHO):
+    """
+    https://www.datacamp.com/tutorial/super-multiple-inheritance-diamond-problem
+    https://stackoverflow.com/questions/34884567/python-multiple-inheritance-passing-arguments-to-constructors-using-super
+    """
+
+    def __init__(
+        self,data,possible_values,axes,initial_values,to_str_method,constrained,weights,
+        debug=True,title=None, debug_folder="debug"
+    ):
+        Greedy2DAlgorithmsBaseClass.__init__(self,data,possible_values,axes,initial_values,to_str_method,constrained,
+            debug,title, debug_folder)
+        GHO.__init__(self,data,possible_values,axes,initial_values,to_str_method,constrained,weights)

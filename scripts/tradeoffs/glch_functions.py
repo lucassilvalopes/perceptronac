@@ -34,7 +34,7 @@ def build_gho_tree(
     if version== "2D":
         return GHO2D(
             data,possible_values,[x_axis,y_axis],initial_values,to_str_method,constrained,
-            debug,title,debug_folder,lmbda
+            [1,lmbda],debug,title,debug_folder
         ).build_tree()
     elif version== "multidimensional":
         return GHO(
