@@ -5,7 +5,7 @@ from perceptronac.power_consumption import estimate_joules, get_n_pixels
 from perceptronac.power_consumption import group_energy_measurements
 from glch import GLCHGiftWrapping,GLCHAngleRule,GHO2D,GHO
 from decimal import Decimal
-from glch_utils import save_tree_data, save_hull_data, save_trees_data, save_hulls_data, tree_nodes
+from glch_utils import save_tree_data, save_hull_data, save_trees_data, save_hulls_data, save_optimal_point
 
 
 
@@ -28,18 +28,18 @@ def build_glch_tree(
 
 
 def build_gho_tree(
-    data,possible_values,x_axis,y_axis,initial_values,to_str_method,start="left",debug=True,title=None,
-    constrained=True,lmbda=1, debug_folder="debug",version="multidimensional"
+    data,possible_values,axes,initial_values,to_str_method,constrained,weights,
+    debug=True,title=None,debug_folder="debug",version="multidimensional"
 ):
     if version== "2D":
         return GHO2D(
-            data,possible_values,[x_axis,y_axis],initial_values,to_str_method,constrained,
-            [1,lmbda],debug,title,debug_folder
+            data,possible_values,axes,initial_values,to_str_method,constrained,
+            weights,debug,title,debug_folder
         ).build_tree()
     elif version== "multidimensional":
         return GHO(
-            data,possible_values,[x_axis,y_axis],initial_values,to_str_method,constrained,
-            [1,lmbda]
+            data,possible_values,axes,initial_values,to_str_method,constrained,
+            weights
         ).build_tree()
     else:
         ValueError(version)
@@ -145,8 +145,8 @@ def glch_rate_vs_energy(
         r = build_glch_tree(data,possible_values,x_axis,y_axis,initial_values,to_str_method,title=title,
             constrained=constrained,debug_folder=debug_folder)
     elif algo == "gho":
-        r = build_gho_tree(data,possible_values,x_axis,y_axis,initial_values,to_str_method,title=title,
-            constrained=constrained,lmbda=lmbda,debug_folder=debug_folder)
+        r = build_gho_tree(data,possible_values,[x_axis,y_axis],initial_values,to_str_method,constrained,[1,lmbda],
+            debug=True,title=title,debug_folder=debug_folder,version="2D")
     else:
         ValueError(algo)
 
@@ -166,14 +166,15 @@ def glch_rate_vs_params(*args,**kwargs):
 
 
 def glch_rate_vs_dist(
-        csv_path,x_axis,y_axis,
-        x_range=None,y_range=None,
-        start="left",
-        x_alias=None,y_alias=None,
-        lambdas=[],
+        csv_path,
+        axes,
         algo="glch",
         constrained=True,
-        lmbda=1,
+        weights=None,
+        start="left",
+        lambdas=[],
+        axes_ranges=None,
+        axes_aliases=None,
         fldr="glch_results",
         debug_folder="debug"
     ):
@@ -192,9 +193,6 @@ def glch_rate_vs_dist(
         "M": [32, 64, 96, 128, 160, 192, 224, 256, 288, 320]
     }
 
-    # x_axis = "bpp_loss"
-    # y_axis = "mse_loss"
-
     if start == "right":
         possible_values = {k:v[::-1] for k,v in possible_values.items()}
 
@@ -208,39 +206,32 @@ def glch_rate_vs_dist(
     def to_str_method(params):
         return f"D{params['D']}L{params['L']}N{params['N']}M{params['M']}"
     
-    if algo == "glch":
-        if start == "right":
-            r = build_glch_tree(data,possible_values,y_axis,x_axis,initial_values,to_str_method,
-                constrained=constrained,debug_folder=debug_folder)
-        else:
-            r = build_glch_tree(data,possible_values,x_axis,y_axis,initial_values,to_str_method,
-                constrained=constrained,debug_folder=debug_folder)
-    elif algo == "gho":
-        r = build_gho_tree(data,possible_values,x_axis,y_axis,initial_values,to_str_method,
-            constrained=constrained,lmbda=lmbda,debug_folder=debug_folder)
-    else:
-        ValueError(algo)
-
     formatted_lambdas = "" if len(lambdas)==0 else "_" + "-".join([lambdas[i] for i in np.argsort(list(map(float,lambdas)))])
 
-    save_tree_data(data,r,x_axis,y_axis,x_range,y_range,f'{x_axis}_vs_{y_axis}_start_{start}{formatted_lambdas}',
-        x_alias=x_alias,y_alias=y_alias,fldr=fldr)
-    if algo == "glch":
-        save_hull_data(data,r,x_axis,y_axis,x_range,y_range,f'{x_axis}_vs_{y_axis}_start_{start}{formatted_lambdas}',
-            x_alias=x_alias,y_alias=y_alias,fldr=fldr)
-    elif algo == "gho":
-        new_points = []
-        new_points += [str(r)]
-        new_points += tree_nodes(r,[],"all")
-        probe = data.loc[new_points,:].loc[:,[x_axis,y_axis]]
+    exp_id = f'{"_vs_".join(axes)}_start_{start}{formatted_lambdas}'
 
-        print("estimated best")
-        print(probe.iloc[[np.argmin([x + lmbda * y for x,y in probe.values.tolist()])],:].reset_index(
-            ).loc[:,["labels",x_axis,y_axis]])
-        print("true best")
-        print(data.iloc[[np.argmin([x + lmbda * y for x,y in data.loc[:,[x_axis,y_axis]].values.tolist()])],:].reset_index(
-            ).loc[:,["labels",x_axis,y_axis]])
-        
+    if algo == "glch":
+        if start == "right":
+            r = build_glch_tree(data,possible_values,axes[1],axes[0],initial_values,to_str_method,
+                constrained=constrained,debug_folder=debug_folder)
+        else:
+            r = build_glch_tree(data,possible_values,axes[0],axes[1],initial_values,to_str_method,
+                constrained=constrained,debug_folder=debug_folder)
+        save_tree_data(data,r,axes[0],axes[1],axes_ranges[0],axes_ranges[1],exp_id,
+            x_alias=axes_aliases[0],y_alias=axes_aliases[1],fldr=fldr)
+        save_hull_data(data,r,axes[0],axes[1],axes_ranges[0],axes_ranges[1],exp_id,
+            x_alias=axes_aliases[0],y_alias=axes_aliases[1],fldr=fldr)
+    elif algo == "gho":
+        if len(axes)==2:
+            r = build_gho_tree(data,possible_values,axes,initial_values,to_str_method,constrained,weights,
+                debug=True,title=None,debug_folder=debug_folder,version="2D")
+            save_tree_data(data,r,axes[0],axes[1],axes_ranges[0],axes_ranges[1],exp_id,
+                x_alias=axes_aliases[0],y_alias=axes_aliases[1],fldr=fldr)
+            save_optimal_point(data,r,axes,weights)
+        else:
+            r = build_gho_tree(data,possible_values,axes,initial_values,to_str_method,constrained,weights,
+                debug=True,title=None,debug_folder=debug_folder,version="multidimensional")
+            save_optimal_point(data,r,axes,weights)
     else:
         ValueError(algo)
 
@@ -339,9 +330,8 @@ def glch_model_bits_vs_data_bits(
             data,possible_values,x_axis,y_axis,initial_values,to_str_method,
             constrained=constrained,debug_folder=debug_folder)
     elif algo == "gho":
-        r = build_gho_tree(
-            data,possible_values,x_axis,y_axis,initial_values,to_str_method,
-            constrained=constrained,lmbda=lmbda,debug_folder=debug_folder)
+        r = build_gho_tree(data,possible_values,[x_axis,y_axis],initial_values,to_str_method,constrained,[1,lmbda],
+            debug=True,title=None,debug_folder=debug_folder,version="2D")
     else:
         ValueError(algo)
 

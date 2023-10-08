@@ -451,3 +451,21 @@ def save_hulls_data(data,rs,ls,x_axis,y_axis,x_range,y_range,exp_id,fldr="glch_r
     hulls_fig.savefig(f"{fldr}/hulls_fig_{exp_id}.png", dpi=300, facecolor='w', bbox_inches = "tight")
 
     save_hull_points(f"{fldr}/hulls_fig_{exp_id}",true_hull_points,estimated_hull_points)
+
+
+def get_optimal_point_info(data,axes,weights):
+    ix = np.argmin([sum([c*w for c,w in zip(xyzetc,weights)]) for xyzetc in data.loc[:,axes].values.tolist()])
+    info = data.iloc[[ix],:].reset_index().loc[:,["labels"]+axes]
+    return info
+
+
+def save_optimal_point(data,r,axes,weights):
+    new_points = []
+    new_points += [str(r)]
+    new_points += tree_nodes(r,[],"all")
+    probe = data.loc[new_points,:]
+
+    print("estimated best")
+    print(get_optimal_point_info(probe,axes,weights))
+    print("true best")
+    print(get_optimal_point_info(data,axes,weights))
