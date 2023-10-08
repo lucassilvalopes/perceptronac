@@ -10,6 +10,7 @@ import random
 from sklearn.gaussian_process import GaussianProcessRegressor
 from warnings import catch_warnings
 from warnings import simplefilter
+from scipy.stats import norm
 
 
 class BOCustom:
@@ -29,12 +30,21 @@ class BOCustom:
             simplefilter("ignore")
             return self.model.predict(X, return_std=True)
 
-    def acquisition(self, Xsamples):
+    def ucb_acquisition(self, X, Xsamples):
         # upper confidence bound acquisition function
         mu, std = self.surrogate(Xsamples)
         mu = mu[:, 0]
         a = mu + self.exploration_exploitation_tredeoff * std
         return a
+
+    def pi_acquisition(self, X, Xsamples):
+        # probability of improvement acquisition function
+        yhat, _ = self.surrogate(X)
+        best = max(yhat)
+        mu, std = self.surrogate(Xsamples)
+        mu = mu[:, 0]
+        probs = norm.cdf((mu - best) / (std+1E-9))
+        return probs
 
     def list_func_args(self):
         return [
@@ -49,9 +59,9 @@ class BOCustom:
         Xsamples = np.array(features).T
         return Xsamples
 
-    def opt_acquisition(self):
+    def opt_acquisition(self,X):
         Xsamples = self.random(100)
-        scores = self.acquisition(Xsamples)
+        scores = self.pi_acquisition(X,Xsamples)
         ix = np.argmax(scores)
         x = Xsamples[ix, :]
         actual = self.f(*x)
@@ -69,7 +79,7 @@ class BOCustom:
             self.res.append(self.format_res(X[i, :],y[i]))
         self.model.fit(X, y)
         for i in range(n_iter):
-            x = self.opt_acquisition()
+            x = self.opt_acquisition(X)
             actual = self.f(*x)
             X = np.vstack((X, [x]))
             y = np.vstack((y, [[actual]]))
