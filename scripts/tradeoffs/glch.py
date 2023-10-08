@@ -169,12 +169,12 @@ class Greedy2DAlgorithmsBaseClass(GreedyAlgorithmsBaseClass):
 class GLCHGiftWrapping(Greedy2DAlgorithmsBaseClass):
 
     def __init__(
-        self,data,possible_values,axes,initial_values,to_str_method,constrained,
-        debug=True,title=None, debug_folder="debug",start="left"
+        self,data,possible_values,axes,initial_values,to_str_method,constrained,start,
+        debug=True,title=None, debug_folder="debug"
     ):
-        self.start = start
-        Greedy2DAlgorithmsBaseClass.__init__(self,data,possible_values,axes,initial_values,to_str_method,constrained,
-            debug,title, debug_folder)
+        Greedy2DAlgorithmsBaseClass.__init__(self,data,possible_values,
+            (axes[::-1] if start == "right" else axes),
+            initial_values,to_str_method,constrained,debug,title, debug_folder)
 
 
     def make_choice_func(self,ref_node,node,prev_candidate_nodes,candidate_nodes):
@@ -189,11 +189,11 @@ class GLCHGiftWrapping(Greedy2DAlgorithmsBaseClass):
 
         coord_chull = self.get_node_coord([ref_node]+all_candidate_nodes)
 
-        candidates_in_chull = min_max_convex_hull(coord_chull,start=self.start)
+        candidates_in_chull = min_max_convex_hull(coord_chull)
 
         if len(candidates_in_chull) == 1 and candidates_in_chull[0] == 0:
 
-            candidates_in_chull = min_max_convex_hull(self.get_node_coord(filtered_nodes),start=self.start)
+            candidates_in_chull = min_max_convex_hull(self.get_node_coord(filtered_nodes))
             chosen_node_index = candidates_in_chull[-1]
 
             update_ref_node = False
@@ -206,7 +206,7 @@ class GLCHGiftWrapping(Greedy2DAlgorithmsBaseClass):
 
             if len(no_nw) == 0:
 
-                candidates_in_chull = min_max_convex_hull(self.get_node_coord(filtered_nodes),start=self.start)
+                candidates_in_chull = min_max_convex_hull(self.get_node_coord(filtered_nodes))
                 chosen_node_index = candidates_in_chull[-1]
 
                 update_ref_node = False
@@ -228,6 +228,14 @@ class GLCHGiftWrapping(Greedy2DAlgorithmsBaseClass):
 
 
 class GLCHAngleRule(Greedy2DAlgorithmsBaseClass):
+
+    def __init__(
+        self,data,possible_values,axes,initial_values,to_str_method,constrained,start,
+        debug=True,title=None, debug_folder="debug"
+    ):
+        Greedy2DAlgorithmsBaseClass.__init__(self,data,possible_values,
+            (axes[::-1] if start == "right" else axes),
+            initial_values,to_str_method,constrained,debug,title, debug_folder)
 
     def make_choice_func(self,ref_node,node,prev_candidate_nodes,candidate_nodes):
 

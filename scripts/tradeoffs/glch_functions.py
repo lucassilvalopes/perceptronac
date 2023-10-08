@@ -10,17 +10,17 @@ from glch_utils import save_tree_data, save_hull_data, save_trees_data, save_hul
 
 
 def build_glch_tree(
-    data,possible_values,x_axis,y_axis,initial_values,to_str_method,start="left",debug=True,title=None,
-    constrained=True, debug_folder="debug",select_function="corrected_angle_rule"
+    data,possible_values,x_axis,y_axis,initial_values,to_str_method,constrained,start,
+    debug=True,title=None,debug_folder="debug",select_function="corrected_angle_rule"
 ):
     if select_function == "gift_wrapping":
         return GLCHGiftWrapping(
-            data,possible_values,[x_axis,y_axis],initial_values,to_str_method,constrained,
-            debug,title,debug_folder,start
+            data,possible_values,[x_axis,y_axis],initial_values,to_str_method,constrained,start,
+            debug,title,debug_folder
         ).build_tree()
     elif select_function == "corrected_angle_rule":
         return GLCHAngleRule(
-            data,possible_values,[x_axis,y_axis],initial_values,to_str_method,constrained,
+            data,possible_values,[x_axis,y_axis],initial_values,to_str_method,constrained,start,
             debug,title,debug_folder
         ).build_tree()
     else:
@@ -142,8 +142,8 @@ def glch_rate_vs_energy(
         return '_'.join(map(lambda x: f"{x:03d}",widths))
 
     if algo == "glch":
-        r = build_glch_tree(data,possible_values,x_axis,y_axis,initial_values,to_str_method,title=title,
-            constrained=constrained,debug_folder=debug_folder)
+        r = build_glch_tree(data,possible_values,x_axis,y_axis,initial_values,to_str_method,constrained,"left",
+            debug=True,title=title,debug_folder=debug_folder)
     elif algo == "gho":
         r = build_gho_tree(data,possible_values,[x_axis,y_axis],initial_values,to_str_method,constrained,[1,lmbda],
             debug=True,title=title,debug_folder=debug_folder,version="2D")
@@ -210,13 +210,16 @@ def glch_rate_vs_dist(
 
     exp_id = f'{"_vs_".join(axes)}_start_{start}{formatted_lambdas}'
 
+    if weights is None:
+        weights = [1 for _ in range(len(axes))]
+    if axes_ranges is None:
+        axes_ranges = [None for _ in range(len(axes))]
+    if axes_aliases is None:
+        axes_aliases = [None for _ in range(len(axes))]
+
     if algo == "glch":
-        if start == "right":
-            r = build_glch_tree(data,possible_values,axes[1],axes[0],initial_values,to_str_method,
-                constrained=constrained,debug_folder=debug_folder)
-        else:
-            r = build_glch_tree(data,possible_values,axes[0],axes[1],initial_values,to_str_method,
-                constrained=constrained,debug_folder=debug_folder)
+        r = build_glch_tree(data,possible_values,axes[0],axes[1],initial_values,to_str_method,
+            constrained,start,debug=True,title=None,debug_folder=debug_folder)
         save_tree_data(data,r,axes[0],axes[1],axes_ranges[0],axes_ranges[1],exp_id,
             x_alias=axes_aliases[0],y_alias=axes_aliases[1],fldr=fldr)
         save_hull_data(data,r,axes[0],axes[1],axes_ranges[0],axes_ranges[1],exp_id,
@@ -277,12 +280,8 @@ def glch_rate_vs_dist_2(
         to_str_method = to_str_method_factory({"L":L})
 
         current_data = data.iloc[[i for i,lbl in enumerate(data.index) if f"L{L}" in lbl],:]
-        if start == "right":
-            r = build_glch_tree(current_data,greedy_dict,y_axis,x_axis,initial_state,to_str_method,
-                constrained=constrained,debug_folder=debug_folder)
-        else:
-            r = build_glch_tree(current_data,greedy_dict,x_axis,y_axis,initial_state,to_str_method,
-                constrained=constrained,debug_folder=debug_folder)
+        r = build_glch_tree(current_data,greedy_dict,x_axis,y_axis,initial_state,to_str_method,
+            constrained,start,debug=True,title=None,debug_folder=debug_folder)
         
         rs.append(r)
 
@@ -328,7 +327,7 @@ def glch_model_bits_vs_data_bits(
     if algo == "glch":
         r = build_glch_tree(
             data,possible_values,x_axis,y_axis,initial_values,to_str_method,
-            constrained=constrained,debug_folder=debug_folder)
+            constrained,"left",debug=True,title=None,debug_folder=debug_folder)
     elif algo == "gho":
         r = build_gho_tree(data,possible_values,[x_axis,y_axis],initial_values,to_str_method,constrained,[1,lmbda],
             debug=True,title=None,debug_folder=debug_folder,version="2D")
