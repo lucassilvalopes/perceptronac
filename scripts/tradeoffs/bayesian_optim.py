@@ -7,6 +7,7 @@ https://github.com/bayesian-optimization/BayesianOptimization/blob/master/exampl
 import pandas as pd
 # from bayes_opt import BayesianOptimization
 from bayesian_optim_custom import BOCustom as BayesianOptimization
+from collections.abc import Iterable
 
 class BayesOptRateDist:
 
@@ -38,13 +39,29 @@ class BayesOptRateDist:
     def get_label_coord(self,label):
         return self.data.loc[label,self.axes].values.tolist()
 
+    @staticmethod
+    def unpack_black_box_function_inputs(D,L,N,M):
+        inputs_is_iter = [(not isinstance(P,str)) and isinstance(P,Iterable) for P in [D,L,N,M]]
+        if all(inputs_is_iter):
+            D,Dw = D[0],D[1]
+            L,Lw = L[0],L[1]
+            N,Nw = N[0],N[1]
+            M,Mw = M[0],M[1]
+        elif any(inputs_is_iter):
+            raise ValueError("inconsistent input types. Either all or none should be iterable.")
+        else:
+            Dw,Lw,Nw,Mw = 1,1,1,1
+        return D,L,N,M,Dw,Lw,Nw,Mw
+
     def black_box_function(self,D,L,N,M):
         """receives hyperparameters and outputs -J = -(R + lambda * D + gamma * C)"""
+
+        D,L,N,M,Dw,Lw,Nw,Mw = self.unpack_black_box_function_inputs(D,L,N,M)
 
         D,L,N,M = self.round_to_possible_values(D,L,N,M)
 
         coord = self.get_label_coord(self.to_str_method(D,L,N,M))
-        J = sum([c*w for c,w in zip(coord,self.weights)])
+        J = sum([c*dw*fw for c,dw,fw in zip(coord,[Dw,Lw,Nw,Mw],self.weights)])
         return -J
 
     def round_to_possible_values(self,D,L,N,M):
