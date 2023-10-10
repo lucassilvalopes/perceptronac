@@ -40,29 +40,13 @@ class BayesOptRateDist:
     def get_label_coord(self,label):
         return self.data.loc[label,self.axes].values.tolist()
 
-    @staticmethod
-    def unpack_black_box_function_inputs(D,L,N,M):
-        inputs_is_iter = [(not isinstance(P,str)) and isinstance(P,Iterable) for P in [D,L,N,M]]
-        if all(inputs_is_iter):
-            D,Dw = D[0],D[1]
-            L,Lw = L[0],L[1]
-            N,Nw = N[0],N[1]
-            M,Mw = M[0],M[1]
-        elif any(inputs_is_iter):
-            raise ValueError("inconsistent input types. Either all or none should be iterable.")
-        else:
-            Dw,Lw,Nw,Mw = 1,1,1,1
-        return D,L,N,M,Dw,Lw,Nw,Mw
-
-    def black_box_function(self,D,L,N,M):
+    def black_box_function(self,D,L,N,M,dynamic_weights=None):
         """receives hyperparameters and outputs -J = -(R + lambda * D + gamma * C)"""
-
-        D,L,N,M,Dw,Lw,Nw,Mw = self.unpack_black_box_function_inputs(D,L,N,M)
 
         D,L,N,M = self.round_to_possible_values(D,L,N,M)
 
         coord = self.get_label_coord(self.to_str_method(D,L,N,M))
-        J = sum([c*dynamic_w*fixed_w for c,dynamic_w,fixed_w in zip(coord,[Dw,Lw,Nw,Mw],self.weights)])
+        J = sum([c*dynamic_w*fixed_w for c,dynamic_w,fixed_w in zip(coord,dynamic_weights,self.weights)])
         return -J
 
     def round_to_possible_values(self,D,L,N,M):
@@ -103,6 +87,25 @@ def simple_lambda_grid():
     ]))
     return grid
 
+
+def bayes_lch_rate_dist(csv_path,axes,lambda_grid,lambdas=[],random_state=1,init_points=5,n_iter=25):
+    fixed_weights = [1 for _ in range(len(axes))]
+    bayesOptRateDist = BayesOptRateDist(csv_path,axes,fixed_weights,lambdas=lambdas)
+
+    optimizer = BayesianOptimization(
+        f=bayesOptRateDist.black_box_function,
+        pbounds=bayesOptRateDist.pbounds,
+        verbose=2,
+        random_state=random_state,
+        lambda_grid=lambda_grid
+    )
+
+    optimizer.maximize(
+        init_points=init_points, # default: 5
+        n_iter=n_iter, # default: 25
+    )
+
+    print(optimizer.maxes)
 
 
 def bayes_opt_rate_dist(csv_path,axes,weights,lambdas=[],random_state=1,init_points=5,n_iter=25):
@@ -168,4 +171,16 @@ if __name__ == "__main__":
         ["bpp_loss","mse_loss","flops"],
         [1,2e-2*(255**2),1/1e10],
         lambdas=["2e-2"]
+    )
+
+    bayes_lch_rate_dist(
+        "/home/lucas/Documents/perceptronac/scripts/tradeoffs/bpp-mse-psnr-loss-flops-params_bmshj2018-factorized_10000-epochs_D-3-4_L-2e-2-1e-2-5e-3_N-32-64-96-128-160-192-224_M-32-64-96-128-160-192-224-256-288-320.csv",
+        ["bpp_loss","mse_loss","params"],
+        simple_lambda_grid()
+    )
+
+    bayes_lch_rate_dist(
+        "/home/lucas/Documents/perceptronac/scripts/tradeoffs/bpp-mse-psnr-loss-flops-params_bmshj2018-factorized_10000-epochs_D-3-4_L-2e-2-1e-2-5e-3_N-32-64-96-128-160-192-224_M-32-64-96-128-160-192-224-256-288-320.csv",
+        ["bpp_loss","mse_loss","flops"],
+        simple_lambda_grid()
     )

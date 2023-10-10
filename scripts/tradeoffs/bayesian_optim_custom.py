@@ -48,8 +48,14 @@ class BOCustom:
         return sum(probs)
 
     def list_func_args(self):
-        return [
-            a for a in self.f.__code__.co_varnames[:self.f.__code__.co_argcount] if a !="self"]
+        """
+        https://stackoverflow.com/questions/582056/getting-list-of-parameter-names-inside-python-function
+        https://stackoverflow.com/questions/57885922/count-positional-arguments-in-function-signature
+        """
+        n_all_args = self.f.__code__.co_argcount
+        n_kwargs = 0 if self.f.__defaults__ is None else len(self.f.__defaults__)
+        n_args = n_all_args - n_kwargs
+        return [a for a in self.f.__code__.co_varnames[:n_args] if a !="self"]
 
     def random(self,n_samples):
         features = []
@@ -66,7 +72,7 @@ class BOCustom:
         ix = np.argmax(scores)
         x = Xsamples[ix, :]
         for m in range(len(self.models)):
-            actual = self.f(*list(zip(x,self.lambda_grid[m])))
+            actual = self.f(*x,dynamic_weights=self.lambda_grid[m])
             self.res.append(self.format_res(x, actual, m))
         return x
     
@@ -77,7 +83,7 @@ class BOCustom:
         X = self.random(init_points)
         ys = []
         for m in range(len(self.models)):
-            y = np.asarray([self.f(*list(zip(x,self.lambda_grid[m]))) for x in X])
+            y = np.asarray([self.f(*x,dynamic_weights=self.lambda_grid[m]) for x in X])
             y = y.reshape(len(y), 1)
             self.models[m].fit(X, y)
             ys.append(y)
@@ -88,7 +94,7 @@ class BOCustom:
             x = self.opt_acquisition(X)
             X = np.vstack((X, [x]))
             for m in range(len(self.models)):
-                actual = self.f(*list(zip(x,self.lambda_grid[m])))
+                actual = self.f(*x,dynamic_weights=self.lambda_grid[m])
                 ys[m] = np.vstack((ys[m], [[actual]]))
                 self.models[m].fit(X, ys[m])
         self.maxes = []
