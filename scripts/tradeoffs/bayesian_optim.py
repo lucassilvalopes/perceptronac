@@ -88,7 +88,7 @@ class BayesOptRateDist:
                     return P_list[i+1]
 
 
-def simple_grid():
+def simple_lambda_grid():
     m45 = -45
     m90 = -90+1e-10
     m00 = -1e-10
