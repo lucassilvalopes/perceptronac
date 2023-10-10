@@ -20,6 +20,7 @@ install_requires = [
     'scikit-image',#==0.18.3',
     'openpyxl',#==3.0.10',
     # 'compressai',#==1.2.3',
+    'PyQt5', #==5.15.9',
     'bayesian-optimization'
 ]
 
