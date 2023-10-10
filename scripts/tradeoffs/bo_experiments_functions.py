@@ -5,7 +5,6 @@ https://github.com/bayesian-optimization/BayesianOptimization/blob/master/exampl
 """
 
 import pandas as pd
-import numpy as np
 # from bayes_opt import BayesianOptimization
 from bo import BOCustom as BayesianOptimization
 from collections.abc import Iterable
@@ -70,22 +69,6 @@ class BayesOptRateDist:
                     return P_list[i]
                 else:
                     return P_list[i+1]
-
-
-def simple_lambda_grid():
-    m45 = -45
-    m90 = -90+1e-10
-    m00 = -1e-10
-    grid = -1/np.tan((np.pi/180) * np.array([
-        [m45,m90,m90],
-        [m45,m90,m45],
-        [m45,m90,m00],
-        [m45,m45,m90],
-        [m45,m45,m45],
-        [m45,m00,m90],
-        [m45,m00,m00]
-    ]))
-    return grid
 
 
 def bayes_lch_rate_dist(csv_path,axes,lambda_grid,lambdas=[],random_state=1,init_points=5,n_iter=25):
