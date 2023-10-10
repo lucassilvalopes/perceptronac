@@ -1,5 +1,5 @@
 import os
-from glch_functions import glch_rate_vs_dist
+from glch_experiments_functions import glch_rate_vs_dist
 
 
 if __name__ == "__main__":
