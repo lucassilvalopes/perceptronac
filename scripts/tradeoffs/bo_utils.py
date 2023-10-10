@@ -20,7 +20,7 @@ def simple_lambda_grid_3d():
     return grid
 
 
-def plot_3d_lch(arrays_of_points,colors,markers,title=None):
+def plot_3d_lch(arrays_of_points,colors,markers,alphas,title=None):
     """
     https://stackoverflow.com/questions/56656777/userwarning-matplotlib-is-currently-using-agg-which-is-a-non-gui-backend-so
     https://stackoverflow.com/questions/4930524/how-can-i-set-the-matplotlib-backend
@@ -30,12 +30,12 @@ def plot_3d_lch(arrays_of_points,colors,markers,title=None):
     fig = plt.figure()
     ax = fig.add_subplot(111, projection='3d')
 
-    for data,c,m in zip(arrays_of_points,colors,markers):
+    for data,c,m,a in zip(arrays_of_points,colors,markers,alphas):
         xs = [row[0] for row in data]
         ys = [row[1] for row in data]
         zs = [row[2] for row in data]
 
-        ax.scatter(xs, ys, zs, c=c, marker=m)
+        ax.scatter(xs, ys, zs, c=c, marker=m, alpha=a)
 
     ax.set_xlabel('X Label')
     ax.set_ylabel('Y Label')

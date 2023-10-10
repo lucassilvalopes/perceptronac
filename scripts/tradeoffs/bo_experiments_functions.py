@@ -105,7 +105,7 @@ def bayes_lch_rate_dist(csv_path,axes,lambda_grid,lambdas=[],random_state=1,init
         bayesOptRateDist.convert_res_to_lbl(res)) for res in optimizer.res]
 
     from bo_utils import plot_3d_lch
-    plot_3d_lch([cloud,lch],["b","r"],['^','o'])
+    plot_3d_lch([cloud,lch],["b","r"],['^','o'],[0.05,1])
  
 
 
