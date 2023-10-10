@@ -19,7 +19,7 @@ class BOCustom:
         self.f = f
         self.pbounds = pbounds
         if lambda_grid is None:
-            self.lambda_grid = np.ones((1,len(pbounds)))
+            self.lambda_grid = np.ones((1,0))
         else:
             self.lambda_grid = lambda_grid
         self.models = self.init_models()

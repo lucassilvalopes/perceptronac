@@ -2,7 +2,7 @@
 import numpy as np
 
 
-def simple_lambda_grid():
+def simple_lambda_grid_3d():
     m45 = -45
     m90 = -90+1e-10
     m00 = -1e-10
