@@ -70,6 +70,15 @@ class BayesOptRateDist:
                 else:
                     return P_list[i+1]
 
+    def convert_res_to_lbl(self,res):
+        lbl = self.to_str_method(
+            *self.round_to_possible_values(
+                res["params"]["D"],res["params"]["L"],res["params"]["N"],res["params"]["M"]
+            )
+        )
+        return lbl
+
+
 
 def bayes_lch_rate_dist(csv_path,axes,lambda_grid,lambdas=[],random_state=1,init_points=5,n_iter=25):
     fixed_weights = [1 for _ in range(len(axes))]
@@ -89,6 +98,15 @@ def bayes_lch_rate_dist(csv_path,axes,lambda_grid,lambdas=[],random_state=1,init
     )
 
     print(optimizer.maxes)
+
+    cloud = bayesOptRateDist.data.loc[:,bayesOptRateDist.axes].values.tolist()
+
+    lch = [bayesOptRateDist.get_label_coord(
+        bayesOptRateDist.convert_res_to_lbl(res)) for res in optimizer.res]
+
+    from bo_utils import plot_3d_lch
+    plot_3d_lch([cloud,lch],["b","r"],['^','o'])
+ 
 
 
 def bayes_opt_rate_dist(csv_path,axes,weights,lambdas=[],random_state=1,init_points=5,n_iter=25):
@@ -120,14 +138,7 @@ def bayes_opt_rate_dist(csv_path,axes,weights,lambdas=[],random_state=1,init_poi
     for i, res in enumerate(optimizer.res):
         print("Iteration {}: \n\t{}".format(i, res))
 
-    lbl = bayesOptRateDist.to_str_method(
-        *bayesOptRateDist.round_to_possible_values(
-            optimizer.max["params"]["D"],
-            optimizer.max["params"]["L"],
-            optimizer.max["params"]["N"],
-            optimizer.max["params"]["M"]
-        )
-    )
+    lbl = bayesOptRateDist.convert_res_to_lbl(optimizer.max)
 
     print(
         lbl, bayesOptRateDist.get_label_coord(lbl), optimizer.max["target"]
