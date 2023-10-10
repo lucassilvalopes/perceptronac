@@ -80,7 +80,7 @@ class BayesOptRateDist:
 
 
 
-def bayes_lch_rate_dist(csv_path,axes,lambda_grid,lambdas=[],random_state=1,init_points=5,n_iter=25):
+def bayes_lch_rate_dist(csv_path,axes,lambda_grid,lambdas=[],random_state=1,init_points=5,n_iter=25,ax_ranges=None):
     fixed_weights = [1 for _ in range(len(axes))]
     bayesOptRateDist = BayesOptRateDist(csv_path,axes,fixed_weights,lambdas=lambdas)
 
@@ -105,7 +105,7 @@ def bayes_lch_rate_dist(csv_path,axes,lambda_grid,lambdas=[],random_state=1,init
         bayesOptRateDist.convert_res_to_lbl(res)) for res in optimizer.res]
 
     from bo_utils import plot_3d_lch
-    plot_3d_lch([cloud,lch],["b","r"],['^','o'],[0.05,1])
+    plot_3d_lch([cloud,lch],["b","r"],['^','o'],[0.05,1],ax_ranges=ax_ranges,ax_labels=axes)
  
 
 
