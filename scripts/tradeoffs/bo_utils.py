@@ -86,8 +86,36 @@ def plot_plane_3d(ax,plane):
     """
     https://stackoverflow.com/questions/36060933/plot-a-plane-and-points-in-3d-simultaneously
     """
-    xx, yy = np.meshgrid(ax.get_xlim(), ax.get_ylim())
+
+    center = plane["center"]
+    normal = plane["weights"]
+
+    delta = 1
+
+    R = get_rotation_matrix(np.array([0, 0, 1], dtype=np.float64),np.array(normal).astype(np.float64))
+    xx, yy = delta * np.meshgrid([-1,0,1],[-1,0,1])
+
+    rot = R @ np.vstack([xx.reshape(1,-1),yy.reshape(1,-1),np.zeros((1,9))])
+
+    xx = rot[0,:].reshape(3,3) + center[0]
+    yy = rot[1,:].reshape(3,3) + center[1]
+
     target = plane["target"]
     weights = plane["weights"]
     z = target/weights[2] - (1/weights[2]) * xx - (weights[1]/weights[2]) * yy
     ax.plot_surface(xx, yy, z, alpha=0.5)
+
+
+
+def get_rotation_matrix(a,b):
+    """
+    https://math.stackexchange.com/questions/180418/calculate-rotation-matrix-to-align-vector-a-to-vector-b-in-3d
+    """
+    # a = np.array([1, 0, 0], dtype=np.float64)
+    # b = np.array([0, 0, 1], dtype=np.float64)
+    v = np.cross(a, b)
+    s = np.linalg.norm(v)
+    c = np.dot(a, b)
+    vx = np.array([[0, -v[2], v[1]], [v[2], 0, -v[0]], [-v[1], v[0], 0]])
+    r = np.eye(3) + vx + np.dot(vx, vx) * (1-c)/(s**2)
+    return r
