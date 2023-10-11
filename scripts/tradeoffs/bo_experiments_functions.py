@@ -112,7 +112,8 @@ def bayes_lch_rate_dist(csv_path,axes,lambda_grid,lambdas=[],random_state=1,init
     visited = [bayesOptRateDist.get_label_coord(lbl) for lbl in visited_labels]
 
     from bo_utils import plot_3d_lch
-    plot_3d_lch([cloud,visited,lch],["b","r","g"],['o','^','s'],[0.05,0.1,1],ax_ranges=ax_ranges,ax_labels=axes)
+    plot_3d_lch([cloud,visited,lch],["b","r","g"],['o','^','s'],[0.05,0.1,1],
+        ax_ranges=ax_ranges,ax_labels=axes,planes=optimizer.maxes)
  
 
 

@@ -40,7 +40,7 @@ def lambda_grid_3d(y_lmbd,z_lmbd):
     return grid
 
 
-def plot_3d_lch(arrays_of_points,colors,markers,alphas,ax_ranges=None,ax_labels=None,title=None):
+def plot_3d_lch(arrays_of_points,colors,markers,alphas,ax_ranges=None,ax_labels=None,title=None,planes=[]):
     """
     https://stackoverflow.com/questions/4739360/any-easy-way-to-plot-a-3d-scatter-in-python-that-i-can-rotate-around
     https://stackoverflow.com/questions/56656777/userwarning-matplotlib-is-currently-using-agg-which-is-a-non-gui-backend-so
@@ -72,6 +72,9 @@ def plot_3d_lch(arrays_of_points,colors,markers,alphas,ax_ranges=None,ax_labels=
         ax.set_ylim(ax_ranges[1][0],ax_ranges[1][1])
         ax.set_zlim(ax_ranges[2][0],ax_ranges[2][1])
 
+    for plane in planes:
+        plot_plane_3d(ax,plane)
+
     if title is None:
         plt.show(block=True)
     else:
@@ -79,3 +82,12 @@ def plot_3d_lch(arrays_of_points,colors,markers,alphas,ax_ranges=None,ax_labels=
             f"teste3d.png", 
             dpi=300, facecolor='w', bbox_inches = "tight")
 
+def plot_plane_3d(ax,plane):
+    """
+    https://stackoverflow.com/questions/36060933/plot-a-plane-and-points-in-3d-simultaneously
+    """
+    xx, yy = np.meshgrid(ax.get_xlim(), ax.get_ylim())
+    target = plane["target"]
+    weights = plane["weights"]
+    z = target/weights[2] - (1/weights[2]) * xx - (weights[1]/weights[2]) * yy
+    ax.plot_surface(xx, yy, z, alpha=0.5)

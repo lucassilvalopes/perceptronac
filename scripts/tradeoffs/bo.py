@@ -77,7 +77,7 @@ class BOCustom:
         return x
     
     def format_res(self,x,y,m):
-        return {"params": dict(zip(self.list_func_args(),x)), "target": y, "model": m}
+        return {"params": dict(zip(self.list_func_args(),x)), "target": y, "weights": self.lambda_grid[m]}
 
     def maximize(self,init_points=5,n_iter=25):
         X = self.random(init_points)
