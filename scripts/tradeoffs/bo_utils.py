@@ -72,8 +72,8 @@ def plot_3d_lch(arrays_of_points,colors,markers,alphas,ax_ranges=None,ax_labels=
         ax.set_ylim(ax_ranges[1][0],ax_ranges[1][1])
         ax.set_zlim(ax_ranges[2][0],ax_ranges[2][1])
 
-    for plane in planes:
-        plot_plane_3d(ax,plane)
+    # for plane in planes:
+    #     plot_plane_3d(ax,plane)
 
     if title is None:
         plt.show(block=True)

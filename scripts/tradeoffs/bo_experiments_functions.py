@@ -13,8 +13,8 @@ class BayesOptRateDist:
 
     def __init__(self,csv_path,axes,weights,lambdas=[]):
 
-        self.data = self.read_data(csv_path,lambdas)
         self.axes = axes
+        self.data = self.read_data(csv_path,lambdas)
         self.weights = weights
         self.possible_values = {
             "D": [3,4],
@@ -24,11 +24,16 @@ class BayesOptRateDist:
         }
         self.pbounds = {k:(float(v[0]),float(v[-1])) for k,v in self.possible_values.items()}
 
-    @staticmethod
-    def read_data(csv_path,lambdas):
+    def read_data(self,csv_path,lambdas):
         data = pd.read_csv(csv_path)
         if len(lambdas) > 0:
             data = data[data["labels"].apply(lambda x: any([(lmbd in x) for lmbd in lambdas]) )]
+        data["params"] = data["params"]/1e+6
+
+        from sklearn.preprocessing import MinMaxScaler
+        scaler = MinMaxScaler()
+        data[self.axes] = scaler.fit_transform(data[self.axes])
+
         data = data.set_index("labels")
         return data
 
@@ -97,9 +102,9 @@ def bayes_lch_rate_dist(csv_path,axes,lambda_grid,lambdas=[],random_state=1,init
         n_iter=n_iter, # default: 25
     )
 
-    # print(optimizer.maxes)
+    print(optimizer.maxes)
 
-    # print({bayesOptRateDist.convert_res_to_lbl(mx) for mx in optimizer.maxes})
+    print({bayesOptRateDist.convert_res_to_lbl(mx) for mx in optimizer.maxes})
 
     cloud = bayesOptRateDist.data.loc[:,bayesOptRateDist.axes].values.tolist()
 
