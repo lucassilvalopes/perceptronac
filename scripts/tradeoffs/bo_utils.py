@@ -20,6 +20,26 @@ def simple_lambda_grid_3d():
     return grid
 
 
+def lambda_seq(ticks,angle_start=None,angle_end=None):
+    m90 = -90+1e-10
+    m00 = -1e-10
+    if angle_start is None:
+        angle_start = m00
+    if angle_end is None:
+        angle_end = m90
+    ls = -1/np.tan((np.pi/180) * np.linspace(angle_start,angle_end,ticks))
+    return ls
+
+
+def lambda_grid_3d(y_lmbd,z_lmbd):
+    zv,yv = np.meshgrid(z_lmbd, y_lmbd)
+    zv_flat = zv.reshape(-1,1)
+    yv_flat = yv.reshape(-1,1)
+    xv_flat = np.ones((len(y_lmbd)*len(z_lmbd),1))
+    grid = np.hstack([xv_flat,yv_flat,zv_flat])
+    return grid
+
+
 def plot_3d_lch(arrays_of_points,colors,markers,alphas,ax_ranges=None,ax_labels=None,title=None):
     """
     https://stackoverflow.com/questions/4739360/any-easy-way-to-plot-a-3d-scatter-in-python-that-i-can-rotate-around

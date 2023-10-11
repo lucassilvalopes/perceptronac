@@ -97,15 +97,22 @@ def bayes_lch_rate_dist(csv_path,axes,lambda_grid,lambdas=[],random_state=1,init
         n_iter=n_iter, # default: 25
     )
 
-    print(optimizer.maxes)
+    # print(optimizer.maxes)
+
+    # print({bayesOptRateDist.convert_res_to_lbl(mx) for mx in optimizer.maxes})
 
     cloud = bayesOptRateDist.data.loc[:,bayesOptRateDist.axes].values.tolist()
 
-    lch = [bayesOptRateDist.get_label_coord(
-        bayesOptRateDist.convert_res_to_lbl(res)) for res in optimizer.res]
+    lch_labels = [bayesOptRateDist.convert_res_to_lbl(mx) for mx in optimizer.maxes]
+    visited_labels = [bayesOptRateDist.convert_res_to_lbl(res) for res in optimizer.res]
+    
+    visited_labels = [lbl for lbl in visited_labels if (lbl not in lch_labels)]
+
+    lch = [bayesOptRateDist.get_label_coord(lbl) for lbl in lch_labels]
+    visited = [bayesOptRateDist.get_label_coord(lbl) for lbl in visited_labels]
 
     from bo_utils import plot_3d_lch
-    plot_3d_lch([cloud,lch],["b","r"],['^','o'],[0.05,1],ax_ranges=ax_ranges,ax_labels=axes)
+    plot_3d_lch([cloud,visited,lch],["b","r","g"],['o','^','s'],[0.05,0.1,1],ax_ranges=ax_ranges,ax_labels=axes)
  
 
 
