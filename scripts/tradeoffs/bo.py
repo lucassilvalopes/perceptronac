@@ -95,7 +95,6 @@ class BOCustom:
         for model in self.models:
             yhat, _ = self.surrogate(model,X)
             best = max(yhat)
-            print(best)
             mu, std = self.surrogate(model,Xsamples)
             mu = mu[:, 0]
             probs.append( norm.cdf((best - mu) / (std+1E-9)) )
