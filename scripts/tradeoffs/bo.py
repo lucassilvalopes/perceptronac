@@ -11,6 +11,7 @@ from sklearn.gaussian_process import GaussianProcessRegressor
 from warnings import catch_warnings
 from warnings import simplefilter
 from scipy.stats import norm
+from scipy.stats import multivariate_normal as mvn
 
 
 class BOCustom:
@@ -19,7 +20,7 @@ class BOCustom:
         self.f = f
         self.pbounds = pbounds
         if lambda_grid is None:
-            self.lambda_grid = np.ones((1,0))
+            self.lambda_grid = np.ones((1,len(self.list_func_args())))
         else:
             self.lambda_grid = lambda_grid
         self.models = self.init_models()
@@ -37,15 +38,64 @@ class BOCustom:
             return model.predict(X, return_std=True)
 
     def pi_acquisition(self, X, Xsamples):
-        # probability of improvement acquisition function
+        # multidimensional probability of improvement acquisition function
+        # with correlation between planes modeled by the normal vectors inner product 
+        means = []
+        stds = []
+        bests = []
+        for model in self.models:
+            yhat, _ = self.surrogate(model,X)
+            best = np.max(yhat)
+            mu, std = self.surrogate(model,Xsamples)
+            mu = mu[:, 0]
+            means.append( mu )
+            stds.append( std )
+            bests.append( best )
+
+        means = np.array(means).T # (n_samples, n_planes)
+        stds = np.array(stds).T # (n_samples, n_planes)
+        bests = np.array(bests) # (n_planes,)
+
+        n_samples = Xsamples.shape[0]
+
+        norms = np.sqrt(np.sum(self.lambda_grid**2,axis=1)).reshape(-1,1)
+        corr = (self.lambda_grid @ self.lambda_grid.T) / (norms @ norms.T)
+
+        # import matplotlib
+        # matplotlib.use('Qt5Agg')
+        # import matplotlib.pyplot as plt
+        # plt.imshow(corr)
+        # plt.show(block=True)
+
+        probs = []
+        for i in range(n_samples):
+
+            mean_vec = means[i] # (n_planes,)
+            std_vec = stds[i] # (n_planes,)
+            best_vec = bests # (n_planes,)
+
+            # https://en.wikipedia.org/wiki/Covariance_matrix#Relation_to_the_correlation_matrix
+            covariance_mtx = np.diag(std_vec) @ corr @ np.diag(std_vec)
+
+            assert np.allclose(std_vec*std_vec,np.diag(covariance_mtx))
+
+            dist = mvn(mean=mean_vec, cov=covariance_mtx, allow_singular=True)
+
+            prob = 1 - dist.cdf(best_vec)
+
+            probs.append(prob)
+        
+        return np.array(probs)
+
+    def pi_acquisition_independent(self, X, Xsamples):
+        # multidimensional probability of improvement acquisition function
+        # assuming independence between planes
         probs = []
         for model in self.models:
             yhat, _ = self.surrogate(model,X)
             best = max(yhat)
             mu, std = self.surrogate(model,Xsamples)
             mu = mu[:, 0]
-        #     probs.append( norm.cdf((mu - best) / (std+1E-9)) )
-        # return sum(probs)
             probs.append( norm.cdf((best - mu) / (std+1E-9)) )
         return 1 - np.prod(probs)
 
