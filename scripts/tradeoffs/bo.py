@@ -44,8 +44,10 @@ class BOCustom:
             best = max(yhat)
             mu, std = self.surrogate(model,Xsamples)
             mu = mu[:, 0]
-            probs.append( norm.cdf((mu - best) / (std+1E-9)) )
-        return sum(probs)
+        #     probs.append( norm.cdf((mu - best) / (std+1E-9)) )
+        # return sum(probs)
+            probs.append( norm.cdf((best - mu) / (std+1E-9)) )
+        return 1 - np.prod(probs)
 
     def list_func_args(self):
         """
