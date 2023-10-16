@@ -97,7 +97,8 @@ class BOCustom:
             mu, std = self.surrogate(model,Xsamples)
             mu = mu[:, 0]
             probs.append( norm.cdf((best - mu) / (std+1E-9)) )
-        return 1 - np.prod(probs)
+        probs = np.vstack(probs)
+        return 1 - np.prod(probs,axis=0)
 
     def pi_acquisition_random(self, X, Xsamples):
         return np.ones((Xsamples.shape[0],))
@@ -123,7 +124,8 @@ class BOCustom:
 
     def opt_acquisition(self,X):
         Xsamples = self.random(100)
-        scores = self.pi_acquisition_random(X,Xsamples)
+        scores = self.pi_acquisition_independent(X,Xsamples)
+        print(scores)
         ix = np.argmax(scores)
         x = Xsamples[ix, :]
         for m in range(len(self.models)):
