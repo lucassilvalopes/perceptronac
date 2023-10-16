@@ -12,7 +12,7 @@ from warnings import catch_warnings
 from warnings import simplefilter
 from scipy.stats import norm
 from scipy.stats import multivariate_normal as mvn
-
+from sklearn.gaussian_process.kernels import DotProduct, WhiteKernel
 
 class BOCustom:
 	
@@ -30,7 +30,8 @@ class BOCustom:
             random.seed(random_state)
     
     def init_models(self):
-        return [GaussianProcessRegressor() for _ in range(self.lambda_grid.shape[0])]
+        kernel = DotProduct() + WhiteKernel()
+        return [GaussianProcessRegressor(kernel=kernel) for _ in range(self.lambda_grid.shape[0])]
 
     def surrogate(self, model, X):
         with catch_warnings():
@@ -94,6 +95,7 @@ class BOCustom:
         for model in self.models:
             yhat, _ = self.surrogate(model,X)
             best = max(yhat)
+            print(best)
             mu, std = self.surrogate(model,Xsamples)
             mu = mu[:, 0]
             probs.append( norm.cdf((best - mu) / (std+1E-9)) )
@@ -125,7 +127,7 @@ class BOCustom:
     def opt_acquisition(self,X):
         Xsamples = self.random(100)
         scores = self.pi_acquisition_independent(X,Xsamples)
-        print(scores)
+        # print(scores)
         ix = np.argmax(scores)
         x = Xsamples[ix, :]
         for m in range(len(self.models)):
