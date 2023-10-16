@@ -99,6 +99,9 @@ class BOCustom:
             probs.append( norm.cdf((best - mu) / (std+1E-9)) )
         return 1 - np.prod(probs)
 
+    def pi_acquisition_random(self, X, Xsamples):
+        return np.ones((Xsamples.shape[0],))
+
     def list_func_args(self):
         """
         https://stackoverflow.com/questions/582056/getting-list-of-parameter-names-inside-python-function
@@ -120,7 +123,7 @@ class BOCustom:
 
     def opt_acquisition(self,X):
         Xsamples = self.random(100)
-        scores = self.pi_acquisition(X,Xsamples)
+        scores = self.pi_acquisition_random(X,Xsamples)
         ix = np.argmax(scores)
         x = Xsamples[ix, :]
         for m in range(len(self.models)):
