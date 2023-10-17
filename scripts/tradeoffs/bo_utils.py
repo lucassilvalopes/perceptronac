@@ -82,29 +82,126 @@ def plot_3d_lch(arrays_of_points,colors,markers,alphas,ax_ranges=None,ax_labels=
             f"teste3d.png", 
             dpi=300, facecolor='w', bbox_inches = "tight")
 
-def plot_plane_3d(ax,plane):
-    """
-    https://stackoverflow.com/questions/36060933/plot-a-plane-and-points-in-3d-simultaneously
-    """
 
-    center = plane["center"]
+def plane_coeff_from_pt_and_normal(point,normal):
+    D = -np.dot(point,normal)
+    A,B,C = normal[0],normal[1],normal[2]
+    return (A,B,C,D)
+
+
+def line_coeff_from_pts(x1,x2,y1,y2):
+    a = (y2-y1) / (x2-x1)
+    b = y1 - a * x1
+    A = -a
+    B = 1
+    C = -b
+    return (A,B,C) 
+
+
+def line_coeff_from_pt_and_normal(point,normal):
+    C = -np.dot(point,normal)
+    A,B = normal[0],normal[1]
+    return (A,B,C)
+
+
+def plot_plane_3d(ax,plane):
+
+    x_range = ax.get_xlim()
+    y_range = ax.get_ylim()
+    z_range = ax.get_zlim()
+
+    point = plane["center"]
     normal = plane["weights"]
 
-    delta = 1
+    point = np.array(point).astype(np.float64)
+    normal = np.array(normal).astype(np.float64)
+    
+    side_normals = np.array([
+        [1,0,0],
+        [1,0,0],
+        [0,1,0],
+        [0,1,0],
+        [0,0,1],
+        [0,0,1]
+    ])
 
-    R = get_rotation_matrix(np.array([0, 0, 1], dtype=np.float64),np.array(normal).astype(np.float64))
-    xx, yy = delta * np.meshgrid([-1,0,1],[-1,0,1])
+    side_points = np.array([
+        [x_range[0],y_range[0],z_range[0]],
+        [x_range[1],y_range[0],z_range[0]],
+        [x_range[0],y_range[0],z_range[0]],
+        [x_range[0],y_range[1],z_range[0]],
+        [x_range[0],y_range[0],z_range[0]],
+        [x_range[0],y_range[0],z_range[1]]
+    ])
 
-    rot = R @ np.vstack([xx.reshape(1,-1),yy.reshape(1,-1),np.zeros((1,9))])
+    boundaries_normals = np.array([
+        [[1,0],[1,0],[0,1],[0,1]],
+        [[1,0],[1,0],[0,1],[0,1]],
+        [[1,0],[1,0],[0,1],[0,1]],
+        [[1,0],[1,0],[0,1],[0,1]],
+        [[1,0],[1,0],[0,1],[0,1]],
+        [[1,0],[1,0],[0,1],[0,1]]
+    ])
 
-    xx = rot[0,:].reshape(3,3) + center[0]
-    yy = rot[1,:].reshape(3,3) + center[1]
+    boundaries_points = np.array([
+        [[y_range[0],z_range[0]],[y_range[1],z_range[0]],[y_range[0],z_range[0]],[y_range[0],z_range[1]]],
+        [[y_range[0],z_range[0]],[y_range[1],z_range[0]],[y_range[0],z_range[0]],[y_range[0],z_range[1]]],
+        [[z_range[0],x_range[0]],[z_range[1],x_range[0]],[z_range[0],x_range[0]],[z_range[0],x_range[1]]],
+        [[z_range[0],x_range[0]],[z_range[1],x_range[0]],[z_range[0],x_range[0]],[z_range[0],x_range[1]]],
+        [[x_range[0],y_range[0]],[x_range[1],y_range[0]],[x_range[0],y_range[0]],[x_range[0],y_range[1]]],
+        [[x_range[0],y_range[0]],[x_range[1],y_range[0]],[x_range[0],y_range[0]],[x_range[0],y_range[1]]]
+    ])
 
-    target = plane["target"]
-    weights = plane["weights"]
-    z = target/weights[2] - (1/weights[2]) * xx - (weights[1]/weights[2]) * yy
-    ax.plot_surface(xx, yy, z, alpha=0.5)
+    for p,n,ps,ns in zip(side_points,side_normals,boundaries_points,boundaries_normals):
 
+        idx = np.argmax(n)
+
+        pts = plane_intersect(
+            plane_coeff_from_pt_and_normal(point,normal),
+            plane_coeff_from_pt_and_normal(p,n),
+        )
+        if pts is None:
+            continue
+
+        pt1,pt2 = pts
+
+        if idx == 0:
+            lpts = []
+            for lp,ln in zip(ps,ns):
+                pt = line_intersection(
+                    line_coeff_from_pts(pt1[1],pt2[1],pt1[2],pt2[2]),
+                    line_coeff_from_pt_and_normal(lp,ln)
+                )
+                if pt is None:
+                    continue
+                lpts.append([p[0],pt[0],pt[1]])
+            assert len(lpts) == 2
+            ax.plot([e[0] for e in lpts], [e[1] for e in lpts],zs=[e[2] for e in lpts])
+        elif idx == 1:
+            lpts = []
+            for lp,ln in zip(ps,ns):
+                pt = line_intersection(
+                    line_coeff_from_pts(pt1[2],pt2[2],pt1[0],pt2[0]),
+                    line_coeff_from_pt_and_normal(lp,ln)
+                )
+                if pt is None:
+                    continue
+                lpts.append([pt[1],p[1],pt[0]])
+            assert len(lpts) == 2
+            ax.plot([e[0] for e in lpts], [e[1] for e in lpts],zs=[e[2] for e in lpts])
+        elif idx == 2:
+            lpts = []
+            for lp,ln in zip(ps,ns):
+                pt = line_intersection(
+                    line_coeff_from_pts(pt1[0],pt2[0],pt1[1],pt2[1]),
+                    line_coeff_from_pt_and_normal(lp,ln)
+                )
+                if pt is None:
+                    continue
+                lpts.append([pt[0],pt[1],p[2]])
+            assert len(lpts) == 2
+            ax.plot([e[0] for e in lpts], [e[1] for e in lpts],zs=[e[2] for e in lpts])
+            
 
 
 def get_rotation_matrix(a,b):
@@ -119,3 +216,41 @@ def get_rotation_matrix(a,b):
     vx = np.array([[0, -v[2], v[1]], [v[2], 0, -v[0]], [-v[1], v[0], 0]])
     r = np.eye(3) + vx + np.dot(vx, vx) * (1-c)/(s**2)
     return r
+
+
+def plane_intersect(a, b):
+    """
+    a, b   4-tuples/lists
+           Ax + By +Cz + D = 0
+           A,B,C,D in order  
+
+    output: 2 points on line of intersection, np.arrays, shape (3,)
+
+    https://stackoverflow.com/questions/48126838/plane-plane-intersection-in-python
+    """
+    a_vec, b_vec = np.array(a[:3]), np.array(b[:3])
+
+    aXb_vec = np.cross(a_vec, b_vec)
+
+    A = np.array([a_vec, b_vec, aXb_vec])
+    d = np.array([-a[3], -b[3], 0.]).reshape(3,1)
+
+    # could add np.linalg.det(A) == 0 test to prevent linalg.solve throwing error
+    if np.linalg.det(A) == 0:
+        return None
+
+    p_inter = np.linalg.solve(A, d).T
+
+    return p_inter[0], (p_inter + aXb_vec)[0]
+
+
+def line_intersection(l1,l2):
+    l1_vec, l2_vec = np.array(l1[:2]), np.array(l2[:2])
+    A = np.array([l1_vec, l2_vec])
+    d = np.array([-l1[2], -l2[2]]).reshape(2,1)
+    if np.linalg.det(A) == 0:
+        return None
+    p_inter = np.linalg.solve(A, d).T
+    return p_inter[0]
+
+

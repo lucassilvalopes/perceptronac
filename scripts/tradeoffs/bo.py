@@ -125,7 +125,7 @@ class BOCustom:
 
     def opt_acquisition(self,X):
         Xsamples = self.random(100)
-        scores = self.pi_acquisition_independent(X,Xsamples)
+        scores = self.pi_acquisition(X,Xsamples)
         # print(scores)
         ix = np.argmax(scores)
         x = Xsamples[ix, :]
