@@ -72,8 +72,8 @@ def plot_3d_lch(arrays_of_points,colors,markers,alphas,ax_ranges=None,ax_labels=
         ax.set_ylim(ax_ranges[1][0],ax_ranges[1][1])
         ax.set_zlim(ax_ranges[2][0],ax_ranges[2][1])
 
-    # for plane in planes:
-    #     plot_plane_3d(ax,plane)
+    for plane in planes:
+        plot_plane_3d(ax,plane)
 
     if title is None:
         plt.show(block=True)
@@ -241,7 +241,9 @@ def plane_intersect(a, b):
 
     p_inter = np.linalg.solve(A, d).T
 
-    return p_inter[0], (p_inter + aXb_vec)[0]
+    ret = (p_inter[0], (p_inter + aXb_vec)[0])
+
+    return ret
 
 
 def line_intersection(l1,l2):
@@ -254,3 +256,30 @@ def line_intersection(l1,l2):
     return p_inter[0]
 
 
+if __name__ == "__main__":
+
+    import unittest
+
+    class TestPlotPlane3D(unittest.TestCase):
+
+        def test_plane_intersect_plane_coeff_line_coeff_functions(self):
+            point = np.ones((3,))
+            normal = np.ones((3,))
+
+            p = np.zeros((3,))
+            n = np.array([0,0,1])
+
+            pts = plane_intersect(
+                plane_coeff_from_pt_and_normal(point,normal),
+                plane_coeff_from_pt_and_normal(p,n),
+            )
+
+            pt1,pt2 = pts
+
+            line_coeff = line_coeff_from_pts(pt1[0],pt2[0],pt1[1],pt2[1])
+
+            self.assertTrue(np.allclose((1.0, 1, -3.0), line_coeff))
+
+    unittest.main()
+
+    
