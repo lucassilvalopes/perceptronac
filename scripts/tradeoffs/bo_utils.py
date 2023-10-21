@@ -110,17 +110,17 @@ def plot_plane_3d(ax,plane):
     y_range = ax.get_ylim()
     z_range = ax.get_zlim()
 
-    all_lpts = get_points(x_range,y_range,z_range,plane)
+    point = plane["center"]
+    normal = plane["weights"]
+
+    all_lpts = get_points(x_range,y_range,z_range,point,normal)
 
     for lpts in all_lpts:
         ax.plot([e[0] for e in lpts], [e[1] for e in lpts],zs=[e[2] for e in lpts])
 
 
 
-def get_points(x_range,y_range,z_range,plane):
-
-    point = plane["center"]
-    normal = plane["weights"]
+def get_points(x_range,y_range,z_range,point,normal):
 
     point = np.array(point).astype(np.float64)
     normal = np.array(normal).astype(np.float64)
@@ -281,15 +281,20 @@ if __name__ == "__main__":
 
     class TestPlotPlane3D(unittest.TestCase):
 
+        def setUp(self):
+            self.point = np.ones((3,))
+            self.normal = np.ones((3,))
+            self.x_range = [0,4]
+            self.y_range = [0,4]
+            self.z_range = [0,4]
+
         def test_utilitary_functions(self):
-            point = np.ones((3,))
-            normal = np.ones((3,))
 
             p = np.zeros((3,))
             n = np.array([0,0,1])
 
             pts = plane_intersect(
-                plane_coeff_from_pt_and_normal(point,normal),
+                plane_coeff_from_pt_and_normal(self.point,self.normal),
                 plane_coeff_from_pt_and_normal(p,n),
             )
 
@@ -318,6 +323,12 @@ if __name__ == "__main__":
                     self.assertTrue(np.allclose(np.array([3., 0.]),pt))
                 elif i == 3:
                     self.assertTrue(pt is None)
+
+        def test_main_function(self):
+
+            all_lpts = get_points(self.x_range,self.y_range,self.z_range,self.point,self.normal)
+
+            print(all_lpts)
 
     unittest.main()
 
