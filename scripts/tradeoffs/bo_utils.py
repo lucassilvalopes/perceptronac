@@ -116,7 +116,11 @@ def plot_plane_3d(ax,plane):
     all_lpts = get_points(x_range,y_range,z_range,point,normal)
 
     for lpts in all_lpts:
-        ax.plot([e[0] for e in lpts], [e[1] for e in lpts],zs=[e[2] for e in lpts])
+        if all([e is None for e in lpts]):
+            continue
+        else:
+            lptsf = [e for e in lpts if e is not None]
+            ax.plot([e[0] for e in lptsf], [e[1] for e in lptsf],zs=[e[2] for e in lptsf])
 
 
 
@@ -186,10 +190,10 @@ def get_points(x_range,y_range,z_range,point,normal):
                 if not (y_range[0] <= pt[0] <= y_range[1] and z_range[0] <= pt[1] <= z_range[1]):
                     pt = None
                 if pt is None:
-                    continue
-                lpts.append([p[0],pt[0],pt[1]])
-            if len(lpts)>0:
-                all_lpts.append(lpts)
+                    lpts.append(None)
+                else:
+                    lpts.append([p[0],pt[0],pt[1]])
+            all_lpts.append(lpts)
             
         elif idx == 1:
             lpts = []
@@ -201,10 +205,10 @@ def get_points(x_range,y_range,z_range,point,normal):
                 if not (z_range[0] <= pt[0] <= z_range[1] and x_range[0] <= pt[1] <= x_range[1]):
                     pt = None
                 if pt is None:
-                    continue
-                lpts.append([pt[1],p[1],pt[0]])
-            if len(lpts)>0:
-                all_lpts.append(lpts)
+                    lpts.append(None)
+                else:
+                    lpts.append([pt[1],p[1],pt[0]])
+            all_lpts.append(lpts)
         elif idx == 2:
             lpts = []
             for lp,ln in zip(ps,ns):
@@ -215,10 +219,10 @@ def get_points(x_range,y_range,z_range,point,normal):
                 if not (x_range[0] <= pt[0] <= x_range[1] and y_range[0] <= pt[1] <= y_range[1]):
                     pt = None
                 if pt is None:
-                    continue
-                lpts.append([pt[0],pt[1],p[2]])
-            if len(lpts)>0:
-                all_lpts.append(lpts)
+                    lpts.append(None)
+                else:
+                    lpts.append([pt[0],pt[1],p[2]])
+            all_lpts.append(lpts)
             
     return all_lpts
 
