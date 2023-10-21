@@ -161,6 +161,8 @@ def get_points(x_range,y_range,z_range,point,normal):
         [[x_range[0],y_range[0]],[x_range[1],y_range[0]],[x_range[0],y_range[0]],[x_range[0],y_range[1]]]
     ])
 
+    all_lpts = []
+
     for p,n,ps,ns in zip(side_points,side_normals,boundaries_points,boundaries_normals):
 
         idx = np.argmax(n)
@@ -174,8 +176,6 @@ def get_points(x_range,y_range,z_range,point,normal):
 
         pt1,pt2 = pts
 
-        all_lpts = []
-
         if idx == 0:
             lpts = []
             for lp,ln in zip(ps,ns):
@@ -188,8 +188,8 @@ def get_points(x_range,y_range,z_range,point,normal):
                 if pt is None:
                     continue
                 lpts.append([p[0],pt[0],pt[1]])
-            assert len(lpts) == 2, lpts
-            all_lpts.append(lpts)
+            if len(lpts)>0:
+                all_lpts.append(lpts)
             
         elif idx == 1:
             lpts = []
@@ -203,8 +203,8 @@ def get_points(x_range,y_range,z_range,point,normal):
                 if pt is None:
                     continue
                 lpts.append([pt[1],p[1],pt[0]])
-            assert len(lpts) == 2, lpts
-            all_lpts.append(lpts)
+            if len(lpts)>0:
+                all_lpts.append(lpts)
         elif idx == 2:
             lpts = []
             for lp,ln in zip(ps,ns):
@@ -217,8 +217,8 @@ def get_points(x_range,y_range,z_range,point,normal):
                 if pt is None:
                     continue
                 lpts.append([pt[0],pt[1],p[2]])
-            assert len(lpts) == 2, lpts
-            all_lpts.append(lpts)
+            if len(lpts)>0:
+                all_lpts.append(lpts)
             
     return all_lpts
 
