@@ -110,6 +110,15 @@ def plot_plane_3d(ax,plane):
     y_range = ax.get_ylim()
     z_range = ax.get_zlim()
 
+    all_lpts = get_points(x_range,y_range,z_range,plane)
+
+    for lpts in all_lpts:
+        ax.plot([e[0] for e in lpts], [e[1] for e in lpts],zs=[e[2] for e in lpts])
+
+
+
+def get_points(x_range,y_range,z_range,plane):
+
     point = plane["center"]
     normal = plane["weights"]
 
@@ -165,6 +174,8 @@ def plot_plane_3d(ax,plane):
 
         pt1,pt2 = pts
 
+        all_lpts = []
+
         if idx == 0:
             lpts = []
             for lp,ln in zip(ps,ns):
@@ -172,11 +183,14 @@ def plot_plane_3d(ax,plane):
                     line_coeff_from_pts(pt1[1],pt2[1],pt1[2],pt2[2]),
                     line_coeff_from_pt_and_normal(lp,ln)
                 )
+                if not (y_range[0] <= pt[0] <= y_range[1] and z_range[0] <= pt[1] <= z_range[1]):
+                    pt = None
                 if pt is None:
                     continue
                 lpts.append([p[0],pt[0],pt[1]])
-            assert len(lpts) == 2
-            ax.plot([e[0] for e in lpts], [e[1] for e in lpts],zs=[e[2] for e in lpts])
+            assert len(lpts) == 2, lpts
+            all_lpts.append(lpts)
+            
         elif idx == 1:
             lpts = []
             for lp,ln in zip(ps,ns):
@@ -184,11 +198,13 @@ def plot_plane_3d(ax,plane):
                     line_coeff_from_pts(pt1[2],pt2[2],pt1[0],pt2[0]),
                     line_coeff_from_pt_and_normal(lp,ln)
                 )
+                if not (z_range[0] <= pt[0] <= z_range[1] and x_range[0] <= pt[1] <= x_range[1]):
+                    pt = None
                 if pt is None:
                     continue
                 lpts.append([pt[1],p[1],pt[0]])
-            assert len(lpts) == 2
-            ax.plot([e[0] for e in lpts], [e[1] for e in lpts],zs=[e[2] for e in lpts])
+            assert len(lpts) == 2, lpts
+            all_lpts.append(lpts)
         elif idx == 2:
             lpts = []
             for lp,ln in zip(ps,ns):
@@ -196,12 +212,15 @@ def plot_plane_3d(ax,plane):
                     line_coeff_from_pts(pt1[0],pt2[0],pt1[1],pt2[1]),
                     line_coeff_from_pt_and_normal(lp,ln)
                 )
+                if not (x_range[0] <= pt[0] <= x_range[1] and y_range[0] <= pt[1] <= y_range[1]):
+                    pt = None
                 if pt is None:
                     continue
                 lpts.append([pt[0],pt[1],p[2]])
-            assert len(lpts) == 2
-            ax.plot([e[0] for e in lpts], [e[1] for e in lpts],zs=[e[2] for e in lpts])
+            assert len(lpts) == 2, lpts
+            all_lpts.append(lpts)
             
+    return all_lpts
 
 
 def get_rotation_matrix(a,b):
