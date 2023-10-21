@@ -262,7 +262,7 @@ if __name__ == "__main__":
 
     class TestPlotPlane3D(unittest.TestCase):
 
-        def test_plane_intersect_plane_coeff_line_coeff_functions(self):
+        def test_utilitary_functions(self):
             point = np.ones((3,))
             normal = np.ones((3,))
 
@@ -279,6 +279,26 @@ if __name__ == "__main__":
             line_coeff = line_coeff_from_pts(pt1[0],pt2[0],pt1[1],pt2[1])
 
             self.assertTrue(np.allclose((1.0, 1, -3.0), line_coeff))
+
+            boundaries_normals = np.array([[1,0],[1,0],[0,1],[0,1]])
+
+            boundaries_points = np.array([[0,0],[4,0],[0,0],[0,4]])
+
+            for i,lp,ln in zip(range(4),boundaries_points,boundaries_normals):
+                pt = line_intersection(
+                    line_coeff,
+                    line_coeff_from_pt_and_normal(lp,ln)
+                )
+                if not (0 <= pt[0] <= 4 and 0 <= pt[1] <= 4):
+                    pt = None
+                if i == 0:
+                    self.assertTrue(np.allclose(np.array([0., 3.]),pt))
+                elif i == 1:
+                    self.assertTrue(pt is None)
+                elif i == 2:
+                    self.assertTrue(np.allclose(np.array([3., 0.]),pt))
+                elif i == 3:
+                    self.assertTrue(pt is None)
 
     unittest.main()
 
