@@ -187,8 +187,12 @@ def get_points(x_range,y_range,z_range,point,normal):
                     line_coeff_from_pts(pt1[1],pt2[1],pt1[2],pt2[2]),
                     line_coeff_from_pt_and_normal(lp,ln)
                 )
-                if not (y_range[0] <= pt[0] <= y_range[1] and z_range[0] <= pt[1] <= z_range[1]):
+                if pt is None:
+                    pass
+                elif not (y_range[0] <= pt[0] <= y_range[1] and z_range[0] <= pt[1] <= z_range[1]):
                     pt = None
+                else:
+                    pass
                 if pt is None:
                     lpts.append(None)
                 else:
@@ -202,8 +206,12 @@ def get_points(x_range,y_range,z_range,point,normal):
                     line_coeff_from_pts(pt1[2],pt2[2],pt1[0],pt2[0]),
                     line_coeff_from_pt_and_normal(lp,ln)
                 )
-                if not (z_range[0] <= pt[0] <= z_range[1] and x_range[0] <= pt[1] <= x_range[1]):
+                if pt is None:
+                    pass
+                elif not (z_range[0] <= pt[0] <= z_range[1] and x_range[0] <= pt[1] <= x_range[1]):
                     pt = None
+                else:
+                    pass
                 if pt is None:
                     lpts.append(None)
                 else:
@@ -216,8 +224,12 @@ def get_points(x_range,y_range,z_range,point,normal):
                     line_coeff_from_pts(pt1[0],pt2[0],pt1[1],pt2[1]),
                     line_coeff_from_pt_and_normal(lp,ln)
                 )
-                if not (x_range[0] <= pt[0] <= x_range[1] and y_range[0] <= pt[1] <= y_range[1]):
+                if pt is None:
+                    pass
+                elif not (x_range[0] <= pt[0] <= x_range[1] and y_range[0] <= pt[1] <= y_range[1]):
                     pt = None
+                else:
+                    pass
                 if pt is None:
                     lpts.append(None)
                 else:
