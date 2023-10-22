@@ -5,6 +5,7 @@ https://github.com/bayesian-optimization/BayesianOptimization/blob/master/exampl
 """
 
 import random
+import numpy as np
 import pandas as pd
 # from bayes_opt import BayesianOptimization
 from bo import BOCustom as BayesianOptimization
@@ -36,15 +37,50 @@ class BayesOptRateDist:
             ]
             params = [
                 # fake function based if it was an MLP
-                # without bias and without input
-                (N ** 2) * (D-1) + (N ** 2) * (D-2) + N*M 
+                # without bias and with input size 10000 = (100 * 100)
+                N*10000 + (N ** 2) * (D-1) + (N ** 2) * (D-2) + 2*N*M 
                 for D in self.possible_values["D"]
                 for L in self.possible_values["L"]
                 for N in self.possible_values["N"]
                 for M in self.possible_values["M"]
             ]
-            bpp_loss = [1 - p/max(params) + random.uniform(0, 1) for p in params]
-            mse_loss = [1 - p/max(params) + random.uniform(0, 1) for p in params]
+            maxN = self.pbounds["N"][1]
+            maxM = self.pbounds["M"][1]
+            maxD = self.pbounds["D"][1]
+            N0bpp = 192
+            M0bpp = 256
+            D0bpp = 3
+            N0mse = 160
+            M0mse = 288
+            D0mse = 4
+            widthNbpp = 1.1
+            widthMbpp = 0.9
+            widthDbpp = 1
+            widthNmse = 1.2
+            widthMmse = 1.0
+            widthDmse = 1.3
+            bpp_loss = [(
+                    ((N/maxN - N0bpp/maxN)**2)/widthNbpp
+                    + ((M/maxM - M0bpp/maxM)**2)/widthMbpp
+                    + ((D/maxD - D0bpp/maxD)**2)/widthDbpp
+                    + max(min(np.log10(float(L)),8),-8) + 8.5
+                )
+                for D in self.possible_values["D"]
+                for L in self.possible_values["L"]
+                for N in self.possible_values["N"]
+                for M in self.possible_values["M"]
+            ]
+            mse_loss = [(
+                    ((N/maxN - N0mse/maxN)**2)/widthNmse
+                    + ((M/maxM - M0mse/maxM)**2)/widthMmse
+                    + ((D/maxD - D0mse/maxD)**2)/widthDmse
+                    - max(min(np.log10(float(L)),8),-8) + 8.5
+                )
+                for D in self.possible_values["D"]
+                for L in self.possible_values["L"]
+                for N in self.possible_values["N"]
+                for M in self.possible_values["M"]
+            ]
             data = pd.DataFrame({
                 "labels": labels,
                 "bpp_loss": bpp_loss,
