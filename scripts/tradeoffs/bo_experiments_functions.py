@@ -4,6 +4,7 @@ https://stackoverflow.com/questions/57182358/iterate-over-integers-in-bayesian-o
 https://github.com/bayesian-optimization/BayesianOptimization/blob/master/examples/advanced-tour.ipynb
 """
 
+import random
 import pandas as pd
 # from bayes_opt import BayesianOptimization
 from bo import BOCustom as BayesianOptimization
@@ -14,7 +15,6 @@ class BayesOptRateDist:
     def __init__(self,csv_path,axes,weights,lambdas=[]):
 
         self.axes = axes
-        self.data = self.read_data(csv_path,lambdas)
         self.weights = weights
         self.possible_values = {
             "D": [3,4],
@@ -23,12 +23,40 @@ class BayesOptRateDist:
             "M": [32, 64, 96, 128, 160, 192, 224, 256, 288, 320]
         }
         self.pbounds = {k:(float(v[0]),float(v[-1])) for k,v in self.possible_values.items()}
+        self.data = self.read_data(csv_path,lambdas)
 
     def read_data(self,csv_path,lambdas):
-        data = pd.read_csv(csv_path)
-        if len(lambdas) > 0:
-            data = data[data["labels"].apply(lambda x: any([(lmbd in x) for lmbd in lambdas]) )]
-        data["params"] = data["params"]/1e+6
+        if csv_path == "random":
+            labels = [
+                self.to_str_method(D,L,N,M)
+                for D in self.possible_values["D"]
+                for L in self.possible_values["L"]
+                for N in self.possible_values["N"]
+                for M in self.possible_values["M"]
+            ]
+            params = [
+                # fake function based if it was an MLP
+                # without bias and without input
+                (N ** 2) * (D-1) + (N ** 2) * (D-2) + N*M 
+                for D in self.possible_values["D"]
+                for L in self.possible_values["L"]
+                for N in self.possible_values["N"]
+                for M in self.possible_values["M"]
+            ]
+            bpp_loss = [1 - p/max(params) + random.uniform(0, 1) for p in params]
+            mse_loss = [1 - p/max(params) + random.uniform(0, 1) for p in params]
+            data = pd.DataFrame({
+                "labels": labels,
+                "bpp_loss": bpp_loss,
+                "mse_loss": mse_loss,
+                "params": params
+            })
+        else:
+
+            data = pd.read_csv(csv_path)
+            if len(lambdas) > 0:
+                data = data[data["labels"].apply(lambda x: any([(lmbd in x) for lmbd in lambdas]) )]
+            data["params"] = data["params"]/1e+6
 
         from sklearn.preprocessing import MinMaxScaler
         scaler = MinMaxScaler()
