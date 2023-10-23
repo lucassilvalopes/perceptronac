@@ -30,7 +30,7 @@ if __name__ == "__main__":
         # ax_ranges=[[0,4],[0.0025,0.0125],[0,9*1e6]],
         random_state=random_state,
         init_points=2,
-        n_iter=18,
+        n_iter=47,
         acquisition_func="random",
         lch_method="jointly"
     )
@@ -43,7 +43,7 @@ if __name__ == "__main__":
         # ax_ranges=[[0,4],[0.0025,0.0125],[0,9*1e6]],
         random_state=random_state,
         init_points=2,
-        n_iter=18,
+        n_iter=47,
         acquisition_func="pii",
         lch_method="jointly"
 
@@ -57,7 +57,7 @@ if __name__ == "__main__":
         # ax_ranges=[[0,4],[0.0025,0.0125],[0,9*1e6]],
         random_state=random_state,
         init_points=2,
-        n_iter=18,
+        n_iter=5,
         acquisition_func="pi",
         lch_method="repeatedly"
     )

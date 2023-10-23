@@ -254,11 +254,11 @@ def bayes_lch_rate_dist(
     visited_labels = [lbl for lbl in visited_labels if (lbl not in lch_labels)]
     cloud = [c for c,lbl in zip(cloud,bayesOptRateDist.data.index) if ((lbl not in lch_labels) and (lbl not in visited_labels))]
 
-    lch = [bayesOptRateDist.get_label_coord(lbl) for lbl in lch_labels]
-    visited = [bayesOptRateDist.get_label_coord(lbl) for lbl in visited_labels]
+    lch = [bayesOptRateDist.get_label_coord(lbl) for lbl in set(lch_labels)]
+    visited = [bayesOptRateDist.get_label_coord(lbl) for lbl in set(visited_labels)]
 
     from bo_utils import plot_3d_lch
-    plot_3d_lch([cloud,visited,lch],["b","r","g"],['o','^','s'],[0.05,0.1,1],
+    plot_3d_lch([cloud,visited,lch],["b","r","g"],['o','^','s'],[0.05,0.5,1],
         ax_ranges=ax_ranges,
         ax_labels=axes,
         planes=[{**mx, "center":bayesOptRateDist.get_label_coord(bayesOptRateDist.convert_res_to_lbl(mx))} for mx in optimizer_maxes]
