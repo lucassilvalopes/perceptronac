@@ -16,7 +16,13 @@ from sklearn.gaussian_process.kernels import DotProduct, WhiteKernel
 
 class BOCustom:
 	
-    def __init__(self,f,pbounds,verbose=None,random_state=None,lambda_grid=None):
+    def __init__(self,f,pbounds,verbose=None,random_state=None,lambda_grid=None,acquisition_func="pii"):
+        """
+        acquisition_func: 
+        - probability of improvement (pi)
+        - probability of improvement independent (pii)
+        - random
+        """
         self.f = f
         self.pbounds = pbounds
         if lambda_grid is None:
@@ -28,6 +34,7 @@ class BOCustom:
         self.res = []
         if random_state is not None:
             random.seed(random_state)
+        self.acquisition_func = acquisition_func
     
     def init_models(self):
         kernel = DotProduct() + WhiteKernel()
@@ -125,7 +132,14 @@ class BOCustom:
 
     def opt_acquisition(self,X):
         Xsamples = self.random(100)
-        scores = self.pi_acquisition_independent(X,Xsamples)
+        if self.acquisition_func == "pii":
+            scores = self.pi_acquisition_independent(X,Xsamples)
+        elif self.acquisition_func == "pi":
+            scores = self.pi_acquisition(X,Xsamples)
+        elif self.acquisition_func == "random":
+            scores = self.pi_acquisition_random(X,Xsamples)
+        else:
+            raise ValueError(self.acquisition_func)
         # print(scores)
         ix = np.argmax(scores)
         x = Xsamples[ix, :]

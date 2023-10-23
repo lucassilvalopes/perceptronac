@@ -149,7 +149,10 @@ class BayesOptRateDist:
 
 
 
-def bayes_lch_rate_dist(csv_path,axes,lambda_grid,lambdas=[],random_state=1,init_points=5,n_iter=25,ax_ranges=None):
+def bayes_lch_rate_dist(
+        csv_path,axes,lambda_grid,lambdas=[],random_state=1,init_points=5,n_iter=25,ax_ranges=None,
+        acquisition_func="pii"
+    ):
     fixed_weights = [1 for _ in range(len(axes))]
     bayesOptRateDist = BayesOptRateDist(csv_path,axes,fixed_weights,lambdas=lambdas)
 
@@ -158,7 +161,8 @@ def bayes_lch_rate_dist(csv_path,axes,lambda_grid,lambdas=[],random_state=1,init
         pbounds=bayesOptRateDist.pbounds,
         verbose=2,
         random_state=random_state,
-        lambda_grid=lambda_grid
+        lambda_grid=lambda_grid,
+        acquisition_func=acquisition_func
     )
 
     optimizer.maximize(

@@ -13,7 +13,8 @@ if __name__ == "__main__":
     #     # lambda_grid_3d(y_lmbd=[0.005,0.01,0.02,500],z_lmbd=[1/1e+6]),
     #     # ax_ranges=[[0,4],[0.0025,0.0125],[0,9*1e6]],
     #     init_points=2,
-    #     n_iter=47
+    #     n_iter=47,
+    #     acquisition_func="pii"
     # )
 
 
@@ -24,5 +25,17 @@ if __name__ == "__main__":
         # lambda_grid_3d(y_lmbd=[0.005,0.01,0.02,500],z_lmbd=[1/1e+6]),
         # ax_ranges=[[0,4],[0.0025,0.0125],[0,9*1e6]],
         init_points=2,
-        n_iter=5
+        n_iter=18,
+        acquisition_func="random"
+    )
+
+    bayes_lch_rate_dist(
+        "random",
+        ["bpp_loss","mse_loss","params"],
+        simple_lambda_grid_3d(),
+        # lambda_grid_3d(y_lmbd=[0.005,0.01,0.02,500],z_lmbd=[1/1e+6]),
+        # ax_ranges=[[0,4],[0.0025,0.0125],[0,9*1e6]],
+        init_points=2,
+        n_iter=18,
+        acquisition_func="pii"
     )
