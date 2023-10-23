@@ -2,6 +2,10 @@
 https://machinelearningmastery.com/what-is-bayesian-optimization/
 
 https://ekamperi.github.io/machine%20learning/2021/06/11/acquisition-functions.html
+
+https://www.w3schools.com/python/ref_random_setstate.asp
+
+https://stackoverflow.com/questions/45922944/what-is-the-exact-nature-of-differences-or-similarities-between-random-setstate
 """
 
 
@@ -32,10 +36,13 @@ class BOCustom:
         self.models = self.init_models()
         self.max = None
         self.res = []
-        if random_state is not None:
-            random.seed(random_state)
+        self.original_random_state = random.getstate()
+        random.seed(random_state)
         self.acquisition_func = acquisition_func
     
+    def __del__(self):
+        random.setstate(self.original_random_state)
+
     def init_models(self):
         kernel = DotProduct() + WhiteKernel()
         return [GaussianProcessRegressor(kernel=kernel) for _ in range(self.lambda_grid.shape[0])]

@@ -13,8 +13,8 @@ from collections.abc import Iterable
 
 class BayesOptRateDist:
 
-    def __init__(self,csv_path,axes,weights,lambdas=[]):
-
+    def __init__(self,csv_path,axes,weights,lambdas=[],seed=None):
+        self.seed=seed
         self.axes = axes
         self.weights = weights
         self.possible_values = {
@@ -47,18 +47,23 @@ class BayesOptRateDist:
             maxN = self.pbounds["N"][1]
             maxM = self.pbounds["M"][1]
             maxD = self.pbounds["D"][1]
-            N0bpp = 192
-            M0bpp = 256
-            D0bpp = 3
-            N0mse = 160
-            M0mse = 288
-            D0mse = 4
-            widthNbpp = 1.1
-            widthMbpp = 0.9
-            widthDbpp = 1
-            widthNmse = 1.2
-            widthMmse = 1.0
-            widthDmse = 1.3
+
+            self.original_random_state = random.getstate()
+            random.seed(self.seed)
+            N0bpp = random.choice(self.possible_values["N"])
+            M0bpp = random.choice(self.possible_values["M"])
+            D0bpp = random.choice(self.possible_values["D"])
+            N0mse = random.choice(self.possible_values["N"])
+            M0mse = random.choice(self.possible_values["M"])
+            D0mse = random.choice(self.possible_values["D"])
+            widthNbpp = 1 + random.uniform(-0.5, 0.5)
+            widthMbpp = 1 + random.uniform(-0.5, 0.5)
+            widthDbpp = 1 + random.uniform(-0.5, 0.5)
+            widthNmse = 1 + random.uniform(-0.5, 0.5)
+            widthMmse = 1 + random.uniform(-0.5, 0.5)
+            widthDmse = 1 + random.uniform(-0.5, 0.5)
+            random.setstate(self.original_random_state)
+
             bpp_loss = [(
                     ((N/maxN - N0bpp/maxN)**2)/widthNbpp
                     + ((M/maxM - M0bpp/maxM)**2)/widthMbpp
@@ -150,11 +155,11 @@ class BayesOptRateDist:
 
 
 def bayes_lch_rate_dist(
-        csv_path,axes,lambda_grid,lambdas=[],random_state=1,init_points=5,n_iter=25,ax_ranges=None,
+        csv_path,axes,lambda_grid,lambdas=[],random_state=None,init_points=5,n_iter=25,ax_ranges=None,
         acquisition_func="pii"
     ):
     fixed_weights = [1 for _ in range(len(axes))]
-    bayesOptRateDist = BayesOptRateDist(csv_path,axes,fixed_weights,lambdas=lambdas)
+    bayesOptRateDist = BayesOptRateDist(csv_path,axes,fixed_weights,lambdas=lambdas,seed=random_state)
 
     optimizer = BayesianOptimization(
         f=bayesOptRateDist.black_box_function,
