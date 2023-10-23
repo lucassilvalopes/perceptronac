@@ -180,21 +180,67 @@ def run_bo_lch(
     return optimizer.maxes, optimizer.res
 
 
+
+def run_bo_repeatedly(
+    black_box_function,
+    pbounds,
+    random_state,
+    lambda_grid,
+    acquisition_func,
+    init_points,
+    n_iter
+):
+    optimizer_maxes, optimizer_res = [],[]
+    for i in range(lambda_grid.shape[0]):
+        optimizer = BayesianOptimization(
+            f=black_box_function,
+            pbounds=pbounds,
+            verbose=2,
+            random_state=random_state,
+            lambda_grid=lambda_grid[i:i+1,:],
+            acquisition_func=acquisition_func
+        )
+
+        optimizer.maximize(
+            init_points=init_points, # default: 5
+            n_iter=n_iter, # default: 25
+        )
+        optimizer_maxes.extend( optimizer.maxes )
+        optimizer_res.extend( optimizer.res )
+        
+    return optimizer_maxes, optimizer_res
+
+
+
 def bayes_lch_rate_dist(
         csv_path,axes,lambda_grid,lambdas=[],random_state=None,init_points=5,n_iter=25,ax_ranges=None,
-        acquisition_func="pii"
+        acquisition_func="pii", lch_method="jointly"
     ):
     fixed_weights = [1 for _ in range(len(axes))]
     bayesOptRateDist = BayesOptRateDist(csv_path,axes,fixed_weights,lambdas=lambdas,seed=random_state)
 
-    optimizer_maxes, optimizer_res = run_bo_lch(bayesOptRateDist.black_box_function,
-    bayesOptRateDist.pbounds,
-    random_state=random_state,
-    lambda_grid=lambda_grid,
-    acquisition_func=acquisition_func,
-    init_points=init_points,
-    n_iter=n_iter)
-
+    if lch_method == "jointly":
+        optimizer_maxes, optimizer_res = run_bo_lch(
+            bayesOptRateDist.black_box_function,
+            bayesOptRateDist.pbounds,
+            random_state=random_state,
+            lambda_grid=lambda_grid,
+            acquisition_func=acquisition_func,
+            init_points=init_points,
+            n_iter=n_iter
+        )
+    elif lch_method == "repeatedly":
+        optimizer_maxes, optimizer_res = run_bo_repeatedly(
+            bayesOptRateDist.black_box_function,
+            bayesOptRateDist.pbounds,
+            random_state=random_state,
+            lambda_grid=lambda_grid,
+            acquisition_func=acquisition_func,
+            init_points=init_points,
+            n_iter=n_iter
+        )
+    else:
+        raise ValueError(lch_method)
 
     print(optimizer_maxes)
 

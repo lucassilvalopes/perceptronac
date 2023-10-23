@@ -16,7 +16,8 @@ if __name__ == "__main__":
     #     random_state=1,
     #     init_points=2,
     #     n_iter=47,
-    #     acquisition_func="pii"
+    #     acquisition_func="pii",
+    #     lch_method="jointly"
     # )
 
     random_state = random.randint(0,100)
@@ -30,7 +31,8 @@ if __name__ == "__main__":
         random_state=random_state,
         init_points=2,
         n_iter=18,
-        acquisition_func="random"
+        acquisition_func="random",
+        lch_method="jointly"
     )
 
     bayes_lch_rate_dist(
@@ -42,5 +44,20 @@ if __name__ == "__main__":
         random_state=random_state,
         init_points=2,
         n_iter=18,
-        acquisition_func="pii"
+        acquisition_func="pii",
+        lch_method="jointly"
+
+    )
+
+    bayes_lch_rate_dist(
+        "random",
+        ["bpp_loss","mse_loss","params"],
+        simple_lambda_grid_3d(),
+        # lambda_grid_3d(y_lmbd=[0.005,0.01,0.02,500],z_lmbd=[1/1e+6]),
+        # ax_ranges=[[0,4],[0.0025,0.0125],[0,9*1e6]],
+        random_state=random_state,
+        init_points=2,
+        n_iter=18,
+        acquisition_func="pi",
+        lch_method="repeatedly"
     )
