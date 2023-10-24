@@ -56,18 +56,25 @@ class BayesOptRateDist:
             N0mse = random.choice(self.possible_values["N"])
             M0mse = random.choice(self.possible_values["M"])
             D0mse = random.choice(self.possible_values["D"])
-            widthNbpp = 1 + random.uniform(-0.5, 0.5)
-            widthMbpp = 1 + random.uniform(-0.5, 0.5)
-            widthDbpp = 1 + random.uniform(-0.5, 0.5)
-            widthNmse = 1 + random.uniform(-0.5, 0.5)
-            widthMmse = 1 + random.uniform(-0.5, 0.5)
-            widthDmse = 1 + random.uniform(-0.5, 0.5)
+            wNMbpp = random.uniform(0.1, 3.9)
+            wNDbpp = random.uniform(0.1, 3.9)
+            wMNbpp = random.uniform(0.1, 3.9)
+            wMDbpp = random.uniform(0.1, 3.9)
+            wDNbpp = random.uniform(0.1, 3.9)
+            wDMbpp = random.uniform(0.1, 3.9)
+            wNMmse = random.uniform(0.1, 3.9)
+            wNDmse = random.uniform(0.1, 3.9)
+            wMNmse = random.uniform(0.1, 3.9)
+            wMDmse = random.uniform(0.1, 3.9)
+            wDNmse = random.uniform(0.1, 3.9)
+            wDMmse = random.uniform(0.1, 3.9)
+
             random.setstate(self.original_random_state)
 
             bpp_loss = [(
-                    ((N/maxN - N0bpp/maxN)**2)/widthNbpp
-                    + ((M/maxM - M0bpp/maxM)**2)/widthMbpp
-                    + ((D/maxD - D0bpp/maxD)**2)/widthDbpp
+                    ((N/maxN - random.choice(self.possible_values["N"])/maxN)**2)/(-wNMbpp*M/maxM - wNDbpp*D/maxD + 8)
+                    + ((M/maxM - random.choice(self.possible_values["M"])/maxM)**2)/(-wMNbpp*N/maxN - wMDbpp*D/maxD + 8)
+                    + ((D/maxD - random.choice(self.possible_values["D"])/maxD)**2)/(-wDNbpp*N/maxN - wDMbpp*M/maxM + 8)
                     + max(min(np.log10(float(L)),8),-8) + 8.5
                 )
                 for D in self.possible_values["D"]
@@ -76,9 +83,9 @@ class BayesOptRateDist:
                 for M in self.possible_values["M"]
             ]
             mse_loss = [(
-                    ((N/maxN - N0mse/maxN)**2)/widthNmse
-                    + ((M/maxM - M0mse/maxM)**2)/widthMmse
-                    + ((D/maxD - D0mse/maxD)**2)/widthDmse
+                    ((N/maxN - random.choice(self.possible_values["N"])/maxN)**2)/(-wNMmse*M/maxM - wNDmse*D/maxD + 8)
+                    + ((M/maxM - random.choice(self.possible_values["M"])/maxM)**2)/(-wMNmse*N/maxN - wMDmse*D/maxD + 8)
+                    + ((D/maxD - random.choice(self.possible_values["D"])/maxD)**2)/(-wDNmse*N/maxN - wDMmse*M/maxM + 8)
                     - max(min(np.log10(float(L)),8),-8) + 8.5
                 )
                 for D in self.possible_values["D"]

@@ -6,8 +6,13 @@ https://ekamperi.github.io/machine%20learning/2021/06/11/acquisition-functions.h
 https://www.w3schools.com/python/ref_random_setstate.asp
 
 https://stackoverflow.com/questions/45922944/what-is-the-exact-nature-of-differences-or-similarities-between-random-setstate
-"""
 
+https://stackoverflow.com/questions/32612180/eliminating-warnings-from-scikit-learn
+"""
+def warn(*args, **kwargs):
+    pass
+import warnings
+warnings.warn = warn
 
 import numpy as np
 import random
