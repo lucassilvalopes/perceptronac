@@ -50,24 +50,12 @@ class BayesOptRateDist:
 
             self.original_random_state = random.getstate()
             random.seed(self.seed)
-            N0bpp = random.choice(self.possible_values["N"])
-            M0bpp = random.choice(self.possible_values["M"])
-            D0bpp = random.choice(self.possible_values["D"])
-            N0mse = random.choice(self.possible_values["N"])
-            M0mse = random.choice(self.possible_values["M"])
-            D0mse = random.choice(self.possible_values["D"])
-            wNbpp = random.uniform(0.1, 3.9)
-            wMbpp = random.uniform(0.1, 3.9)
-            wDbpp = random.uniform(0.1, 3.9)
-            wNmse = random.uniform(0.1, 3.9)
-            wMmse = random.uniform(0.1, 3.9)
-            wDmse = random.uniform(0.1, 3.9)
             random.setstate(self.original_random_state)
 
             bpp_loss = [(
-                    ((N/maxN - random.choice(self.possible_values["N"])/maxN)**2)/wNbpp
-                    + ((M/maxM - random.choice(self.possible_values["M"])/maxM)**2)/wMbpp
-                    + ((D/maxD - random.choice(self.possible_values["D"])/maxD)**2)/wDbpp
+                    ((N/maxN - random.choice(self.possible_values["N"])/maxN)**2)/random.uniform(0.1, 3.9)
+                    + ((M/maxM - random.choice(self.possible_values["M"])/maxM)**2)/random.uniform(0.1, 3.9)
+                    + ((D/maxD - random.choice(self.possible_values["D"])/maxD)**2)/random.uniform(0.1, 3.9)
                     + max(min(np.log10(float(L)),8),-8) + 8.5
                 )
                 for D in self.possible_values["D"]
@@ -76,9 +64,9 @@ class BayesOptRateDist:
                 for M in self.possible_values["M"]
             ]
             mse_loss = [(
-                    ((N/maxN - random.choice(self.possible_values["N"])/maxN)**2)/wNmse
-                    + ((M/maxM - random.choice(self.possible_values["M"])/maxM)**2)/wMmse
-                    + ((D/maxD - random.choice(self.possible_values["D"])/maxD)**2)/wDmse
+                    ((N/maxN - random.choice(self.possible_values["N"])/maxN)**2)/random.uniform(0.1, 3.9)
+                    + ((M/maxM - random.choice(self.possible_values["M"])/maxM)**2)/random.uniform(0.1, 3.9)
+                    + ((D/maxD - random.choice(self.possible_values["D"])/maxD)**2)/random.uniform(0.1, 3.9)
                     - max(min(np.log10(float(L)),8),-8) + 8.5
                 )
                 for D in self.possible_values["D"]
