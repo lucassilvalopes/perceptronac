@@ -5,13 +5,12 @@ from perceptronac.loading_and_saving import linestyle_tuple
 
 if __name__ == "__main__":
 
-    exp_name = "Adaptive_Detection_of_Dim_page3_lut_mean_mode_lr1e-1_lr1e-2_lr1e-4" # "Adaptive_Detection_of_Dim_lut_mean_mode_lr1e-1_lr1e-2_lr1e-4"
+    exp_name = "A_PDE_Model_for_Smooth_page2_lut_mean_mode_lr1e-1_lr1e-2_lr1e-4"
 
     docs = [
         [
-            "/home/lucas/Documents/data/SPL2021/all_pages/Adaptive_Detection_of_Dim_Maneuvering_Targets_in_Adjacent_Range_Cells_3.png",
-            # "/home/lucas/Documents/data/SPL2021/all_pages/Adaptive_Detection_of_Dim_Maneuvering_Targets_in_Adjacent_Range_Cells_1.png",
-            # "SPL2021all_pages/Adaptive_Detection_of_Dim_Maneuvering_Targets_in_Adjacent_Range_Cells_1.png", # "SPL2021/Adaptive_Detection_of_Dim_Maneuvering_Targets_in_Adjacent_Range_Cells_3.png"
+
+            "/home/lucas/Documents/data/SPL2020V/pages/A_PDE_Model_for_Smooth_Surface_Reconstruction_from_2D_Parallel_Slices_2.png"
         ]
     ]
 
