@@ -102,7 +102,7 @@ def plot_comparison(xvalues,data,xlabel,ylabel='bits/sample',xscale="linear",lin
     ax.legend(handles=handles,loc="upper right", ncol=legend_ncol)
 
     fig.tight_layout()
-    plt.show()    
+    # plt.show()    
     return fig
 
 
