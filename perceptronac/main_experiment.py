@@ -179,17 +179,36 @@ class RatesCAAC:
                     geo_or_attr=self.geo_or_attr,n_classes=self.n_classes,channels=self.channels,color_space=self.color_space,
                     manual_th=self.manual_th,full_page=self.full_page)
                 cabac.load(X=dataset.X,y=dataset.y)
-            else:
-                dataset = CausalContextDataset(datacoding, self.data_type, self.N, self.percentage_of_uncles,
-                    geo_or_attr=self.geo_or_attr,n_classes=self.n_classes,channels=self.channels,color_space=self.color_space,
-                    manual_th=self.manual_th,full_page=self.full_page)
-            X,y = dataset.X,dataset.y
-            cabac_pred = cabac(X)
-            final_loss = perfect_AC(y,cabac_pred,binary=self.binary)
-            if phase=='train':
+
+                X,y = dataset.X,dataset.y
+                cabac_pred = cabac(X)
+                final_loss = perfect_AC(y,cabac_pred,binary=self.binary)
                 train_loss.append(final_loss)
             else:
+                # dataset = CausalContextDataset(datacoding, self.data_type, self.N, self.percentage_of_uncles,
+                #     geo_or_attr=self.geo_or_attr,n_classes=self.n_classes,channels=self.channels,color_space=self.color_space,
+                #     manual_th=self.manual_th,full_page=self.full_page)
+                
+                pths = datacoding  
+                
+                pths_per_dset = max(1,len(pths)//self.configs["dset_pieces"])
+
+                running_loss = 0.0
+                n_samples = 0.0
+                for pths_i in range(0,len(pths),pths_per_dset):
+
+                    dataset = CausalContextDataset(pths[pths_i:(pths_i+pths_per_dset)], self.data_type, self.N, self.percentage_of_uncles,
+                        geo_or_attr=self.geo_or_attr,n_classes=self.n_classes,channels=self.channels,color_space=self.color_space,
+                        manual_th=self.manual_th,full_page=self.full_page)
+
+                    X,y = dataset.X,dataset.y
+                    cabac_pred = cabac(X)
+                    running_loss += perfect_AC(y,cabac_pred,binary=self.binary) * y.size
+                    n_samples += y.size
+                
+                final_loss = running_loss / n_samples
                 valid_loss.append(final_loss)
+
         self.save_N_model(cabac)
         return self.epochs*train_loss, self.epochs*valid_loss
 
