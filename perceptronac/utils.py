@@ -77,9 +77,9 @@ def add_border(img,N):
     return new_img
 
 
-def causal_context_many_imgs(pths,N,n_classes=2,channels=[1,0,0],color_space="YCbCr"):
+def causal_context_many_imgs(pths,N,n_classes=2,channels=[1,0,0],color_space="YCbCr",manual_th=None,full_page=True):
     if n_classes == 2 and channels==[1,0,0] and color_space == "YCbCr":
-        return causal_context_many_imgs_binary(pths,N)
+        return causal_context_many_imgs_binary(pths,N,manual_th,full_page)
     elif n_classes == 256 and channels==[1,0,0] and color_space == "YCbCr":
         return causal_context_many_imgs_gray(pths,N)
     elif n_classes == 256 and channels==[1,1,1] and color_space == "RGB":
@@ -92,11 +92,13 @@ def causal_context_many_imgs(pths,N,n_classes=2,channels=[1,0,0],color_space="YC
         raise ValueError(m)
 
 
-def causal_context_many_imgs_binary(pths,N):
+def causal_context_many_imgs_binary(pths,N,manual_th=None,full_page=True):
     y = []
     X = []
     for pth in pths:
-        img = add_border(read_im2bw_otsu(pth),N)
+        img = read_im2bw(pth,manual_th) if manual_th else read_im2bw_otsu(pth)
+        if full_page:
+            img = add_border(img,N)
         partial_y,partial_X = causal_context((img > 0).astype(int), N)
         y.append(partial_y)
         X.append(partial_X)

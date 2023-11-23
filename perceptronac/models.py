@@ -151,11 +151,15 @@ class Pointnet_3_64N_32N_16N_1(torch.nn.Module):
 class CausalContextDataset(torch.utils.data.Dataset):
     def __init__(
         self,pths,data_type,N,percentage_of_uncles=None,getXy_later=False,
-        geo_or_attr = None, n_classes=None, channels=None, color_space=None
+        geo_or_attr = None, n_classes=None, channels=None, color_space=None,
+        manual_th=None,full_page=True
     ):
         self.pths = pths
         self.data_type = data_type
         self.N = N
+
+        self.manual_th = manual_th
+        self.full_page = full_page
 
         if data_type == "pointcloud":
             self.percentage_of_uncles = percentage_of_uncles
@@ -178,7 +182,8 @@ class CausalContextDataset(torch.utils.data.Dataset):
         if self.data_type == "image":
             self.y,self.X = causal_context_many_imgs(
                 self.pths, self.N, n_classes=self.n_classes,
-                channels=self.channels, color_space=self.color_space)
+                channels=self.channels, color_space=self.color_space,
+                manual_th=self.manual_th,full_page=self.full_page)
         elif self.data_type == "pointcloud":
             if self.percentage_of_uncles is None:
                 m = f"Input percentage_of_uncles must be specified "+\

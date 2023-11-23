@@ -89,6 +89,8 @@ class RatesStaticAC:
         self.color_space=self.configs["color_space"]
         self.data_type = self.configs["data_type"]
         self.percentage_of_uncles = self.configs["percentage_of_uncles"]
+        self.manual_th=self.configs["manual_th"]
+        self.full_page=self.configs["full_page"]
         self.binary = (self.geo_or_attr=="geometry" or (self.n_classes==2 and np.count_nonzero(self.channels)==1) )
         
     def get_rates(self,datatraining,datacoding):
@@ -98,11 +100,13 @@ class RatesStaticAC:
         for phase in sorted(self.phases):
             if phase == 'train':
                 dataset = CausalContextDataset(datatraining, self.data_type, self.N, self.percentage_of_uncles,
-                    geo_or_attr=self.geo_or_attr,n_classes=self.n_classes,channels=self.channels,color_space=self.color_space)
+                    geo_or_attr=self.geo_or_attr,n_classes=self.n_classes,channels=self.channels,color_space=self.color_space,
+                    manual_th=self.manual_th,full_page=self.full_page)
                 staticac.load(y=dataset.y)
             else:
                 dataset = CausalContextDataset(datacoding, self.data_type, self.N, self.percentage_of_uncles,
-                    geo_or_attr=self.geo_or_attr,n_classes=self.n_classes,channels=self.channels,color_space=self.color_space)
+                    geo_or_attr=self.geo_or_attr,n_classes=self.n_classes,channels=self.channels,color_space=self.color_space,
+                    manual_th=self.manual_th,full_page=self.full_page)
             X,y = dataset.X,dataset.y
             static_pred = staticac(X)
             final_loss = perfect_AC(y,static_pred,binary=self.binary)
@@ -160,6 +164,8 @@ class RatesCAAC:
         self.color_space=self.configs["color_space"]
         self.data_type = self.configs["data_type"]
         self.percentage_of_uncles = self.configs["percentage_of_uncles"]
+        self.manual_th=self.configs["manual_th"]
+        self.full_page=self.configs["full_page"]
         self.binary = (self.geo_or_attr=="geometry" or (self.n_classes==2 and np.count_nonzero(self.channels)==1) )
         
     def get_rates(self,datatraining,datacoding):
@@ -170,11 +176,13 @@ class RatesCAAC:
         for phase in sorted(self.phases): # train first then valid
             if phase == 'train':
                 dataset = CausalContextDataset(datatraining, self.data_type, self.N, self.percentage_of_uncles,
-                    geo_or_attr=self.geo_or_attr,n_classes=self.n_classes,channels=self.channels,color_space=self.color_space)
+                    geo_or_attr=self.geo_or_attr,n_classes=self.n_classes,channels=self.channels,color_space=self.color_space,
+                    manual_th=self.manual_th,full_page=self.full_page)
                 cabac.load(X=dataset.X,y=dataset.y)
             else:
                 dataset = CausalContextDataset(datacoding, self.data_type, self.N, self.percentage_of_uncles,
-                    geo_or_attr=self.geo_or_attr,n_classes=self.n_classes,channels=self.channels,color_space=self.color_space)
+                    geo_or_attr=self.geo_or_attr,n_classes=self.n_classes,channels=self.channels,color_space=self.color_space,
+                    manual_th=self.manual_th,full_page=self.full_page)
             X,y = dataset.X,dataset.y
             cabac_pred = cabac(X)
             final_loss = perfect_AC(y,cabac_pred,binary=self.binary)
@@ -248,9 +256,11 @@ class RatesJBIG1:
         train_loss, valid_loss = [], []
         for phase in sorted(phases): # train first then valid
             if phase == 'train':
-                dataset = CausalContextDataset(datatraining, self.configs["data_type"], self.N, self.configs["percentage_of_uncles"])
+                dataset = CausalContextDataset(datatraining, self.configs["data_type"], self.N, self.configs["percentage_of_uncles"],
+                                               manual_th=self.configs["manual_th"],full_page=self.configs["full_page"])
             else:
-                dataset = CausalContextDataset(datacoding, self.configs["data_type"], self.N, self.configs["percentage_of_uncles"])
+                dataset = CausalContextDataset(datacoding, self.configs["data_type"], self.N, self.configs["percentage_of_uncles"],
+                                               manual_th=self.configs["manual_th"],full_page=self.configs["full_page"])
             final_loss = self.avg_rate(dataset.pths)
             if phase=='train':
                 train_loss.append(final_loss)
@@ -332,7 +342,8 @@ class RatesMLP:
 
             dset = CausalContextDataset(shuffled_pths[shuffled_pths_i:(shuffled_pths_i+pths_per_dset)], 
                 self.configs["data_type"], self.N, self.configs["percentage_of_uncles"],geo_or_attr=self.configs["geo_or_attr"],
-                n_classes=self.configs["n_classes"],channels=self.configs["channels"],color_space=self.configs["color_space"])
+                n_classes=self.configs["n_classes"],channels=self.configs["channels"],color_space=self.configs["color_space"],
+                manual_th=self.configs["manual_th"],full_page=self.configs["full_page"])
 
             dataloader=torch.utils.data.DataLoader(
                 dset,batch_size=self.configs["batch_size"],shuffle=True,num_workers=self.configs["num_workers"])
@@ -539,14 +550,17 @@ def train_loop(configs,datatraining,datacoding,N):
     phases=configs["phases"]
     epochs=configs["epochs"]
 
+    methods=configs["methods"]
+
     data = dict()
     for phase in phases:
         data[phase] = dict()
 
-    static_condition = (N == 0)
-    cabac_condition = (N > 0)
-    mlp_condition = (N > 0)
-    jbig1_condition = (configs["data_type"] == "image") and (configs["n_classes"] == 2) and (np.count_nonzero(configs["channels"])==1)
+    static_condition = (N == 0) and (("LUT" in methods) or ("MLP" in methods))
+    cabac_condition = (N > 0) and ("LUT" in methods)
+    mlp_condition = (N > 0) and ("MLP" in methods)
+    jbig1_condition = (configs["data_type"] == "image") and (configs["n_classes"] == 2) and \
+        (np.count_nonzero(configs["channels"])==1) and ("JBIG1" in methods)
 
     rates_empty_t,rates_empty_c= epochs*[-1],epochs*[-1]
     if static_condition:
