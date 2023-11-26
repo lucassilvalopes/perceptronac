@@ -11,7 +11,7 @@ from glch_utils import save_tree_data, save_hull_data, save_trees_data, save_hul
 
 def build_glch_tree(
     data,possible_values,x_axis,y_axis,initial_values,to_str_method,constrained,start,
-    debug=True,title=None,debug_folder="debug",select_function="corrected_angle_rule"
+    debug=True,title=None,debug_folder="debug",select_function="gift_wrapping"
 ):
     if select_function == "gift_wrapping":
         return GLCHGiftWrapping(

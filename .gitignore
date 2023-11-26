@@ -134,7 +134,9 @@ dmypy.json
 
 .DS_store
 
-**/trash/
+results
+# https://stackoverflow.com/questions/32335459/git-ignore-filenames-which-contain-pattern-to-ignore
+**/trash*
 *.ply
 *.xlsx
 *.tar

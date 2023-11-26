@@ -262,14 +262,18 @@ class GLCHGiftWrapping(Greedy2DAlgorithmsBaseClass):
 
         all_candidate_nodes = filt_prev_candidate_nodes + filtered_nodes
 
-        coord_chull = self.get_node_coord([ref_node]+all_candidate_nodes)
+        ref_nodes = [n for n in self.nodes if (str(n) not in [str(cn) for cn in all_candidate_nodes])]
+
+        n_ref_nodes = len(ref_nodes)
+
+        coord_chull = self.get_node_coord(ref_nodes+all_candidate_nodes)
 
         candidates_in_chull = min_max_convex_hull(coord_chull)
 
-        if len(candidates_in_chull) == 1 and candidates_in_chull[0] == 0:
+        if all([i<n_ref_nodes for i in candidates_in_chull]):
 
             candidates_in_chull = min_max_convex_hull(self.get_node_coord(filtered_nodes))
-            chosen_node_index = candidates_in_chull[0]
+            chosen_node_index = candidates_in_chull[-1]
 
             update_ref_node = False
 
@@ -277,27 +281,16 @@ class GLCHGiftWrapping(Greedy2DAlgorithmsBaseClass):
 
         else:
 
-            no_nw = [i for i in candidates_in_chull if ((coord_chull[i][1] <= coord_chull[0][1]) and i != 0)]
+            valid_in_chull = [i for i in candidates_in_chull if (i >= n_ref_nodes)]
 
-            if len(no_nw) == 0:
+            chosen_node_index = valid_in_chull[0]
+            update_ref_node = True
 
-                candidates_in_chull = min_max_convex_hull(self.get_node_coord(filtered_nodes))
-                chosen_node_index = candidates_in_chull[0]
-
-                update_ref_node = False
-
-                chosen_node_index = len(prev_candidate_nodes) + candidate_nodes.index(filtered_nodes[chosen_node_index])
-
-
+            if chosen_node_index >= len(filt_prev_candidate_nodes)+n_ref_nodes:
+                chosen_node_index = len(prev_candidate_nodes) + \
+                    candidate_nodes.index(filtered_nodes[chosen_node_index-len(filt_prev_candidate_nodes)-n_ref_nodes])
             else:
-                chosen_node_index = no_nw[0]
-                update_ref_node = True
-
-                if chosen_node_index >= len(filt_prev_candidate_nodes)+1:
-                    chosen_node_index = len(prev_candidate_nodes) + \
-                        candidate_nodes.index(filtered_nodes[chosen_node_index-len(filt_prev_candidate_nodes)-1])
-                else:
-                    chosen_node_index = prev_candidate_nodes.index(filt_prev_candidate_nodes[chosen_node_index-1])
+                chosen_node_index = prev_candidate_nodes.index(filt_prev_candidate_nodes[chosen_node_index-n_ref_nodes])
 
         return chosen_node_index, update_ref_node
 
