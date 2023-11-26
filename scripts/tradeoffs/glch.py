@@ -50,6 +50,7 @@ class GreedyAlgorithmsBaseClass(ABC):
 
         root = Node(**self.initial_values)
         root.set_to_str_method(self.to_str_method)
+        self.nodes = [root]
         return root
 
     def begin_debug(self):
@@ -101,6 +102,8 @@ class GreedyAlgorithmsBaseClass(ABC):
                 chosen_node = candidate_nodes[chosen_node_index - len(prev_candidate_nodes)]
             else:
                 chosen_node = prev_candidate_nodes[chosen_node_index]
+
+            self.nodes += candidate_nodes # TODO : what happens in case of duplicacy ?
 
             if chosen_node_index < len(prev_candidate_nodes):
                 node.chosen_child_indices.append(None)
@@ -164,6 +167,78 @@ class Greedy2DAlgorithmsBaseClass(GreedyAlgorithmsBaseClass):
         if not self.debug:
             return
         close_debug_txt_file(self.txt_file)
+
+
+class GLCHGiftWrappingTieBreak(Greedy2DAlgorithmsBaseClass):
+
+    def __init__(
+        self,data,possible_values,axes,initial_values,to_str_method,constrained,scales,
+        debug=True,title=None, debug_folder="debug"
+    ):
+        if not constrained:
+            raise NotImplementedError
+        self.scales = scales
+        Greedy2DAlgorithmsBaseClass.__init__(self,data,possible_values,axes,
+            initial_values,to_str_method,constrained,debug,title, debug_folder)
+
+    def find_candidates_in_chull(self,candidate_nodes):
+
+        len_nodes = len(self.nodes)
+
+        coord = self.get_node_coord(self.nodes) + self.get_node_coord(candidate_nodes)
+
+        chull = min_max_convex_hull(coord)
+
+        candidates_in_chull = [i-len_nodes for i in chull if i >= len_nodes]
+
+        return candidates_in_chull
+
+
+    def dist_to_chull(self,pt):
+
+        lmbd = ((self.scales[0]/self.scales[1])/6)
+
+        improv = pt[0] + pt[1]*lmbd
+
+        return improv
+
+
+    def make_choice_tie_break(self,node,candidate_nodes):
+
+        dists = []
+
+        for pt in self.get_node_coord(candidate_nodes):
+
+            dist = self.dist_to_chull(pt)
+
+            dists.append(dist)
+        
+        idx = np.argsort(dists)
+
+        filtered_idx = [i for i in idx if str(candidate_nodes[i]) != str(node)]
+
+        chosen_node_index = filtered_idx[0]
+
+        return chosen_node_index
+
+
+    def make_choice(self,ref_node,node,prev_candidate_nodes,candidate_nodes):
+
+        filtered_nodes = [n for n in candidate_nodes if str(n) != str(node)]
+
+        candidates_in_chull = self.find_candidates_in_chull(filtered_nodes)
+
+        if (len(candidates_in_chull)==1):
+
+            chosen_node_index = candidates_in_chull[0]
+
+            chosen_node_index = candidate_nodes.index(filtered_nodes[chosen_node_index])
+
+        else:
+
+            chosen_node_index = self.make_choice_tie_break(node,candidate_nodes)
+
+        return len(prev_candidate_nodes) + chosen_node_index, True
 
 
 class GLCHGiftWrapping(Greedy2DAlgorithmsBaseClass):
