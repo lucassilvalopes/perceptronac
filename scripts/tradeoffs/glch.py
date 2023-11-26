@@ -207,7 +207,7 @@ class GLCHGiftWrapping(Greedy2DAlgorithmsBaseClass):
             if len(no_nw) == 0:
 
                 candidates_in_chull = min_max_convex_hull(self.get_node_coord(filtered_nodes))
-                chosen_node_index = candidates_in_chull[-1]
+                chosen_node_index = candidates_in_chull[0]
 
                 update_ref_node = False
 
