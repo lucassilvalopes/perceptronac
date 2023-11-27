@@ -32,7 +32,8 @@ if __name__ == "__main__":
         algo="glch",
         constrained=True,
         fldr=results_folder,
-        debug_folder=debug_folder
+        debug_folder=debug_folder,
+        debug=False
     )
 
     glch_rate_vs_energy(
@@ -48,7 +49,8 @@ if __name__ == "__main__":
         algo="glch",
         constrained=True,
         fldr=results_folder,
-        debug_folder=debug_folder
+        debug_folder=debug_folder,
+        debug=False
     )
 
     glch_rate_vs_params(
@@ -63,7 +65,8 @@ if __name__ == "__main__":
         algo="glch",
         constrained=True,
         fldr=results_folder,
-        debug_folder=debug_folder
+        debug_folder=debug_folder,
+        debug=False
     )
 
     # TODO: the time measurements right now are too comprehensive.
@@ -84,7 +87,8 @@ if __name__ == "__main__":
         algo="glch",
         constrained=True,
         fldr=results_folder,
-        debug_folder=debug_folder
+        debug_folder=debug_folder,
+        debug=False
     )
 
     glch_rate_vs_dist(
@@ -94,7 +98,8 @@ if __name__ == "__main__":
         algo="glch",
         constrained=True,
         fldr=results_folder,
-        debug_folder=debug_folder
+        debug_folder=debug_folder,
+        debug=False
     )
 
     glch_rate_vs_dist_2(
@@ -105,7 +110,8 @@ if __name__ == "__main__":
         start="left",
         constrained=True,
         fldr=results_folder,
-        debug_folder=debug_folder
+        debug_folder=debug_folder,
+        debug=False
     )
 
     glch_rate_vs_dist(
@@ -116,7 +122,8 @@ if __name__ == "__main__":
         algo="glch",
         constrained=True,
         fldr=results_folder,
-        debug_folder=debug_folder
+        debug_folder=debug_folder,
+        debug=False
     )
 
     glch_rate_vs_dist(
@@ -127,7 +134,8 @@ if __name__ == "__main__":
         algo="glch",
         constrained=True,
         fldr=results_folder,
-        debug_folder=debug_folder
+        debug_folder=debug_folder,
+        debug=False
     )
 
     glch_model_bits_vs_data_bits(
@@ -141,5 +149,6 @@ if __name__ == "__main__":
         algo="glch",
         constrained=True,
         fldr=results_folder,
-        debug_folder=debug_folder
+        debug_folder=debug_folder,
+        debug=False
     )
