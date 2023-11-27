@@ -3,17 +3,22 @@ import pandas as pd
 import numpy as np
 from perceptronac.power_consumption import estimate_joules, get_n_pixels
 from perceptronac.power_consumption import group_energy_measurements
-from glch import GLCHGiftWrapping,GLCHAngleRule,GHO2D,GHO
+from glch import GLCHGiftWrapping,GLCHGiftWrappingTieBreak,GLCHAngleRule,GHO2D,GHO
 from decimal import Decimal
 from glch_utils import save_tree_data, save_hull_data, save_trees_data, save_hulls_data, save_optimal_point
 
 
 
 def build_glch_tree(
-    data,possible_values,x_axis,y_axis,initial_values,to_str_method,constrained,start,
-    debug=True,title=None,debug_folder="debug",select_function="gift_wrapping"
+    data,possible_values,x_axis,y_axis,initial_values,to_str_method,constrained,start,scale_x,scale_y,
+    debug=True,title=None,debug_folder="debug",select_function="gift_wrapping_tie_break"
 ):
-    if select_function == "gift_wrapping":
+    if select_function == "gift_wrapping_tie_break":
+        return GLCHGiftWrappingTieBreak(
+            data,possible_values,[x_axis,y_axis],initial_values,to_str_method,constrained,[scale_x,scale_y],
+            debug,title,debug_folder
+        ).build_tree()
+    elif select_function == "gift_wrapping":
         return GLCHGiftWrapping(
             data,possible_values,[x_axis,y_axis],initial_values,to_str_method,constrained,start,
             debug,title,debug_folder
@@ -130,6 +135,9 @@ def glch_rate_vs_energy(
 
     data = get_energy_data(csv_path,remove_noise)
 
+    scale_x = data.loc[["032_010_010_001","032_640_640_001"],x_axis].max() - data.loc[["032_010_010_001","032_640_640_001"],x_axis].min()
+    scale_y = data.loc[["032_010_010_001","032_640_640_001"],y_axis].max() - data.loc[["032_010_010_001","032_640_640_001"],y_axis].min()
+
     possible_values = {
         "h1": [10,20,40,80,160,320,640],
         "h2": [10,20,40,80,160,320,640]
@@ -143,7 +151,7 @@ def glch_rate_vs_energy(
 
     if algo == "glch":
         r = build_glch_tree(data,possible_values,x_axis,y_axis,initial_values,to_str_method,constrained,"left",
-            debug=True,title=title,debug_folder=debug_folder)
+            scale_x=scale_x,scale_y=scale_y,debug=True,title=title,debug_folder=debug_folder)
     elif algo == "gho":
         r = build_gho_tree(data,possible_values,[x_axis,y_axis],initial_values,to_str_method,constrained,[1,lmbda],
             debug=True,title=title,debug_folder=debug_folder,version="2D")
@@ -186,6 +194,15 @@ def glch_rate_vs_dist(
     else:
         data = data[data["labels"].apply(lambda x: any([(lmbd in x) for lmbd in lambdas]) )].set_index("labels")
 
+    x_axis = axes[0]
+    y_axis = axes[1]
+
+    simplest = "D3L{}N32M32".format("5e-3" if len(lambdas) == 0 else lambdas[np.argmin(list(map(float,lambdas)))])
+    most_complex = "D4L{}N224M320".format("2e-2" if len(lambdas) == 0 else lambdas[np.argmax(list(map(float,lambdas)))])
+
+    scale_x = data.loc[[simplest,most_complex],x_axis].max() - data.loc[[simplest,most_complex],x_axis].min()
+    scale_y = data.loc[[simplest,most_complex],y_axis].max() - data.loc[[simplest,most_complex],y_axis].min()
+
     possible_values = {
         "D": [3,4],
         "L": ["5e-3", "1e-2", "2e-2"] if len(lambdas) == 0 else lambdas,
@@ -218,8 +235,8 @@ def glch_rate_vs_dist(
         axes_aliases = [None for _ in range(len(axes))]
 
     if algo == "glch":
-        r = build_glch_tree(data,possible_values,axes[0],axes[1],initial_values,to_str_method,
-            constrained,start,debug=True,title=None,debug_folder=debug_folder)
+        r = build_glch_tree(data,possible_values,axes[0],axes[1],initial_values,to_str_method,constrained,start,
+            scale_x=scale_x,scale_y=scale_y,debug=True,title=None,debug_folder=debug_folder)
         save_tree_data(data,r,axes[0],axes[1],axes_ranges[0],axes_ranges[1],exp_id,
             x_alias=axes_aliases[0],y_alias=axes_aliases[1],fldr=fldr)
         save_hull_data(data,r,axes[0],axes[1],axes_ranges[0],axes_ranges[1],exp_id,
@@ -244,6 +261,9 @@ def glch_rate_vs_dist_2(
     """only for glch algo"""
 
     data = pd.read_csv(csv_path).set_index("labels")
+
+    scale_x = data.loc[["D3L5e-3N32M32","D4L2e-2N224M320"],x_axis].max() - data.loc[["D3L5e-3N32M32","D4L2e-2N224M320"],x_axis].min()
+    scale_y = data.loc[["D3L5e-3N32M32","D4L2e-2N224M320"],y_axis].max() - data.loc[["D3L5e-3N32M32","D4L2e-2N224M320"],y_axis].min()
 
     brute_dict = {
         "L": ["5e-3", "1e-2", "2e-2"]
@@ -280,8 +300,8 @@ def glch_rate_vs_dist_2(
         to_str_method = to_str_method_factory({"L":L})
 
         current_data = data.iloc[[i for i,lbl in enumerate(data.index) if f"L{L}" in lbl],:]
-        r = build_glch_tree(current_data,greedy_dict,x_axis,y_axis,initial_state,to_str_method,
-            constrained,start,debug=True,title=None,debug_folder=debug_folder)
+        r = build_glch_tree(current_data,greedy_dict,x_axis,y_axis,initial_state,to_str_method,constrained,start,
+            scale_x=scale_x,scale_y=scale_y,debug=True,title=None,debug_folder=debug_folder)
         
         rs.append(r)
 
@@ -309,6 +329,9 @@ def glch_model_bits_vs_data_bits(
 
     data = data.set_index("idx")
 
+    scale_x = data.loc[["032_010_010_001_08b","032_640_640_001_32b"],x_axis].max() - data.loc[["032_010_010_001_08b","032_640_640_001_32b"],x_axis].min()
+    scale_y = data.loc[["032_010_010_001_08b","032_640_640_001_32b"],y_axis].max() - data.loc[["032_010_010_001_08b","032_640_640_001_32b"],y_axis].min()
+
     possible_values = {
         "h1": [10,20,40,80,160,320,640],
         "h2": [10,20,40,80,160,320,640],
@@ -326,8 +349,8 @@ def glch_model_bits_vs_data_bits(
 
     if algo == "glch":
         r = build_glch_tree(
-            data,possible_values,x_axis,y_axis,initial_values,to_str_method,
-            constrained,"left",debug=True,title=None,debug_folder=debug_folder)
+            data,possible_values,x_axis,y_axis,initial_values,to_str_method,constrained,"left",
+            scale_x=scale_x,scale_y=scale_y,debug=True,title=None,debug_folder=debug_folder)
     elif algo == "gho":
         r = build_gho_tree(data,possible_values,[x_axis,y_axis],initial_values,to_str_method,constrained,[1,lmbda],
             debug=True,title=None,debug_folder=debug_folder,version="2D")

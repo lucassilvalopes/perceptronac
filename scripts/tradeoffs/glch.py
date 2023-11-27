@@ -222,7 +222,7 @@ class GLCHGiftWrappingTieBreak(Greedy2DAlgorithmsBaseClass):
         return chosen_node_index
 
 
-    def make_choice(self,ref_node,node,prev_candidate_nodes,candidate_nodes):
+    def make_choice_func(self,ref_node,node,prev_candidate_nodes,candidate_nodes):
 
         filtered_nodes = [n for n in candidate_nodes if str(n) != str(node)]
 
