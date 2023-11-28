@@ -1,7 +1,8 @@
 """
 Example:
 
-python3 scripts/gen_bkwd_adpt_cdng_grph.py 0.5 1 \
+python3 scripts/adaptive_context_modeling_paper/gen_bkwd_adpt_cdng_grph.py 0.5 2 \
+    "MLPlr=1e-01,MLPlr=1e-02,MLPlr=1e-04,LUTmean,RNNlr=1e-02" \
     results/exp_1672230131/rnn_online_coding_Adaptive_Detection_of_Dim_5pages_GRURNN650_lr1e-02_batchsize64.csv \
     results/exp_1672234599/backward_adaptive_coding_Adaptive_Detection_of_Dim_5pages_lut_mean_lr1e-2_N26.csv
 """
@@ -68,16 +69,19 @@ if __name__ == "__main__":
     
     ylim_upper = float(sys.argv[1]) # 0.5
     legend_ncol = int(sys.argv[2]) # 1
-    csv_name = sys.argv[3]
+    columns = sys.argv[3] # "MLPlr=1e-01,MLPlr=1e-02,MLPlr=1e-04,LUTmean,RNNlr=1e-02"
+    csv_name = sys.argv[4]
 
     data = pd.read_csv(csv_name)
 
     identifiers = re.findall(r'[\d]{10}',csv_name)
 
-    for i in range(4,len(sys.argv)):
+    for i in range(5,len(sys.argv)):
         csv_name = sys.argv[i]
         identifiers += re.findall(r'[\d]{10}',csv_name)
-        data = pd.merge(data,pd.read_csv(csv_name),on="iteration")
+        partial_data = pd.read_csv(csv_name)
+        partial_data = partial_data.drop([c for c in data.columns if c !="iteration"],axis=1, errors='ignore')
+        data = pd.merge(data,partial_data,on="iteration")
 
     data = data.set_index("iteration")
         
@@ -85,6 +89,8 @@ if __name__ == "__main__":
     len_data = len(xvalues)
 
     data = data.to_dict(orient="list")
+
+    data = {k:v for k,v in data.items() if k in columns}
 
     labels = [label_map(k) for k in sorted(data.keys())]
 
