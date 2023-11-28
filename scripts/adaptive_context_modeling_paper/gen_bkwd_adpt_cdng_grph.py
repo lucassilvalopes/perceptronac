@@ -22,7 +22,9 @@ def label_map(orig_lbl):
     label_map_dict = {
         "LUTmean": 'ALUT',
         "MLP": "APC",
-        "RNN": "ARNN"
+        "RNN": "ARNN",
+        "Xavier": "Xavier",
+        "Ours": "Ours"
     }
     if "MLP" in orig_lbl or "RNN" in orig_lbl:
         ky = "MLP" if "MLP" in orig_lbl else "RNN"
@@ -39,6 +41,8 @@ def linestyle_map(orig_lbl):
         0.1 : "dashdot",
         0.01 : "dashed", 
         0.0001 : "dotted", 
+        "Ours" : "dashed", 
+        "Xavier": linestyle_tuple["densely dashed"],
     }
     if "MLP" in orig_lbl:
         ky = float(re.search(r'[\d\.]{1,}e-[\d]{1,}',orig_lbl).group())
@@ -55,6 +59,8 @@ def color_map(orig_lbl):
         0.1 : "r",
         0.01 : "b",
         0.0001 : "c",
+        "Ours" : "b",
+        "Xavier": "k",
     }
     if "MLP" in orig_lbl:
         ky = float(re.search(r'[\d\.]{1,}e-[\d]{1,}',orig_lbl).group())
