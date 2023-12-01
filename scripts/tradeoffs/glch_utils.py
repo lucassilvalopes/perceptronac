@@ -165,9 +165,9 @@ def plot_choice(
             dpi=300, facecolor='w', bbox_inches = "tight")
 
 
-def one_line_of_tree_str(node,children,chosen_child_indices):
+def one_line_of_tree_str(node,prev_children,children,chosen_child_indices):
     children_str = ""
-    for i,c in enumerate(children):
+    for i,c in enumerate(children,len(prev_children)):
         if i in chosen_child_indices:
             prefix = ''.join(["!"] * (chosen_child_indices.index(i)+1) )
         else:
@@ -184,7 +184,7 @@ def print_tree(node,file=None):
     if len(node.children) == 0:
         return
 
-    one_line = one_line_of_tree_str(node,node.children,node.chosen_child_indices)
+    one_line = one_line_of_tree_str(node,[],node.children,node.chosen_child_indices)
 
     print(one_line,file=file)
     

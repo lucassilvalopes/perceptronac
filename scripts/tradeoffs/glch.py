@@ -142,7 +142,7 @@ class Greedy2DAlgorithmsBaseClass(GreedyAlgorithmsBaseClass):
 
 
     def print_debug(self,node,prev_candidate_nodes,candidate_nodes,chosen_node_index,iteration):
-        self.tree_str += one_line_of_tree_str(node,candidate_nodes,[chosen_node_index])
+        self.tree_str += one_line_of_tree_str(node,prev_candidate_nodes,candidate_nodes,[chosen_node_index])
         if not self.debug:
             return
         if chosen_node_index >= len(prev_candidate_nodes):
