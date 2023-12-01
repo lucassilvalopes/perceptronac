@@ -175,7 +175,7 @@ def one_line_of_tree_str(node,children,chosen_child_indices):
         
         children_str += f"{prefix}{c} "
 
-    return "{},{}\n".format(node,children_str)
+    return "{} {}\n".format(node,children_str)
 
 
 def print_tree(node,file=None):

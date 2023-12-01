@@ -19,21 +19,21 @@ def build_glch_tree(
             debug,title,debug_folder
         )
         r = glch_alg.build_tree()
-        return r, glch_alg.tree_str
+        return r, glch_alg.get_tree_str()
     elif select_function == "gift_wrapping":
         glch_alg = GLCHGiftWrapping(
             data,possible_values,[x_axis,y_axis],initial_values,to_str_method,constrained,start,
             debug,title,debug_folder
         )
         r = glch_alg.build_tree()
-        return r, glch_alg.tree_str
+        return r, glch_alg.get_tree_str()
     elif select_function == "corrected_angle_rule":
         glch_alg = GLCHAngleRule(
             data,possible_values,[x_axis,y_axis],initial_values,to_str_method,constrained,start,
             debug,title,debug_folder
         )
         r = glch_alg.build_tree()
-        return r, glch_alg.tree_str
+        return r, glch_alg.get_tree_str()
     else:
         ValueError(select_function)
 
@@ -48,7 +48,7 @@ def build_gho_tree(
             weights,debug,title,debug_folder
         )
         r = gho_alg.build_tree()
-        return r, None
+        return r, gho_alg.get_tree_str()
     elif version== "multidimensional":
         gho_alg = GHO(
             data,possible_values,axes,initial_values,to_str_method,constrained,
