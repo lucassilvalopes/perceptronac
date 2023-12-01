@@ -4,7 +4,7 @@ import os
 import numpy as np
 from abc import ABC, abstractmethod
 from glch_utils import plot_choice, plot_choice_2, open_debug_txt_file, close_debug_txt_file
-from glch_utils import Node, min_max_convex_hull
+from glch_utils import Node, min_max_convex_hull, one_line_of_tree_str
 
 
 
@@ -155,6 +155,7 @@ class Greedy2DAlgorithmsBaseClass(GreedyAlgorithmsBaseClass):
             self.data,self.axes[0],self.axes[1],
             node,node_coord,candidate_nodes,candidate_coord,chosen_node_index,txt_file=self.txt_file,
             title=f"{self.title}_{iteration}",fldr=self.debug_folder)
+        self.tree_str += one_line_of_tree_str(node,candidate_nodes,[chosen_node_index])
 
     def begin_debug(self):
         if not self.debug:
@@ -162,6 +163,7 @@ class Greedy2DAlgorithmsBaseClass(GreedyAlgorithmsBaseClass):
         if not os.path.isdir(self.debug_folder):
             os.mkdir(self.debug_folder)
         self.txt_file = open_debug_txt_file(self.title,self.debug_folder)
+        self.tree_str = ""
 
     def end_debug(self):
         if not self.debug:

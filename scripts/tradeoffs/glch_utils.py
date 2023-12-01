@@ -165,24 +165,28 @@ def plot_choice(
             dpi=300, facecolor='w', bbox_inches = "tight")
 
 
+def one_line_of_tree_str(node,children,chosen_child_indices):
+    children_str = ""
+    for i,c in enumerate(children):
+        if i in chosen_child_indices:
+            prefix = ''.join(["!"] * (chosen_child_indices.index(i)+1) )
+        else:
+            prefix = ""
+        
+        children_str += f"{prefix}{c} "
+
+    return "{},{}\n".format(node,children_str)
+
+
 def print_tree(node,file=None):
     # print("parent", node)
 
     if len(node.children) == 0:
         return
 
-    children_str = ""
-    for i,c in enumerate(node.children):
-        if i in node.chosen_child_indices:
-            prefix = ''.join(["!"] * (node.chosen_child_indices.index(i)+1) )
-        else:
-            prefix = ""
-        
-        children_str += f"{prefix}{c} "
+    one_line = one_line_of_tree_str(node,node.children,node.chosen_child_indices)
 
-    print(node,children_str,file=file)
-
-    print("\n",file=file)
+    print(one_line,file=file)
     
     for i,c in enumerate(node.children):
         print_tree(node.children[i],file=file)
@@ -299,8 +303,9 @@ def get_n_trained_networks(rs):
     for r in rs:
         new_points += [str(r)]
         new_points += tree_nodes(r,[],"all")
+    n_visited_networks = len(set(new_points))
     n_trained_networks = len(set([re.sub(r'_[\d]{2}b','',pt) for pt in new_points]))
-    return n_trained_networks
+    return n_visited_networks,n_trained_networks
 
 
 def paint_hulls(true_hull_points,estimated_hull_points,x_axis,y_axis,ax):
@@ -359,12 +364,17 @@ def save_hull_points(file_name,true_hull_points,estimated_hull_points):
         print(estimated_hull_points,file=f)
 
 
-def save_tree_data(data,r,x_axis,y_axis,x_range,y_range,data_id,x_in_log_scale=False,x_alias=None,y_alias=None,fldr="glch_results"):
+def save_tree_data(
+    data,r,x_axis,y_axis,x_range,y_range,data_id,x_in_log_scale=False,x_alias=None,y_alias=None,fldr="glch_results",tree_str=None):
 
-    n_trained_networks = get_n_trained_networks([r])
+    n_visited_networks,n_trained_networks = get_n_trained_networks([r])
 
     with open(f'{fldr}/tree_{data_id}.txt', 'w') as f:
-        print_tree(r,file=f)
+        if tree_str:
+            print(tree_str,file=f)
+        else:
+            print_tree(r,file=f)
+        print(f"number of visited networks : {n_visited_networks}",file=f)
         print(f"number of trained networks : {n_trained_networks}",file=f)
 
     tree_fig, ax = plt.subplots(nrows=1, ncols=1)
@@ -400,7 +410,7 @@ def get_x_range_y_range(data,x_axis,y_axis):
     return x_range,y_range
 
 
-def save_trees_data(data,rs,ls,x_axis,y_axis,x_range,y_range,exp_id,fldr="glch_results"):
+def save_trees_data(data,rs,ls,x_axis,y_axis,x_range,y_range,exp_id,fldr="glch_results",tree_strs=None):
 
     tree_file = open(f'{fldr}/tree_{exp_id}.txt', 'w')
 
@@ -413,7 +423,10 @@ def save_trees_data(data,rs,ls,x_axis,y_axis,x_range,y_range,exp_id,fldr="glch_r
 
         current_data = data.iloc[[i for i,lbl in enumerate(data.index) if f"L{L}" in lbl],:]
 
-        print_tree(r,file=tree_file)
+        if isinstance(tree_strs,list) and (len(tree_strs) == len(rs)) and all(tree_strs):
+            print(f"{tree_strs[i]}\n",file=tree_file)
+        else:
+            print_tree(r,file=tree_file)
 
         paint_root(data,r,x_axis,y_axis,tree_fig.axes[i])
         # paint_cloud(data,x_axis,y_axis,tree_fig.axes[i],".")
@@ -425,8 +438,9 @@ def save_trees_data(data,rs,ls,x_axis,y_axis,x_range,y_range,exp_id,fldr="glch_r
             tree_fig.axes[i].set_yticks([])
             tree_fig.axes[i].set_ylabel('')
     
-    n_trained_networks = get_n_trained_networks(rs)
+    n_visited_networks,n_trained_networks = get_n_trained_networks(rs)
 
+    print(f"number of visited networks : {n_visited_networks}",file=tree_file)
     print(f"number of trained networks : {n_trained_networks}",file=tree_file)
     tree_file.close()
 

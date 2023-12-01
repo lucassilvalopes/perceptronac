@@ -14,20 +14,26 @@ def build_glch_tree(
     debug=True,title=None,debug_folder="debug",select_function="corrected_angle_rule"
 ):
     if select_function == "gift_wrapping_tie_break":
-        return GLCHGiftWrappingTieBreak(
+        glch_alg = GLCHGiftWrappingTieBreak(
             data,possible_values,[x_axis,y_axis],initial_values,to_str_method,constrained,[scale_x,scale_y],
             debug,title,debug_folder
-        ).build_tree()
+        )
+        r = glch_alg.build_tree()
+        return r, glch_alg.tree_str
     elif select_function == "gift_wrapping":
-        return GLCHGiftWrapping(
+        glch_alg = GLCHGiftWrapping(
             data,possible_values,[x_axis,y_axis],initial_values,to_str_method,constrained,start,
             debug,title,debug_folder
-        ).build_tree()
+        )
+        r = glch_alg.build_tree()
+        return r, glch_alg.tree_str
     elif select_function == "corrected_angle_rule":
-        return GLCHAngleRule(
+        glch_alg = GLCHAngleRule(
             data,possible_values,[x_axis,y_axis],initial_values,to_str_method,constrained,start,
             debug,title,debug_folder
-        ).build_tree()
+        )
+        r = glch_alg.build_tree()
+        return r, glch_alg.tree_str
     else:
         ValueError(select_function)
 
@@ -37,15 +43,19 @@ def build_gho_tree(
     debug=True,title=None,debug_folder="debug",version="multidimensional"
 ):
     if version== "2D":
-        return GHO2D(
+        gho_alg = GHO2D(
             data,possible_values,axes,initial_values,to_str_method,constrained,
             weights,debug,title,debug_folder
-        ).build_tree()
+        )
+        r = gho_alg.build_tree()
+        return r, None
     elif version== "multidimensional":
-        return GHO(
+        gho_alg = GHO(
             data,possible_values,axes,initial_values,to_str_method,constrained,
             weights
-        ).build_tree()
+        )
+        r = gho_alg.build_tree()
+        return r, None
     else:
         ValueError(version)
 
@@ -151,16 +161,16 @@ def glch_rate_vs_energy(
         return '_'.join(map(lambda x: f"{x:03d}",widths))
 
     if algo == "glch":
-        r = build_glch_tree(data,possible_values,x_axis,y_axis,initial_values,to_str_method,constrained,"left",
+        r,tree_str = build_glch_tree(data,possible_values,x_axis,y_axis,initial_values,to_str_method,constrained,"left",
             scale_x=scale_x,scale_y=scale_y,debug=debug,title=title,debug_folder=debug_folder)
     elif algo == "gho":
-        r = build_gho_tree(data,possible_values,[x_axis,y_axis],initial_values,to_str_method,constrained,[1,lmbda],
+        r,tree_str = build_gho_tree(data,possible_values,[x_axis,y_axis],initial_values,to_str_method,constrained,[1,lmbda],
             debug=debug,title=title,debug_folder=debug_folder,version="2D")
     else:
         ValueError(algo)
 
     save_tree_data(data,r,x_axis,y_axis,x_range,y_range,title,
-        x_in_log_scale=x_in_log_scale,x_alias=x_alias,y_alias=y_alias,fldr=fldr)
+        x_in_log_scale=x_in_log_scale,x_alias=x_alias,y_alias=y_alias,fldr=fldr,tree_str=tree_str)
     if algo == "glch":
         save_hull_data(data,r,x_axis,y_axis,x_range,y_range,title,
             x_in_log_scale=x_in_log_scale,x_alias=x_alias,y_alias=y_alias,fldr=fldr)
@@ -237,21 +247,21 @@ def glch_rate_vs_dist(
         axes_aliases = [None for _ in range(len(axes))]
 
     if algo == "glch":
-        r = build_glch_tree(data,possible_values,axes[0],axes[1],initial_values,to_str_method,constrained,start,
+        r,tree_str = build_glch_tree(data,possible_values,axes[0],axes[1],initial_values,to_str_method,constrained,start,
             scale_x=scale_x,scale_y=scale_y,debug=debug,title=None,debug_folder=debug_folder)
         save_tree_data(data,r,axes[0],axes[1],axes_ranges[0],axes_ranges[1],exp_id,
-            x_alias=axes_aliases[0],y_alias=axes_aliases[1],fldr=fldr)
+            x_alias=axes_aliases[0],y_alias=axes_aliases[1],fldr=fldr,tree_str=tree_str)
         save_hull_data(data,r,axes[0],axes[1],axes_ranges[0],axes_ranges[1],exp_id,
             x_alias=axes_aliases[0],y_alias=axes_aliases[1],fldr=fldr)
     elif algo == "gho":
         if len(axes)==2:
-            r = build_gho_tree(data,possible_values,axes,initial_values,to_str_method,constrained,weights,
+            r,tree_str = build_gho_tree(data,possible_values,axes,initial_values,to_str_method,constrained,weights,
                 debug=debug,title=None,debug_folder=debug_folder,version="2D")
             save_tree_data(data,r,axes[0],axes[1],axes_ranges[0],axes_ranges[1],exp_id,
-                x_alias=axes_aliases[0],y_alias=axes_aliases[1],fldr=fldr)
+                x_alias=axes_aliases[0],y_alias=axes_aliases[1],fldr=fldr,tree_str=tree_str)
             save_optimal_point(data,r,axes,weights)
         else:
-            r = build_gho_tree(data,possible_values,axes,initial_values,to_str_method,constrained,weights,
+            r,tree_str = build_gho_tree(data,possible_values,axes,initial_values,to_str_method,constrained,weights,
                 debug=debug,title=None,debug_folder=debug_folder,version="multidimensional")
             save_optimal_point(data,r,axes,weights)
     else:
@@ -297,17 +307,19 @@ def glch_rate_vs_dist_2(
     exp_id = f"{x_axis}_vs_{y_axis}_brute_{brute_keys}_greedy_{greedy_keys}_start_{start}"
 
     rs = []
+    tree_strs = []
     for i,L in enumerate(brute_dict["L"]):
 
         to_str_method = to_str_method_factory({"L":L})
 
         current_data = data.iloc[[i for i,lbl in enumerate(data.index) if f"L{L}" in lbl],:]
-        r = build_glch_tree(current_data,greedy_dict,x_axis,y_axis,initial_state,to_str_method,constrained,start,
+        r,tree_str = build_glch_tree(current_data,greedy_dict,x_axis,y_axis,initial_state,to_str_method,constrained,start,
             scale_x=scale_x,scale_y=scale_y,debug=debug,title=None,debug_folder=debug_folder)
         
+        tree_strs.append(tree_str)
         rs.append(r)
 
-    save_trees_data(data,rs,brute_dict["L"],x_axis,y_axis,x_range,y_range,exp_id,fldr=fldr)
+    save_trees_data(data,rs,brute_dict["L"],x_axis,y_axis,x_range,y_range,exp_id,fldr=fldr,tree_strs=tree_strs)
     save_hulls_data(data,rs,brute_dict["L"],x_axis,y_axis,x_range,y_range,exp_id,fldr=fldr)
 
 
@@ -351,17 +363,17 @@ def glch_model_bits_vs_data_bits(
         return '_'.join(map(lambda x: f"{x:03d}",widths)) + f"_{params['qb']:02d}b"
 
     if algo == "glch":
-        r = build_glch_tree(
+        r,tree_str = build_glch_tree(
             data,possible_values,x_axis,y_axis,initial_values,to_str_method,constrained,"left",
             scale_x=scale_x,scale_y=scale_y,debug=debug,title=None,debug_folder=debug_folder)
     elif algo == "gho":
-        r = build_gho_tree(data,possible_values,[x_axis,y_axis],initial_values,to_str_method,constrained,[1,lmbda],
+        r,tree_str = build_gho_tree(data,possible_values,[x_axis,y_axis],initial_values,to_str_method,constrained,[1,lmbda],
             debug=debug,title=None,debug_folder=debug_folder,version="2D")
     else:
         ValueError(algo)
 
     save_tree_data(data,r,x_axis,y_axis,x_range,y_range,'model_bits_vs_data_bits',
-        x_in_log_scale=x_in_log_scale,x_alias=x_alias,y_alias=y_alias,fldr=fldr)
+        x_in_log_scale=x_in_log_scale,x_alias=x_alias,y_alias=y_alias,fldr=fldr,tree_str=tree_str)
 
     if algo == "glch":
         save_hull_data(data,r,x_axis,y_axis,x_range,y_range,'model_bits_vs_data_bits',
