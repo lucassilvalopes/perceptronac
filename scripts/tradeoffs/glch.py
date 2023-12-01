@@ -261,7 +261,7 @@ class GLCHGiftWrapping(Greedy2DAlgorithmsBaseClass):
 
         filtered_nodes = [n for n in candidate_nodes if str(n) != str(node)]
 
-        blacklist = [str(n) for n in filtered_nodes]
+        blacklist = [str(n) for n in filtered_nodes] + [str(node)]
 
         filt_prev_candidate_nodes = [n for n in prev_candidate_nodes if (n.color == "red") and (str(n) not in blacklist)]
 
@@ -314,7 +314,7 @@ class GLCHAngleRule(Greedy2DAlgorithmsBaseClass):
 
         filtered_nodes = [n for n in candidate_nodes if str(n) != str(node)]
 
-        blacklist = [str(n) for n in filtered_nodes]
+        blacklist = [str(n) for n in filtered_nodes] + [str(node)]
 
         filt_prev_candidate_nodes = [n for n in prev_candidate_nodes if (n.color == "red") and (str(n) not in blacklist)]
 
@@ -421,7 +421,7 @@ class GHO(GreedyAlgorithmsBaseClass):
 
         filtered_nodes = [n for n in candidate_nodes if str(n) != str(node)]
 
-        blacklist = [str(n) for n in filtered_nodes]
+        blacklist = [str(n) for n in filtered_nodes] + [str(node)]
 
         filt_prev_candidate_nodes = [n for n in prev_candidate_nodes if (n.color == "red") and (str(n) not in blacklist)]
 
