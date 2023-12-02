@@ -287,14 +287,23 @@ def bayes_opt_rate_dist(csv_path,axes,weights,lambdas=[],random_state=1,init_poi
     )
 
     # best combination of parameters and target value found
-    print(optimizer.max)
+    # print(optimizer.max)
 
     # list of all parameters probed and their corresponding target values 
-    for i, res in enumerate(optimizer.res):
-        print("Iteration {}: \n\t{}".format(i, res))
+    # for i, res in enumerate(optimizer.res):
+    #     print("Iteration {}: \n\t{}".format(i, res))
 
     lbl = bayesOptRateDist.convert_res_to_lbl(optimizer.max)
 
-    print(
-        lbl, bayesOptRateDist.get_label_coord(lbl), optimizer.max["target"]
-    )
+    # print(
+    #     lbl, bayesOptRateDist.get_label_coord(lbl), optimizer.max["target"]
+    # )
+
+
+    visited_labels = [bayesOptRateDist.convert_res_to_lbl(res) for res in optimizer.res]
+    n_trained_networks = len(set(visited_labels))
+
+    idx = visited_labels.index(lbl)
+
+
+    return lbl, n_trained_networks, idx
