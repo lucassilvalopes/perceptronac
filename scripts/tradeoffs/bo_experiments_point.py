@@ -21,16 +21,15 @@ def bo_statistics(*args,**kwargs):
 
         kwargs["random_state"] = random_state
 
-        lbl,n_trained_networks,target = bayes_opt_rate_dist(*args,**kwargs)
-        results_list.append((lbl,n_trained_networks,target))
+        lbl,target,n_trained_networks,optimal_point_lbl,optimal_point_target = \
+            bayes_opt_rate_dist(*args,**kwargs)
+        results_list.append((
+            lbl,n_trained_networks,target,optimal_point_lbl,optimal_point_target))
     
-    n_hits = sum([(1 if r[0] == "D3L2e-2N160M32" else 0) for r in results_list])
-    n_misses = sum([(1 if r[0] != "D3L2e-2N160M32" else 0) for r in results_list])
+    n_hits = sum([(1 if r[0] == optimal_point_lbl else 0) for r in results_list])
     avg_n_trained_networks = sum([r[1] for r in results_list])/len(results_list)
 
-    best_target = -results_list[([r[0] for r in results_list]).index("D3L2e-2N160M32")][2]
-
-    percent_higher = sum([(-r[2] - best_target)/best_target for r in results_list])/len(results_list)
+    percent_higher = sum([(-r[2] - optimal_point_target)/optimal_point_target for r in results_list])/len(results_list)
 
     axes = args[1]
     lambdas = kwargs["lambdas"]
@@ -40,9 +39,9 @@ def bo_statistics(*args,**kwargs):
 
     with open(f'{RESULTS_FOLDER}/tree_{exp_id}.txt', 'w') as f:
 
-        print(f"number of hits: {n_hits} out of {len(results_list)}",file=f)
+        print(f"number of hits: {n_hits} out of {len(results_list)} trials",file=f)
         print(f"average number of trained networks: {avg_n_trained_networks}",file=f)
-        print(f"best target: {best_target}",file=f)
+        print(f"best target: {optimal_point_target}",file=f)
         print(f"target higher on average by (%): {percent_higher}",file=f)
 
 
