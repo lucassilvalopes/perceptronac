@@ -5,6 +5,7 @@ import numpy as np
 from abc import ABC, abstractmethod
 from glch_utils import plot_choice, plot_choice_2, open_debug_txt_file, close_debug_txt_file
 from glch_utils import Node, min_max_convex_hull, one_line_of_tree_str
+import unittest
 
 
 
@@ -370,7 +371,7 @@ class GLCHAngleRule(Greedy2DAlgorithmsBaseClass):
         else:
 
             sorted_idx = self.sorted_deltac_deltar(
-                nw+ne,deltacs,deltars,which_first="r")
+                nw+ne,deltacs,deltars,mode=1)
 
             chosen_node_index = sorted_idx[0]
 
@@ -402,17 +403,34 @@ class GLCHAngleRule(Greedy2DAlgorithmsBaseClass):
     
         return idx
     
-    def sorted_deltac_deltar(self,ii,deltacs,deltars,which_first="c"):
-        if which_first == "c":
+    @staticmethod
+    def sorted_deltac_deltar(ii,deltacs,deltars,mode=0):
+        if mode == 0:
+            # [0]: min complexity first then min rate
             key_func = lambda x: (x[1], x[2])
-        elif which_first == "r":
-            key_func = lambda x: (x[2], x[1])
+        elif mode == 1:
+            # [0] : min rate first then maximal complexity
+            key_func = lambda x: (x[2], -x[1])
         else:
-            raise ValueError(which_first)
+            raise ValueError(mode)
     
         idx = [z[0] for z in sorted([[i,deltacs[i],deltars[i]] for i in (ii)],key=key_func)]
     
         return idx  
+
+
+class TestGLCHAngleRule(unittest.TestCase):
+    def setUp(self):
+        self.ii = [0,2,3,7,8,9]
+        self.deltacs = [450000,330000,270000,90000,566000,704000,101000,90000,613000,90000]
+        self.deltars = [0.2,1.1,0.2,-0.01,2.1,0.003,-4.0,0.7,0.2,-1.1]
+    def test_sorted_deltac_deltar_mode_0(self):
+        sorted_idx = GLCHAngleRule.sorted_deltac_deltar(self.ii,self.deltacs,self.deltars,mode=0)
+        sorted_idx == [9,3,7,2,0,8]
+    def test_sorted_deltac_deltar_mode_1(self):
+        sorted_idx = GLCHAngleRule.sorted_deltac_deltar(self.ii,self.deltacs,self.deltars,mode=1)
+        sorted_idx == [9,3,8,0,2,7]
+
 
 
 class GHO(GreedyAlgorithmsBaseClass):
@@ -476,3 +494,9 @@ class GHO2D(Greedy2DAlgorithmsBaseClass,GHO):
         Greedy2DAlgorithmsBaseClass.__init__(self,data,possible_values,axes,initial_values,to_str_method,constrained,
             debug,title, debug_folder)
         GHO.__init__(self,data,possible_values,axes,initial_values,to_str_method,constrained,weights)
+
+
+
+
+if __name__ == "__main__":
+    unittest.main()
