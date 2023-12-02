@@ -308,4 +308,4 @@ def bayes_opt_rate_dist(csv_path,axes,weights,lambdas=[],random_state=1,init_poi
 
     n_trained_networks = len(set(visited_labels[:idx+1]))
 
-    return lbl, n_trained_networks
+    return lbl, n_trained_networks, optimizer.max["target"]
