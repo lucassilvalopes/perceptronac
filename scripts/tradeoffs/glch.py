@@ -353,19 +353,26 @@ class GLCHAngleRule(Greedy2DAlgorithmsBaseClass):
 
             chosen_node_index = sorted_idx[-1]
 
-        elif len(nw) > 0 :
+        # elif len(nw) > 0 :
 
-            sorted_idx = self.sorted_deltac_deltar(
-                nw,deltacs,deltars)
+        #     sorted_idx = self.sorted_deltac_deltar(
+        #         nw,deltacs,deltars)
 
-            chosen_node_index = sorted_idx[0]
+        #     chosen_node_index = sorted_idx[0]
+
+        # else:
+
+        #     sorted_idx = self.sorted_minus_deltar_over_deltac(
+        #         ne,deltacs,deltars)
+
+        #     chosen_node_index = sorted_idx[-1]
 
         else:
 
-            sorted_idx = self.sorted_minus_deltar_over_deltac(
-                ne,deltacs,deltars)
+            sorted_idx = self.sorted_deltac_deltar(
+                nw+ne,deltacs,deltars,which_first="r")
 
-            chosen_node_index = sorted_idx[-1]
+            chosen_node_index = sorted_idx[0]
 
         if chosen_node_index >= len(filt_prev_candidate_nodes):
             chosen_node_index = len(prev_candidate_nodes) + \
@@ -395,9 +402,15 @@ class GLCHAngleRule(Greedy2DAlgorithmsBaseClass):
     
         return idx
     
-    def sorted_deltac_deltar(self,ii,deltacs,deltars):
+    def sorted_deltac_deltar(self,ii,deltacs,deltars,which_first="c"):
+        if which_first == "c":
+            key_func = lambda x: (x[1], x[2])
+        elif which_first == "r":
+            key_func = lambda x: (x[2], x[1])
+        else:
+            raise ValueError(which_first)
     
-        idx = [z[0] for z in sorted([[i,deltacs[i],deltars[i]] for i in (ii)],key=lambda x: (x[1], x[2]))]
+        idx = [z[0] for z in sorted([[i,deltacs[i],deltars[i]] for i in (ii)],key=key_func)]
     
         return idx  
 
