@@ -29,7 +29,7 @@ def bo_statistics(*args,**kwargs):
     n_hits = sum([(1 if r[0] == optimal_point_lbl else 0) for r in results_list])
     avg_n_trained_networks = sum([r[1] for r in results_list])/len(results_list)
 
-    percent_higher = sum([(-r[2] - optimal_point_target)/optimal_point_target for r in results_list])/len(results_list)
+    percent_higher = 100 * sum([(-r[2] - optimal_point_target)/optimal_point_target for r in results_list])/len(results_list)
 
     axes = args[1]
     lambdas = kwargs["lambdas"]
@@ -59,16 +59,44 @@ if __name__ == "__main__":
         lambdas=["2e-2"]
     )
 
-    # bo_statistics(
-    #     "/home/lucas/Documents/perceptronac/scripts/tradeoffs/bpp-mse-psnr-loss-flops-params_bmshj2018-factorized_10000-epochs_D-3-4_L-2e-2-1e-2-5e-3_N-32-64-96-128-160-192-224_M-32-64-96-128-160-192-224-256-288-320.csv",
-    #     ["bpp_loss","mse_loss","params"],
-    #     [1,2e-2*(255**2),1/1e6],
-    #     lambdas=["2e-2"]
-    # )
+    bo_statistics(
+        "/home/lucas/Documents/perceptronac/scripts/tradeoffs/bpp-mse-psnr-loss-flops-params_bmshj2018-factorized_10000-epochs_D-3-4_L-2e-2-1e-2-5e-3_N-32-64-96-128-160-192-224_M-32-64-96-128-160-192-224-256-288-320.csv",
+        ["bpp_loss","mse_loss","params"],
+        [1,5e-3*(255**2),1/1e6],
+        lambdas=["5e-3"]
+    )
 
-    # bo_statistics(
-    #     "/home/lucas/Documents/perceptronac/scripts/tradeoffs/bpp-mse-psnr-loss-flops-params_bmshj2018-factorized_10000-epochs_D-3-4_L-2e-2-1e-2-5e-3_N-32-64-96-128-160-192-224_M-32-64-96-128-160-192-224-256-288-320.csv",
-    #     ["bpp_loss","mse_loss","flops"],
-    #     [1,2e-2*(255**2),1/1e10],
-    #     lambdas=["2e-2"]
-    # )
+    bo_statistics(
+        "/home/lucas/Documents/perceptronac/scripts/tradeoffs/bpp-mse-psnr-loss-flops-params_bmshj2018-factorized_10000-epochs_D-3-4_L-2e-2-1e-2-5e-3_N-32-64-96-128-160-192-224_M-32-64-96-128-160-192-224-256-288-320.csv",
+        ["bpp_loss","mse_loss","flops"],
+        [1,5e-3*(255**2),1/1e10],
+        lambdas=["5e-3"]
+    )
+
+    bo_statistics(
+        "/home/lucas/Documents/perceptronac/scripts/tradeoffs/bpp-mse-psnr-loss-flops-params_bmshj2018-factorized_10000-epochs_D-3-4_L-2e-2-1e-2-5e-3_N-32-64-96-128-160-192-224_M-32-64-96-128-160-192-224-256-288-320.csv",
+        ["bpp_loss","mse_loss","params"],
+        [1,1e-2*(255**2),1/1e6],
+        lambdas=["1e-2"]
+    )
+
+    bo_statistics(
+        "/home/lucas/Documents/perceptronac/scripts/tradeoffs/bpp-mse-psnr-loss-flops-params_bmshj2018-factorized_10000-epochs_D-3-4_L-2e-2-1e-2-5e-3_N-32-64-96-128-160-192-224_M-32-64-96-128-160-192-224-256-288-320.csv",
+        ["bpp_loss","mse_loss","flops"],
+        [1,1e-2*(255**2),1/1e10],
+        lambdas=["1e-2"]
+    )
+
+    bo_statistics(
+        "/home/lucas/Documents/perceptronac/scripts/tradeoffs/bpp-mse-psnr-loss-flops-params_bmshj2018-factorized_10000-epochs_D-3-4_L-2e-2-1e-2-5e-3_N-32-64-96-128-160-192-224_M-32-64-96-128-160-192-224-256-288-320.csv",
+        ["bpp_loss","mse_loss","params"],
+        [1,2e-2*(255**2),1/1e6],
+        lambdas=["2e-2"]
+    )
+
+    bo_statistics(
+        "/home/lucas/Documents/perceptronac/scripts/tradeoffs/bpp-mse-psnr-loss-flops-params_bmshj2018-factorized_10000-epochs_D-3-4_L-2e-2-1e-2-5e-3_N-32-64-96-128-160-192-224_M-32-64-96-128-160-192-224-256-288-320.csv",
+        ["bpp_loss","mse_loss","flops"],
+        [1,2e-2*(255**2),1/1e10],
+        lambdas=["2e-2"]
+    )
