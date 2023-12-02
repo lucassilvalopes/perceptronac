@@ -11,7 +11,7 @@ from collections.abc import Iterable
 
 class BayesOptRateDist:
 
-    def __init__(self,csv_path,axes,weights,lambdas=[],seed=None):
+    def __init__(self,csv_path,axes,weights,lambdas=[],seed=None,normalize=True):
         self.seed=seed
         self.axes = axes
         self.weights = weights
@@ -22,6 +22,7 @@ class BayesOptRateDist:
             "M": [32, 64, 96, 128, 160, 192, 224, 256, 288, 320]
         }
         self.pbounds = {k:(float(v[0]),float(v[-1])) for k,v in self.possible_values.items()}
+        self.normalize = normalize
         self.data = self.read_data(csv_path,lambdas)
 
     def read_data(self,csv_path,lambdas):
@@ -83,11 +84,12 @@ class BayesOptRateDist:
             data = pd.read_csv(csv_path)
             if len(lambdas) > 0:
                 data = data[data["labels"].apply(lambda x: any([(lmbd in x) for lmbd in lambdas]) )]
-            data["params"] = data["params"]/1e+6
+            # data["params"] = data["params"]/1e+6
 
-        from sklearn.preprocessing import MinMaxScaler
-        scaler = MinMaxScaler()
-        data[self.axes] = scaler.fit_transform(data[self.axes])
+        if self.normalize:
+            from sklearn.preprocessing import MinMaxScaler
+            scaler = MinMaxScaler()
+            data[self.axes] = scaler.fit_transform(data[self.axes])
 
         data = data.set_index("labels")
         return data
@@ -264,7 +266,7 @@ def bayes_opt_rate_dist(csv_path,axes,weights,lambdas=[],random_state=1,init_poi
 
     from bayes_opt import BayesianOptimization
 
-    bayesOptRateDist = BayesOptRateDist(csv_path,axes,weights,lambdas=lambdas)
+    bayesOptRateDist = BayesOptRateDist(csv_path,axes,weights,lambdas=lambdas,normalize=False)
 
 
     optimizer = BayesianOptimization(
