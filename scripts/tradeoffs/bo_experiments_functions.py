@@ -105,7 +105,10 @@ class BayesOptRateDist:
         D,L,N,M = self.round_to_possible_values(D,L,N,M)
 
         coord = self.get_label_coord(self.to_str_method(D,L,N,M))
-        J = sum([c*dynamic_w*fixed_w for c,dynamic_w,fixed_w in zip(coord,dynamic_weights,self.weights)])
+        if dynamic_weights is not None:
+            J = sum([c*dynamic_w*fixed_w for c,dynamic_w,fixed_w in zip(coord,dynamic_weights,self.weights)])
+        else:
+            J = sum([c*fixed_w for c,fixed_w in zip(coord,self.weights)])
         return -J
 
     def round_to_possible_values(self,D,L,N,M):
