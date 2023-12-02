@@ -1,5 +1,10 @@
+
+import os
+import numpy as np
 import random
 from bo_experiments_functions import bayes_opt_rate_dist
+
+RESULTS_FOLDER = "bo_results"
 
 
 def bo_statistics(*args,**kwargs):
@@ -27,14 +32,26 @@ def bo_statistics(*args,**kwargs):
 
     percent_higher = sum([(-r[2] - best_target)/best_target for r in results_list])/len(results_list)
 
-    print(f"number of hits: {n_hits}")
-    print(f"average number of trained networks: {avg_n_trained_networks}")
-    print(f"best target: {best_target}")
-    print(f"target higher on average by (%): {percent_higher}")
+    axes = args[1]
+    lambdas = args[3]
+    formatted_lambdas = "" if len(lambdas)==0 else "_" + "-".join([lambdas[i] for i in np.argsort(list(map(float,lambdas)))])
 
+    exp_id = f'{"_vs_".join(axes)}{formatted_lambdas}'
+
+    with open(f'{RESULTS_FOLDER}/tree_{exp_id}.txt', 'w') as f:
+
+        print(f"number of hits: {n_hits}",file=f)
+        print(f"average number of trained networks: {avg_n_trained_networks}",file=f)
+        print(f"best target: {best_target}",file=f)
+        print(f"target higher on average by (%): {percent_higher}",file=f)
 
 
 if __name__ == "__main__":
+
+    if os.path.isdir(RESULTS_FOLDER):
+        import shutil
+        shutil.rmtree(RESULTS_FOLDER)
+    os.mkdir(RESULTS_FOLDER)
 
     bo_statistics(
         "/home/lucas/Documents/perceptronac/scripts/tradeoffs/bpp-mse-psnr-loss-flops-params_bmshj2018-factorized_10000-epochs_D-3-4_L-2e-2-1e-2-5e-3_N-32-64-96-128-160-192-224_M-32-64-96-128-160-192-224-256-288-320.csv",
