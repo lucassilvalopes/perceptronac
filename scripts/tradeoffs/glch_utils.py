@@ -360,17 +360,17 @@ def save_hull_points(data,rs,x_axis,y_axis,file_name):
     true_hull_points,estimated_hull_points = compute_hulls(data,rs,x_axis,y_axis)
 
     with open(f'{file_name}.txt', 'w') as f:
-        print("true_hull_points",file=f)
-        print(true_hull_points,file=f)
-        print("estimated_hull_points",file=f)
-        print(estimated_hull_points,file=f)
+        print("\ntrue_hull_points:\n",file=f)
+        print(true_hull_points[[x_axis,y_axis]],file=f)
+        print("\nestimated_hull_points:\n",file=f)
+        print(estimated_hull_points[[x_axis,y_axis]],file=f)
 
-        print("reference nodes:",file=f)
+        print("\nreference nodes:\n",file=f)
         for i in range(len(rs)):
             lch_nodes = [str(rs[i])] + tree_nodes(rs[i],[], "lch")
             lch_nodes_xy = data.loc[lch_nodes,:]
             lch_nodes_xy[x_axis],lch_nodes_xy[y_axis]
-            lch_nodes_df = lch_nodes_xy.reset_index()[["labels",x_axis,y_axis]]
+            lch_nodes_df = lch_nodes_xy[[x_axis,y_axis]]
             print(lch_nodes_df,file=f)
 
 
