@@ -7,8 +7,6 @@ https://github.com/bayesian-optimization/BayesianOptimization/blob/master/exampl
 import random
 import numpy as np
 import pandas as pd
-# from bayes_opt import BayesianOptimization
-from bo import BOCustom as BayesianOptimization
 from collections.abc import Iterable
 
 class BayesOptRateDist:
@@ -151,6 +149,8 @@ def run_bo_lch(
     n_iter
 ):
 
+    from bo import BOCustom as BayesianOptimization
+
     optimizer = BayesianOptimization(
         f=black_box_function,
         pbounds=pbounds,
@@ -178,6 +178,9 @@ def run_bo_repeatedly(
     init_points,
     n_iter
 ):
+
+    from bo import BOCustom as BayesianOptimization
+
     optimizer_maxes, optimizer_res = [],[]
     for i in range(lambda_grid.shape[0]):
         optimizer = BayesianOptimization(
@@ -255,6 +258,8 @@ def bayes_lch_rate_dist(
 
 
 def bayes_opt_rate_dist(csv_path,axes,weights,lambdas=[],random_state=1,init_points=5,n_iter=25):
+
+    from bayes_opt import BayesianOptimization
 
     bayesOptRateDist = BayesOptRateDist(csv_path,axes,weights,lambdas=lambdas)
 
