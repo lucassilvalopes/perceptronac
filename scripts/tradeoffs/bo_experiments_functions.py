@@ -49,7 +49,6 @@ class BayesOptRateDist:
 
             self.original_random_state = random.getstate()
             random.seed(self.seed)
-            random.setstate(self.original_random_state)
 
             bpp_loss = [(
                     ((N/maxN - random.choice(self.possible_values["N"])/maxN)**2)/random.uniform(0.1, 3.9)
@@ -73,6 +72,9 @@ class BayesOptRateDist:
                 for N in self.possible_values["N"]
                 for M in self.possible_values["M"]
             ]
+
+            random.setstate(self.original_random_state)
+
             data = pd.DataFrame({
                 "labels": labels,
                 "bpp_loss": bpp_loss,
