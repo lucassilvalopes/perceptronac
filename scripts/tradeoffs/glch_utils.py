@@ -355,13 +355,23 @@ def paint_tree_nodes(data,r,x_axis,y_axis,ax):
     ax.plot(unselected_nodes_xy[x_axis],unselected_nodes_xy[y_axis],linestyle="",color="firebrick",marker=".")
 
 
-def save_hull_points(file_name,true_hull_points,estimated_hull_points):
+def save_hull_points(data,rs,x_axis,y_axis,file_name):
+
+    true_hull_points,estimated_hull_points = compute_hulls(data,rs,x_axis,y_axis)
 
     with open(f'{file_name}.txt', 'w') as f:
         print("true_hull_points",file=f)
         print(true_hull_points,file=f)
         print("estimated_hull_points",file=f)
         print(estimated_hull_points,file=f)
+
+        print("reference nodes:",file=f)
+        for i in range(len(rs)):
+            lch_nodes = [str(rs[i])] + tree_nodes(rs[i],[], "lch")
+            lch_nodes_xy = data.loc[lch_nodes,:]
+            lch_nodes_xy[x_axis],lch_nodes_xy[y_axis]
+            lch_nodes_df = lch_nodes_xy.reset_index()[["labels",x_axis,y_axis]]
+            print(lch_nodes_df,file=f)
 
 
 def save_tree_data(
@@ -389,7 +399,7 @@ def save_tree_data(
 
 def save_hull_data(data,r,x_axis,y_axis,x_range,y_range,data_id,x_in_log_scale=False,x_alias=None,y_alias=None,fldr="glch_results"):
 
-    true_hull_points,estimated_hull_points = compute_hulls(data,[r],x_axis,y_axis)
+    # true_hull_points,estimated_hull_points = compute_hulls(data,[r],x_axis,y_axis)
 
     hulls_fig, ax = plt.subplots(nrows=1, ncols=1)
     paint_cloud(data,x_axis,y_axis,ax,"x")
@@ -399,7 +409,7 @@ def save_hull_data(data,r,x_axis,y_axis,x_range,y_range,data_id,x_in_log_scale=F
     adjust_axes(x_axis,y_axis,None,None,ax,x_in_log_scale,x_alias,y_alias)
     hulls_fig.savefig(f"{fldr}/hulls_fig_{data_id}.png", dpi=300, facecolor='w', bbox_inches = "tight")
 
-    save_hull_points(f"{fldr}/hulls_{data_id}",true_hull_points,estimated_hull_points)
+    save_hull_points(data,[r],x_axis,y_axis,f"{fldr}/hulls_{data_id}")
 
 
 def get_x_range_y_range(data,x_axis,y_axis):
@@ -453,7 +463,7 @@ def save_trees_data(data,rs,ls,x_axis,y_axis,x_range,y_range,exp_id,fldr="glch_r
 
 def save_hulls_data(data,rs,ls,x_axis,y_axis,x_range,y_range,exp_id,fldr="glch_results"):
     
-    true_hull_points,estimated_hull_points = compute_hulls(data,rs,x_axis,y_axis)
+    # true_hull_points,estimated_hull_points = compute_hulls(data,rs,x_axis,y_axis)
 
     hulls_fig, ax = plt.subplots(nrows=1, ncols=1)
     paint_cloud(data,x_axis,y_axis,ax,"x")
@@ -464,7 +474,7 @@ def save_hulls_data(data,rs,ls,x_axis,y_axis,x_range,y_range,exp_id,fldr="glch_r
     adjust_axes(x_axis,y_axis,None,None,ax)
     hulls_fig.savefig(f"{fldr}/hulls_fig_{exp_id}.png", dpi=300, facecolor='w', bbox_inches = "tight")
 
-    save_hull_points(f"{fldr}/hulls_fig_{exp_id}",true_hull_points,estimated_hull_points)
+    save_hull_points(data,rs,x_axis,y_axis,f"{fldr}/hulls_{exp_id}")
 
 
 def get_optimal_point_info(data,axes,weights):
