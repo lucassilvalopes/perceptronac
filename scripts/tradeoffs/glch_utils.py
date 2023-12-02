@@ -483,13 +483,15 @@ def get_optimal_point_info(data,axes,weights):
     return info
 
 
-def save_optimal_point(data,r,axes,weights):
+def save_optimal_point(data,r,axes,weights,exp_id,fldr="gho_results"):
     new_points = []
     new_points += [str(r)]
     new_points += tree_nodes(r,[],"all")
     probe = data.loc[new_points,:]
 
-    print("estimated best")
-    print(get_optimal_point_info(probe,axes,weights))
-    print("true best")
-    print(get_optimal_point_info(data,axes,weights))
+    with open(f'{fldr}/optimal_point_{exp_id}.txt', 'w') as f:
+
+        print("estimated best",file=f)
+        print(get_optimal_point_info(probe,axes,weights),file=f)
+        print("true best",file=f)
+        print(get_optimal_point_info(data,axes,weights),file=f)

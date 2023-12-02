@@ -33,14 +33,14 @@ def bo_statistics(*args,**kwargs):
     percent_higher = sum([(-r[2] - best_target)/best_target for r in results_list])/len(results_list)
 
     axes = args[1]
-    lambdas = args[3]
+    lambdas = kwargs["lambdas"]
     formatted_lambdas = "" if len(lambdas)==0 else "_" + "-".join([lambdas[i] for i in np.argsort(list(map(float,lambdas)))])
 
     exp_id = f'{"_vs_".join(axes)}{formatted_lambdas}'
 
     with open(f'{RESULTS_FOLDER}/tree_{exp_id}.txt', 'w') as f:
 
-        print(f"number of hits: {n_hits}",file=f)
+        print(f"number of hits: {n_hits} out of {len(results_list)}",file=f)
         print(f"average number of trained networks: {avg_n_trained_networks}",file=f)
         print(f"best target: {best_target}",file=f)
         print(f"target higher on average by (%): {percent_higher}",file=f)
