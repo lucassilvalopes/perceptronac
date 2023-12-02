@@ -489,9 +489,26 @@ def save_optimal_point(data,r,axes,weights,exp_id,fldr="gho_results"):
     new_points += tree_nodes(r,[],"all")
     probe = data.loc[new_points,:]
 
+    estimated_best = get_optimal_point_info(probe,axes,weights)
+    true_best = get_optimal_point_info(data,axes,weights)
+
+    estimated_best_coord = estimated_best[axes].values.tolist()
+    true_best_coord = true_best[axes].values.tolist()
+
+    estimated_best_target = sum([c*w for c,w in zip(estimated_best_coord,weights)])
+    true_best_target = sum([c*w for c,w in zip(true_best_coord,weights)])
+
+    percent_higher = 100 * (estimated_best_target - true_best_target) / true_best_target
+
     with open(f'{fldr}/optimal_point_{exp_id}.txt', 'w') as f:
 
-        print("estimated best",file=f)
-        print(get_optimal_point_info(probe,axes,weights),file=f)
-        print("true best",file=f)
-        print(get_optimal_point_info(data,axes,weights),file=f)
+        print("\nestimated best:\n",file=f)
+        print(estimated_best,file=f)
+        print("\ntrue best:\n",file=f)
+        print(true_best,file=f)
+        print("\nestimated best target:\n",file=f)
+        print(estimated_best_target,file=f)
+        print("\ntrue best target:\n",file=f)
+        print(true_best_target,file=f)
+        print("\ntarget higher by (%):\n",file=f)
+        print(percent_higher,file=f)
