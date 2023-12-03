@@ -21,15 +21,17 @@ def bo_statistics(*args,**kwargs):
 
         kwargs["random_state"] = random_state
 
-        lbl,target,n_trained_networks,optimal_point_lbl,optimal_point_target = \
+        lbl,loss,n_trained_networks,optimal_point_lbl,optimal_point_loss = \
             bayes_opt_rate_dist(*args,**kwargs)
         results_list.append((
-            lbl,n_trained_networks,target,optimal_point_lbl,optimal_point_target))
+            lbl,loss,n_trained_networks,optimal_point_lbl,optimal_point_loss))
     
     n_hits = sum([(1 if r[0] == optimal_point_lbl else 0) for r in results_list])
-    avg_n_trained_networks = sum([r[1] for r in results_list])/len(results_list)
+    avg_n_trained_networks = sum([r[2] for r in results_list])/len(results_list)
 
-    percent_higher = 100 * sum([(-r[2] - optimal_point_target)/optimal_point_target for r in results_list])/len(results_list)
+    avg_loss = sum([r[1] for r in results_list])/len(results_list) 
+
+    percent_higher = 100 * sum([(r[1] - optimal_point_loss)/optimal_point_loss for r in results_list])/len(results_list)
 
     axes = args[1]
     lambdas = kwargs["lambdas"]
@@ -41,8 +43,9 @@ def bo_statistics(*args,**kwargs):
 
         print(f"number of hits: {n_hits} out of {len(results_list)} trials",file=f)
         print(f"average number of trained networks: {avg_n_trained_networks}",file=f)
-        print(f"best target: {optimal_point_target}",file=f)
-        print(f"target higher on average by (%): {percent_higher}",file=f)
+        print(f"average estimated best loss: {avg_loss}",file=f)
+        print(f"true best loss: {optimal_point_loss}",file=f)
+        print(f"average loss higher by (%): {percent_higher}",file=f)
 
 
 if __name__ == "__main__":

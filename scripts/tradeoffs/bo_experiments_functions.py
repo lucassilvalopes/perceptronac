@@ -275,7 +275,7 @@ def bayes_opt_rate_dist(csv_path,axes,weights,lambdas=[],random_state=1,init_poi
     optimal_point = get_optimal_point_info(bayesOptRateDist.data,axes,weights)
     optimal_point_lbl = optimal_point["labels"].iloc[0]
     coord = bayesOptRateDist.get_label_coord(optimal_point_lbl)
-    optimal_point_target = sum([c*w for c,w in zip(coord,weights)])
+    optimal_point_loss = sum([c*w for c,w in zip(coord,weights)])
 
     optimizer = BayesianOptimization(
         f=bayesOptRateDist.black_box_function,
@@ -314,4 +314,4 @@ def bayes_opt_rate_dist(csv_path,axes,weights,lambdas=[],random_state=1,init_poi
 
     n_trained_networks = len(set(visited_labels[:idx+1]))
 
-    return lbl, optimizer.max["target"], n_trained_networks, optimal_point_lbl, optimal_point_target
+    return lbl, -optimizer.max["target"], n_trained_networks, optimal_point_lbl, optimal_point_loss

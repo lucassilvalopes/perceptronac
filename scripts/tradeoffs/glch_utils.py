@@ -508,10 +508,10 @@ def save_optimal_point(data,r,axes,weights,tree_str,exp_id,fldr="gho_results"):
     estimated_best_coord = estimated_best[axes].iloc[0,:].values.tolist()
     true_best_coord = true_best[axes].iloc[0,:].values.tolist()
 
-    estimated_best_target = sum([c*w for c,w in zip(estimated_best_coord,weights)])
-    true_best_target = sum([c*w for c,w in zip(true_best_coord,weights)])
+    estimated_best_loss = sum([c*w for c,w in zip(estimated_best_coord,weights)])
+    true_best_loss = sum([c*w for c,w in zip(true_best_coord,weights)])
 
-    percent_higher = 100 * (estimated_best_target - true_best_target) / true_best_target
+    percent_higher = 100 * (estimated_best_loss - true_best_loss) / true_best_loss
 
     n_trained_networks = get_trained_networks_up_to_node(tree_str,estimated_best_lbl)
 
@@ -522,7 +522,8 @@ def save_optimal_point(data,r,axes,weights,tree_str,exp_id,fldr="gho_results"):
         print("\ntrue best:\n",file=f)
         print(true_best,file=f)
         print("",file=f)
-        print(f"estimated best target: {estimated_best_target}",file=f)
-        print(f"true best target: {true_best_target}",file=f)
-        print(f"target higher by (%): {percent_higher}",file=f)
         print(f"number of trained networks: {n_trained_networks}",file=f)
+        print(f"estimated best loss: {estimated_best_loss}",file=f)
+        print(f"true best loss: {true_best_loss}",file=f)
+        print(f"loss higher by (%): {percent_higher}",file=f)
+        

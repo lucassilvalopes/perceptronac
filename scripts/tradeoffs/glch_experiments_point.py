@@ -36,7 +36,9 @@ if __name__ == "__main__":
         weights=[1,5e-3*(255**2),1/1e6],
         lambdas=["5e-3"],
         algo="gho",
-        constrained=True
+        constrained=True,
+        fldr=results_folder,
+        debug_folder=debug_folder
     )
 
     glch_rate_vs_dist(
@@ -45,7 +47,9 @@ if __name__ == "__main__":
         weights=[1,5e-3*(255**2),1/1e10],
         lambdas=["5e-3"],
         algo="gho",
-        constrained=True
+        constrained=True,
+        fldr=results_folder,
+        debug_folder=debug_folder
     )
 
     glch_rate_vs_dist(
@@ -54,7 +58,9 @@ if __name__ == "__main__":
         weights=[1,1e-2*(255**2),1/1e6],
         lambdas=["1e-2"],
         algo="gho",
-        constrained=True
+        constrained=True,
+        fldr=results_folder,
+        debug_folder=debug_folder
     )
 
     glch_rate_vs_dist(
@@ -63,7 +69,9 @@ if __name__ == "__main__":
         weights=[1,1e-2*(255**2),1/1e10],
         lambdas=["1e-2"],
         algo="gho",
-        constrained=True
+        constrained=True,
+        fldr=results_folder,
+        debug_folder=debug_folder
     )
 
     glch_rate_vs_dist(
@@ -72,7 +80,9 @@ if __name__ == "__main__":
         weights=[1,2e-2*(255**2),1/1e6],
         lambdas=["2e-2"],
         algo="gho",
-        constrained=True
+        constrained=True,
+        fldr=results_folder,
+        debug_folder=debug_folder
     )
 
     glch_rate_vs_dist(
@@ -81,5 +91,7 @@ if __name__ == "__main__":
         weights=[1,2e-2*(255**2),1/1e10],
         lambdas=["2e-2"],
         algo="gho",
-        constrained=True
+        constrained=True,
+        fldr=results_folder,
+        debug_folder=debug_folder
     )
