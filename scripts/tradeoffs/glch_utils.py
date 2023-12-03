@@ -552,10 +552,10 @@ def save_optimal_point(data,r,axes,weights,tree_str,exp_id,fldr="gho_results"):
         print("\ntrue best:\n",file=f)
         print(true_best,file=f)
         print("",file=f)
-        # print(f"number of trained networks: {n_trained_networks}",file=f)
-        # print(f"estimated best loss: {estimated_best_loss}",file=f)
-        # print(f"true best loss: {true_best_loss}",file=f)
-        # print(f"loss higher by (%): {percent_higher}",file=f)
+        print(f"number of trained networks: {n_trained_networks}",file=f)
+        print(f"estimated best loss: {estimated_best_loss}",file=f)
+        print(f"true best loss: {true_best_loss}",file=f)
+        print(f"loss higher by (%): {percent_higher}",file=f)
         
 
     df = pd.DataFrame({"n_trials":n_trained_networks_history,"loss":loss_history})
