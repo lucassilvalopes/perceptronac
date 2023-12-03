@@ -3,6 +3,7 @@ import re
 import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
 from perceptronac.convex_hull import convex_hull
 from sklearn.preprocessing import MinMaxScaler
 from line_clipping import cohenSutherlandClip
@@ -490,7 +491,28 @@ def get_trained_networks_up_to_node(tree_str,node_lbl):
     if col_idx == 0:
         row_idx = row_idx - 1
     trained_networks = {wd for ln in tree_data[:row_idx+1] for wd in ln}.union({tree_data[0][0]})
-    return len(trained_networks)
+    return trained_networks
+
+
+def loss_per_trials(data,axes,weights,tree_str):
+
+    parent_nodes = [ln.split()[0] for ln in tree_str.split("\n") if ln.strip()] 
+
+    n_trained_networks_history = []
+    loss_history = []
+    for parent_node in parent_nodes:
+        trained_networks = get_trained_networks_up_to_node(tree_str,parent_node)
+        best_so_far = get_optimal_point_info(data.loc[trained_networks,:],axes,weights)
+        coord = best_so_far[axes].iloc[0,:].values.tolist()
+        loss = get_loss(coord,weights)
+        n_trained_networks_history.append(len(trained_networks))
+        loss_history.append(loss)
+    
+    return n_trained_networks_history, loss_history
+
+
+def get_loss(coord,weights):
+    return sum([c*w for c,w in zip(coord,weights)])
 
 
 def save_optimal_point(data,r,axes,weights,tree_str,exp_id,fldr="gho_results"):
@@ -498,6 +520,8 @@ def save_optimal_point(data,r,axes,weights,tree_str,exp_id,fldr="gho_results"):
     new_points += [str(r)]
     new_points += tree_nodes(r,[],"all")
     probe = data.loc[new_points,:]
+
+    final_n_trained_networks = len(set(new_points))
 
     estimated_best = get_optimal_point_info(probe,axes,weights)
     true_best = get_optimal_point_info(data,axes,weights)
@@ -508,12 +532,18 @@ def save_optimal_point(data,r,axes,weights,tree_str,exp_id,fldr="gho_results"):
     estimated_best_coord = estimated_best[axes].iloc[0,:].values.tolist()
     true_best_coord = true_best[axes].iloc[0,:].values.tolist()
 
-    estimated_best_loss = sum([c*w for c,w in zip(estimated_best_coord,weights)])
-    true_best_loss = sum([c*w for c,w in zip(true_best_coord,weights)])
+    estimated_best_loss = get_loss(estimated_best_coord,weights)
+    true_best_loss = get_loss(true_best_coord,weights)
 
     percent_higher = 100 * (estimated_best_loss - true_best_loss) / true_best_loss
 
-    n_trained_networks = get_trained_networks_up_to_node(tree_str,estimated_best_lbl)
+    n_trained_networks = len(get_trained_networks_up_to_node(tree_str,estimated_best_lbl))
+
+    n_trained_networks_history, loss_history = loss_per_trials(data,axes,weights,tree_str)
+    n_trained_networks_history.append(final_n_trained_networks)
+    loss_history.append(estimated_best_loss)
+
+    # loss_history = [(el - true_best_loss) for el in loss_history]
 
     with open(f'{fldr}/optimal_point_{exp_id}.txt', 'w') as f:
 
@@ -522,8 +552,12 @@ def save_optimal_point(data,r,axes,weights,tree_str,exp_id,fldr="gho_results"):
         print("\ntrue best:\n",file=f)
         print(true_best,file=f)
         print("",file=f)
-        print(f"number of trained networks: {n_trained_networks}",file=f)
-        print(f"estimated best loss: {estimated_best_loss}",file=f)
-        print(f"true best loss: {true_best_loss}",file=f)
-        print(f"loss higher by (%): {percent_higher}",file=f)
+        # print(f"number of trained networks: {n_trained_networks}",file=f)
+        # print(f"estimated best loss: {estimated_best_loss}",file=f)
+        # print(f"true best loss: {true_best_loss}",file=f)
+        # print(f"loss higher by (%): {percent_higher}",file=f)
         
+
+    df = pd.DataFrame({"n_trials":n_trained_networks_history,"loss":loss_history})
+
+    df.to_csv(f'{fldr}/optimal_point_{exp_id}.csv')
