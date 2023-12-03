@@ -118,14 +118,41 @@ def plot_choice_2(x_axis,y_axis,node,node_coord,candidate_nodes,candidate_coord,
             dpi=300, facecolor='w', bbox_inches = "tight")
 
 
+def plot_arrow(ax,src_coord,dst_coord,color):
+    ax.annotate('',
+        xytext= (src_coord[0],src_coord[1]),
+        xy= (dst_coord[0],dst_coord[1]),
+        arrowprops=dict(arrowstyle="->", color=color),
+        # size=size
+    )
+
+def get_line(lmbda,rate_axis,dist_axis,x_lims,y_lims):
+    best_point = np.argmin(np.array(rate_axis) + lmbda * np.array(dist_axis))
+    if lmbda >= (np.diff(x_lims)/np.diff(y_lims)):
+        line_x = np.array(x_lims)
+        line_y = (-1/lmbda)*line_x + (rate_axis[best_point]/lmbda + dist_axis[best_point])
+    else:
+        line_y = np.array(y_lims)
+        line_x = (-1)* lmbda * line_y + (rate_axis[best_point] + lmbda * dist_axis[best_point])
+    line = [line_x,line_y]
+    return line
+
+
 def plot_choice(
     data,x_axis,y_axis,node,node_coord,candidate_nodes,candidate_coord,chosen_node_index,dists=None,txt_file=None,title=None,fldr="debug"):
 
     fig, ax = plt.subplots(nrows=1, ncols=1)
 
-    ax.plot(data[x_axis].values, data[y_axis].values,marker="x",linestyle="")
+    ax.plot(data[x_axis].values, data[y_axis].values,marker=".",linestyle="")
 
-    ax.text(x=node_coord[0],y=node_coord[1],s=str(node),color="black")
+    x_lims = [0.3,1.5]
+    y_lims = [0.001,0.004]
+
+    line = get_line((255**2)*2e-2,data[x_axis].values, data[y_axis].values,x_lims,y_lims)
+
+    ax.plot(line[0],line[1],color="k",linewidth=0.5)
+
+    # ax.text(x=node_coord[0],y=node_coord[1],s=str(node),color="black")
 
     print(f"-1,-1,-1,-1,-1",file=txt_file)
 
@@ -142,24 +169,31 @@ def plot_choice(
 
         clr = ("g" if i == chosen_node_index else "r")
 
-        ax.plot(
-            [node_coord[0],pt[0]],
-            [node_coord[1],pt[1]],
-            color= clr)
+        # ax.plot(
+        #     [node_coord[0],pt[0]],
+        #     [node_coord[1],pt[1]],
+        #     color= clr)
+        if str(node) != "D3L2e-2N160M32":
+            plot_arrow(ax,node_coord,pt,clr)
 
-        ax.text(x=pt[0],y=pt[1],s=f"{str(candidate_nodes[i])}" + \
-                (f",d={dists[i]}" if (dists is not None) else ""),color=clr)
+        # ax.text(x=pt[0],y=pt[1],s=f"{str(candidate_nodes[i])}" + \
+        #         (f",d={dists[i]}" if (dists is not None) else ""),color=clr)
 
         print(f"{node_coord[0]},{node_coord[1]},{pt[0]},{pt[1]},{(1 if i == chosen_node_index else 0)}",file=txt_file)
 
-    ax.set_xlabel(x_axis)
-    ax.set_ylabel(y_axis)
+    ax.set_xlabel("Rate (bits per pixel)")
+    ax.set_ylabel("MSE")
 
-    ax.set_title(f"{chosen_node_index} {str(candidate_nodes[chosen_node_index])}")
+    # ax.set_title(f"{chosen_node_index} {str(candidate_nodes[chosen_node_index])}")
 
     if title is None:
         fig.show()
     else:
+
+        ax.set_xlim(x_lims[0],x_lims[1])
+
+        ax.set_ylim(y_lims[0],y_lims[1])
+
         fig.savefig(
             f"{fldr}/{title}.png", 
             dpi=300, facecolor='w', bbox_inches = "tight")

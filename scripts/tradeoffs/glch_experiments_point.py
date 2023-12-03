@@ -24,7 +24,7 @@ if __name__ == "__main__":
         # axes_ranges=[[0.1,1.75],[0.001,0.0045]]
         lambdas=["2e-2"],
         algo="gho",
-        constrained=True,
+        constrained=False,
         weights=[1,2e-2*(255**2)],
         fldr=results_folder,
         debug_folder=debug_folder
@@ -36,7 +36,7 @@ if __name__ == "__main__":
         weights=[1,5e-3*(255**2),1/1e6],
         lambdas=["5e-3"],
         algo="gho",
-        constrained=True,
+        constrained=False,
         fldr=results_folder,
         debug_folder=debug_folder
     )
@@ -47,7 +47,7 @@ if __name__ == "__main__":
         weights=[1,5e-3*(255**2),1/1e10],
         lambdas=["5e-3"],
         algo="gho",
-        constrained=True,
+        constrained=False,
         fldr=results_folder,
         debug_folder=debug_folder
     )
@@ -58,7 +58,7 @@ if __name__ == "__main__":
         weights=[1,1e-2*(255**2),1/1e6],
         lambdas=["1e-2"],
         algo="gho",
-        constrained=True,
+        constrained=False,
         fldr=results_folder,
         debug_folder=debug_folder
     )
@@ -69,7 +69,7 @@ if __name__ == "__main__":
         weights=[1,1e-2*(255**2),1/1e10],
         lambdas=["1e-2"],
         algo="gho",
-        constrained=True,
+        constrained=False,
         fldr=results_folder,
         debug_folder=debug_folder
     )
@@ -80,7 +80,7 @@ if __name__ == "__main__":
         weights=[1,2e-2*(255**2),1/1e6],
         lambdas=["2e-2"],
         algo="gho",
-        constrained=True,
+        constrained=False,
         fldr=results_folder,
         debug_folder=debug_folder
     )
@@ -91,7 +91,7 @@ if __name__ == "__main__":
         weights=[1,2e-2*(255**2),1/1e10],
         lambdas=["2e-2"],
         algo="gho",
-        constrained=True,
+        constrained=False,
         fldr=results_folder,
         debug_folder=debug_folder
     )
