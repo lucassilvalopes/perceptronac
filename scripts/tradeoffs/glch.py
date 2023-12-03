@@ -40,6 +40,7 @@ class GreedyAlgorithmsBaseClass(ABC):
         self.initial_values = initial_values
         self.to_str_method = to_str_method
         self.constrained = constrained
+        self.tree_str = None
 
     def get_node_coord(self,node):
         if isinstance(node,list):
@@ -63,12 +64,16 @@ class GreedyAlgorithmsBaseClass(ABC):
     def end_debug(self):
         pass
 
+    def get_tree_str(self):
+        return self.tree_str
+
     @abstractmethod
     def make_choice_func(self,ref_node,node,prev_candidate_nodes,candidate_nodes):
         pass
 
     def build_tree(self):
 
+        self.tree_str = ""
         self.begin_debug()
 
         root = self.setup_build_tree()
@@ -97,6 +102,7 @@ class GreedyAlgorithmsBaseClass(ABC):
 
             chosen_node_index,update_ref_node = self.make_choice_func(ref_node,node,prev_candidate_nodes,candidate_nodes)
 
+            self.tree_str += one_line_of_tree_str(node,prev_candidate_nodes,candidate_nodes,[chosen_node_index])
             self.print_debug(node,prev_candidate_nodes,candidate_nodes,chosen_node_index,iteration)
 
             if chosen_node_index >= len(prev_candidate_nodes):
@@ -143,7 +149,7 @@ class Greedy2DAlgorithmsBaseClass(GreedyAlgorithmsBaseClass):
 
 
     def print_debug(self,node,prev_candidate_nodes,candidate_nodes,chosen_node_index,iteration):
-        self.tree_str += one_line_of_tree_str(node,prev_candidate_nodes,candidate_nodes,[chosen_node_index])
+
         if not self.debug:
             return
         if chosen_node_index >= len(prev_candidate_nodes):
@@ -159,7 +165,7 @@ class Greedy2DAlgorithmsBaseClass(GreedyAlgorithmsBaseClass):
             title=f"{self.title}_{iteration}",fldr=self.debug_folder)
 
     def begin_debug(self):
-        self.tree_str = ""
+
         if not self.debug:
             return
         if not os.path.isdir(self.debug_folder):
@@ -170,9 +176,6 @@ class Greedy2DAlgorithmsBaseClass(GreedyAlgorithmsBaseClass):
         if not self.debug:
             return
         close_debug_txt_file(self.txt_file)
-
-    def get_tree_str(self):
-        return self.tree_str
 
 
 class GLCHGiftWrappingTieBreak(Greedy2DAlgorithmsBaseClass):

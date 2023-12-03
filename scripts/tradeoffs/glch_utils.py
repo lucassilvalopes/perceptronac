@@ -483,7 +483,17 @@ def get_optimal_point_info(data,axes,weights):
     return info
 
 
-def save_optimal_point(data,r,axes,weights,exp_id,fldr="gho_results"):
+def get_trained_networks_up_to_node(tree_str,node_lbl):
+    tree_data = [[wd for wd in ln.split()] for ln in re.sub("[!]+","",tree_str).split("\n")] 
+    row_idx = [(node_lbl in ln) for ln in tree_data].index(True)
+    col_idx = [(wd == node_lbl) for wd in tree_data[row_idx]].index(True)
+    if col_idx == 0:
+        row_idx = row_idx - 1
+    trained_networks = {wd for ln in tree_data[:row_idx+1] for wd in ln}.union(set(tree_data[0][0]))
+    return len(trained_networks)
+
+
+def save_optimal_point(data,r,axes,weights,tree_str,exp_id,fldr="gho_results"):
     new_points = []
     new_points += [str(r)]
     new_points += tree_nodes(r,[],"all")
@@ -492,6 +502,9 @@ def save_optimal_point(data,r,axes,weights,exp_id,fldr="gho_results"):
     estimated_best = get_optimal_point_info(probe,axes,weights)
     true_best = get_optimal_point_info(data,axes,weights)
 
+    estimated_best_lbl = estimated_best["labels"].iloc[0]
+    true_best_lbl = true_best["labels"].iloc[0]
+
     estimated_best_coord = estimated_best[axes].values.tolist()
     true_best_coord = true_best[axes].values.tolist()
 
@@ -499,6 +512,8 @@ def save_optimal_point(data,r,axes,weights,exp_id,fldr="gho_results"):
     true_best_target = sum([c*w for c,w in zip(true_best_coord,weights)])
 
     percent_higher = 100 * (estimated_best_target - true_best_target) / true_best_target
+
+    n_trained_networks = get_trained_networks_up_to_node(tree_str,estimated_best_lbl)
 
     with open(f'{fldr}/optimal_point_{exp_id}.txt', 'w') as f:
 
@@ -512,3 +527,5 @@ def save_optimal_point(data,r,axes,weights,exp_id,fldr="gho_results"):
         print(true_best_target,file=f)
         print("\ntarget higher by (%):\n",file=f)
         print(percent_higher,file=f)
+        print("\nnumber of trained networks:\n",file=f)
+        print(n_trained_networks,file=f)

@@ -55,7 +55,7 @@ def build_gho_tree(
             weights
         )
         r = gho_alg.build_tree()
-        return r, None
+        return r, gho_alg.get_tree_str()
     else:
         ValueError(version)
 
@@ -259,11 +259,11 @@ def glch_rate_vs_dist(
                 debug=debug,title=None,debug_folder=debug_folder,version="2D")
             save_tree_data(data,r,axes[0],axes[1],axes_ranges[0],axes_ranges[1],exp_id,
                 x_alias=axes_aliases[0],y_alias=axes_aliases[1],fldr=fldr,tree_str=tree_str)
-            save_optimal_point(data,r,axes,weights,exp_id,fldr=fldr)
+            save_optimal_point(data,r,axes,weights,tree_str,exp_id,fldr=fldr)
         else:
             r,tree_str = build_gho_tree(data,possible_values,axes,initial_values,to_str_method,constrained,weights,
                 debug=debug,title=None,debug_folder=debug_folder,version="multidimensional")
-            save_optimal_point(data,r,axes,weights,exp_id,fldr=fldr)
+            save_optimal_point(data,r,axes,weights,tree_str,exp_id,fldr=fldr)
     else:
         ValueError(algo)
 
