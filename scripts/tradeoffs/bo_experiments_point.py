@@ -65,41 +65,41 @@ if __name__ == "__main__":
     bo_statistics(
         "/home/lucas/Documents/perceptronac/scripts/tradeoffs/bpp-mse-psnr-loss-flops-params_bmshj2018-factorized_10000-epochs_D-3-4_L-2e-2-1e-2-5e-3_N-32-64-96-128-160-192-224_M-32-64-96-128-160-192-224-256-288-320.csv",
         ["bpp_loss","mse_loss","params"],
-        [1,5e-3*(255**2),1/1e6],
+        [1,5e-3*(255**2),1/(1e6 * 100)],
         lambdas=["5e-3"]
     )
 
     bo_statistics(
         "/home/lucas/Documents/perceptronac/scripts/tradeoffs/bpp-mse-psnr-loss-flops-params_bmshj2018-factorized_10000-epochs_D-3-4_L-2e-2-1e-2-5e-3_N-32-64-96-128-160-192-224_M-32-64-96-128-160-192-224-256-288-320.csv",
         ["bpp_loss","mse_loss","flops"],
-        [1,5e-3*(255**2),1/1e10],
+        [1,5e-3*(255**2),1/(1e10 * 100)],
         lambdas=["5e-3"]
     )
 
     bo_statistics(
         "/home/lucas/Documents/perceptronac/scripts/tradeoffs/bpp-mse-psnr-loss-flops-params_bmshj2018-factorized_10000-epochs_D-3-4_L-2e-2-1e-2-5e-3_N-32-64-96-128-160-192-224_M-32-64-96-128-160-192-224-256-288-320.csv",
         ["bpp_loss","mse_loss","params"],
-        [1,1e-2*(255**2),1/1e6],
+        [1,1e-2*(255**2),1/(1e6 * 100)],
         lambdas=["1e-2"]
     )
 
     bo_statistics(
         "/home/lucas/Documents/perceptronac/scripts/tradeoffs/bpp-mse-psnr-loss-flops-params_bmshj2018-factorized_10000-epochs_D-3-4_L-2e-2-1e-2-5e-3_N-32-64-96-128-160-192-224_M-32-64-96-128-160-192-224-256-288-320.csv",
         ["bpp_loss","mse_loss","flops"],
-        [1,1e-2*(255**2),1/1e10],
+        [1,1e-2*(255**2),1/(1e10 * 100)],
         lambdas=["1e-2"]
     )
 
     bo_statistics(
         "/home/lucas/Documents/perceptronac/scripts/tradeoffs/bpp-mse-psnr-loss-flops-params_bmshj2018-factorized_10000-epochs_D-3-4_L-2e-2-1e-2-5e-3_N-32-64-96-128-160-192-224_M-32-64-96-128-160-192-224-256-288-320.csv",
         ["bpp_loss","mse_loss","params"],
-        [1,2e-2*(255**2),1/1e6],
+        [1,2e-2*(255**2),1/(1e6 * 100)],
         lambdas=["2e-2"]
     )
 
     bo_statistics(
         "/home/lucas/Documents/perceptronac/scripts/tradeoffs/bpp-mse-psnr-loss-flops-params_bmshj2018-factorized_10000-epochs_D-3-4_L-2e-2-1e-2-5e-3_N-32-64-96-128-160-192-224_M-32-64-96-128-160-192-224-256-288-320.csv",
         ["bpp_loss","mse_loss","flops"],
-        [1,2e-2*(255**2),1/1e10],
+        [1,2e-2*(255**2),1/(1e10 * 100)],
         lambdas=["2e-2"]
     )
