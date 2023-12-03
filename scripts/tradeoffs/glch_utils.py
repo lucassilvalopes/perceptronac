@@ -489,7 +489,7 @@ def get_trained_networks_up_to_node(tree_str,node_lbl):
     col_idx = [(wd == node_lbl) for wd in tree_data[row_idx]].index(True)
     if col_idx == 0:
         row_idx = row_idx - 1
-    trained_networks = {wd for ln in tree_data[:row_idx+1] for wd in ln}.union(set(tree_data[0][0]))
+    trained_networks = {wd for ln in tree_data[:row_idx+1] for wd in ln}.union({tree_data[0][0]})
     return len(trained_networks)
 
 
@@ -505,8 +505,8 @@ def save_optimal_point(data,r,axes,weights,tree_str,exp_id,fldr="gho_results"):
     estimated_best_lbl = estimated_best["labels"].iloc[0]
     true_best_lbl = true_best["labels"].iloc[0]
 
-    estimated_best_coord = estimated_best[axes].values.tolist()
-    true_best_coord = true_best[axes].values.tolist()
+    estimated_best_coord = estimated_best[axes].iloc[0,:].values.tolist()
+    true_best_coord = true_best[axes].iloc[0,:].values.tolist()
 
     estimated_best_target = sum([c*w for c,w in zip(estimated_best_coord,weights)])
     true_best_target = sum([c*w for c,w in zip(true_best_coord,weights)])
@@ -521,11 +521,8 @@ def save_optimal_point(data,r,axes,weights,tree_str,exp_id,fldr="gho_results"):
         print(estimated_best,file=f)
         print("\ntrue best:\n",file=f)
         print(true_best,file=f)
-        print("\nestimated best target:\n",file=f)
-        print(estimated_best_target,file=f)
-        print("\ntrue best target:\n",file=f)
-        print(true_best_target,file=f)
-        print("\ntarget higher by (%):\n",file=f)
-        print(percent_higher,file=f)
-        print("\nnumber of trained networks:\n",file=f)
-        print(n_trained_networks,file=f)
+        print("",file=f)
+        print(f"estimated best target: {estimated_best_target}",file=f)
+        print(f"true best target: {true_best_target}",file=f)
+        print(f"target higher by (%): {percent_higher}",file=f)
+        print(f"number of trained networks: {n_trained_networks}",file=f)
