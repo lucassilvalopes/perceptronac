@@ -1,6 +1,7 @@
 
 import os
 import numpy as np
+import pandas as pd
 import random
 from bo_experiments_functions import bayes_opt_rate_dist
 
@@ -17,14 +18,16 @@ def bo_statistics(*args,**kwargs):
     print(random_states)
 
     results_list = []
+    min_loss_histories = []
     for random_state in random_states:
 
         kwargs["random_state"] = random_state
 
-        lbl,loss,n_trained_networks,optimal_point_lbl,optimal_point_loss = \
+        lbl,loss,n_trained_networks,optimal_point_lbl,optimal_point_loss,min_loss_history = \
             bayes_opt_rate_dist(*args,**kwargs)
         results_list.append((
             lbl,loss,n_trained_networks,optimal_point_lbl,optimal_point_loss))
+        min_loss_histories.append(min_loss_history)
     
     n_hits = sum([(1 if r[0] == optimal_point_lbl else 0) for r in results_list])
     avg_n_trained_networks = sum([r[2] for r in results_list])/len(results_list)
@@ -39,13 +42,18 @@ def bo_statistics(*args,**kwargs):
 
     exp_id = f'{"_vs_".join(axes)}{formatted_lambdas}'
 
-    with open(f'{RESULTS_FOLDER}/tree_{exp_id}.txt', 'w') as f:
+    with open(f'{RESULTS_FOLDER}/optimal_point_{exp_id}.txt', 'w') as f:
 
         print(f"number of hits: {n_hits} out of {len(results_list)} trials",file=f)
         print(f"average number of trained networks: {avg_n_trained_networks}",file=f)
         print(f"average estimated best loss: {avg_loss}",file=f)
         print(f"true best loss: {optimal_point_loss}",file=f)
         print(f"average loss higher by (%): {percent_higher}",file=f)
+
+    csv_data = np.array(min_loss_histories).T
+    df = pd.DataFrame(data=csv_data,index=list(range(1,csv_data.shape[0]+1)),columns=random_states)
+    df["mean"] = df.mean(axis=1)
+    df.to_csv(f'{RESULTS_FOLDER}/optimal_point_{exp_id}.csv')
 
 
 if __name__ == "__main__":
