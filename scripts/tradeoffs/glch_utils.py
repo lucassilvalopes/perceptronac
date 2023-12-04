@@ -181,8 +181,8 @@ def plot_choice(
 
         print(f"{node_coord[0]},{node_coord[1]},{pt[0]},{pt[1]},{(1 if i == chosen_node_index else 0)}",file=txt_file)
 
-    ax.set_xlabel("Rate (bits per pixel)")
-    ax.set_ylabel("MSE")
+    ax.set_xlabel("Rate (bits per pixel)", fontsize=16)
+    ax.set_ylabel("Distortion (MSE)", fontsize=16)
 
     # ax.set_title(f"{chosen_node_index} {str(candidate_nodes[chosen_node_index])}")
 
