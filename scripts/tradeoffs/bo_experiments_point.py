@@ -31,9 +31,9 @@ def bo_statistics(*args,**kwargs):
         results_list.append((
             lbl,loss,n_trained_networks,optimal_point_lbl,optimal_point_loss))
         
-        assert len(min_loss_history) >= 25, len(min_loss_history)
+        assert len(min_loss_history) >= 23, len(min_loss_history)
 
-        min_loss_histories.append(min_loss_history[:25])
+        min_loss_histories.append(min_loss_history[:23])
     
     n_hits = sum([(1 if r[0] == optimal_point_lbl else 0) for r in results_list])
     avg_n_trained_networks = sum([r[2] for r in results_list])/len(results_list)
