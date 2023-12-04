@@ -13,6 +13,7 @@ def bo_statistics(*args,**kwargs):
     original_random_state = random.getstate()
     random.seed(42)
     random_states = random.sample(range(1, 10000), 10)
+    random_states = random_states[:4]
     random.setstate(original_random_state)
 
     print(random_states)
@@ -23,11 +24,16 @@ def bo_statistics(*args,**kwargs):
 
         kwargs["random_state"] = random_state
 
-        lbl,loss,n_trained_networks,optimal_point_lbl,optimal_point_loss,min_loss_history = \
+        kwargs["n_iter"] = 500
+
+        lbl,loss,n_trained_networks,optimal_point_lbl,optimal_point_loss,min_loss_history,n_trained_networks_history = \
             bayes_opt_rate_dist(*args,**kwargs)
         results_list.append((
             lbl,loss,n_trained_networks,optimal_point_lbl,optimal_point_loss))
-        min_loss_histories.append(min_loss_history)
+        
+        assert len(min_loss_history) >= 25, len(min_loss_history)
+
+        min_loss_histories.append(min_loss_history[:25])
     
     n_hits = sum([(1 if r[0] == optimal_point_lbl else 0) for r in results_list])
     avg_n_trained_networks = sum([r[2] for r in results_list])/len(results_list)
@@ -63,12 +69,12 @@ if __name__ == "__main__":
         shutil.rmtree(RESULTS_FOLDER)
     os.mkdir(RESULTS_FOLDER)
 
-    bo_statistics(
-        "/home/lucas/Documents/perceptronac/scripts/tradeoffs/bpp-mse-psnr-loss-flops-params_bmshj2018-factorized_10000-epochs_D-3-4_L-2e-2-1e-2-5e-3_N-32-64-96-128-160-192-224_M-32-64-96-128-160-192-224-256-288-320.csv",
-        ["bpp_loss","mse_loss"],
-        [1,2e-2*(255**2)],
-        lambdas=["2e-2"]
-    )
+    # bo_statistics(
+    #     "/home/lucas/Documents/perceptronac/scripts/tradeoffs/bpp-mse-psnr-loss-flops-params_bmshj2018-factorized_10000-epochs_D-3-4_L-2e-2-1e-2-5e-3_N-32-64-96-128-160-192-224_M-32-64-96-128-160-192-224-256-288-320.csv",
+    #     ["bpp_loss","mse_loss"],
+    #     [1,2e-2*(255**2)],
+    #     lambdas=["2e-2"]
+    # )
 
     bo_statistics(
         "/home/lucas/Documents/perceptronac/scripts/tradeoffs/bpp-mse-psnr-loss-flops-params_bmshj2018-factorized_10000-epochs_D-3-4_L-2e-2-1e-2-5e-3_N-32-64-96-128-160-192-224_M-32-64-96-128-160-192-224-256-288-320.csv",
