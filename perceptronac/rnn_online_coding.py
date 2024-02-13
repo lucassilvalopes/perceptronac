@@ -71,7 +71,10 @@ def rnn_online_coding(pths,lr,which_model,hidden_units,n_layers,samples_per_time
     - then line_tensor is (samples_per_time+1,1,2)
     - each time backpropagation is run, is only on samples_per_time samples,
     then this code runs truncated backpropagation through time truncated to samples_per_time samples
-    
+    - the whole "pieces" thing is to restrict the amount of samples that are loaded into memory at a time.
+    - piece_len is actually the piece length per page
+    - the actual piece length is piece_len*len(pths)
+    - piece*piece_len*len(pths)=piece*(page_len/n_pieces)*len(pths)=(piece/n_pieces)*page_len*len(pths)
     """
 
     device=torch.device("cuda:0")
