@@ -58,6 +58,21 @@ def train(rnn,hidden,criterion,learning_rate,category_tensor, line_tensor):
 
 
 def rnn_online_coding(pths,lr,which_model,hidden_units,n_layers,samples_per_time=1,n_pieces=1):
+    """
+    To help me understand this code later:
+    - batch_size is 1
+    - category_tensor contains samples_per_time samples
+    - then category_tensor is (samples_per_time,1)
+    - the numbers in category_tensor are either 0 or 1
+    - line_tensor contains samples_per_time + 1 samples
+    - line_tensor contains all samples in category_tensor, except the last
+    - line_tensor also contains the two samples prior to the first sample in category_tensor
+    - the samples in line_tensor are one-hot encoded
+    - then line_tensor is (samples_per_time+1,1,2)
+    - each time backpropagation is run, is only on samples_per_time samples,
+    then this code runs truncated backpropagation through time truncated to samples_per_time samples
+    
+    """
 
     device=torch.device("cuda:0")
 
