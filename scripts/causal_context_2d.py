@@ -66,11 +66,58 @@ def add_border(img,N):
     return new_img
 
 
+def context_training(X,y,max_context=20):
+    L,N = X.shape
+    if N > max_context:
+        m=f"max_context is {max_context} but X.shape[1] is {N}"
+        raise ValueError(m)
+    X = (X > 0).astype(int)
+    po2 = 2 ** np.arange(0,N).reshape(-1,1)
+    context = X @ po2
+    p1 = np.zeros((2**N,1))
+    p0 = np.zeros((2**N,1))
+    for k in range(L):
+        if (y[k,0] == 1):
+            p1[context[k,0],0] = p1[context[k,0],0] + 1
+        else:
+            p0[context[k,0],0] = p0[context[k,0],0] + 1
+
+    # p1 = p1 + (p1 == 0).astype(int)
+    # p0 = p0 + (p0 == 0).astype(int)
+    # p = p1 / (p1 + p0)
+
+    # p = np.clip(p1,1,None) / (np.clip(p1,1,None) + np.clip(p0,1,None))
+    # p[np.logical_and(p0 != 0,p1 == 0)]=(0 + np.finfo(p.dtype).eps)
+    # p[np.logical_and(p0 == 0,p1 != 0)]=(1 - np.finfo(p.dtype).eps)
+
+    return np.hstack([p0,p1])
+
+
 if __name__ == "__main__":
 
-    N = 32
+    N = 2
 
-    pth = sys.argv[1] # /path/to/file.png
+    if len(sys.argv)>1:
+        pth = sys.argv[1] # /path/to/file.png
 
-    img = add_border(np.array(Image.open(pth)),N)
+        img = np.array(Image.open(pth))
+    else:
+        img = np.array([
+            [1,1,1,1,1,1,1,1,1,1],
+            [1,1,1,0,0,0,0,1,1,1],
+            [1,1,0,1,1,1,1,0,1,1],
+            [1,0,1,0,1,1,0,1,0,1],
+            [1,0,1,1,1,1,1,1,0,1],
+            [1,0,1,0,1,1,0,1,0,1],
+            [1,0,1,1,0,0,1,1,0,1],
+            [1,1,0,1,1,1,1,0,1,1],
+            [1,1,1,0,0,0,0,1,1,1],
+            [1,1,1,1,1,1,1,1,1,1],
+        ])
+
+    img = add_border(img,N)
     y,X = causal_context((img > 0).astype(int), N)
+
+    p = context_training(X,y)
+
+    print(p)
