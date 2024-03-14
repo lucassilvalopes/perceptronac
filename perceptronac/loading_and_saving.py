@@ -72,7 +72,7 @@ def plot_single_curve(ax,rates,xvalues,linestyle,color,label,marker):
 
 
 def plot_comparison(xvalues,data,xlabel,ylabel='bits/sample',xscale="linear",linestyles=None,colors=None,markers=None,
-    labels=None,legend_ncol=None):
+    labels=None,legend_ncol=None,figsize=(4.8,4.8)):
 
     if linestyles is None:
         linestyles = {"JBIG1":"dashdot","LUT":"dotted","MLP":"solid","STATIC":"dashed"}
@@ -85,7 +85,7 @@ def plot_comparison(xvalues,data,xlabel,ylabel='bits/sample',xscale="linear",lin
     if legend_ncol is None:
         legend_ncol = 1
     
-    fig, ax = plt.subplots(nrows=1, ncols=1,figsize=(4.8,4.8))    
+    fig, ax = plt.subplots(nrows=1, ncols=1,figsize=figsize)    
 
     handles = []
     for k in sorted(data.keys()):
