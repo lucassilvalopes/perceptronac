@@ -18,7 +18,7 @@ from perceptronac.loading_and_saving import change_aspect
 from perceptronac.loading_and_saving import linestyle_tuple
 
 
-def label_map(orig_lbl):
+def label_map(orig_lbl,lr_symbol):
     label_map_dict = {
         "LUTmean": 'ALUT',
         "MLP": "APC",
@@ -30,7 +30,7 @@ def label_map(orig_lbl):
         ky = "MLP" if "MLP" in orig_lbl else "RNN"
         coefficient = re.search(r'(?<==).*(?=e-)',orig_lbl).group()
         exponent = re.search(r'(?<=e-).*(?=$)',orig_lbl).group()
-        return label_map_dict[ky] + ' $\lambda='+str(coefficient)+'\cdot10^{-'+ str(int(exponent)) + '}$'
+        return label_map_dict[ky] + ' $'+lr_symbol+'='+str(coefficient)+'\cdot10^{-'+ str(int(exponent)) + '}$'
     else:
         return label_map_dict[orig_lbl]
 
@@ -95,7 +95,7 @@ def read_csvs(csvs):
     return data, identifiers
 
 
-def plot_bkwd_adpt_cdng_grph(data,legend_ncol,columns,figsize=(4.8,4.8)):
+def plot_bkwd_adpt_cdng_grph(data,legend_ncol,columns,figsize=(4.8,4.8),lr_symbol="\lambda"):
 
     xvalues = data.index
 
@@ -103,7 +103,7 @@ def plot_bkwd_adpt_cdng_grph(data,legend_ncol,columns,figsize=(4.8,4.8)):
 
     data = {k:v for k,v in data.items() if k in columns}
 
-    labels = [label_map(k) for k in sorted(data.keys())]
+    labels = [label_map(k,lr_symbol) for k in sorted(data.keys())]
 
     linestyles = [linestyle_map(k) for k in sorted(data.keys())]
 
