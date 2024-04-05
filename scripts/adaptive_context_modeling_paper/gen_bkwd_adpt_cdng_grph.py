@@ -40,6 +40,7 @@ def linestyle_map(orig_lbl):
         "LUTmean": "solid",
         0.1 : "dashdot",
         0.01 : "dashed", 
+        0.001 : "solid", 
         0.0001 : "dotted", 
         "Ours" : "dashed", 
         "Xavier": linestyle_tuple["densely dashed"],
@@ -58,6 +59,7 @@ def color_map(orig_lbl):
         "LUTmean": "g",
         0.1 : "r",
         0.01 : "b",
+        0.001 : "tab:gray",
         0.0001 : "c",
         "Ours" : "b",
         "Xavier": "k",
@@ -85,13 +87,15 @@ def read_csvs(csvs):
         partial_data = pd.read_csv(csv_name)
         partial_data = partial_data.drop([c for c in data.columns if c !="iteration"],axis=1, errors='ignore')
         data = pd.merge(data,partial_data,on="iteration")
+    
+    data = data.rename(columns={"iteration": "sample"})
 
-    data = data.set_index("iteration")
+    data = data.set_index("sample")
 
     return data, identifiers
 
 
-def plot_bkwd_adpt_cdng_grph(data,legend_ncol):
+def plot_bkwd_adpt_cdng_grph(data,legend_ncol,columns):
 
     xvalues = data.index
 
@@ -105,7 +109,7 @@ def plot_bkwd_adpt_cdng_grph(data,legend_ncol):
 
     colors = [color_map(k) for k in sorted(data.keys())]
 
-    fig = plot_comparison(xvalues,data,"iteration",
+    fig = plot_comparison(xvalues,data,"sample",#"iteration",
         linestyles={k:ls for k,ls in zip(sorted(data.keys()),linestyles)},
         colors={k:c for k,c in zip(sorted(data.keys()),colors)},
         markers={k:"" for k in sorted(data.keys())},
@@ -152,7 +156,7 @@ if __name__ == "__main__":
 
     data, identifiers = read_csvs(csvs)
 
-    fig = plot_bkwd_adpt_cdng_grph(data,legend_ncol)
+    fig = plot_bkwd_adpt_cdng_grph(data,legend_ncol,columns)
 
     fig = set_ticks(fig,len(data.index))
 
