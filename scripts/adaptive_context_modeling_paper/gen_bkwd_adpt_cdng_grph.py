@@ -95,7 +95,7 @@ def read_csvs(csvs):
     return data, identifiers
 
 
-def plot_bkwd_adpt_cdng_grph(data,legend_ncol,columns):
+def plot_bkwd_adpt_cdng_grph(data,legend_ncol,columns,figsize=(4.8,4.8)):
 
     xvalues = data.index
 
@@ -114,7 +114,7 @@ def plot_bkwd_adpt_cdng_grph(data,legend_ncol,columns):
         colors={k:c for k,c in zip(sorted(data.keys()),colors)},
         markers={k:"" for k in sorted(data.keys())},
         labels={k:lb for k,lb in zip(sorted(data.keys()),labels)},
-        legend_ncol=legend_ncol)
+        legend_ncol=legend_ncol,figsize=figsize)
 
     return fig
 
@@ -135,20 +135,22 @@ def set_ylim(ax,ylim_upper):
     ax.set_ylim(ylim)
 
 
-def save_bkwd_adpt_cdng_grph(exp_id,identifiers,fig):
-
-    save_dir = f"results/exp_{exp_id}"
-
-    os.makedirs(save_dir)
+def save_bkwd_adpt_cdng_grph(save_dir,identifiers,fig):
 
     fname = "_".join(sorted(set(identifiers)))
 
-    fig.savefig(f"{save_dir.rstrip('/')}/{fname}_edited_graph.png", dpi=300)
+    if save_dir:
+        os.makedirs(save_dir)
+        fig.savefig(f"{save_dir.rstrip('/')}/{fname}_edited_graph.png", dpi=300)
+    else:
+        fig.savefig(f"{fname}_edited_graph.png", dpi=300)
 
 
 if __name__ == "__main__":
 
     exp_id = str(int(time.time()))
+    save_dir = f"results/exp_{exp_id}"
+
     ylim_upper = float(sys.argv[1]) # 0.5
     legend_ncol = int(sys.argv[2]) # 1
     columns = sys.argv[3] # "MLPlr=1e-01,MLPlr=1e-02,MLPlr=1e-04,LUTmean,RNNlr=1e-02"
@@ -166,6 +168,6 @@ if __name__ == "__main__":
 
     change_aspect(ax)
 
-    save_bkwd_adpt_cdng_grph(exp_id,identifiers,fig)
+    save_bkwd_adpt_cdng_grph(save_dir,identifiers,fig)
 
     
