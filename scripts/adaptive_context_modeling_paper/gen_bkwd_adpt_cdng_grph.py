@@ -91,17 +91,9 @@ def read_csvs(csvs):
     return data, identifiers
 
 
-if __name__ == "__main__":
-    
-    ylim_upper = float(sys.argv[1]) # 0.5
-    legend_ncol = int(sys.argv[2]) # 1
-    columns = sys.argv[3] # "MLPlr=1e-01,MLPlr=1e-02,MLPlr=1e-04,LUTmean,RNNlr=1e-02"
-    csvs = sys.argv[4:]
+def plot_bkwd_adpt_cdng_grph(data,legend_ncol):
 
-    data, identifiers = read_csvs(csvs)
-        
     xvalues = data.index
-    len_data = len(xvalues)
 
     data = data.to_dict(orient="list")
 
@@ -113,8 +105,6 @@ if __name__ == "__main__":
 
     colors = [color_map(k) for k in sorted(data.keys())]
 
-    ylim = [0.0, ylim_upper]
-
     fig = plot_comparison(xvalues,data,"iteration",
         linestyles={k:ls for k,ls in zip(sorted(data.keys()),linestyles)},
         colors={k:c for k,c in zip(sorted(data.keys()),colors)},
@@ -122,18 +112,27 @@ if __name__ == "__main__":
         labels={k:lb for k,lb in zip(sorted(data.keys()),labels)},
         legend_ncol=legend_ncol)
 
+    return fig
+
+
+def set_ticks(fig,len_data):
+
     xticks = np.round(np.linspace(0,len_data-1,5)).astype(int)
 
     fig.axes[0].set_xticks( xticks)
     fig.axes[0].set_xticklabels( xticks)
 
-    ax, = fig.axes
+    return fig
+
+
+def set_ylim(ax,ylim_upper):
+    
+    ylim = [0.0, ylim_upper]
     ax.set_ylim(ylim)
 
-    change_aspect(ax)
 
+def save_bkwd_adpt_cdng_grph(exp_id,identifiers,fig):
 
-    exp_id = str(int(time.time()))
     save_dir = f"results/exp_{exp_id}"
 
     os.makedirs(save_dir)
@@ -141,3 +140,28 @@ if __name__ == "__main__":
     fname = "_".join(sorted(set(identifiers)))
 
     fig.savefig(f"{save_dir.rstrip('/')}/{fname}_edited_graph.png", dpi=300)
+
+
+if __name__ == "__main__":
+
+    exp_id = str(int(time.time()))
+    ylim_upper = float(sys.argv[1]) # 0.5
+    legend_ncol = int(sys.argv[2]) # 1
+    columns = sys.argv[3] # "MLPlr=1e-01,MLPlr=1e-02,MLPlr=1e-04,LUTmean,RNNlr=1e-02"
+    csvs = sys.argv[4:]
+
+    data, identifiers = read_csvs(csvs)
+
+    fig = plot_bkwd_adpt_cdng_grph(data,legend_ncol)
+
+    fig = set_ticks(fig,len(data.index))
+
+    ax, = fig.axes
+
+    set_ylim(ax,ylim_upper)
+
+    change_aspect(ax)
+
+    save_bkwd_adpt_cdng_grph(exp_id,identifiers,fig)
+
+    
