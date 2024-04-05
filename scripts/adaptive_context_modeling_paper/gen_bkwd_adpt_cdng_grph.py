@@ -71,25 +71,34 @@ def color_map(orig_lbl):
         return color_map_dict[orig_lbl]
 
 
-if __name__ == "__main__":
-    
-    ylim_upper = float(sys.argv[1]) # 0.5
-    legend_ncol = int(sys.argv[2]) # 1
-    columns = sys.argv[3] # "MLPlr=1e-01,MLPlr=1e-02,MLPlr=1e-04,LUTmean,RNNlr=1e-02"
-    csv_name = sys.argv[4]
+def read_csvs(csvs):
+
+    csv_name = csvs[0]
 
     data = pd.read_csv(csv_name)
 
     identifiers = re.findall(r'[\d]{10}',csv_name)
 
-    for i in range(5,len(sys.argv)):
-        csv_name = sys.argv[i]
+    for i in range(1,len(csvs)):
+        csv_name = csvs[i]
         identifiers += re.findall(r'[\d]{10}',csv_name)
         partial_data = pd.read_csv(csv_name)
         partial_data = partial_data.drop([c for c in data.columns if c !="iteration"],axis=1, errors='ignore')
         data = pd.merge(data,partial_data,on="iteration")
 
     data = data.set_index("iteration")
+
+    return data, identifiers
+
+
+if __name__ == "__main__":
+    
+    ylim_upper = float(sys.argv[1]) # 0.5
+    legend_ncol = int(sys.argv[2]) # 1
+    columns = sys.argv[3] # "MLPlr=1e-01,MLPlr=1e-02,MLPlr=1e-04,LUTmean,RNNlr=1e-02"
+    csvs = sys.argv[4:]
+
+    data, identifiers = read_csvs(csvs)
         
     xvalues = data.index
     len_data = len(xvalues)
