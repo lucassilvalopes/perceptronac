@@ -266,6 +266,8 @@ def glch_rate_vs_dist(
             save_optimal_point(data,r,axes,weights,tree_str,exp_id,fldr=fldr)
     else:
         ValueError(algo)
+    
+    return r,tree_str
 
 
 def glch_rate_vs_dist_2(
@@ -378,3 +380,37 @@ def glch_model_bits_vs_data_bits(
     if algo == "glch":
         save_hull_data(data,r,x_axis,y_axis,x_range,y_range,'model_bits_vs_data_bits',
             x_in_log_scale=x_in_log_scale,x_alias=x_alias,y_alias=y_alias,fldr=fldr)
+
+
+
+def glch3d_rdc(
+        csv_path,
+        complexity_axis="params",
+        constrained=True,
+        lambdas=["5e-3", "1e-2", "2e-2"],
+        fldr="glch_results",
+        debug_folder="debug",
+        debug=True
+    ):
+
+    rs = []
+    tree_strs = []
+    for lmbda in lambdas:
+        r,tree_str = glch_rate_vs_dist(
+            csv_path,
+            [complexity_axis,"loss"],
+            algo="glch",
+            constrained=constrained,
+            weights=None,
+            start="left",
+            lambdas= [lmbda],
+            axes_ranges=None,
+            axes_aliases=None,
+            fldr=fldr,
+            debug_folder=debug_folder,
+            debug=debug
+        )
+        tree_strs.append(tree_str)
+        rs.append(r)
+
+
