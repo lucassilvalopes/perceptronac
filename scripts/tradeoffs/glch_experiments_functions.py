@@ -7,6 +7,7 @@ from glch import GLCHGiftWrapping,GLCHGiftWrappingTieBreak,GLCHAngleRule,GHO2D,G
 from decimal import Decimal
 from glch_utils import save_tree_data, save_hull_data, save_trees_data, save_hulls_data, save_optimal_point
 from glch_utils import compute_hulls
+from bo_utils import plot_3d_lch
 
 
 
@@ -416,9 +417,15 @@ def glch3d_rdc(
 
     data = pd.read_csv(csv_path)
     data = data.set_index("labels")
-    hulls = []
+    estimated_hulls = []
     for r in rs:
         _,estimated_hull_points = compute_hulls(data,[r],complexity_axis,"loss")
-        hulls.append(estimated_hull_points)
+        estimated_hulls.append(estimated_hull_points)
     
-    final_hull = pd.concat(hulls,axis=0)
+    combined_estimated_hull = pd.concat(estimated_hulls,axis=0)
+
+    cloud = data.loc[:,[complexity_axis,"loss"]].values.tolist()
+
+    combined_estimated_hull_cloud = combined_estimated_hull.loc[:,[complexity_axis,"loss"]].values.tolist()
+
+    plot_3d_lch([cloud,combined_estimated_hull_cloud],["b","g"],['o','s'],[0.05,1])
