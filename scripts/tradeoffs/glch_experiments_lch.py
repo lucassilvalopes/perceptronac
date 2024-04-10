@@ -1,7 +1,8 @@
 import os
 from glch_experiments_functions import (
     glch_rate_vs_energy,glch_rate_vs_params,glch_rate_vs_time,
-    glch_rate_vs_dist,glch_rate_vs_dist_2,glch_model_bits_vs_data_bits
+    glch_rate_vs_dist,glch_rate_vs_dist_2,glch_model_bits_vs_data_bits,
+    glch3d_rdc
 )
 
 
@@ -114,73 +115,95 @@ if __name__ == "__main__":
         debug=False
     )
 
-    glch_rate_vs_dist(
+    # glch_rate_vs_dist(
+    #     "/home/lucas/Documents/perceptronac/scripts/tradeoffs/bpp-mse-psnr-loss-flops-params_bmshj2018-factorized_10000-epochs_D-3-4_L-2e-2-1e-2-5e-3_N-32-64-96-128-160-192-224_M-32-64-96-128-160-192-224-256-288-320.csv",
+    #     ["flops","loss"],
+    #     # axes_ranges=[[-0.2*1e10,3.75*1e10],[1.1,3.1]],
+    #     lambdas= ["5e-3"],
+    #     algo="glch",
+    #     constrained=True,
+    #     fldr=results_folder,
+    #     debug_folder=debug_folder,
+    #     debug=False
+    # )
+
+    # glch_rate_vs_dist(
+    #     "/home/lucas/Documents/perceptronac/scripts/tradeoffs/bpp-mse-psnr-loss-flops-params_bmshj2018-factorized_10000-epochs_D-3-4_L-2e-2-1e-2-5e-3_N-32-64-96-128-160-192-224_M-32-64-96-128-160-192-224-256-288-320.csv",
+    #     ["params","loss"],
+    #     # axes_ranges=[[-0.1*1e6,4*1e6],[1.1,3.1]],
+    #     lambdas= ["5e-3"],
+    #     algo="glch",
+    #     constrained=True,
+    #     fldr=results_folder,
+    #     debug_folder=debug_folder,
+    #     debug=False
+    # )
+
+    # glch_rate_vs_dist(
+    #     "/home/lucas/Documents/perceptronac/scripts/tradeoffs/bpp-mse-psnr-loss-flops-params_bmshj2018-factorized_10000-epochs_D-3-4_L-2e-2-1e-2-5e-3_N-32-64-96-128-160-192-224_M-32-64-96-128-160-192-224-256-288-320.csv",
+    #     ["flops","loss"],
+    #     # axes_ranges=[[-0.2*1e10,3.75*1e10],[1.1,3.1]],
+    #     lambdas= ["1e-2"],
+    #     algo="glch",
+    #     constrained=True,
+    #     fldr=results_folder,
+    #     debug_folder=debug_folder,
+    #     debug=False
+    # )
+
+    # glch_rate_vs_dist(
+    #     "/home/lucas/Documents/perceptronac/scripts/tradeoffs/bpp-mse-psnr-loss-flops-params_bmshj2018-factorized_10000-epochs_D-3-4_L-2e-2-1e-2-5e-3_N-32-64-96-128-160-192-224_M-32-64-96-128-160-192-224-256-288-320.csv",
+    #     ["params","loss"],
+    #     # axes_ranges=[[-0.1*1e6,4*1e6],[1.1,3.1]],
+    #     lambdas= ["1e-2"],
+    #     algo="glch",
+    #     constrained=True,
+    #     fldr=results_folder,
+    #     debug_folder=debug_folder,
+    #     debug=False
+    # )
+
+    # glch_rate_vs_dist(
+    #     "/home/lucas/Documents/perceptronac/scripts/tradeoffs/bpp-mse-psnr-loss-flops-params_bmshj2018-factorized_10000-epochs_D-3-4_L-2e-2-1e-2-5e-3_N-32-64-96-128-160-192-224_M-32-64-96-128-160-192-224-256-288-320.csv",
+    #     ["flops","loss"],
+    #     # axes_ranges=[[-0.2*1e10,3.75*1e10],[1.1,3.1]],
+    #     lambdas= ["2e-2"],
+    #     algo="glch",
+    #     constrained=True,
+    #     fldr=results_folder,
+    #     debug_folder=debug_folder,
+    #     debug=False
+    # )
+
+    # glch_rate_vs_dist(
+    #     "/home/lucas/Documents/perceptronac/scripts/tradeoffs/bpp-mse-psnr-loss-flops-params_bmshj2018-factorized_10000-epochs_D-3-4_L-2e-2-1e-2-5e-3_N-32-64-96-128-160-192-224_M-32-64-96-128-160-192-224-256-288-320.csv",
+    #     ["params","loss"],
+    #     # axes_ranges=[[-0.1*1e6,4*1e6],[1.1,3.1]],
+    #     lambdas= ["2e-2"],
+    #     algo="glch",
+    #     constrained=True,
+    #     fldr=results_folder,
+    #     debug_folder=debug_folder,
+    #     debug=False
+    # )
+
+    glch3d_rdc(
         "/home/lucas/Documents/perceptronac/scripts/tradeoffs/bpp-mse-psnr-loss-flops-params_bmshj2018-factorized_10000-epochs_D-3-4_L-2e-2-1e-2-5e-3_N-32-64-96-128-160-192-224_M-32-64-96-128-160-192-224-256-288-320.csv",
-        ["flops","loss"],
-        # axes_ranges=[[-0.2*1e10,3.75*1e10],[1.1,3.1]],
-        lambdas= ["5e-3"],
-        algo="glch",
+        complexity_axis="flops",
         constrained=True,
+        start="left",
+        lambdas=["5e-3", "1e-2", "2e-2"],
         fldr=results_folder,
         debug_folder=debug_folder,
         debug=False
     )
 
-    glch_rate_vs_dist(
+    glch3d_rdc(
         "/home/lucas/Documents/perceptronac/scripts/tradeoffs/bpp-mse-psnr-loss-flops-params_bmshj2018-factorized_10000-epochs_D-3-4_L-2e-2-1e-2-5e-3_N-32-64-96-128-160-192-224_M-32-64-96-128-160-192-224-256-288-320.csv",
-        ["params","loss"],
-        # axes_ranges=[[-0.1*1e6,4*1e6],[1.1,3.1]],
-        lambdas= ["5e-3"],
-        algo="glch",
+        complexity_axis="params",
         constrained=True,
-        fldr=results_folder,
-        debug_folder=debug_folder,
-        debug=False
-    )
-
-    glch_rate_vs_dist(
-        "/home/lucas/Documents/perceptronac/scripts/tradeoffs/bpp-mse-psnr-loss-flops-params_bmshj2018-factorized_10000-epochs_D-3-4_L-2e-2-1e-2-5e-3_N-32-64-96-128-160-192-224_M-32-64-96-128-160-192-224-256-288-320.csv",
-        ["flops","loss"],
-        # axes_ranges=[[-0.2*1e10,3.75*1e10],[1.1,3.1]],
-        lambdas= ["1e-2"],
-        algo="glch",
-        constrained=True,
-        fldr=results_folder,
-        debug_folder=debug_folder,
-        debug=False
-    )
-
-    glch_rate_vs_dist(
-        "/home/lucas/Documents/perceptronac/scripts/tradeoffs/bpp-mse-psnr-loss-flops-params_bmshj2018-factorized_10000-epochs_D-3-4_L-2e-2-1e-2-5e-3_N-32-64-96-128-160-192-224_M-32-64-96-128-160-192-224-256-288-320.csv",
-        ["params","loss"],
-        # axes_ranges=[[-0.1*1e6,4*1e6],[1.1,3.1]],
-        lambdas= ["1e-2"],
-        algo="glch",
-        constrained=True,
-        fldr=results_folder,
-        debug_folder=debug_folder,
-        debug=False
-    )
-
-    glch_rate_vs_dist(
-        "/home/lucas/Documents/perceptronac/scripts/tradeoffs/bpp-mse-psnr-loss-flops-params_bmshj2018-factorized_10000-epochs_D-3-4_L-2e-2-1e-2-5e-3_N-32-64-96-128-160-192-224_M-32-64-96-128-160-192-224-256-288-320.csv",
-        ["flops","loss"],
-        # axes_ranges=[[-0.2*1e10,3.75*1e10],[1.1,3.1]],
-        lambdas= ["2e-2"],
-        algo="glch",
-        constrained=True,
-        fldr=results_folder,
-        debug_folder=debug_folder,
-        debug=False
-    )
-
-    glch_rate_vs_dist(
-        "/home/lucas/Documents/perceptronac/scripts/tradeoffs/bpp-mse-psnr-loss-flops-params_bmshj2018-factorized_10000-epochs_D-3-4_L-2e-2-1e-2-5e-3_N-32-64-96-128-160-192-224_M-32-64-96-128-160-192-224-256-288-320.csv",
-        ["params","loss"],
-        # axes_ranges=[[-0.1*1e6,4*1e6],[1.1,3.1]],
-        lambdas= ["2e-2"],
-        algo="glch",
-        constrained=True,
+        start="left",
+        lambdas=["5e-3", "1e-2", "2e-2"],
         fldr=results_folder,
         debug_folder=debug_folder,
         debug=False

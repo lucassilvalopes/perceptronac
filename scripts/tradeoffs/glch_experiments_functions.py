@@ -389,6 +389,7 @@ def glch3d_rdc(
     csv_path,
     complexity_axis="params",
     constrained=True,
+    start="left",
     lambdas=["5e-3", "1e-2", "2e-2"],
     fldr="glch_results",
     debug_folder="debug",
@@ -404,7 +405,7 @@ def glch3d_rdc(
             algo="glch",
             constrained=constrained,
             weights=None,
-            start="left",
+            start=start,
             lambdas= [lmbda],
             axes_ranges=None,
             axes_aliases=None,
@@ -424,8 +425,17 @@ def glch3d_rdc(
     
     combined_estimated_hull = pd.concat(estimated_hulls,axis=0)
 
-    cloud = data.loc[:,[complexity_axis,"loss"]].values.tolist()
+    axes = ["bpp_loss","mse_loss",complexity_axis]
 
-    combined_estimated_hull_cloud = combined_estimated_hull.loc[:,[complexity_axis,"loss"]].values.tolist()
+    exp_id = f'{"_vs_".join(axes)}_start_{start}'
 
-    plot_3d_lch([cloud,combined_estimated_hull_cloud],["b","g"],['o','s'],[0.05,1])
+    with open(f'{fldr}/threed_hull_{exp_id}.txt', 'w') as f:
+        print("\nestimated_hull_points:\n",file=f)
+        print(combined_estimated_hull[axes],file=f)
+
+
+    cloud = data.loc[:,axes].values.tolist()
+
+    combined_estimated_hull_cloud = combined_estimated_hull.loc[:,axes].values.tolist()
+
+    plot_3d_lch([cloud,combined_estimated_hull_cloud],["b","g"],['o','s'],[0.05,1])#,title=f'{fldr}/threed_hull_fig_{exp_id}')

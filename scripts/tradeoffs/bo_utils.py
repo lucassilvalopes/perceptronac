@@ -1,7 +1,6 @@
-import matplotlib
-matplotlib.use('Qt5Agg')
+
 import numpy as np
-import matplotlib.pyplot as plt
+import os
 
 
 def simple_lambda_grid_3d():
@@ -48,7 +47,13 @@ def plot_3d_lch(arrays_of_points,colors,markers,alphas,ax_ranges=None,ax_labels=
     https://stackoverflow.com/questions/12358312/keep-plotting-window-open-in-matplotlib
     """
 
-    fig = plt.figure()
+    import matplotlib
+    if title is None:
+        matplotlib.use('Qt5Agg')
+    else:
+        matplotlib.use('Agg')
+
+    fig = matplotlib.pyplot.figure()
     ax = fig.add_subplot(111, projection='3d')
 
     for data,c,m,a in zip(arrays_of_points,colors,markers,alphas):
@@ -76,11 +81,15 @@ def plot_3d_lch(arrays_of_points,colors,markers,alphas,ax_ranges=None,ax_labels=
         plot_plane_3d(ax,plane)
 
     if title is None:
-        plt.show(block=True)
+        matplotlib.pyplot.show(block=True)
     else:
+        fig_name = os.path.splitext(title)[0]
         fig.savefig(
-            f"teste3d.png", 
+            f"{fig_name}.png", 
             dpi=300, facecolor='w', bbox_inches = "tight")
+
+    if title is None:
+        matplotlib.use('Qt5Agg')
 
 
 def plane_coeff_from_pt_and_normal(point,normal):
