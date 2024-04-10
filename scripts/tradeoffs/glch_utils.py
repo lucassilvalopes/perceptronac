@@ -499,14 +499,16 @@ def get_trained_networks_history(data,tree_str):
 
     parent_nodes = [ln.split()[0] for ln in tree_str.split("\n") if ln.strip()] 
     pieces = []
+    past = set()
     iter_vect = []
     for i,parent_node in enumerate(parent_nodes):
         trained_networks = get_trained_networks_up_to_node(tree_str,parent_node)
-        pieces.append(data.loc[trained_networks,:].copy(deep=True))
-        for _ in len(trained_networks):
+        pieces.append(data.loc[trained_networks-past,:].copy(deep=True))
+        for _ in range(len(trained_networks-past)):
             iter_vect.append(i)
+        past = trained_networks
     hist = pd.concat(pieces,axis=0)
-    hist = hist.assign(np.array(iter_vect))
+    hist = hist.assign(iteration=np.array(iter_vect))
 
     return hist
 

@@ -6,7 +6,7 @@ from perceptronac.power_consumption import group_energy_measurements
 from glch import GLCHGiftWrapping,GLCHGiftWrappingTieBreak,GLCHAngleRule,GHO2D,GHO
 from decimal import Decimal
 from glch_utils import save_tree_data, save_hull_data, save_trees_data, save_hulls_data, save_optimal_point
-from glch_utils import compute_hulls
+from glch_utils import compute_hulls, get_trained_networks_history
 from bo_utils import plot_3d_lch
 
 
@@ -439,3 +439,13 @@ def glch3d_rdc(
     combined_estimated_hull_cloud = combined_estimated_hull.loc[:,axes].values.tolist()
 
     plot_3d_lch([cloud,combined_estimated_hull_cloud],["b","g"],['o','s'],[0.05,1],title=f'{fldr}/threed_hull_fig_{exp_id}')
+
+    # history
+
+    histories = []
+    for tree_str in tree_strs:
+        histories.append(get_trained_networks_history(data,tree_str))
+    
+    df = pd.concat(histories,axis=0).sort_values(by=['iteration'])
+
+    df.to_csv(f'{fldr}/threed_hull_{exp_id}.csv')
