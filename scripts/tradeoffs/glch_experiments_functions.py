@@ -438,4 +438,4 @@ def glch3d_rdc(
 
     combined_estimated_hull_cloud = combined_estimated_hull.loc[:,axes].values.tolist()
 
-    plot_3d_lch([cloud,combined_estimated_hull_cloud],["b","g"],['o','s'],[0.05,1])#,title=f'{fldr}/threed_hull_fig_{exp_id}')
+    plot_3d_lch([cloud,combined_estimated_hull_cloud],["b","g"],['o','s'],[0.05,1],title=f'{fldr}/threed_hull_fig_{exp_id}')

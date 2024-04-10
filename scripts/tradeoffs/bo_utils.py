@@ -89,7 +89,7 @@ def plot_3d_lch(arrays_of_points,colors,markers,alphas,ax_ranges=None,ax_labels=
             dpi=300, facecolor='w', bbox_inches = "tight")
 
     if title is None:
-        matplotlib.use('Qt5Agg')
+        matplotlib.use('Agg')
 
 
 def plane_coeff_from_pt_and_normal(point,normal):
