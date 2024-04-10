@@ -6,6 +6,7 @@ from perceptronac.power_consumption import group_energy_measurements
 from glch import GLCHGiftWrapping,GLCHGiftWrappingTieBreak,GLCHAngleRule,GHO2D,GHO
 from decimal import Decimal
 from glch_utils import save_tree_data, save_hull_data, save_trees_data, save_hulls_data, save_optimal_point
+from glch_utils import compute_hulls
 
 
 
@@ -384,14 +385,14 @@ def glch_model_bits_vs_data_bits(
 
 
 def glch3d_rdc(
-        csv_path,
-        complexity_axis="params",
-        constrained=True,
-        lambdas=["5e-3", "1e-2", "2e-2"],
-        fldr="glch_results",
-        debug_folder="debug",
-        debug=True
-    ):
+    csv_path,
+    complexity_axis="params",
+    constrained=True,
+    lambdas=["5e-3", "1e-2", "2e-2"],
+    fldr="glch_results",
+    debug_folder="debug",
+    debug=True
+):
 
     rs = []
     tree_strs = []
@@ -413,4 +414,11 @@ def glch3d_rdc(
         tree_strs.append(tree_str)
         rs.append(r)
 
-
+    data = pd.read_csv(csv_path)
+    data = data.set_index("labels")
+    hulls = []
+    for r in rs:
+        _,estimated_hull_points = compute_hulls(data,[r],complexity_axis,"loss")
+        hulls.append(estimated_hull_points)
+    
+    final_hull = pd.concat(hulls,axis=0)
