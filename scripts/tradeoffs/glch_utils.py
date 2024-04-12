@@ -507,6 +507,12 @@ def get_trained_networks_history(data,tree_str):
         for _ in range(len(trained_networks-past)):
             iter_vect.append(i)
         past = trained_networks
+    
+    trained_networks = {w for w in tree_str.replace("!","").split()}.intersection(set(data.index.values))
+    pieces.append(data.loc[trained_networks-past,:].copy(deep=True))
+    for _ in range(len(trained_networks-past)):
+        iter_vect.append(i+1)
+
     hist = pd.concat(pieces,axis=0)
     hist = hist.assign(iteration=np.array(iter_vect))
 
