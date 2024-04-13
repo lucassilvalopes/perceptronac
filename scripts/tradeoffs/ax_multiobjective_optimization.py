@@ -186,3 +186,55 @@ def parego_method(search_space,optimization_config,seed,n_init,n_batch):
     parego_outcomes = np.array(exp_to_df(parego_experiment)[metric_names], dtype=np.double)
 
     return parego_hv_list
+
+
+def initialize_experiment_with_trials(exp,trials):
+    for i, trial in enumerate(trials):
+        arm_name = f"{i}_0"
+        trial_obj = exp.new_trial()
+        trial_obj.add_arm(Arm(parameters=trial["input"], name=arm_name))
+        start_data = Data(df=pd.DataFrame.from_records([
+                {
+                    "arm_name": arm_name,
+                    "metric_name": metric_name,
+                    "mean": output["mean"],
+                    "sem": output["sem"],
+                    "trial_index": i,
+                }
+                for metric_name, output in trial["output"].items()
+            ])
+        )
+        exp.attach_data(start_data)
+        trial_obj.run().complete()
+
+
+def get_trials_hv(search_space,optimization_config,trials):
+
+    hv_exp = build_experiment(search_space,optimization_config)
+
+    initialize_experiment_with_trials(hv_exp,trials)
+
+    hv = observed_hypervolume(
+        modelbridge=Models.BOTORCH_MODULAR(
+            experiment=hv_exp,
+            data=hv_exp.fetch_data()
+        )
+    )
+
+    return hv
+
+
+def get_summary_df(iters,init_hv_list,sobol_hv_list,ehvi_hv_list,parego_hv_list,glch_hv_list,max_hv):
+    methods_df = pd.DataFrame({"iters":iters,
+    "sobol_hv_list":np.hstack([init_hv_list,sobol_hv_list]),
+    "ehvi_hv_list":np.hstack([init_hv_list,ehvi_hv_list]),
+    "parego_hv_list":np.hstack([init_hv_list,parego_hv_list]),
+    "glch_hv_list":glch_hv_list}).set_index("iters")
+    methods_df["max_hv"] = max_hv
+    return methods_df
+
+
+def plot_mohpo_methods(methods_df):
+    (methods_df["max_hv"] - methods_df[["sobol_hv_list","parego_hv_list","ehvi_hv_list","glch_hv_list"]]).map(np.log10).plot()
+
+
