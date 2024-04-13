@@ -28,7 +28,7 @@ from ax.runners.synthetic import SyntheticRunner
 from ax.service.utils.report_utils import exp_to_df
 from botorch.test_functions.multi_objective import BraninCurrin
 
-from ax_multiobjective_optimization import get_trials_hv
+from scripts.tradeoffs.ax_utils import get_trials_hv
 
 
 def label_to_params(label):
