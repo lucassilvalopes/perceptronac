@@ -49,9 +49,9 @@ def df_to_trials(df):
         trials.append({
             "input":label_to_params(r),
             "output": {
-                "a":{"mean":c["bpp_loss"], "sem": 0},
-                "b":{"mean":c["mse_loss"], "sem": 0},
-                "c":{"mean":c["params"], "sem": 0}
+                "bpp_loss":{"mean":c["bpp_loss"], "sem": 0},
+                "mse_loss":{"mean":c["mse_loss"], "sem": 0},
+                "params":{"mean":c["params"], "sem": 0}
             }
         })
     return trials
