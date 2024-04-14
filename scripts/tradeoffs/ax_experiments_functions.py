@@ -1,32 +1,21 @@
 
-import torch
 import random
 import pandas as pd
 import numpy as np
 
-from ax.core.arm import Arm
-from ax.core.data import Data
-from ax.core.experiment import Experiment
-from ax.core.metric import Metric
 from ax.core.objective import MultiObjective, Objective
 from ax.core.optimization_config import (
     MultiObjectiveOptimizationConfig,
     ObjectiveThreshold,
 )
 
-from ax.core.parameter import ParameterType, RangeParameter, ChoiceParameter
+from ax.core.parameter import ParameterType, ChoiceParameter
 from ax.core.search_space import SearchSpace
 from ax.metrics.noisy_function import NoisyFunctionMetric
 
-# Factory methods for creating multi-objective optimization modesl.
-from ax.modelbridge.factory import get_MOO_PAREGO
-
-# Analysis utilities, including a method to evaluate hypervolumes
-from ax.modelbridge.modelbridge_utils import observed_hypervolume
-from ax.modelbridge.registry import Models
-from ax.runners.synthetic import SyntheticRunner
-from ax.service.utils.report_utils import exp_to_df
-from botorch.test_functions.multi_objective import BraninCurrin
+from ax_utils import sobol_method,ehvi_method,parego_method,get_summary_df
+from ax_utils import get_init_hv_list,plot_mohpo_methods, combine_results
+from ax_experiments_functions import ax_rdc_setup, get_glch_hv_list_rdc
 
 from ax_utils import get_trials_hv
 
@@ -136,5 +125,38 @@ def ax_rdc_setup(data_csv_path,complexity_axis="params"):
 
     return search_space, optimization_config, max_hv
 
+
+
+def ax_rdc(data_csv_path,complexity_axis,glch_csv_path,results_folder,n_seeds,seeds_range = [1, 10000],n_init=6):
+
+    original_random_state = random.getstate()
+    random.seed(42)
+    random_seeds = random.sample(range(*seeds_range), n_seeds)
+    random.setstate(original_random_state)
+
+    search_space,optimization_config,max_hv = ax_rdc_setup(data_csv_path)
+
+    glch_hv_list = get_glch_hv_list_rdc(search_space,optimization_config,glch_csv_path,complexity_axis)
+
+    n_batch = len(glch_hv_list) - n_init
+
+    for seed in random_seeds:
+
+        sobol_hv_list = sobol_method(search_space,optimization_config,seed,n_init,n_batch)
+
+        ehvi_hv_list = ehvi_method(search_space,optimization_config,seed,n_init,n_batch)
+
+        parego_hv_list = parego_method(search_space,optimization_config,seed,n_init,n_batch)
+
+        init_hv_list = get_init_hv_list(search_space,optimization_config,seed,n_init)
+
+        iters = np.arange(1, n_init + n_batch + 1)
+        methods_df = get_summary_df(iters,init_hv_list,sobol_hv_list,ehvi_hv_list,parego_hv_list,len(iters)*[None],max_hv)
+        methods_df.to_csv(f"{results_folder}/bpp_loss_mse_loss_{complexity_axis}_ax_methods_seed{seed}.csv")
+
+
+    avg_df = combine_results(results_folder,glch_hv_list)
+
+    plot_mohpo_methods(avg_df,f"{results_folder}/bpp_loss_mse_loss_{complexity_axis}_ax_methods_avgs.png")
 
 
