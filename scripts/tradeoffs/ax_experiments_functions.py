@@ -57,9 +57,9 @@ def df_to_trials(df):
     return trials
 
 
-def get_glch_hv_list_rdc(search_space,optimization_config,glch_csv_name):
+def get_glch_hv_list_rdc(search_space,optimization_config,glch_csv_path):
 
-    glch_csv = pd.read_csv(glch_csv_name)
+    glch_csv = pd.read_csv(glch_csv_path)
     glch_csv[["D","L","N","M"]] = glch_csv["labels"].apply(lambda x: pd.Series(label_to_params(x)))
     glch_csv = glch_csv.sort_values(by=['iteration', 'D','N','M','L']).set_index("labels")
 
@@ -78,9 +78,9 @@ def get_glch_hv_list_rdc(search_space,optimization_config,glch_csv_name):
     return glch_hv_list
 
 
-def ax_rdc_setup(csv_path):
+def ax_rdc_setup(data_csv_path):
 
-    data = pd.read_csv(csv_path).set_index("labels")
+    data = pd.read_csv(data_csv_path).set_index("labels")
 
     ref_point = data[["bpp_loss","mse_loss","params"]].max().values * 1.1
 
