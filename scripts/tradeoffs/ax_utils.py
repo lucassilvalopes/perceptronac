@@ -235,12 +235,15 @@ def get_summary_df(iters,init_hv_list,sobol_hv_list,ehvi_hv_list,parego_hv_list,
     return methods_df
 
 
-def plot_mohpo_methods(methods_df,fig_path):
+def plot_mohpo_methods(methods_df,fig_path=None):
     max_hv = methods_df["max_hv"].iloc[0]
     ax = (max_hv - methods_df[["sobol_hv_list","parego_hv_list","ehvi_hv_list","glch_hv_list"]]).map(np.log10).plot(
         xlabel="number of observations", ylabel="Log Hypervolume Difference")
     fig = ax.get_figure()
-    fig.savefig(fig_path)
+    if fig_path is None:
+        return fig
+    else:
+        fig.savefig(fig_path)
 
 
 def combine_results(ax_results_folder,glch_hv_list):

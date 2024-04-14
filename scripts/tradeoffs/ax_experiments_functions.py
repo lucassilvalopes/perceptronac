@@ -43,7 +43,7 @@ def label_to_params(label):
     return {"D":D,"L":L,"N":N,"M":M}
 
 
-def df_to_trials(df):
+def df_to_trials(df,complexity_axis):
     trials = []
     for r,c in df.iterrows():
         trials.append({
@@ -51,13 +51,13 @@ def df_to_trials(df):
             "output": {
                 "bpp_loss":{"mean":c["bpp_loss"], "sem": 0},
                 "mse_loss":{"mean":c["mse_loss"], "sem": 0},
-                "params":{"mean":c["params"], "sem": 0}
+                complexity_axis:{"mean":c[complexity_axis], "sem": 0}
             }
         })
     return trials
 
 
-def get_glch_hv_list_rdc(search_space,optimization_config,glch_csv_path):
+def get_glch_hv_list_rdc(search_space,optimization_config,glch_csv_path,complexity_axis):
 
     glch_csv = pd.read_csv(glch_csv_path)
     glch_csv[["D","L","N","M"]] = glch_csv["labels"].apply(lambda x: pd.Series(label_to_params(x)))
@@ -69,7 +69,7 @@ def get_glch_hv_list_rdc(search_space,optimization_config,glch_csv_path):
 
         curr_data = glch_csv.iloc[:i+1,:]
 
-        curr_trials = df_to_trials(curr_data)
+        curr_trials = df_to_trials(curr_data,complexity_axis)
         
         curr_hv = get_trials_hv(search_space,optimization_config,curr_trials)
         
@@ -78,11 +78,11 @@ def get_glch_hv_list_rdc(search_space,optimization_config,glch_csv_path):
     return glch_hv_list
 
 
-def ax_rdc_setup(data_csv_path):
+def ax_rdc_setup(data_csv_path,complexity_axis="params"):
 
     data = pd.read_csv(data_csv_path).set_index("labels")
 
-    ref_point = data[["bpp_loss","mse_loss","params"]].max().values * 1.1
+    ref_point = data[["bpp_loss","mse_loss",complexity_axis]].max().values * 1.1
 
     x1 = ChoiceParameter(name="D", values=[3,4], parameter_type=ParameterType.INT, is_ordered=True, sort_values=True)
     x2 = ChoiceParameter(name="L", values=[5e-3, 1e-2, 2e-2], parameter_type=ParameterType.FLOAT, is_ordered=True, sort_values=True)
@@ -109,12 +109,12 @@ def ax_rdc_setup(data_csv_path):
 
     class MetricC(NoisyFunctionMetric):
         def f(self, x: np.ndarray) -> float:
-            return float(data.loc[params_to_label(*x),"params"]) 
+            return float(data.loc[params_to_label(*x),complexity_axis]) 
 
 
     metric_a = MetricA("bpp_loss", ["D", "L", "N", "M"], noise_sd=0.0, lower_is_better=True)
     metric_b = MetricB("mse_loss", ["D", "L", "N", "M"], noise_sd=0.0, lower_is_better=True)
-    metric_c = MetricC("params", ["D", "L", "N", "M"], noise_sd=0.0, lower_is_better=True)
+    metric_c = MetricC(complexity_axis, ["D", "L", "N", "M"], noise_sd=0.0, lower_is_better=True)
 
     mo = MultiObjective(
         objectives=[Objective(metric=metric_a), Objective(metric=metric_b), Objective(metric=metric_c)],
@@ -130,7 +130,7 @@ def ax_rdc_setup(data_csv_path):
         objective_thresholds=objective_thresholds,
     )
 
-    max_hv_trials = df_to_trials(data)
+    max_hv_trials = df_to_trials(data,complexity_axis)
 
     max_hv = get_trials_hv(search_space,optimization_config,max_hv_trials)
 
