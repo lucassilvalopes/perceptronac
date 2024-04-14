@@ -1,4 +1,5 @@
 
+import os
 import torch
 import random
 import pandas as pd
@@ -239,3 +240,18 @@ def plot_mohpo_methods(methods_df):
     (max_hv - methods_df[["sobol_hv_list","parego_hv_list","ehvi_hv_list","glch_hv_list"]]).map(np.log10).plot()
 
 
+def combine_results(ax_results_folder,glch_hv_list):
+
+    dfs = []
+    for f in os.listdir(ax_results_folder):
+        dfs.append( pd.read_csv(os.path.join(ax_results_folder,f)) )
+
+    avg_df = dfs[0]
+    for df in dfs[1:]:
+        avg_df += df
+
+    avg_df /= len(dfs)
+
+    avg_df["glch_hv_list"] = np.array(glch_hv_list)
+
+    return avg_df
