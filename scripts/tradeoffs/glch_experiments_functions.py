@@ -72,7 +72,8 @@ def save_glch_data(
     if algo == "glch":
         r,tree_str = build_glch_tree(
             data,possible_values,axes[0],axes[1],initial_values,to_str_method,constrained,start,
-            scale_x=axes_scales[0],scale_y=axes_scales[1],debug=debug,title=title,debug_folder=debug_folder)
+            scale_x=axes_scales[0],scale_y=axes_scales[1],debug=debug,title=title,debug_folder=debug_folder,
+            select_function=select_function)
         save_tree_data(data,r,axes[0],axes[1],axes_ranges[0],axes_ranges[1],title,
             x_in_log_scale=x_in_log_scale,x_alias=axes_aliases[0],y_alias=axes_aliases[1],fldr=fldr,tree_str=tree_str)
         save_hull_data(data,r,axes[0],axes[1],axes_ranges[0],axes_ranges[1],title,
