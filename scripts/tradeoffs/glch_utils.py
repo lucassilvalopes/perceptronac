@@ -421,63 +421,6 @@ def get_x_range_y_range(data,x_axis,y_axis):
     return x_range,y_range
 
 
-def save_trees_data(data,rs,ls,x_axis,y_axis,x_range,y_range,exp_id,fldr="glch_results",tree_strs=None):
-
-    tree_file = open(f'{fldr}/tree_{exp_id}.txt', 'w')
-
-    tree_fig, ax = plt.subplots(nrows=1, ncols=len(rs))
-
-    if (x_range is None) and (y_range is None):
-        x_range,y_range = get_x_range_y_range(data,x_axis,y_axis)
-
-    for i,r,L in zip(range(len(rs)),rs,ls):
-
-        current_data = data.iloc[[i for i,lbl in enumerate(data.index) if f"L{L}" in lbl],:]
-
-        if isinstance(tree_strs,list) and (len(tree_strs) == len(rs)) and all(tree_strs):
-            print(f"{tree_strs[i]}\n",file=tree_file)
-        else:
-            print_tree(r,file=tree_file)
-
-        paint_root(data,r,x_axis,y_axis,tree_fig.axes[i])
-        # paint_cloud(data,x_axis,y_axis,tree_fig.axes[i],".")
-        paint_cloud(current_data,x_axis,y_axis,tree_fig.axes[i],".")
-        paint_tree(tree_fig.axes[i],data,r,x_axis,y_axis,x_range,y_range)
-        adjust_axes(x_axis,y_axis,x_range,y_range,tree_fig.axes[i])
-
-        if i != 0:
-            tree_fig.axes[i].set_yticks([])
-            tree_fig.axes[i].set_ylabel('')
-    
-    n_visited_networks,n_trained_networks = get_n_trained_networks(rs)
-
-    print(f"number of visited networks : {n_visited_networks}",file=tree_file)
-    print(f"number of trained networks : {n_trained_networks}",file=tree_file)
-    tree_file.close()
-
-    for i in range(len(rs)):
-        # paint_hull_points(true_hull_points,x_axis,y_axis,tree_fig.axes[i])
-        paint_tree_nodes(data,rs[i],x_axis,y_axis,tree_fig.axes[i])
-
-    tree_fig.savefig(f"{fldr}/tree_fig_{exp_id}.png", dpi=300, facecolor='w', bbox_inches = "tight")
-
-
-def save_hulls_data(data,rs,ls,x_axis,y_axis,x_range,y_range,exp_id,fldr="glch_results"):
-    
-    # true_hull_points,estimated_hull_points = compute_hulls(data,rs,x_axis,y_axis)
-
-    hulls_fig, ax = plt.subplots(nrows=1, ncols=1)
-    paint_cloud(data,x_axis,y_axis,ax,"x")
-    # paint_hulls(true_hull_points,estimated_hull_points,x_axis,y_axis,ax)
-    # paint_hull(true_hull_points,estimated_hull_points,x_axis,y_axis,ax)
-    for i in range(len(rs)):
-        paint_hull_nodes(data,rs[i],x_axis,y_axis,ax)
-    adjust_axes(x_axis,y_axis,None,None,ax)
-    hulls_fig.savefig(f"{fldr}/hulls_fig_{exp_id}.png", dpi=300, facecolor='w', bbox_inches = "tight")
-
-    save_hull_points(data,rs,x_axis,y_axis,f"{fldr}/hulls_{exp_id}")
-
-
 def get_optimal_point_info(data,axes,weights):
     ix = np.argmin([sum([c*w for c,w in zip(xyzetc,weights)]) for xyzetc in data.loc[:,axes].values.tolist()])
     info = data.iloc[[ix],:].reset_index().loc[:,["labels"]+axes]
@@ -586,3 +529,34 @@ def save_optimal_point(data,r,axes,weights,tree_str,exp_id,fldr="gho_results"):
     df = pd.DataFrame({"n_trials":n_trained_networks_history,"loss":loss_history})
 
     df.to_csv(f'{fldr}/optimal_point_{exp_id}.csv')
+
+
+def save_threed_history(data,tree_strs,exp_id,fldr="glch_results"):
+
+    histories = []
+    for tree_str in tree_strs:
+        histories.append(get_trained_networks_history(data,tree_str))
+    
+    df = pd.concat(histories,axis=0).sort_values(by=['iteration'])
+
+    df.to_csv(f'{fldr}/threed_history_{exp_id}.csv')
+
+
+def save_threed_hull_data(data,rs,axes,complexity_axis,exp_id,fldr="glch_results"):
+
+    estimated_hulls = []
+    for r in rs:
+        _,estimated_hull_points = compute_hulls(data,[r],complexity_axis,"loss")
+        estimated_hulls.append(estimated_hull_points)
+    
+    combined_estimated_hull = pd.concat(estimated_hulls,axis=0)
+
+    with open(f'{fldr}/threed_hull_{exp_id}.txt', 'w') as f:
+        print("\nestimated_hull_points:\n",file=f)
+        print(combined_estimated_hull[axes],file=f)
+
+    cloud = data.loc[:,axes].values.tolist()
+
+    combined_estimated_hull_cloud = combined_estimated_hull.loc[:,axes].values.tolist()
+
+    plot_3d_lch([cloud,combined_estimated_hull_cloud],["b","g"],['o','s'],[0.05,1],title=f'{fldr}/threed_hull_fig_{exp_id}')

@@ -5,7 +5,7 @@ from perceptronac.power_consumption import estimate_joules, get_n_pixels
 from perceptronac.power_consumption import group_energy_measurements
 from glch import GLCHGiftWrapping,GLCHGiftWrappingTieBreak,GLCHAngleRule,GHO2D,GHO
 from decimal import Decimal
-from glch_utils import save_tree_data, save_hull_data, save_trees_data, save_hulls_data, save_optimal_point
+from glch_utils import save_tree_data, save_hull_data, save_threed_history, save_threed_hull_data, save_optimal_point
 from glch_utils import compute_hulls, get_trained_networks_history
 from bo_utils import plot_3d_lch
 
@@ -70,6 +70,8 @@ def save_glch_data(
     x_in_log_scale,axes_ranges,axes_aliases,fldr):
 
     if algo == "glch":
+        title = f"{select_function}_{title}"
+
         r,tree_str = build_glch_tree(
             data,possible_values,axes[0],axes[1],initial_values,to_str_method,constrained,start,
             scale_x=axes_scales[0],scale_y=axes_scales[1],debug=debug,title=title,debug_folder=debug_folder,
@@ -359,7 +361,8 @@ def glch3d_rdc(
     lambdas=["5e-3", "1e-2", "2e-2"],
     fldr="glch_results",
     debug_folder="debug",
-    debug=True
+    debug=True,
+    select_function="corrected_angle_rule"
 ):
 
     rs = []
@@ -377,41 +380,22 @@ def glch3d_rdc(
             axes_aliases=None,
             fldr=fldr,
             debug_folder=debug_folder,
-            debug=debug
+            debug=debug,
+            select_function=select_function
         )
         tree_strs.append(tree_str)
         rs.append(r)
 
     data = pd.read_csv(csv_path)
     data = data.set_index("labels")
-    estimated_hulls = []
-    for r in rs:
-        _,estimated_hull_points = compute_hulls(data,[r],complexity_axis,"loss")
-        estimated_hulls.append(estimated_hull_points)
-    
-    combined_estimated_hull = pd.concat(estimated_hulls,axis=0)
 
     axes = ["bpp_loss","mse_loss",complexity_axis]
 
-    exp_id = f'{"_vs_".join(axes)}_start_{start}'
+    exp_id = f'{select_function}_{"_vs_".join(axes)}_start_{start}'
 
-    with open(f'{fldr}/threed_hull_{exp_id}.txt', 'w') as f:
-        print("\nestimated_hull_points:\n",file=f)
-        print(combined_estimated_hull[axes],file=f)
+    save_threed_hull_data(data,rs,axes,complexity_axis,exp_id,fldr=fldr)
+
+    save_threed_history(data,tree_strs,exp_id,fldr=fldr)
 
 
-    cloud = data.loc[:,axes].values.tolist()
 
-    combined_estimated_hull_cloud = combined_estimated_hull.loc[:,axes].values.tolist()
-
-    plot_3d_lch([cloud,combined_estimated_hull_cloud],["b","g"],['o','s'],[0.05,1],title=f'{fldr}/threed_hull_fig_{exp_id}')
-
-    # history
-
-    histories = []
-    for tree_str in tree_strs:
-        histories.append(get_trained_networks_history(data,tree_str))
-    
-    df = pd.concat(histories,axis=0).sort_values(by=['iteration'])
-
-    df.to_csv(f'{fldr}/threed_hull_{exp_id}.csv')
