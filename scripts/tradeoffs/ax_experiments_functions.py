@@ -20,7 +20,16 @@ from ax_experiments_functions import ax_rdc_setup, get_glch_hv_list_rdc
 from ax_utils import get_trials_hv
 
 
-def label_to_params(label):
+
+def rdc_params_to_label(D,L,N,M):
+    D = str(int(D))
+    L = "5e-3" if L == 5e-3 else ("1e-2" if L == 1e-2 else "2e-2")
+    N = str(int(N))
+    M = str(int(M))
+    return f"D{D}L{L}N{N}M{M}"
+
+
+def rdc_label_to_params(label):
     splitm = label.split("M")
     M = int(splitm[1])
     splitn = splitm[0].split("N")
@@ -32,11 +41,11 @@ def label_to_params(label):
     return {"D":D,"L":L,"N":N,"M":M}
 
 
-def df_to_trials(df,complexity_axis):
+def rdc_df_to_trials(df,complexity_axis):
     trials = []
     for r,c in df.iterrows():
         trials.append({
-            "input":label_to_params(r),
+            "input":rdc_label_to_params(r),
             "output": {
                 "bpp_loss":{"mean":c["bpp_loss"], "sem": 0},
                 "mse_loss":{"mean":c["mse_loss"], "sem": 0},
@@ -49,7 +58,7 @@ def df_to_trials(df,complexity_axis):
 def get_glch_hv_list_rdc(search_space,optimization_config,glch_csv_path,complexity_axis):
 
     glch_csv = pd.read_csv(glch_csv_path)
-    glch_csv[["D","L","N","M"]] = glch_csv["labels"].apply(lambda x: pd.Series(label_to_params(x)))
+    glch_csv[["D","L","N","M"]] = glch_csv["labels"].apply(lambda x: pd.Series(rdc_label_to_params(x)))
     glch_csv = glch_csv.sort_values(by=['iteration', 'D','N','M','L']).set_index("labels")
 
     glch_hv_list = []
@@ -58,7 +67,7 @@ def get_glch_hv_list_rdc(search_space,optimization_config,glch_csv_path,complexi
 
         curr_data = glch_csv.iloc[:i+1,:]
 
-        curr_trials = df_to_trials(curr_data,complexity_axis)
+        curr_trials = rdc_df_to_trials(curr_data,complexity_axis)
         
         curr_hv = get_trials_hv(search_space,optimization_config,curr_trials)
         
@@ -81,24 +90,18 @@ def ax_rdc_setup(data_csv_path,complexity_axis="params"):
 
     search_space = SearchSpace(parameters=[x1, x2, x3, x4])
 
-    def params_to_label(D,L,N,M):
-        D = str(int(D))
-        L = "5e-3" if L == 5e-3 else ("1e-2" if L == 1e-2 else "2e-2")
-        N = str(int(N))
-        M = str(int(M))
-        return f"D{D}L{L}N{N}M{M}"
 
     class MetricA(NoisyFunctionMetric):
         def f(self, x: np.ndarray) -> float:
-            return float(data.loc[params_to_label(*x),"bpp_loss"])
+            return float(data.loc[rdc_params_to_label(*x),"bpp_loss"])
 
     class MetricB(NoisyFunctionMetric):
         def f(self, x: np.ndarray) -> float:
-            return float(data.loc[params_to_label(*x),"mse_loss"])
+            return float(data.loc[rdc_params_to_label(*x),"mse_loss"])
 
     class MetricC(NoisyFunctionMetric):
         def f(self, x: np.ndarray) -> float:
-            return float(data.loc[params_to_label(*x),complexity_axis]) 
+            return float(data.loc[rdc_params_to_label(*x),complexity_axis]) 
 
 
     metric_a = MetricA("bpp_loss", ["D", "L", "N", "M"], noise_sd=0.0, lower_is_better=True)
@@ -119,7 +122,7 @@ def ax_rdc_setup(data_csv_path,complexity_axis="params"):
         objective_thresholds=objective_thresholds,
     )
 
-    max_hv_trials = df_to_trials(data,complexity_axis)
+    max_hv_trials = rdc_df_to_trials(data,complexity_axis)
 
     max_hv = get_trials_hv(search_space,optimization_config,max_hv_trials)
 
