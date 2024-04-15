@@ -7,6 +7,7 @@ import pandas as pd
 from perceptronac.convex_hull import convex_hull
 from sklearn.preprocessing import MinMaxScaler
 from line_clipping import cohenSutherlandClip
+from bo_utils import plot_3d_lch
 
 
 matplotlib.use("pgf")
@@ -529,6 +530,14 @@ def save_optimal_point(data,r,axes,weights,tree_str,exp_id,fldr="gho_results"):
     df = pd.DataFrame({"n_trials":n_trained_networks_history,"loss":loss_history})
 
     df.to_csv(f'{fldr}/optimal_point_{exp_id}.csv')
+
+
+
+def save_history(data,tree_str,exp_id,fldr="glch_results"):
+
+    df = get_trained_networks_history(data,tree_str)
+
+    df.to_csv(f'{fldr}/history_{exp_id}.csv')
 
 
 def save_threed_history(data,tree_strs,exp_id,fldr="glch_results"):
