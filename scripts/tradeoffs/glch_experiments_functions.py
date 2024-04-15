@@ -12,9 +12,9 @@ from glch_utils import save_history
 
 def build_glch_tree(
     data,possible_values,x_axis,y_axis,initial_values,to_str_method,constrained,start,scale_x,scale_y,
-    debug=True,title=None,debug_folder="debug",select_function="corrected_angle_rule"
+    debug=True,title=None,debug_folder="debug",select_function="angle_rule"
 ):
-    if select_function == "gift_wrapping_tie_break":
+    if select_function == "tie_break":
         glch_alg = GLCHGiftWrappingTieBreak(
             data,possible_values,[x_axis,y_axis],initial_values,to_str_method,constrained,[scale_x,scale_y],
             debug,title,debug_folder
@@ -28,7 +28,7 @@ def build_glch_tree(
         )
         r = glch_alg.build_tree()
         return r, glch_alg.get_tree_str()
-    elif select_function == "corrected_angle_rule":
+    elif select_function == "angle_rule":
         glch_alg = GLCHAngleRule(
             data,possible_values,[x_axis,y_axis],initial_values,to_str_method,constrained,start,
             debug,title,debug_folder
@@ -69,7 +69,7 @@ def save_glch_data(
     x_in_log_scale,axes_ranges,axes_aliases,fldr):
 
     if algo == "glch":
-        title = f"{title}_glch2D_{select_function}"
+        title = f"glch2D_{select_function}_{'constrained' if constrained else 'unconstrained'}_{title}"
 
         r,tree_str = build_glch_tree(
             data,possible_values,axes[0],axes[1],initial_values,to_str_method,constrained,start,
@@ -81,7 +81,7 @@ def save_glch_data(
             x_in_log_scale=x_in_log_scale,x_alias=axes_aliases[0],y_alias=axes_aliases[1],fldr=fldr)
         save_history(data,tree_str,title,fldr=fldr)
     elif algo == "gho":
-        title = f"{title}_glch1D_weights_{'_'.join(['{:.0e}'.format(w) for w in weights])}"
+        title = f"glch1D_weights_{'_'.join(['{:.0e}'.format(w) for w in weights])}_{title}"
 
         if len(axes)==2:
             r,tree_str = build_gho_tree(data,possible_values,axes,initial_values,to_str_method,constrained,weights,
@@ -183,7 +183,7 @@ def glch_rate_vs_energy(
         fldr="glch_results",
         debug_folder="debug",
         debug=True,
-        select_function="corrected_angle_rule"
+        select_function="angle_rule"
     ):
 
     data = get_energy_data(csv_path,remove_noise)
@@ -235,7 +235,7 @@ def glch_model_bits_vs_data_bits(
         fldr="glch_results",
         debug_folder="debug",
         debug=True,
-        select_function="corrected_angle_rule"
+        select_function="angle_rule"
     ):
 
     data = pd.read_csv(csv_path)
@@ -294,7 +294,7 @@ def glch_rate_vs_dist(
         fldr="glch_results",
         debug_folder="debug",
         debug=True,
-        select_function="corrected_angle_rule"
+        select_function="angle_rule"
     ):
 
     data = pd.read_csv(csv_path)
@@ -367,7 +367,7 @@ def glch3d_rdc(
     fldr="glch_results",
     debug_folder="debug",
     debug=True,
-    select_function="corrected_angle_rule"
+    select_function="angle_rule"
 ):
 
     rs = []
@@ -396,9 +396,9 @@ def glch3d_rdc(
 
     axes = ["bpp_loss","mse_loss",complexity_axis]
 
-    exp_id = f'{"_vs_".join(axes)}_start_{start}_glch3D_{select_function}'
+    exp_id = f'glch3D_{select_function}_{"constrained" if constrained else "unconstrained"}_{"_vs_".join(axes)}_start_{start}'
 
-    save_threed_hull_data(data,rs,axes,complexity_axis,exp_id,fldr=fldr)
+    # save_threed_hull_data(data,rs,axes,complexity_axis,exp_id,fldr=fldr)
 
     save_threed_history(data,tree_strs,exp_id,fldr=fldr)
 

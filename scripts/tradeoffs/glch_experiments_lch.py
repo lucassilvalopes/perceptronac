@@ -22,37 +22,33 @@ if __name__ == "__main__":
     os.mkdir(debug_folder)
 
     for select_function,constrained in [
-        ("gift_wrapping_tie_break",True),
+        ("tie_break",True),
         ("gift_wrapping",True),
         ("gift_wrapping",False),
-        ("corrected_angle_rule",True),
-        ("corrected_angle_rule",False)
+        ("angle_rule",True),
+        ("angle_rule",False)
     ]:
 
-        glch_rate_vs_energy(
-            "/home/lucas/Documents/perceptronac/results/exp_1676160746/exp_1676160746_raw_values.csv",
-            "micro_joules_per_pixel",
-            "data_bits/data_samples",
-            "rate_vs_energy",
-            # x_range=[135,175],
-            # y_range=[0.115,0.145],
-            x_alias="Complexity ($\SI{}{\mu\joule}$ per pixel)",
-            y_alias="Rate (bits per pixel)",
-            algo="glch",
-            constrained=constrained,
-            fldr=results_folder,
-            debug_folder=debug_folder,
-            debug=False,
-            select_function=select_function
-        )
+        # glch_rate_vs_energy(
+        #     "/home/lucas/Documents/perceptronac/results/exp_1676160746/exp_1676160746_raw_values.csv",
+        #     "micro_joules_per_pixel",
+        #     "data_bits/data_samples",
+        #     "rate_vs_energy",
+        #     x_alias="Complexity ($\SI{}{\mu\joule}$ per pixel)",
+        #     y_alias="Rate (bits per pixel)",
+        #     algo="glch",
+        #     constrained=constrained,
+        #     fldr=results_folder,
+        #     debug_folder=debug_folder,
+        #     debug=False,
+        #     select_function=select_function
+        # )
 
         glch_rate_vs_energy(
             "/home/lucas/Documents/perceptronac/results/exp_1676160746/exp_1676160746_raw_values.csv",
             "micro_joules_per_pixel",
             "data_bits/data_samples",
             "rate_vs_energy_noisy",
-            # x_range=[140,180],
-            # y_range=None,
             remove_noise=False,
             x_alias="Complexity ($\SI{}{\mu\joule}$ per pixel)",
             y_alias="Rate (bits per pixel)",
@@ -68,8 +64,6 @@ if __name__ == "__main__":
             "/home/lucas/Documents/perceptronac/results/exp_1676160746/exp_1676160746_raw_values.csv",
             "params","data_bits/data_samples",
             "rate_vs_params",
-            # x_range=None,
-            # y_range=None,
             x_in_log_scale=True,
             x_alias="Complexity (multiply/adds per pixel)",
             y_alias="Rate (bits per pixel)",
@@ -90,8 +84,6 @@ if __name__ == "__main__":
             "/home/lucas/Documents/perceptronac/results/exp_1676160746/exp_1676160746_raw_values.csv",
             "time","data_bits/data_samples",
             "rate_vs_time",
-            # x_range=None,
-            # y_range=None,
             remove_noise=False,
             x_in_log_scale=False,
             x_alias="Complexity (seconds)",
@@ -104,17 +96,16 @@ if __name__ == "__main__":
             select_function=select_function
         )
 
-        glch_rate_vs_dist(
-            "/home/lucas/Documents/perceptronac/scripts/tradeoffs/bpp-mse-psnr-loss-flops-params_bmshj2018-factorized_10000-epochs_D-3-4_L-2e-2-1e-2-5e-3_N-32-64-96-128-160-192-224_M-32-64-96-128-160-192-224-256-288-320.csv",
-            ["bpp_loss","mse_loss"],
-            # axes_ranges=[[0.1,1.75],[0.001,0.0045]],
-            algo="glch",
-            constrained=constrained,
-            fldr=results_folder,
-            debug_folder=debug_folder,
-            debug=False,
-            select_function=select_function
-        )
+        # glch_rate_vs_dist(
+        #     "/home/lucas/Documents/perceptronac/scripts/tradeoffs/bpp-mse-psnr-loss-flops-params_bmshj2018-factorized_10000-epochs_D-3-4_L-2e-2-1e-2-5e-3_N-32-64-96-128-160-192-224_M-32-64-96-128-160-192-224-256-288-320.csv",
+        #     ["bpp_loss","mse_loss"],
+        #     algo="glch",
+        #     constrained=constrained,
+        #     fldr=results_folder,
+        #     debug_folder=debug_folder,
+        #     debug=False,
+        #     select_function=select_function
+        # )
 
 
 
@@ -145,8 +136,6 @@ if __name__ == "__main__":
         glch_model_bits_vs_data_bits(
             "/home/lucas/Documents/perceptronac/results/exp_1676160183/exp_1676160183_model_bits_x_data_bits_values.csv",
             "model_bits","data_bits/data_samples",
-            # x_range=[-0.1,0.8],
-            # y_range=None,
             x_in_log_scale=True,
             x_alias="Complexity (encoded model bits)",
             y_alias="Rate (bits per pixel)",
