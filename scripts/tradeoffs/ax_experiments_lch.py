@@ -18,7 +18,7 @@ if __name__ == "__main__":
             "c_gift_wrapping": "/home/lucas/Documents/perceptronac/scripts/tradeoffs/glch_results/glch3D_gift_wrapping_constrained_bpp_loss_vs_mse_loss_vs_params_start_left_threed_history.csv",
             "u_gift_wrapping": "/home/lucas/Documents/perceptronac/scripts/tradeoffs/glch_results/glch3D_gift_wrapping_unconstrained_bpp_loss_vs_mse_loss_vs_params_start_left_threed_history.csv",
             "c_tie_break": "/home/lucas/Documents/perceptronac/scripts/tradeoffs/glch_results/glch3D_tie_break_constrained_bpp_loss_vs_mse_loss_vs_params_start_left_threed_history.csv"
-        }
+        },
         results_folder=results_folder,
         n_seeds = 1,
         seeds_range = [1234,1235]
