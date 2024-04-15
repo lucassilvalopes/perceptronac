@@ -69,7 +69,7 @@ def save_glch_data(
     x_in_log_scale,axes_ranges,axes_aliases,fldr):
 
     if algo == "glch":
-        title = f"{title}_{select_function}"
+        title = f"{title}_glch2D_{select_function}"
 
         r,tree_str = build_glch_tree(
             data,possible_values,axes[0],axes[1],initial_values,to_str_method,constrained,start,
@@ -81,7 +81,7 @@ def save_glch_data(
             x_in_log_scale=x_in_log_scale,x_alias=axes_aliases[0],y_alias=axes_aliases[1],fldr=fldr)
         save_history(data,tree_str,title,fldr=fldr)
     elif algo == "gho":
-        title = f"{title}_weights_{'_'.join(['{:.0e}'.format(w) for w in weights])}"
+        title = f"{title}_glch1D_weights_{'_'.join(['{:.0e}'.format(w) for w in weights])}"
 
         if len(axes)==2:
             r,tree_str = build_gho_tree(data,possible_values,axes,initial_values,to_str_method,constrained,weights,
@@ -333,9 +333,10 @@ def glch_rate_vs_dist(
     def to_str_method(params):
         return f"D{params['D']}L{params['L']}N{params['N']}M{params['M']}"
     
-    formatted_lambdas = "" if len(lambdas)==0 else "_" + "-".join([lambdas[i] for i in np.argsort(list(map(float,lambdas)))])
+    formatted_lambdas = \
+        "" if len(lambdas)==0 else "lambdas_" + "-".join([lambdas[i] for i in np.argsort(list(map(float,lambdas)))])+"_"
 
-    exp_id = f'{"_vs_".join(axes)}_start_{start}{formatted_lambdas}'
+    exp_id = f'{formatted_lambdas}{"_vs_".join(axes)}_start_{start}'
 
     if weights is None:
         weights = [1 for _ in range(len(axes))]
@@ -395,7 +396,7 @@ def glch3d_rdc(
 
     axes = ["bpp_loss","mse_loss",complexity_axis]
 
-    exp_id = f'{"_vs_".join(axes)}_start_{start}_{select_function}'
+    exp_id = f'{"_vs_".join(axes)}_start_{start}_glch3D_{select_function}'
 
     save_threed_hull_data(data,rs,axes,complexity_axis,exp_id,fldr=fldr)
 
