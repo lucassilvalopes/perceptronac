@@ -101,81 +101,10 @@ def save_glch_data(
     return r,tree_str
 
 
-def fexp(number):
-    (sign, digits, exponent) = Decimal(number).as_tuple()
-    return len(digits) + exponent - 1
-
-
-def fman(number):
-    return Decimal(number).scaleb(-fexp(number)).normalize()
-
-
-def limit_significant_digits(value,last_significant_digit_position):
-    factor = 10**last_significant_digit_position
-    return np.round(value/factor) * factor
-
-
-def limit_energy_significant_digits(data,x_axis):
-    """
-    https://stackoverflow.com/questions/45332056/decompose-a-float-into-mantissa-and-exponent-in-base-10-without-strings
-    """
-
-    mean_col=x_axis
-    std_col=f"{x_axis}_std"
-
-    last_significant_digit_position = fexp(data[std_col].max())
-
-    data[[mean_col,std_col]] = data[[mean_col,std_col]].apply(lambda x: pd.Series({
-        mean_col:limit_significant_digits(x[mean_col],last_significant_digit_position),
-        std_col:limit_significant_digits(x[std_col],last_significant_digit_position)
-        # mean_col:limit_significant_digits(x[mean_col],fexp(x[std_col])),
-        # std_col:limit_significant_digits(x[std_col],fexp(x[std_col]))
-    },index=[mean_col,std_col]), axis=1)
-    return data
-
-
-def get_energy_data(csv_path,remove_noise):
-
-    data = pd.read_csv(csv_path)
-
-    csv_path_2 = csv_path.replace("raw_values","power_draw")
-
-    power_draw = np.loadtxt(csv_path_2)
-
-    power_draw[:,1] = power_draw[:,1] - 16 # np.min(power_draw[:,1])
-
-    joules = estimate_joules(data,power_draw)
-
-    data["joules"] = joules
-
-    data = group_energy_measurements(data).set_index("topology")
-
-    csv_path_3 = csv_path.replace("raw_values","conf")
-
-    n_pixels = get_n_pixels(csv_path_3)
-
-    data["joules_per_pixel"] = data["joules"] / n_pixels
-
-    data["joules_per_pixel_std"] = data["joules_std"] / n_pixels
-
-    data["micro_joules_per_pixel"] = data["joules_per_pixel"] / 1e-6
-
-    data["micro_joules_per_pixel_std"] = data["joules_per_pixel_std"] / 1e-6
-    
-    if remove_noise:
-
-        limit_energy_significant_digits(data,"time")
-        limit_energy_significant_digits(data,"joules")
-        limit_energy_significant_digits(data,"joules_per_pixel")
-        limit_energy_significant_digits(data,"micro_joules_per_pixel")
-
-    return data
-
-
 def glch_rate_vs_energy(
         csv_path,x_axis,y_axis,title,
         x_range=None,y_range=None,
-        x_in_log_scale=False,remove_noise=True,
+        x_in_log_scale=False,
         x_alias=None,y_alias=None,
         algo="glch",
         constrained=True,
@@ -186,7 +115,9 @@ def glch_rate_vs_energy(
         select_function="angle_rule"
     ):
 
-    data = get_energy_data(csv_path,remove_noise)
+    data = pd.read_csv(csv_path)
+
+    data = data.set_index("topology")
 
     scale_x = data.loc[["032_010_010_001","032_640_640_001"],x_axis].max() - data.loc[["032_010_010_001","032_640_640_001"],x_axis].min()
     scale_y = data.loc[["032_010_010_001","032_640_640_001"],y_axis].max() - data.loc[["032_010_010_001","032_640_640_001"],y_axis].min()

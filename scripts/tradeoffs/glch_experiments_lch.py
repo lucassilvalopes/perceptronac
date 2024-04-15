@@ -30,7 +30,7 @@ if __name__ == "__main__":
     ]:
 
         # glch_rate_vs_energy(
-        #     "/home/lucas/Documents/perceptronac/results/exp_1676160746/exp_1676160746_raw_values.csv",
+        #     "/home/lucas/Documents/perceptronac/scripts/tradeoffs/rate-joules-time-params_hx-10-20-40-80-160-320-640.csv",
         #     "micro_joules_per_pixel",
         #     "data_bits/data_samples",
         #     "rate_vs_energy",
@@ -45,11 +45,10 @@ if __name__ == "__main__":
         # )
 
         glch_rate_vs_energy(
-            "/home/lucas/Documents/perceptronac/results/exp_1676160746/exp_1676160746_raw_values.csv",
+            "/home/lucas/Documents/perceptronac/scripts/tradeoffs/rate-noisy-joules-time-params_hx-10-20-40-80-160-320-640.csv",
             "micro_joules_per_pixel",
             "data_bits/data_samples",
             "rate_vs_energy_noisy",
-            remove_noise=False,
             x_alias="Complexity ($\SI{}{\mu\joule}$ per pixel)",
             y_alias="Rate (bits per pixel)",
             algo="glch",
@@ -61,7 +60,7 @@ if __name__ == "__main__":
         )
 
         glch_rate_vs_params(
-            "/home/lucas/Documents/perceptronac/results/exp_1676160746/exp_1676160746_raw_values.csv",
+            "/home/lucas/Documents/perceptronac/scripts/tradeoffs/rate-noisy-joules-time-params_hx-10-20-40-80-160-320-640.csv",
             "params","data_bits/data_samples",
             "rate_vs_params",
             x_in_log_scale=True,
@@ -81,10 +80,9 @@ if __name__ == "__main__":
         # # I could try to restrict the time measurements a bit more.
         # # In other words, the measurements seem a little biased.
         # glch_rate_vs_time(
-        #     "/home/lucas/Documents/perceptronac/results/exp_1676160746/exp_1676160746_raw_values.csv",
+        #     "/home/lucas/Documents/perceptronac/scripts/tradeoffs/rate-noisy-joules-time-params_hx-10-20-40-80-160-320-640.csv",
         #     "time","data_bits/data_samples",
         #     "rate_vs_time",
-        #     remove_noise=False,
         #     x_in_log_scale=False,
         #     x_alias="Complexity (seconds)",
         #     y_alias="Rate (bits per pixel)",
