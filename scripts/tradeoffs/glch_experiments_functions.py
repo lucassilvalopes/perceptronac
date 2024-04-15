@@ -395,7 +395,7 @@ def glch3d_rdc(
 
     axes = ["bpp_loss","mse_loss",complexity_axis]
 
-    exp_id = f'{select_function}_{"_vs_".join(axes)}_start_{start}'
+    exp_id = f'{"_vs_".join(axes)}_start_{start}_{select_function}'
 
     save_threed_hull_data(data,rs,axes,complexity_axis,exp_id,fldr=fldr)
 

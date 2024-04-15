@@ -73,7 +73,7 @@ class Node:
 
 
 def open_debug_txt_file(title,fldr="debug"):
-    txt_file = open(f"{fldr}/transitions_{title}.txt", 'w')
+    txt_file = open(f"{fldr}/{title}_transitions.txt", 'w')
     print(f"src_x,src_y,dst_x,dst_y,taken",file=txt_file)
     return txt_file
 
@@ -381,7 +381,7 @@ def save_tree_data(
 
     n_visited_networks,n_trained_networks = get_n_trained_networks([r])
 
-    with open(f'{fldr}/tree_{data_id}.txt', 'w') as f:
+    with open(f'{fldr}/{data_id}_tree.txt', 'w') as f:
         if tree_str:
             print(tree_str,file=f)
         else:
@@ -396,7 +396,7 @@ def save_tree_data(
     # paint_hull_points(true_hull_points,x_axis,y_axis,ax)
     paint_tree_nodes(data,r,x_axis,y_axis,ax)
     adjust_axes(x_axis,y_axis,x_range,y_range,ax,x_in_log_scale,x_alias,y_alias)
-    tree_fig.savefig(f"{fldr}/tree_fig_{data_id}.png", dpi=300, facecolor='w', bbox_inches = "tight")
+    tree_fig.savefig(f"{fldr}/{data_id}_tree_fig.png", dpi=300, facecolor='w', bbox_inches = "tight")
 
 
 def save_hull_data(data,r,x_axis,y_axis,x_range,y_range,data_id,x_in_log_scale=False,x_alias=None,y_alias=None,fldr="glch_results"):
@@ -409,7 +409,7 @@ def save_hull_data(data,r,x_axis,y_axis,x_range,y_range,data_id,x_in_log_scale=F
     # paint_hull(true_hull_points,estimated_hull_points,x_axis,y_axis,ax)
     paint_hull_nodes(data,r,x_axis,y_axis,ax)
     adjust_axes(x_axis,y_axis,None,None,ax,x_in_log_scale,x_alias,y_alias)
-    hulls_fig.savefig(f"{fldr}/hulls_fig_{data_id}.png", dpi=300, facecolor='w', bbox_inches = "tight")
+    hulls_fig.savefig(f"{fldr}/{data_id}_hulls_fig.png", dpi=300, facecolor='w', bbox_inches = "tight")
 
     save_hull_points(data,[r],x_axis,y_axis,f"{fldr}/hulls_{data_id}")
 
@@ -506,7 +506,7 @@ def save_optimal_point(data,r,axes,weights,tree_str,exp_id,fldr="gho_results"):
 
     # loss_history = [(el - true_best_loss) for el in loss_history]
 
-    with open(f'{fldr}/optimal_point_{exp_id}.txt', 'w') as f:
+    with open(f'{fldr}/{exp_id}_optimal_point.txt', 'w') as f:
 
         print("\nestimated best:\n",file=f)
         print(estimated_best,file=f)
@@ -521,7 +521,7 @@ def save_optimal_point(data,r,axes,weights,tree_str,exp_id,fldr="gho_results"):
 
     df = pd.DataFrame({"n_trials":n_trained_networks_history,"loss":loss_history})
 
-    df.to_csv(f'{fldr}/optimal_point_{exp_id}.csv')
+    df.to_csv(f'{fldr}/{exp_id}_optimal_point.csv')
 
 
 
@@ -529,7 +529,7 @@ def save_history(data,tree_str,exp_id,fldr="glch_results"):
 
     df = get_trained_networks_history(data,tree_str)
 
-    df.to_csv(f'{fldr}/history_{exp_id}.csv')
+    df.to_csv(f'{fldr}/{exp_id}_history.csv')
 
 
 def save_threed_history(data,tree_strs,exp_id,fldr="glch_results"):
@@ -540,7 +540,7 @@ def save_threed_history(data,tree_strs,exp_id,fldr="glch_results"):
     
     df = pd.concat(histories,axis=0).sort_values(by=['iteration'])
 
-    df.to_csv(f'{fldr}/threed_history_{exp_id}.csv')
+    df.to_csv(f'{fldr}/{exp_id}_threed_history.csv')
 
 
 def save_threed_hull_data(data,rs,axes,complexity_axis,exp_id,fldr="glch_results"):
@@ -552,7 +552,7 @@ def save_threed_hull_data(data,rs,axes,complexity_axis,exp_id,fldr="glch_results
     
     combined_estimated_hull = pd.concat(estimated_hulls,axis=0)
 
-    with open(f'{fldr}/threed_hull_{exp_id}.txt', 'w') as f:
+    with open(f'{fldr}/{exp_id}_threed_hull.txt', 'w') as f:
         print("\nestimated_hull_points:\n",file=f)
         print(combined_estimated_hull[axes],file=f)
 
