@@ -40,25 +40,27 @@ def rdc_label_to_params(label):
     return {"D":D,"L":L,"N":N,"M":M}
 
 
-def rdc_df_to_trials(df,complexity_axis):
+
+def df_to_trials(df,label_to_params_func,axes):
     trials = []
     for r,c in df.iterrows():
         trials.append({
-            "input":rdc_label_to_params(r),
-            "output": {
-                "bpp_loss":{"mean":c["bpp_loss"], "sem": 0},
-                "mse_loss":{"mean":c["mse_loss"], "sem": 0},
-                complexity_axis:{"mean":c[complexity_axis], "sem": 0}
-            }
+            "input":label_to_params_func(r),
+            "output": { k:{"mean":c[k], "sem": 0} for k in axes }
         })
     return trials
 
 
-def get_glch_hv_list_rdc(search_space,optimization_config,glch_csv_path,complexity_axis):
+def get_glch_hv_list(
+        search_space,optimization_config,
+        glch_csv_path,label_to_params_func,axes,
+        sort_values_by,labels_col
+        ):
 
-    glch_csv = pd.read_csv(glch_csv_path)
-    glch_csv[["D","L","N","M"]] = glch_csv["labels"].apply(lambda x: pd.Series(rdc_label_to_params(x)))
-    glch_csv = glch_csv.sort_values(by=['iteration', 'D','N','M','L']).set_index("labels")
+    glch_csv = pd.read_csv(glch_csv_path)    
+    glch_csv = pd.concat([glch_csv,glch_csv[labels_col].apply(lambda x: pd.Series(label_to_params_func(x)))],axis=1)
+    
+    glch_csv = glch_csv.sort_values(by=sort_values_by).set_index(labels_col)
 
     glch_hv_list = []
 
@@ -66,7 +68,7 @@ def get_glch_hv_list_rdc(search_space,optimization_config,glch_csv_path,complexi
 
         curr_data = glch_csv.iloc[:i+1,:]
 
-        curr_trials = rdc_df_to_trials(curr_data,complexity_axis)
+        curr_trials = df_to_trials(curr_data,label_to_params_func,axes)
         
         curr_hv = get_trials_hv(search_space,optimization_config,curr_trials)
         
@@ -121,7 +123,7 @@ def ax_rdc_setup(data_csv_path,complexity_axis="params"):
         objective_thresholds=objective_thresholds,
     )
 
-    max_hv_trials = rdc_df_to_trials(data,complexity_axis)
+    max_hv_trials = df_to_trials(data,rdc_label_to_params,["bpp_loss","mse_loss",complexity_axis])
 
     max_hv = get_trials_hv(search_space,optimization_config,max_hv_trials)
 
@@ -140,7 +142,10 @@ def ax_rdc(data_csv_path,complexity_axis,glch_csv_paths,results_folder,n_seeds,s
 
     glch_hv_lists = dict()
     for lbl,glch_csv_path in glch_csv_paths.items():
-        glch_hv_lists[lbl] = get_glch_hv_list_rdc(search_space,optimization_config,glch_csv_path,complexity_axis)
+        glch_hv_lists[lbl] = get_glch_hv_list(
+            search_space,optimization_config,glch_csv_path,rdc_label_to_params,
+            ["bpp_loss","mse_loss",complexity_axis],['iteration', 'D','N','M','L'],"labels"
+            )
     
     n_iters = min([len(glch_hv_list) for glch_hv_list in glch_hv_lists.values()])
 
