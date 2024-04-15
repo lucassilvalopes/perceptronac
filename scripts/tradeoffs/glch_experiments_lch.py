@@ -75,26 +75,26 @@ if __name__ == "__main__":
             select_function=select_function
         )
 
-        # TODO: the time measurements right now are too comprehensive.
-        # They are measuring more than just the network computations.
-        # They are also measuring the time taken to load the data, etc.
-        # I could try to restrict the time measurements a bit more.
-        # In other words, the measurements seem a little biased.
-        glch_rate_vs_time(
-            "/home/lucas/Documents/perceptronac/results/exp_1676160746/exp_1676160746_raw_values.csv",
-            "time","data_bits/data_samples",
-            "rate_vs_time",
-            remove_noise=False,
-            x_in_log_scale=False,
-            x_alias="Complexity (seconds)",
-            y_alias="Rate (bits per pixel)",
-            algo="glch",
-            constrained=constrained,
-            fldr=results_folder,
-            debug_folder=debug_folder,
-            debug=False,
-            select_function=select_function
-        )
+        # # TODO: the time measurements right now are too comprehensive.
+        # # They are measuring more than just the network computations.
+        # # They are also measuring the time taken to load the data, etc.
+        # # I could try to restrict the time measurements a bit more.
+        # # In other words, the measurements seem a little biased.
+        # glch_rate_vs_time(
+        #     "/home/lucas/Documents/perceptronac/results/exp_1676160746/exp_1676160746_raw_values.csv",
+        #     "time","data_bits/data_samples",
+        #     "rate_vs_time",
+        #     remove_noise=False,
+        #     x_in_log_scale=False,
+        #     x_alias="Complexity (seconds)",
+        #     y_alias="Rate (bits per pixel)",
+        #     algo="glch",
+        #     constrained=constrained,
+        #     fldr=results_folder,
+        #     debug_folder=debug_folder,
+        #     debug=False,
+        #     select_function=select_function
+        # )
 
         # glch_rate_vs_dist(
         #     "/home/lucas/Documents/perceptronac/scripts/tradeoffs/bpp-mse-psnr-loss-flops-params_bmshj2018-factorized_10000-epochs_D-3-4_L-2e-2-1e-2-5e-3_N-32-64-96-128-160-192-224_M-32-64-96-128-160-192-224-256-288-320.csv",

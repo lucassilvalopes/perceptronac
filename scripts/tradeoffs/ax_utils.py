@@ -225,19 +225,23 @@ def get_trials_hv(search_space,optimization_config,trials):
     return hv
 
 
-def get_summary_df(iters,init_hv_list,sobol_hv_list,ehvi_hv_list,parego_hv_list,glch_hv_list,max_hv):
+def get_summary_df(iters,init_hv_list,sobol_hv_list,ehvi_hv_list,parego_hv_list,max_hv):
     methods_df = pd.DataFrame({"iters":iters,
     "sobol_hv_list":np.hstack([init_hv_list,sobol_hv_list]),
     "ehvi_hv_list":np.hstack([init_hv_list,ehvi_hv_list]),
-    "parego_hv_list":np.hstack([init_hv_list,parego_hv_list]),
-    "glch_hv_list":glch_hv_list}).set_index("iters")
+    "parego_hv_list":np.hstack([init_hv_list,parego_hv_list])}).set_index("iters")
     methods_df["max_hv"] = max_hv
     return methods_df
 
 
 def plot_mohpo_methods(methods_df,fig_path=None):
     max_hv = methods_df["max_hv"].iloc[0]
-    ax = (max_hv - methods_df[["sobol_hv_list","parego_hv_list","ehvi_hv_list","glch_hv_list"]]).map(np.log10).plot(
+    methods_df = methods_df.drop("max_hv",axis=1)
+
+    if "iters" in methods_df.columns:
+        methods_df = methods_df.set_index("iters")
+    
+    ax = (max_hv - methods_df).map(np.log10).plot(
         xlabel="number of observations", ylabel="Log Hypervolume Difference")
     fig = ax.get_figure()
     if fig_path is None:
@@ -246,11 +250,12 @@ def plot_mohpo_methods(methods_df,fig_path=None):
         fig.savefig(fig_path)
 
 
-def combine_results(ax_results_folder,glch_hv_list):
+def combine_results(ax_results_folder):
 
     dfs = []
     for f in os.listdir(ax_results_folder):
-        dfs.append( pd.read_csv(os.path.join(ax_results_folder,f)) )
+        if f.endswith(".csv"):
+            dfs.append( pd.read_csv(os.path.join(ax_results_folder,f)) )
 
     avg_df = dfs[0]
     for df in dfs[1:]:
@@ -258,6 +263,6 @@ def combine_results(ax_results_folder,glch_hv_list):
 
     avg_df /= len(dfs)
 
-    avg_df["glch_hv_list"] = np.array(glch_hv_list)
+    avg_df = avg_df.drop("glch_hv_list",axis=1,errors="ignore")
 
     return avg_df
