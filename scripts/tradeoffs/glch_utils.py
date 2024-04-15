@@ -414,14 +414,6 @@ def save_hull_data(data,r,x_axis,y_axis,x_range,y_range,data_id,x_in_log_scale=F
     save_hull_points(data,[r],x_axis,y_axis,f"{fldr}/hulls_{data_id}")
 
 
-def get_x_range_y_range(data,x_axis,y_axis):
-
-    tmp_fig, tmp_ax = plt.subplots(nrows=1, ncols=1)
-    paint_cloud(data,x_axis,y_axis,tmp_ax,".")
-    x_range,y_range = tmp_ax.get_xlim(),tmp_ax.get_ylim()
-    return x_range,y_range
-
-
 def get_optimal_point_info(data,axes,weights):
     ix = np.argmin([sum([c*w for c,w in zip(xyzetc,weights)]) for xyzetc in data.loc[:,axes].values.tolist()])
     info = data.iloc[[ix],:].reset_index().loc[:,["labels"]+axes]

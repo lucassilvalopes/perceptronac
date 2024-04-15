@@ -69,7 +69,7 @@ def save_glch_data(
     x_in_log_scale,axes_ranges,axes_aliases,fldr):
 
     if algo == "glch":
-        title = f"{select_function}_{title}"
+        title = f"{title}_{select_function}"
 
         r,tree_str = build_glch_tree(
             data,possible_values,axes[0],axes[1],initial_values,to_str_method,constrained,start,
@@ -81,16 +81,20 @@ def save_glch_data(
             x_in_log_scale=x_in_log_scale,x_alias=axes_aliases[0],y_alias=axes_aliases[1],fldr=fldr)
         save_history(data,tree_str,title,fldr=fldr)
     elif algo == "gho":
+        title = f"{title}_weights_{'_'.join(['{:.0e}'.format(w) for w in weights])}"
+
         if len(axes)==2:
             r,tree_str = build_gho_tree(data,possible_values,axes,initial_values,to_str_method,constrained,weights,
                 debug=debug,title=title,debug_folder=debug_folder,version="2D")
             save_tree_data(data,r,axes[0],axes[1],axes_ranges[0],axes_ranges[1],title,
                 x_in_log_scale=x_in_log_scale,x_alias=axes_aliases[0],y_alias=axes_aliases[1],fldr=fldr,tree_str=tree_str)
             # save_optimal_point(data,r,axes,weights,tree_str,title,fldr=fldr)
+            save_history(data,tree_str,title,fldr=fldr)
         else:
             r,tree_str = build_gho_tree(data,possible_values,axes,initial_values,to_str_method,constrained,weights,
                 debug=debug,title=title,debug_folder=debug_folder,version="multidimensional")
             # save_optimal_point(data,r,axes,weights,tree_str,title,fldr=fldr)
+            save_history(data,tree_str,title,fldr=fldr)
     else:
         ValueError(algo)
 
