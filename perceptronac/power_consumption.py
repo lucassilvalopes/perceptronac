@@ -166,6 +166,20 @@ def get_energy_data(csv_path,remove_noise):
     return data
 
 
+def get_quantization_data(csv_path):
+
+    data = pd.read_csv(csv_path)
+
+    data["model_bits"] = data["model_bits/data_samples"] * data["data_samples"]
+
+    data['idx'] = data.apply(lambda x: f"{x.topology}_{x.quantization_bits:02d}b", axis=1)
+
+    data = data.set_index("idx")
+
+    return data
+
+
+
 if __name__ == "__main__":
 
     get_energy_data(
@@ -174,5 +188,8 @@ if __name__ == "__main__":
         "/home/lucas/Documents/perceptronac/scripts/tradeoffs/rate-noisy-joules-time-params_hx-10-20-40-80-160-320-640.csv"
     )
 
-
-    
+    get_quantization_data(
+        "/home/lucas/Documents/perceptronac/results/exp_1676160183/exp_1676160183_model_bits_x_data_bits_values.csv"
+    ).to_csv(
+        "/home/lucas/Documents/perceptronac/scripts/tradeoffs/rate-model-bits_hx-10-20-40-80-160-320-640_b-8-16-32.csv"
+    )

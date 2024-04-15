@@ -155,21 +155,6 @@ def glch_rate_vs_params(*args,**kwargs):
     glch_rate_vs_energy(*args,**kwargs)
 
 
-
-def get_quantization_data(csv_path):
-
-    data = pd.read_csv(csv_path)
-
-    data["model_bits"] = data["model_bits/data_samples"] * data["data_samples"]
-
-    data['idx'] = data.apply(lambda x: f"{x.topology}_{x.quantization_bits:02d}b", axis=1)
-
-    data = data.set_index("idx")
-
-    return data
-
-
-
 def glch_model_bits_vs_data_bits(
         csv_path,x_axis,y_axis,
         x_range=None,y_range=None,
@@ -184,7 +169,9 @@ def glch_model_bits_vs_data_bits(
         select_function="angle_rule"
     ):
 
-    data = get_quantization_data(csv_path)
+    data = pd.read_csv(csv_path)
+
+    data = data.set_index("idx")
 
     scale_x = data.loc[["032_010_010_001_08b","032_640_640_001_32b"],x_axis].max() - data.loc[["032_010_010_001_08b","032_640_640_001_32b"],x_axis].min()
     scale_y = data.loc[["032_010_010_001_08b","032_640_640_001_32b"],y_axis].max() - data.loc[["032_010_010_001_08b","032_640_640_001_32b"],y_axis].min()

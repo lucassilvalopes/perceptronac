@@ -132,7 +132,7 @@ if __name__ == "__main__":
         )
 
         glch_model_bits_vs_data_bits(
-            "/home/lucas/Documents/perceptronac/results/exp_1676160183/exp_1676160183_model_bits_x_data_bits_values.csv",
+            "/home/lucas/Documents/perceptronac/scripts/tradeoffs/rate-model-bits_hx-10-20-40-80-160-320-640_b-8-16-32.csv",
             "model_bits","data_bits/data_samples",
             x_in_log_scale=True,
             x_alias="Complexity (encoded model bits)",
