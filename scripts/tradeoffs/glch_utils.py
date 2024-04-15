@@ -411,7 +411,7 @@ def save_hull_data(data,r,x_axis,y_axis,x_range,y_range,data_id,x_in_log_scale=F
     adjust_axes(x_axis,y_axis,None,None,ax,x_in_log_scale,x_alias,y_alias)
     hulls_fig.savefig(f"{fldr}/{data_id}_hulls_fig.png", dpi=300, facecolor='w', bbox_inches = "tight")
 
-    save_hull_points(data,[r],x_axis,y_axis,f"{fldr}/hulls_{data_id}")
+    save_hull_points(data,[r],x_axis,y_axis,f"{fldr}/{data_id}_hulls")
 
 
 def get_optimal_point_info(data,axes,weights):
