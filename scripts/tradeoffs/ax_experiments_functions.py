@@ -25,7 +25,6 @@ def rdc_params_to_label(D,L,N,M):
     M = str(int(M))
     return f"D{D}L{L}N{N}M{M}"
 
-
 def rdc_label_to_params(label):
     splitm = label.split("M")
     M = int(splitm[1])
@@ -36,8 +35,6 @@ def rdc_label_to_params(label):
     splitd = splitl[0].split("D")
     D = int(splitd[1])
     return {"D":D,"L":L,"N":N,"M":M}
-
-
 
 def rdc_setup(data_csv_path,complexity_axis="params"):
 
@@ -72,8 +69,6 @@ def rdc_setup(data_csv_path,complexity_axis="params"):
 
     return build_ax_config_objects(parameters,metrics,data,rdc_label_to_params)
 
-
-
 def rdc_read_glch_data(glch_csv_path):
     return read_sorted_glch_data(glch_csv_path,"labels",rdc_label_to_params,['iteration', 'D','N','M','L'])
 
@@ -89,8 +84,6 @@ def rc_label_to_params(label):
     h1 = int(split_label[1])
     h2 = int(split_label[2])
     return {"h1":h1,"h2":h2}
-
-# csv_path = 
 
 def rc_setup(csv_path,complexity_axis="micro_joules_per_pixel"):
 
@@ -116,6 +109,47 @@ def rc_setup(csv_path,complexity_axis="micro_joules_per_pixel"):
 
     return build_ax_config_objects(parameters,metrics,data,rc_label_to_params)
 
-
 def rc_read_glch_data(glch_csv_path):
     return read_sorted_glch_data(glch_csv_path,"topology",rc_label_to_params,['iteration', 'h1','h2'])
+
+
+
+
+def rb_params_to_label(h1,h2,qb):
+    widths = [32,h1,h2,1]
+    return '_'.join(map(lambda x: f"{x:03d}",widths)) + f"_{qb:02d}b"
+
+def rb_label_to_params(label):
+    split_label = label.split("_")
+    h1 = int(split_label[1])
+    h2 = int(split_label[2])
+    qb = int(split_label[4])
+    return {"h1":h1,"h2":h2, qb:"qb"}
+
+def rb_setup(csv_path):
+
+    data = pd.read_csv(csv_path).set_index("idx")
+
+    x1 = ChoiceParameter(name="h1", values=[10,20,40,80,160,320,640], parameter_type=ParameterType.INT, is_ordered=True, sort_values=True)
+    x2 = ChoiceParameter(name="h2", values=[10,20,40,80,160,320,640], parameter_type=ParameterType.INT, is_ordered=True, sort_values=True)
+    qb = ChoiceParameter(name="qb", values=[8,16,32], parameter_type=ParameterType.INT, is_ordered=True, sort_values=True)
+
+    parameters=[x1, x2, qb]
+
+    class MetricA(NoisyFunctionMetric):
+        def f(self, x: np.ndarray) -> float:
+            return float(data.loc[rb_params_to_label(*x),"model_bits"])
+
+    class MetricB(NoisyFunctionMetric):
+        def f(self, x: np.ndarray) -> float:
+            return float(data.loc[rb_params_to_label(*x),"data_bits/data_samples"])
+
+    metric_a = MetricA("model_bits", ["h1", "h2", "qb"], noise_sd=0.0, lower_is_better=True)
+    metric_b = MetricB("data_bits/data_samples", ["h1", "h2", "qb"], noise_sd=0.0, lower_is_better=True)
+
+    metrics = [metric_a,metric_b]
+
+    return build_ax_config_objects(parameters,metrics,data,rb_label_to_params)
+
+def rb_read_glch_data(glch_csv_path):
+    return read_sorted_glch_data(glch_csv_path,"idx",rb_label_to_params,['iteration', 'qb', 'h1','h2'])

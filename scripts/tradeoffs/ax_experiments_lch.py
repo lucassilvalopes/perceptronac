@@ -4,6 +4,7 @@ from ax_utils import ax_glch_comparison
 from functools import partial
 from ax_experiments_functions import rdc_setup,rdc_read_glch_data,rdc_label_to_params
 from ax_experiments_functions import rc_setup,rc_read_glch_data,rc_label_to_params
+from ax_experiments_functions import rb_setup,rb_read_glch_data,rb_label_to_params
 
 
 if __name__ == "__main__":
@@ -47,3 +48,23 @@ if __name__ == "__main__":
         n_init=6
     )
 
+
+
+
+    ax_glch_comparison(
+        results_folder="ax_results_rc_model_bits",
+        data_csv_path = "/home/lucas/Documents/perceptronac/scripts/tradeoffs/rate-model-bits_hx-10-20-40-80-160-320-640_b-8-16-32.csv",
+        setup_func=rb_setup,
+        glch_csv_paths = {
+            "c_angle_rule": "/home/lucas/Documents/perceptronac/scripts/tradeoffs/glch_results/glch2D_angle_rule_constrained_model_bits_vs_data_bits_history.csv",
+            "u_angle_rule": "/home/lucas/Documents/perceptronac/scripts/tradeoffs/glch_results/glch2D_angle_rule_unconstrained_model_bits_vs_data_bits_history.csv",
+            "c_gift_wrapping": "/home/lucas/Documents/perceptronac/scripts/tradeoffs/glch_results/glch2D_gift_wrapping_constrained_model_bits_vs_data_bits_history.csv",
+            "u_gift_wrapping": "/home/lucas/Documents/perceptronac/scripts/tradeoffs/glch_results/glch2D_gift_wrapping_unconstrained_model_bits_vs_data_bits_history.csv",
+            "c_tie_break": "/home/lucas/Documents/perceptronac/scripts/tradeoffs/glch_results/glch2D_tie_break_constrained_model_bits_vs_data_bits_history.csv"
+        },
+        read_glch_data_func=rb_read_glch_data,
+        label_to_params_func=rb_label_to_params,
+        n_seeds = 1,
+        seeds_range = [1234,1235],
+        n_init=6
+    )
