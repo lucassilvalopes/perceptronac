@@ -79,3 +79,43 @@ def rdc_read_glch_data(glch_csv_path):
 
 
 
+
+def rc_params_to_label(h1,h2):
+    widths = [32,h1,h2,1]
+    return '_'.join(map(lambda x: f"{x:03d}",widths))
+
+def rc_label_to_params(label):
+    split_label = label.split("_")
+    h1 = int(split_label[1])
+    h2 = int(split_label[2])
+    return {"h1":h1,"h2":h2}
+
+# csv_path = 
+
+def rc_setup(csv_path,complexity_axis="micro_joules_per_pixel"):
+
+    data = pd.read_csv(csv_path).set_index("topology")
+
+    x1 = ChoiceParameter(name="h1", values=[10,20,40,80,160,320,640], parameter_type=ParameterType.INT, is_ordered=True, sort_values=True)
+    x2 = ChoiceParameter(name="h2", values=[10,20,40,80,160,320,640], parameter_type=ParameterType.INT, is_ordered=True, sort_values=True)
+
+    parameters=[x1, x2]
+
+    class MetricA(NoisyFunctionMetric):
+        def f(self, x: np.ndarray) -> float:
+            return float(data.loc[rc_params_to_label(*x),complexity_axis])
+
+    class MetricB(NoisyFunctionMetric):
+        def f(self, x: np.ndarray) -> float:
+            return float(data.loc[rc_params_to_label(*x),"data_bits/data_samples"])
+
+    metric_a = MetricA(complexity_axis, ["h1", "h2"], noise_sd=0.0, lower_is_better=True)
+    metric_b = MetricB("data_bits/data_samples", ["h1", "h2"], noise_sd=0.0, lower_is_better=True)
+
+    metrics = [metric_a,metric_b]
+
+    return build_ax_config_objects(parameters,metrics,data,rc_label_to_params)
+
+
+def rc_read_glch_data(glch_csv_path):
+    return read_sorted_glch_data(glch_csv_path,"topology",rc_label_to_params,['iteration', 'h1','h2'])
