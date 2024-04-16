@@ -9,7 +9,7 @@ from ax.core.optimization_config import (
     ObjectiveThreshold,
 )
 
-from ax.core.parameter import ParameterType, ChoiceParameter
+from ax.core.parameter import ParameterType, ChoiceParameter, FixedParameter
 from ax.core.search_space import SearchSpace
 from ax.metrics.noisy_function import NoisyFunctionMetric
 
@@ -94,7 +94,12 @@ def rdc_loss_setup(data_csv_path,weights,lambdas,complexity_axis):
         weights = [1 for _ in range(3)]
 
     x1 = ChoiceParameter(name="D", values=[3,4], parameter_type=ParameterType.INT, is_ordered=True, sort_values=True)
-    x2 = ChoiceParameter(name="L", values=[5e-3, 1e-2, 2e-2], parameter_type=ParameterType.FLOAT, is_ordered=True, sort_values=True)
+    if len(lambdas) == 1:
+        x2 = FixedParameter(name="L", value=float(lambdas[0]), parameter_type=ParameterType.FLOAT)
+    elif len(lambdas) > 1: 
+        x2 = ChoiceParameter(name="L", values=sorted(map(float,lambdas)), parameter_type=ParameterType.FLOAT, is_ordered=True, sort_values=True)
+    else:
+        x2 = ChoiceParameter(name="L", values=[5e-3, 1e-2, 2e-2], parameter_type=ParameterType.FLOAT, is_ordered=True, sort_values=True)
     x3 = ChoiceParameter(name="N", values=[32, 64, 96, 128, 160, 192, 224], parameter_type=ParameterType.INT, is_ordered=True, sort_values=True)
     x4 = ChoiceParameter(name="M", values=[32, 64, 96, 128, 160, 192, 224, 256, 288, 320], parameter_type=ParameterType.INT, is_ordered=True, 
                         sort_values=True)

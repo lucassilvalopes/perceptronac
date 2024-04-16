@@ -109,7 +109,7 @@ def gpei_method(search_space,optimization_config,seed,n_init,n_batch):
         torch.manual_seed(seed)
         gpei = Models.BOTORCH_MODULAR(
             experiment=gpei_experiment,
-            data=gpei_data
+            data=gpei_experiment.fetch_data()
         )
         generator_run = gpei.gen(n=1)
         trial = gpei_experiment.new_trial(generator_run=generator_run)
