@@ -31,7 +31,7 @@ from botorch.test_functions.multi_objective import BraninCurrin
 
 
 
-def build_optimization_config(metrics,ref_point):
+def build_optimization_config_mohpo(metrics,ref_point):
 
     mo = MultiObjective(
         objectives=[Objective(metric=metric) for metric in metrics],
@@ -50,13 +50,13 @@ def build_optimization_config(metrics,ref_point):
     return optimization_config
 
 
-def build_ax_config_objects(parameters,metrics,data,label_to_params_func):
+def build_ax_config_objects_mohpo(parameters,metrics,data,label_to_params_func):
 
     search_space = SearchSpace(parameters=parameters)
 
     ref_point = data[[metric.name for metric in metrics]].max().values * 1.1
 
-    optimization_config = build_optimization_config(metrics,ref_point)
+    optimization_config = build_optimization_config_mohpo(metrics,ref_point)
 
     max_hv = get_df_hv(search_space,optimization_config,data,label_to_params_func)
 
@@ -365,7 +365,7 @@ def get_glch_hv_list(search_space,optimization_config,glch_data,label_to_params_
     return glch_hv_list
 
 
-def ax_loop(results_folder,search_space,optimization_config,max_hv,n_seeds,seeds_range,n_init,n_batch):
+def ax_loop_mohpo(results_folder,search_space,optimization_config,max_hv,n_seeds,seeds_range,n_init,n_batch):
 
     if not os.path.isdir(results_folder):
         os.mkdir(results_folder)
@@ -390,7 +390,7 @@ def ax_loop(results_folder,search_space,optimization_config,max_hv,n_seeds,seeds
         methods_df.to_csv(f"{results_folder}/{'_'.join(optimization_config.metrics.keys())}_ax_methods_seed{seed}.csv")
 
 
-def ax_glch_comparison(
+def ax_glch_comparison_mohpo(
     results_folder,data_csv_path,setup_func,
     glch_csv_paths,read_glch_data_func,label_to_params_func,
     n_seeds,seeds_range,n_init
@@ -409,7 +409,7 @@ def ax_glch_comparison(
 
     n_batch = n_iters - n_init
 
-    ax_loop(results_folder,search_space,optimization_config,max_hv,n_seeds,seeds_range,n_init,n_batch)
+    ax_loop_mohpo(results_folder,search_space,optimization_config,max_hv,n_seeds,seeds_range,n_init,n_batch)
 
     avg_df = combine_ax_results(results_folder)
 

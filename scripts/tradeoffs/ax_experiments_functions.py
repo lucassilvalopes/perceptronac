@@ -13,7 +13,7 @@ from ax.core.parameter import ParameterType, ChoiceParameter
 from ax.core.search_space import SearchSpace
 from ax.metrics.noisy_function import NoisyFunctionMetric
 
-from ax_utils import build_ax_config_objects, read_sorted_glch_data, ax_glch_comparison
+from ax_utils import build_ax_config_objects_mohpo, read_sorted_glch_data
 
 
 
@@ -75,7 +75,7 @@ def rdc_setup(data_csv_path,complexity_axis="params"):
 
     metrics = [metric_a,metric_b,metric_c]
 
-    return build_ax_config_objects(parameters,metrics,data,rdc_label_to_params)
+    return build_ax_config_objects_mohpo(parameters,metrics,data,rdc_label_to_params)
 
 def rdc_read_glch_data(glch_csv_path):
     return read_sorted_glch_data(glch_csv_path,"labels",rdc_label_to_params,['iteration', 'D','N','M','L'])
@@ -157,7 +157,7 @@ def rc_setup(csv_path,complexity_axis="micro_joules_per_pixel"):
 
     metrics = [metric_a,metric_b]
 
-    return build_ax_config_objects(parameters,metrics,data,rc_label_to_params)
+    return build_ax_config_objects_mohpo(parameters,metrics,data,rc_label_to_params)
 
 def rc_read_glch_data(glch_csv_path):
     return read_sorted_glch_data(glch_csv_path,"topology",rc_label_to_params,['iteration', 'h1','h2'])
@@ -199,7 +199,7 @@ def rb_setup(csv_path):
 
     metrics = [metric_a,metric_b]
 
-    return build_ax_config_objects(parameters,metrics,data,rb_label_to_params)
+    return build_ax_config_objects_mohpo(parameters,metrics,data,rb_label_to_params)
 
 def rb_read_glch_data(glch_csv_path):
     return read_sorted_glch_data(glch_csv_path,"idx",rb_label_to_params,['iteration', 'qb', 'h1','h2'])

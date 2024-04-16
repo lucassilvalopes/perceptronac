@@ -1,6 +1,6 @@
 
 import os
-from ax_utils import ax_glch_comparison
+from ax_utils import ax_glch_comparison_mohpo
 from functools import partial
 from ax_experiments_functions import rdc_setup,rdc_read_glch_data,rdc_label_to_params
 from ax_experiments_functions import rc_setup,rc_read_glch_data,rc_label_to_params
@@ -9,7 +9,7 @@ from ax_experiments_functions import rb_setup,rb_read_glch_data,rb_label_to_para
 
 if __name__ == "__main__":
 
-    ax_glch_comparison(
+    ax_glch_comparison_mohpo(
         results_folder="ax_results_rdc_params",
         data_csv_path = "/home/lucas/Documents/perceptronac/scripts/tradeoffs/bpp-mse-psnr-loss-flops-params_bmshj2018-factorized_10000-epochs_D-3-4_L-2e-2-1e-2-5e-3_N-32-64-96-128-160-192-224_M-32-64-96-128-160-192-224-256-288-320.csv",
         setup_func=partial(rdc_setup,complexity_axis="params"),
@@ -30,7 +30,7 @@ if __name__ == "__main__":
 
 
 
-    ax_glch_comparison(
+    ax_glch_comparison_mohpo(
         results_folder="ax_results_rc_noisy_joules",
         data_csv_path = "/home/lucas/Documents/perceptronac/scripts/tradeoffs/rate-noisy-joules-time-params_hx-10-20-40-80-160-320-640.csv",
         setup_func=partial(rc_setup,complexity_axis="micro_joules_per_pixel"),
@@ -51,7 +51,7 @@ if __name__ == "__main__":
 
 
 
-    ax_glch_comparison(
+    ax_glch_comparison_mohpo(
         results_folder="ax_results_rc_model_bits",
         data_csv_path = "/home/lucas/Documents/perceptronac/scripts/tradeoffs/rate-model-bits_hx-10-20-40-80-160-320-640_b-8-16-32.csv",
         setup_func=rb_setup,
