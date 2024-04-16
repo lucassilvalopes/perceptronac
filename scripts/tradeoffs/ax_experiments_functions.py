@@ -13,10 +13,9 @@ from ax.core.parameter import ParameterType, ChoiceParameter
 from ax.core.search_space import SearchSpace
 from ax.metrics.noisy_function import NoisyFunctionMetric
 
-from ax_utils import sobol_method,ehvi_method,parego_method,get_summary_df
-from ax_utils import get_init_hv_list,plot_mohpo_methods, combine_results
+from ax_utils import plot_mohpo_methods, combine_results, build_ax_config_objects
+from ax_utils import get_df_hv, get_glch_hv_list, read_sorted_glch_data, ax_loop
 
-from ax_utils import get_trials_hv
 
 
 
@@ -41,47 +40,9 @@ def rdc_label_to_params(label):
 
 
 
-def df_to_trials(df,label_to_params_func,axes):
-    trials = []
-    for r,c in df.iterrows():
-        trials.append({
-            "input":label_to_params_func(r),
-            "output": { k:{"mean":c[k], "sem": 0} for k in axes }
-        })
-    return trials
-
-
-def get_glch_hv_list(
-        search_space,optimization_config,
-        glch_csv_path,label_to_params_func,axes,
-        sort_values_by,labels_col
-        ):
-
-    glch_csv = pd.read_csv(glch_csv_path)    
-    glch_csv = pd.concat([glch_csv,glch_csv[labels_col].apply(lambda x: pd.Series(label_to_params_func(x)))],axis=1)
-    
-    glch_csv = glch_csv.sort_values(by=sort_values_by).set_index(labels_col)
-
-    glch_hv_list = []
-
-    for i in range(glch_csv.shape[0]):
-
-        curr_data = glch_csv.iloc[:i+1,:]
-
-        curr_trials = df_to_trials(curr_data,label_to_params_func,axes)
-        
-        curr_hv = get_trials_hv(search_space,optimization_config,curr_trials)
-        
-        glch_hv_list.append(curr_hv)
-    
-    return glch_hv_list
-
-
-def ax_rdc_setup(data_csv_path,complexity_axis="params"):
+def rdc_setup(data_csv_path,complexity_axis="params"):
 
     data = pd.read_csv(data_csv_path).set_index("labels")
-
-    ref_point = data[["bpp_loss","mse_loss",complexity_axis]].max().values * 1.1
 
     x1 = ChoiceParameter(name="D", values=[3,4], parameter_type=ParameterType.INT, is_ordered=True, sort_values=True)
     x2 = ChoiceParameter(name="L", values=[5e-3, 1e-2, 2e-2], parameter_type=ParameterType.FLOAT, is_ordered=True, sort_values=True)
@@ -89,8 +50,7 @@ def ax_rdc_setup(data_csv_path,complexity_axis="params"):
     x4 = ChoiceParameter(name="M", values=[32, 64, 96, 128, 160, 192, 224, 256, 288, 320], parameter_type=ParameterType.INT, is_ordered=True, 
                         sort_values=True)
 
-    search_space = SearchSpace(parameters=[x1, x2, x3, x4])
-
+    parameters=[x1, x2, x3, x4]
 
     class MetricA(NoisyFunctionMetric):
         def f(self, x: np.ndarray) -> float:
@@ -109,64 +69,29 @@ def ax_rdc_setup(data_csv_path,complexity_axis="params"):
     metric_b = MetricB("mse_loss", ["D", "L", "N", "M"], noise_sd=0.0, lower_is_better=True)
     metric_c = MetricC(complexity_axis, ["D", "L", "N", "M"], noise_sd=0.0, lower_is_better=True)
 
-    mo = MultiObjective(
-        objectives=[Objective(metric=metric_a), Objective(metric=metric_b), Objective(metric=metric_c)],
-    )
+    metrics = [metric_a,metric_b,metric_c]
 
-    objective_thresholds = [
-        ObjectiveThreshold(metric=metric, bound=val, relative=False)
-        for metric, val in zip(mo.metrics, ref_point)
-    ]
-
-    optimization_config = MultiObjectiveOptimizationConfig(
-        objective=mo,
-        objective_thresholds=objective_thresholds,
-    )
-
-    max_hv_trials = df_to_trials(data,rdc_label_to_params,["bpp_loss","mse_loss",complexity_axis])
-
-    max_hv = get_trials_hv(search_space,optimization_config,max_hv_trials)
-
-    return search_space, optimization_config, max_hv
+    return build_ax_config_objects(parameters,metrics,data,rdc_label_to_params)
 
 
 
 def ax_rdc(data_csv_path,complexity_axis,glch_csv_paths,results_folder,n_seeds,seeds_range = [1, 10000],n_init=6):
 
-    original_random_state = random.getstate()
-    random.seed(42)
-    random_seeds = random.sample(range(*seeds_range), n_seeds)
-    random.setstate(original_random_state)
-
-    search_space,optimization_config,max_hv = ax_rdc_setup(data_csv_path)
+    search_space,optimization_config,max_hv = rdc_setup(data_csv_path,complexity_axis)
 
     glch_hv_lists = dict()
     for lbl,glch_csv_path in glch_csv_paths.items():
+        glch_data = read_sorted_glch_data(glch_csv_path,"labels",rdc_label_to_params,['iteration', 'D','N','M','L'])
         glch_hv_lists[lbl] = get_glch_hv_list(
-            search_space,optimization_config,glch_csv_path,rdc_label_to_params,
-            ["bpp_loss","mse_loss",complexity_axis],['iteration', 'D','N','M','L'],"labels"
-            )
-    
+            search_space,optimization_config,glch_data,rdc_label_to_params)
+
     n_iters = min([len(glch_hv_list) for glch_hv_list in glch_hv_lists.values()])
 
     glch_hv_lists = {k:v[:n_iters] for k,v in glch_hv_lists.items()}
 
     n_batch = n_iters - n_init
 
-    for seed in random_seeds:
-
-        sobol_hv_list = sobol_method(search_space,optimization_config,seed,n_init,n_batch)
-
-        ehvi_hv_list = ehvi_method(search_space,optimization_config,seed,n_init,n_batch)
-
-        parego_hv_list = parego_method(search_space,optimization_config,seed,n_init,n_batch)
-
-        init_hv_list = get_init_hv_list(search_space,optimization_config,seed,n_init)
-
-        iters = np.arange(1, n_init + n_batch + 1)
-        methods_df = get_summary_df(iters,init_hv_list,sobol_hv_list,ehvi_hv_list,parego_hv_list,max_hv)
-        methods_df.to_csv(f"{results_folder}/bpp_loss_mse_loss_{complexity_axis}_ax_methods_seed{seed}.csv")
-
+    ax_loop(search_space,optimization_config,max_hv,n_seeds,seeds_range,n_init,n_batch,results_folder)
 
     avg_df = combine_results(results_folder)
 
@@ -174,6 +99,6 @@ def ax_rdc(data_csv_path,complexity_axis,glch_csv_paths,results_folder,n_seeds,s
 
     comb_df = pd.concat([avg_df,glch_df],axis=1)
 
-    plot_mohpo_methods(comb_df,f"{results_folder}/bpp_loss_mse_loss_{complexity_axis}_ax_methods_avgs.png")
+    plot_mohpo_methods(comb_df,f"{results_folder}/{'_'.join(optimization_config.metrics.keys())}_ax_methods_avgs.png")
 
 

@@ -31,6 +31,36 @@ from botorch.test_functions.multi_objective import BraninCurrin
 
 
 
+def build_optimization_config(metrics,ref_point):
+
+    mo = MultiObjective(
+        objectives=[Objective(metric=metric) for metric in metrics],
+    )
+
+    objective_thresholds = [
+        ObjectiveThreshold(metric=metric, bound=val, relative=False)
+        for metric, val in zip(mo.metrics, ref_point)
+    ]
+
+    optimization_config = MultiObjectiveOptimizationConfig(
+        objective=mo,
+        objective_thresholds=objective_thresholds,
+    )
+
+    return optimization_config
+
+
+def build_ax_config_objects(parameters,metrics,data,label_to_params_func):
+
+    search_space = SearchSpace(parameters=parameters)
+
+    ref_point = data[[metric.name for metric in metrics]].max().values * 1.1
+
+    optimization_config = build_optimization_config(metrics,ref_point)
+
+    max_hv = get_df_hv(search_space,optimization_config,data,label_to_params_func)
+
+    return search_space, optimization_config, max_hv
 
 
 def build_experiment(search_space,optimization_config):
@@ -189,6 +219,16 @@ def parego_method(search_space,optimization_config,seed,n_init,n_batch):
     return parego_hv_list
 
 
+def df_to_trials(df,label_to_params_func,axes):
+    trials = []
+    for r,c in df.iterrows():
+        trials.append({
+            "input":label_to_params_func(r),
+            "output": { k:{"mean":c[k], "sem": 0} for k in axes }
+        })
+    return trials
+
+
 def initialize_experiment_with_trials(exp,trials):
     for i, trial in enumerate(trials):
         arm_name = f"{i}_0"
@@ -221,6 +261,17 @@ def get_trials_hv(search_space,optimization_config,trials):
             data=hv_exp.fetch_data()
         )
     )
+
+    return hv
+
+
+def get_df_hv(search_space,optimization_config,data,label_to_params_func):
+
+    axes = list(optimization_config.metrics.keys())
+
+    trials = df_to_trials(data,label_to_params_func,axes)
+
+    hv = get_trials_hv(search_space,optimization_config,trials)
 
     return hv
 
@@ -266,3 +317,50 @@ def combine_results(ax_results_folder):
     avg_df = avg_df.drop("glch_hv_list",axis=1,errors="ignore")
 
     return avg_df
+
+
+def read_sorted_glch_data(glch_csv_path,labels_col,label_to_params_func,sort_values_by):
+
+    glch_data = pd.read_csv(glch_csv_path)    
+    glch_data = pd.concat([glch_data,glch_data[labels_col].apply(lambda x: pd.Series(label_to_params_func(x)))],axis=1)
+    
+    glch_data = glch_data.sort_values(by=sort_values_by).set_index(labels_col)
+
+    return glch_data
+
+
+def get_glch_hv_list(search_space,optimization_config,glch_data,label_to_params_func):
+
+    glch_hv_list = []
+
+    for i in range(glch_data.shape[0]):
+
+        curr_data = glch_data.iloc[:i+1,:]
+
+        curr_hv = get_df_hv(search_space,optimization_config,curr_data,label_to_params_func)
+        
+        glch_hv_list.append(curr_hv)
+    
+    return glch_hv_list
+
+
+def ax_loop(search_space,optimization_config,max_hv,n_seeds,seeds_range,n_init,n_batch,results_folder):
+
+    original_random_state = random.getstate()
+    random.seed(42)
+    random_seeds = random.sample(range(*seeds_range), n_seeds)
+    random.setstate(original_random_state)
+
+    for seed in random_seeds:
+
+        sobol_hv_list = sobol_method(search_space,optimization_config,seed,n_init,n_batch)
+
+        ehvi_hv_list = ehvi_method(search_space,optimization_config,seed,n_init,n_batch)
+
+        parego_hv_list = parego_method(search_space,optimization_config,seed,n_init,n_batch)
+
+        init_hv_list = get_init_hv_list(search_space,optimization_config,seed,n_init)
+
+        iters = np.arange(1, n_init + n_batch + 1)
+        methods_df = get_summary_df(iters,init_hv_list,sobol_hv_list,ehvi_hv_list,parego_hv_list,max_hv)
+        methods_df.to_csv(f"{results_folder}/{'_'.join(optimization_config.metrics.keys())}_ax_methods_seed{seed}.csv")
