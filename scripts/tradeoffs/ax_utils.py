@@ -115,6 +115,11 @@ def gpei_method(search_space,optimization_config,seed,n_init,n_batch):
         trial = gpei_experiment.new_trial(generator_run=generator_run)
         trial.run()
         trial.mark_completed()
+    
+    gpei_experiment.fetch_data()
+
+    objective_means = np.array([[trial.objective_mean for trial in gpei_experiment.trials.values()]])
+    return np.minimum.accumulate(objective_means, axis=1).reshape(-1).tolist()
 
 
 def sobol_method(search_space,optimization_config,seed,n_init,n_batch):
