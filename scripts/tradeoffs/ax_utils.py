@@ -58,7 +58,7 @@ def build_ax_config_objects_mohpo(parameters,metrics,data,label_to_params_func):
 
     optimization_config = build_optimization_config_mohpo(metrics,ref_point)
 
-    max_hv = get_df_hv(search_space,optimization_config,data,label_to_params_func)
+    max_hv = get_hv_from_df(search_space,optimization_config,data,label_to_params_func)
 
     return search_space, optimization_config, max_hv
 
@@ -286,7 +286,7 @@ def get_trials_hv(search_space,optimization_config,trials):
     return hv
 
 
-def get_df_hv(search_space,optimization_config,data,label_to_params_func):
+def get_hv_from_df(search_space,optimization_config,data,label_to_params_func):
 
     axes = list(optimization_config.metrics.keys())
 
@@ -306,7 +306,7 @@ def get_summary_df(iters,init_hv_list,sobol_hv_list,ehvi_hv_list,parego_hv_list,
     return methods_df
 
 
-def plot_mohpo_methods(methods_df,fig_path=None):
+def plot_hv_graph(methods_df,fig_path=None):
     max_hv = methods_df["max_hv"].iloc[0]
     methods_df = methods_df.drop("max_hv",axis=1)
 
@@ -358,7 +358,7 @@ def get_glch_hv_list(search_space,optimization_config,glch_data,label_to_params_
 
         curr_data = glch_data.iloc[:i+1,:]
 
-        curr_hv = get_df_hv(search_space,optimization_config,curr_data,label_to_params_func)
+        curr_hv = get_hv_from_df(search_space,optimization_config,curr_data,label_to_params_func)
         
         glch_hv_list.append(curr_hv)
     
@@ -417,4 +417,4 @@ def ax_glch_comparison_mohpo(
 
     comb_df = pd.concat([avg_df,glch_df],axis=1)
 
-    plot_mohpo_methods(comb_df,f"{results_folder}/{'_'.join(optimization_config.metrics.keys())}_ax_methods_avgs.png")
+    plot_hv_graph(comb_df,f"{results_folder}/{'_'.join(optimization_config.metrics.keys())}_ax_methods_avgs.png")
