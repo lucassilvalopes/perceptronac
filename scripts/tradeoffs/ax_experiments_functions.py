@@ -78,17 +78,4 @@ def rdc_read_glch_data(glch_csv_path):
     return read_sorted_glch_data(glch_csv_path,"labels",rdc_label_to_params,['iteration', 'D','N','M','L'])
 
 
-def rdc_ax_glch_comparison(
-    results_folder,data_csv_path,glch_csv_paths,n_seeds,seeds_range = [1, 10000],n_init=6,complexity_axis="params"):
-
-    search_space,optimization_config,max_hv = rdc_setup(data_csv_path,complexity_axis)
-
-    ax_glch_comparison(
-        results_folder,
-        search_space,optimization_config,max_hv,
-        glch_csv_paths,rdc_read_glch_data,rdc_label_to_params,
-        n_seeds,seeds_range,n_init)
-
-
-
 

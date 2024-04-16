@@ -346,6 +346,9 @@ def get_glch_hv_list(search_space,optimization_config,glch_data,label_to_params_
 
 def ax_loop(results_folder,search_space,optimization_config,max_hv,n_seeds,seeds_range,n_init,n_batch):
 
+    if not os.path.isdir(results_folder):
+        os.mkdir(results_folder)
+
     original_random_state = random.getstate()
     random.seed(42)
     random_seeds = random.sample(range(*seeds_range), n_seeds)
@@ -367,10 +370,12 @@ def ax_loop(results_folder,search_space,optimization_config,max_hv,n_seeds,seeds
 
 
 def ax_glch_comparison(
-    results_folder,search_space,optimization_config,max_hv,
+    results_folder,data_csv_path,setup_func,
     glch_csv_paths,read_glch_data_func,label_to_params_func,
     n_seeds,seeds_range,n_init
     ):
+
+    search_space,optimization_config,max_hv = setup_func(data_csv_path)
 
     glch_hv_lists = dict()
     for lbl,glch_csv_path in glch_csv_paths.items():
