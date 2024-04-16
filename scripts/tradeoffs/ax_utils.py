@@ -297,7 +297,7 @@ def get_hv_from_df(search_space,optimization_config,data,label_to_params_func):
     return hv
 
 
-def get_summary_df(iters,init_hv_list,sobol_hv_list,ehvi_hv_list,parego_hv_list,max_hv):
+def get_ax_methods_hv_df(iters,init_hv_list,sobol_hv_list,ehvi_hv_list,parego_hv_list,max_hv):
     methods_df = pd.DataFrame({"iters":iters,
     "sobol_hv_list":np.hstack([init_hv_list,sobol_hv_list]),
     "ehvi_hv_list":np.hstack([init_hv_list,ehvi_hv_list]),
@@ -322,7 +322,7 @@ def plot_hv_graph(methods_df,fig_path=None):
         fig.savefig(fig_path)
 
 
-def combine_ax_results(ax_results_folder):
+def avg_ax_dfs(ax_results_folder):
 
     dfs = []
     for f in os.listdir(ax_results_folder):
@@ -386,7 +386,7 @@ def ax_loop_mohpo(results_folder,search_space,optimization_config,max_hv,n_seeds
         init_hv_list = get_init_hv_list(search_space,optimization_config,seed,n_init)
 
         iters = np.arange(1, n_init + n_batch + 1)
-        methods_df = get_summary_df(iters,init_hv_list,sobol_hv_list,ehvi_hv_list,parego_hv_list,max_hv)
+        methods_df = get_ax_methods_hv_df(iters,init_hv_list,sobol_hv_list,ehvi_hv_list,parego_hv_list,max_hv)
         methods_df.to_csv(f"{results_folder}/{'_'.join(optimization_config.metrics.keys())}_ax_methods_seed{seed}.csv")
 
 
@@ -411,7 +411,7 @@ def ax_glch_comparison_mohpo(
 
     ax_loop_mohpo(results_folder,search_space,optimization_config,max_hv,n_seeds,seeds_range,n_init,n_batch)
 
-    avg_df = combine_ax_results(results_folder)
+    avg_df = avg_ax_dfs(results_folder)
 
     glch_df = pd.DataFrame(glch_hv_lists)
 
