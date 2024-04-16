@@ -100,6 +100,22 @@ def get_init_hv_list(search_space,optimization_config,seed,n_init):
 
 
 
+def gpei_method(search_space,optimization_config,seed,n_init,n_batch):
+
+    gpei_experiment = build_experiment(search_space,optimization_config)
+    gpei_data = initialize_experiment(gpei_experiment,seed,n_init)
+
+    for i in range(n_batch):
+        torch.manual_seed(seed)
+        gpei = Models.BOTORCH_MODULAR(
+            experiment=gpei_experiment,
+            data=gpei_data
+        )
+        generator_run = gpei.gen(n=1)
+        trial = gpei_experiment.new_trial(generator_run=generator_run)
+        trial.run()
+        trial.mark_completed()
+
 
 def sobol_method(search_space,optimization_config,seed,n_init,n_batch):
 
