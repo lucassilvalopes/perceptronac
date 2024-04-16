@@ -18,6 +18,14 @@ from ax_utils import build_ax_config_objects, read_sorted_glch_data, ax_glch_com
 
 
 
+def rdc_load_data(data_csv_path,lambdas=[]):
+    data = pd.read_csv(data_csv_path)
+    if len(lambdas) == 0:
+        data = data.set_index("labels")
+    else:
+        data = data[data["labels"].apply(lambda x: any([(lmbd in x) for lmbd in lambdas]) )].set_index("labels")
+    return data
+
 def rdc_params_to_label(D,L,N,M):
     D = str(int(D))
     L = "5e-3" if L == 5e-3 else ("1e-2" if L == 1e-2 else "2e-2")
@@ -71,6 +79,48 @@ def rdc_setup(data_csv_path,complexity_axis="params"):
 
 def rdc_read_glch_data(glch_csv_path):
     return read_sorted_glch_data(glch_csv_path,"labels",rdc_label_to_params,['iteration', 'D','N','M','L'])
+
+
+
+
+
+from ax import OptimizationConfig
+
+def rdc_loss_setup(data_csv_path,weights,lambdas,complexity_axis):
+
+    data = rdc_load_data(data_csv_path,lambdas)
+
+    if weights is None:
+        weights = [1 for _ in range(3)]
+
+    x1 = ChoiceParameter(name="D", values=[3,4], parameter_type=ParameterType.INT, is_ordered=True, sort_values=True)
+    x2 = ChoiceParameter(name="L", values=[5e-3, 1e-2, 2e-2], parameter_type=ParameterType.FLOAT, is_ordered=True, sort_values=True)
+    x3 = ChoiceParameter(name="N", values=[32, 64, 96, 128, 160, 192, 224], parameter_type=ParameterType.INT, is_ordered=True, sort_values=True)
+    x4 = ChoiceParameter(name="M", values=[32, 64, 96, 128, 160, 192, 224, 256, 288, 320], parameter_type=ParameterType.INT, is_ordered=True, 
+                        sort_values=True)
+
+    parameters=[x1, x2, x3, x4]
+
+    search_space = SearchSpace(parameters=parameters)
+
+    class MetricA(NoisyFunctionMetric):
+        def f(self, x: np.ndarray) -> float:
+            return float(sum(np.array(weights) * data.loc[rdc_params_to_label(*x),["bpp_loss","mse_loss",complexity_axis]].values))
+
+    metric_a = MetricA("rdc_loss", ["D", "L", "N", "M"], noise_sd=0.0, lower_is_better=True)
+
+    so = Objective(metric=metric_a,minimize=True)
+
+    optimization_config = OptimizationConfig(objective=so)
+
+    return search_space, optimization_config
+
+
+
+
+
+
+
 
 
 
