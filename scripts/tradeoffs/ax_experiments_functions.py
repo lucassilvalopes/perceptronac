@@ -13,8 +13,7 @@ from ax.core.parameter import ParameterType, ChoiceParameter
 from ax.core.search_space import SearchSpace
 from ax.metrics.noisy_function import NoisyFunctionMetric
 
-from ax_utils import plot_mohpo_methods, combine_results, build_ax_config_objects
-from ax_utils import get_df_hv, get_glch_hv_list, read_sorted_glch_data, ax_loop
+from ax_utils import build_ax_config_objects, read_sorted_glch_data, ax_glch_comparison
 
 
 
@@ -75,30 +74,21 @@ def rdc_setup(data_csv_path,complexity_axis="params"):
 
 
 
-def ax_rdc(data_csv_path,complexity_axis,glch_csv_paths,results_folder,n_seeds,seeds_range = [1, 10000],n_init=6):
+def rdc_read_glch_data(glch_csv_path):
+    return read_sorted_glch_data(glch_csv_path,"labels",rdc_label_to_params,['iteration', 'D','N','M','L'])
+
+
+def rdc_ax_glch_comparison(
+    results_folder,data_csv_path,glch_csv_paths,n_seeds,seeds_range = [1, 10000],n_init=6,complexity_axis="params"):
 
     search_space,optimization_config,max_hv = rdc_setup(data_csv_path,complexity_axis)
 
-    glch_hv_lists = dict()
-    for lbl,glch_csv_path in glch_csv_paths.items():
-        glch_data = read_sorted_glch_data(glch_csv_path,"labels",rdc_label_to_params,['iteration', 'D','N','M','L'])
-        glch_hv_lists[lbl] = get_glch_hv_list(
-            search_space,optimization_config,glch_data,rdc_label_to_params)
+    ax_glch_comparison(
+        results_folder,
+        search_space,optimization_config,max_hv,
+        glch_csv_paths,rdc_read_glch_data,rdc_label_to_params,
+        n_seeds,seeds_range,n_init)
 
-    n_iters = min([len(glch_hv_list) for glch_hv_list in glch_hv_lists.values()])
 
-    glch_hv_lists = {k:v[:n_iters] for k,v in glch_hv_lists.items()}
-
-    n_batch = n_iters - n_init
-
-    ax_loop(search_space,optimization_config,max_hv,n_seeds,seeds_range,n_init,n_batch,results_folder)
-
-    avg_df = combine_results(results_folder)
-
-    glch_df = pd.DataFrame(glch_hv_lists)
-
-    comb_df = pd.concat([avg_df,glch_df],axis=1)
-
-    plot_mohpo_methods(comb_df,f"{results_folder}/{'_'.join(optimization_config.metrics.keys())}_ax_methods_avgs.png")
 
 

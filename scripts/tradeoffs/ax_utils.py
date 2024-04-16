@@ -301,7 +301,7 @@ def plot_mohpo_methods(methods_df,fig_path=None):
         fig.savefig(fig_path)
 
 
-def combine_results(ax_results_folder):
+def combine_ax_results(ax_results_folder):
 
     dfs = []
     for f in os.listdir(ax_results_folder):
@@ -344,7 +344,7 @@ def get_glch_hv_list(search_space,optimization_config,glch_data,label_to_params_
     return glch_hv_list
 
 
-def ax_loop(search_space,optimization_config,max_hv,n_seeds,seeds_range,n_init,n_batch,results_folder):
+def ax_loop(results_folder,search_space,optimization_config,max_hv,n_seeds,seeds_range,n_init,n_batch):
 
     original_random_state = random.getstate()
     random.seed(42)
@@ -364,3 +364,31 @@ def ax_loop(search_space,optimization_config,max_hv,n_seeds,seeds_range,n_init,n
         iters = np.arange(1, n_init + n_batch + 1)
         methods_df = get_summary_df(iters,init_hv_list,sobol_hv_list,ehvi_hv_list,parego_hv_list,max_hv)
         methods_df.to_csv(f"{results_folder}/{'_'.join(optimization_config.metrics.keys())}_ax_methods_seed{seed}.csv")
+
+
+def ax_glch_comparison(
+    results_folder,search_space,optimization_config,max_hv,
+    glch_csv_paths,read_glch_data_func,label_to_params_func,
+    n_seeds,seeds_range,n_init
+    ):
+
+    glch_hv_lists = dict()
+    for lbl,glch_csv_path in glch_csv_paths.items():
+        glch_data = read_glch_data_func(glch_csv_path)
+        glch_hv_lists[lbl] = get_glch_hv_list(search_space,optimization_config,glch_data,label_to_params_func)
+
+    n_iters = min([len(glch_hv_list) for glch_hv_list in glch_hv_lists.values()])
+
+    glch_hv_lists = {k:v[:n_iters] for k,v in glch_hv_lists.items()}
+
+    n_batch = n_iters - n_init
+
+    ax_loop(results_folder,search_space,optimization_config,max_hv,n_seeds,seeds_range,n_init,n_batch)
+
+    avg_df = combine_ax_results(results_folder)
+
+    glch_df = pd.DataFrame(glch_hv_lists)
+
+    comb_df = pd.concat([avg_df,glch_df],axis=1)
+
+    plot_mohpo_methods(comb_df,f"{results_folder}/{'_'.join(optimization_config.metrics.keys())}_ax_methods_avgs.png")
