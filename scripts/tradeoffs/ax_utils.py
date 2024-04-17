@@ -64,7 +64,7 @@ def build_ax_config_objects_mohpo(parameters,metrics,data,label_to_params_func):
     return search_space, optimization_config, max_hv
 
 
-def build_ax_config_objects_sohpo(parameters,metrics,data,weights):
+def build_ax_config_objects_sohpo(parameters,metrics):
 
     search_space = SearchSpace(parameters=parameters)
 
@@ -74,11 +74,14 @@ def build_ax_config_objects_sohpo(parameters,metrics,data,weights):
 
     optimization_config = OptimizationConfig(objective=so)
 
+    return search_space, optimization_config
+
+
+def get_true_min(data,weights):
+
     true_min = np.min(np.sum(np.array(weights).reshape(1,-1) * data.values,axis=1))
 
-    axes = list(data.columns)
-
-    return search_space, optimization_config, true_min, axes, weights
+    return true_min
 
 
 def build_experiment(search_space,optimization_config):
@@ -340,7 +343,9 @@ def get_hv_from_df(search_space,optimization_config,data,label_to_params_func):
     return hv
 
 
-def get_min_list_from_df(search_space,optimization_config,data,label_to_params_func,axes,weights):
+def get_min_list_from_df(search_space,optimization_config,data,label_to_params_func,weights):
+
+    axes = list(data.columns)
 
     metric_name = list(optimization_config.metrics.keys())[0]
 
@@ -386,11 +391,11 @@ def plot_hv_graph(methods_df,fig_path=None):
         fig.savefig(fig_path)
 
 
-def avg_ax_dfs(ax_results_folder):
+def avg_ax_dfs(ax_results_folder,prefix):
 
     dfs = []
     for f in os.listdir(ax_results_folder):
-        if f.endswith(".csv"):
+        if f.endswith(".csv") and (prefix in f):
             dfs.append( pd.read_csv(os.path.join(ax_results_folder,f)) )
 
     avg_df = dfs[0]
@@ -444,7 +449,7 @@ def setup_ax_loop(results_folder,n_seeds,seeds_range,n_init,n_batch):
     return random_seeds, iters
 
 
-def ax_loop_sohpo(results_folder,search_space,optimization_config,true_min,n_seeds,seeds_range,n_init,n_batch):
+def ax_loop_sohpo(results_folder,prefix,search_space,optimization_config,true_min,n_seeds,seeds_range,n_init,n_batch):
 
     random_seeds, iters = setup_ax_loop(results_folder,n_seeds,seeds_range,n_init,n_batch)
 
@@ -453,10 +458,10 @@ def ax_loop_sohpo(results_folder,search_space,optimization_config,true_min,n_see
         gpei_min_list = gpei_method(search_space,optimization_config,seed,n_init,n_batch)
 
         methods_df = pd.DataFrame({"iters":iters,"gpei_min_list": gpei_min_list,"true_min":len(iters)*[true_min]})
-        methods_df.to_csv(f"{results_folder}/{'_'.join(optimization_config.metrics.keys())}_ax_methods_seed{seed}.csv")
+        methods_df.to_csv(f"{results_folder}/{prefix}{seed}.csv")
 
 
-def ax_loop_mohpo(results_folder,search_space,optimization_config,max_hv,n_seeds,seeds_range,n_init,n_batch):
+def ax_loop_mohpo(results_folder,prefix,search_space,optimization_config,max_hv,n_seeds,seeds_range,n_init,n_batch):
 
     random_seeds, iters = setup_ax_loop(results_folder,n_seeds,seeds_range,n_init,n_batch)
 
@@ -471,7 +476,17 @@ def ax_loop_mohpo(results_folder,search_space,optimization_config,max_hv,n_seeds
         init_hv_list = get_init_hv_list(search_space,optimization_config,seed,n_init)
 
         methods_df = get_ax_methods_hv_df(iters,init_hv_list,sobol_hv_list,ehvi_hv_list,parego_hv_list,max_hv)
-        methods_df.to_csv(f"{results_folder}/{'_'.join(optimization_config.metrics.keys())}_ax_methods_seed{seed}.csv")
+        methods_df.to_csv(f"{results_folder}/{prefix}{seed}.csv")
+
+
+
+def custom_e_notation(number):
+    p = int(np.floor(np.log10(np.abs(number))))
+    c = number/10**p
+    s1 = "{:2.0f}".format(10*c)
+    s2 = "{:d}".format(p-1)
+    return f"{s1}e{s2}"
+
 
 
 def ax_glch_comparison_sohpo(
@@ -480,25 +495,27 @@ def ax_glch_comparison_sohpo(
     n_seeds,seeds_range,n_init
     ):
 
-    search_space,optimization_config,true_min,axes,weights = setup_func(data_csv_path)
+    search_space,optimization_config,true_min,weights,prefix = setup_func(data_csv_path)
 
     glch_data = read_glch_data_func(glch_csv_path)
 
-    glch_min_list = get_min_list_from_df(search_space,optimization_config,glch_data,label_to_params_func,axes,weights)
+    glch_min_list = get_min_list_from_df(search_space,optimization_config,glch_data,label_to_params_func,weights)
 
     n_iters = len(glch_min_list)
 
     n_batch = n_iters - n_init
 
-    ax_loop_sohpo(results_folder,search_space,optimization_config,true_min,n_seeds,seeds_range,n_init,n_batch)
+    prefix = f"{prefix}_seed"
 
-    avg_df = avg_ax_dfs(results_folder)
+    ax_loop_sohpo(results_folder,prefix,search_space,optimization_config,true_min,n_seeds,seeds_range,n_init,n_batch)
+
+    avg_df = avg_ax_dfs(results_folder,prefix)
 
     glch_df = pd.DataFrame({"glch_min_list":glch_min_list})
 
     comb_df = pd.concat([avg_df,glch_df],axis=1)
 
-    plot_min_graph(comb_df,f"{results_folder}/{'_'.join(optimization_config.metrics.keys())}_ax_methods_avgs.png")
+    plot_min_graph(comb_df,f"{results_folder}/{prefix.replace('_seed','_avgs')}.png")
 
 
 def ax_glch_comparison_mohpo(
@@ -520,12 +537,14 @@ def ax_glch_comparison_mohpo(
 
     n_batch = n_iters - n_init
 
-    ax_loop_mohpo(results_folder,search_space,optimization_config,max_hv,n_seeds,seeds_range,n_init,n_batch)
+    prefix = f"{'_'.join(optimization_config.metrics.keys())}_ax_methods_seed"
 
-    avg_df = avg_ax_dfs(results_folder)
+    ax_loop_mohpo(results_folder,prefix,search_space,optimization_config,max_hv,n_seeds,seeds_range,n_init,n_batch)
+
+    avg_df = avg_ax_dfs(results_folder,prefix)
 
     glch_df = pd.DataFrame(glch_hv_lists)
 
     comb_df = pd.concat([avg_df,glch_df],axis=1)
 
-    plot_hv_graph(comb_df,f"{results_folder}/{'_'.join(optimization_config.metrics.keys())}_ax_methods_avgs.png")
+    plot_hv_graph(comb_df,f"{results_folder}/{prefix.replace('_seed','_avgs')}.png")

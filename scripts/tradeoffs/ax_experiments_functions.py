@@ -13,19 +13,10 @@ from ax.core.parameter import ParameterType, ChoiceParameter, FixedParameter
 from ax.core.search_space import SearchSpace
 from ax.metrics.noisy_function import NoisyFunctionMetric
 
-from ax_utils import build_ax_config_objects_mohpo, read_sorted_glch_data, build_ax_config_objects_sohpo
+from ax_utils import build_ax_config_objects_mohpo, read_sorted_glch_data, build_ax_config_objects_sohpo, custom_e_notation, get_true_min
 
 
 
-
-def rdc_load_data(data_csv_path,lambdas=[],complexity_axis="params"):
-    data = pd.read_csv(data_csv_path)
-    if len(lambdas) == 0:
-        data = data.set_index("labels")
-    else:
-        data = data[data["labels"].apply(lambda x: any([(lmbd in x) for lmbd in lambdas]) )].set_index("labels")
-    data = data[["bpp_loss","mse_loss",complexity_axis]]
-    return data
 
 def rdc_params_to_label(D,L,N,M):
     D = str(int(D))
@@ -84,8 +75,14 @@ def rdc_read_glch_data(glch_csv_path):
 
 
 
-
-
+def rdc_load_data(data_csv_path,lambdas=[],complexity_axis="params"):
+    data = pd.read_csv(data_csv_path)
+    if len(lambdas) == 0:
+        data = data.set_index("labels")
+    else:
+        data = data[data["labels"].apply(lambda x: any([(lmbd in x) for lmbd in lambdas]) )].set_index("labels")
+    data = data[["bpp_loss","mse_loss",complexity_axis]]
+    return data
 
 def rdc_loss_setup(data_csv_path,weights,lambdas,complexity_axis):
 
@@ -115,14 +112,11 @@ def rdc_loss_setup(data_csv_path,weights,lambdas,complexity_axis):
 
     metrics = [metric_a]
 
-    return build_ax_config_objects_sohpo(parameters,metrics,data,weights)
+    true_min = get_true_min(data,weights)
 
+    prefix = f"{'_'.join(list(data.columns))}_{'_'.join([custom_e_notation(w) for w in weights])}_ax_methods"
 
-
-
-
-
-
+    return *build_ax_config_objects_sohpo(parameters,metrics),true_min,weights,prefix
 
 
 
