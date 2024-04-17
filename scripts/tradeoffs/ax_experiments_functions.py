@@ -125,7 +125,7 @@ def rdc_loss_setup(data_csv_path:str,weights:List[float],lambdas:List[str],compl
 
     true_min = get_true_min(data,weights)
 
-    prefix = rdc_prefix(data,weights,lambdas)
+    prefix = rdc_loss_prefix(data,weights,lambdas)
 
     return *build_ax_config_objects_sohpo(parameters,metrics),true_min,weights,prefix
 
