@@ -70,8 +70,9 @@ def rdc_setup(data_csv_path,complexity_axis="params"):
 
     return build_ax_config_objects_mohpo(parameters,metrics,data,rdc_label_to_params)
 
-def rdc_read_glch_data(glch_csv_path):
-    return read_sorted_glch_data(glch_csv_path,"labels",rdc_label_to_params,['iteration', 'D','N','M','L'])
+def rdc_read_glch_data(glch_csv_path,complexity_axis="params"):
+    return read_sorted_glch_data(
+        glch_csv_path,"labels",rdc_label_to_params,['iteration', 'D','N','M','L'])[["bpp_loss","mse_loss",complexity_axis]]
 
 
 

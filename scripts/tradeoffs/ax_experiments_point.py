@@ -26,7 +26,7 @@ if __name__ == "__main__":
             setup_func=partial(rdc_loss_setup,weights=weights,lambdas=lambdas,complexity_axis="params"),
             glch_csv_path = "/home/lucas/Documents/perceptronac/scripts/tradeoffs/gho_results/"+\
                 f"glch1D_weights_{formatted_weights}_lambdas_{formatted_lambdas}_bpp_loss_vs_mse_loss_vs_params_start_left_history.csv",
-            read_glch_data_func=rdc_read_glch_data,
+            read_glch_data_func=partial(rdc_read_glch_data,complexity_axis="params"),
             label_to_params_func=rdc_label_to_params,
             n_seeds = N_SEEDS,
             seeds_range = SEEDS_RANGE,
@@ -43,7 +43,7 @@ if __name__ == "__main__":
             setup_func=partial(rdc_loss_setup,weights=weights,lambdas=lambdas,complexity_axis="flops"),
             glch_csv_path = "/home/lucas/Documents/perceptronac/scripts/tradeoffs/gho_results/"+\
                 f"glch1D_weights_{formatted_weights}_lambdas_{formatted_lambdas}_bpp_loss_vs_mse_loss_vs_flops_start_left_history.csv",
-            read_glch_data_func=rdc_read_glch_data,
+            read_glch_data_func=partial(rdc_read_glch_data,complexity_axis="flops"),
             label_to_params_func=rdc_label_to_params,
             n_seeds = N_SEEDS,
             seeds_range = SEEDS_RANGE,

@@ -367,6 +367,9 @@ def get_ax_methods_hv_df(iters,init_hv_list,sobol_hv_list,ehvi_hv_list,parego_hv
 
 def plot_min_graph(methods_df,fig_path=None):
 
+    if "iters" in methods_df.columns:
+        methods_df = methods_df.set_index("iters")
+
     ax =methods_df.plot(xlabel="number of observations", ylabel="Objective")
     fig = ax.get_figure()
     if fig_path is None:
@@ -457,7 +460,7 @@ def ax_loop_sohpo(results_folder,prefix,search_space,optimization_config,true_mi
 
         gpei_min_list = gpei_method(search_space,optimization_config,seed,n_init,n_batch)
 
-        methods_df = pd.DataFrame({"iters":iters,"gpei_min_list": gpei_min_list,"true_min":len(iters)*[true_min]})
+        methods_df = pd.DataFrame({"iters":iters,"gpei_min_list": gpei_min_list,"true_min":len(iters)*[true_min]}).set_index("iters")
         methods_df.to_csv(f"{results_folder}/{prefix}{seed}.csv")
 
 
@@ -513,7 +516,7 @@ def ax_glch_comparison_sohpo(
 
     glch_df = pd.DataFrame({"glch_min_list":glch_min_list})
 
-    comb_df = pd.concat([avg_df,glch_df],axis=1)
+    comb_df = pd.concat([avg_df,glch_df],axis=1).set_index("iters")
 
     comb_df.to_csv(f"{results_folder}/{prefix.replace('_seed','_avgs')}.csv")
 
@@ -547,7 +550,7 @@ def ax_glch_comparison_mohpo(
 
     glch_df = pd.DataFrame(glch_hv_lists)
 
-    comb_df = pd.concat([avg_df,glch_df],axis=1)
+    comb_df = pd.concat([avg_df,glch_df],axis=1).set_index("iters")
 
     comb_df.to_csv(f"{results_folder}/{prefix.replace('_seed','_avgs')}.csv")
 

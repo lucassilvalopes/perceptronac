@@ -27,7 +27,7 @@ if __name__ == "__main__":
                 "u_gift_wrapping": f"/home/lucas/Documents/perceptronac/scripts/tradeoffs/glch_results/glch3D_gift_wrapping_unconstrained_bpp_loss_vs_mse_loss_vs_{complexity_axis}_start_left_threed_history.csv",
                 "c_tie_break": f"/home/lucas/Documents/perceptronac/scripts/tradeoffs/glch_results/glch3D_tie_break_constrained_bpp_loss_vs_mse_loss_vs_{complexity_axis}_start_left_threed_history.csv"
             },
-            read_glch_data_func=rdc_read_glch_data,
+            read_glch_data_func=partial(rdc_read_glch_data,complexity_axis=complexity_axis),
             label_to_params_func=rdc_label_to_params,
             n_seeds = N_SEEDS,
             seeds_range = SEEDS_RANGE,
