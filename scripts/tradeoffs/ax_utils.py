@@ -517,7 +517,7 @@ def ax_glch_comparison_sohpo(
 
     comb_df.to_csv(f"{results_folder}/{prefix.replace('_seed','_avgs')}.csv")
 
-    # plot_min_graph(comb_df,f"{results_folder}/{prefix.replace('_seed','_avgs')}.png")
+    plot_min_graph(comb_df,f"{results_folder}/{prefix.replace('_seed','_avgs')}.png")
 
 
 def ax_glch_comparison_mohpo(
@@ -551,4 +551,4 @@ def ax_glch_comparison_mohpo(
 
     comb_df.to_csv(f"{results_folder}/{prefix.replace('_seed','_avgs')}.csv")
 
-    # plot_hv_graph(comb_df,f"{results_folder}/{prefix.replace('_seed','_avgs')}.png")
+    plot_hv_graph(comb_df,f"{results_folder}/{prefix.replace('_seed','_avgs')}.png")
