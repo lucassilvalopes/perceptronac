@@ -76,7 +76,9 @@ def build_ax_config_objects_sohpo(parameters,metrics,data,weights):
 
     true_min = np.min(np.sum(np.array(weights).reshape(1,-1) * data.values,axis=1))
 
-    return search_space, optimization_config, true_min
+    axes = list(data.columns)
+
+    return search_space, optimization_config, true_min, axes, weights
 
 
 def build_experiment(search_space,optimization_config):
@@ -358,6 +360,16 @@ def get_ax_methods_hv_df(iters,init_hv_list,sobol_hv_list,ehvi_hv_list,parego_hv
     return methods_df
 
 
+def plot_min_graph(methods_df,fig_path=None):
+
+    ax =methods_df.plot(xlabel="number of observations", ylabel="Objective")
+    fig = ax.get_figure()
+    if fig_path is None:
+        return fig
+    else:
+        fig.savefig(fig_path)
+
+
 def plot_hv_graph(methods_df,fig_path=None):
     max_hv = methods_df["max_hv"].iloc[0]
     methods_df = methods_df.drop("max_hv",axis=1)
@@ -460,6 +472,33 @@ def ax_loop_mohpo(results_folder,search_space,optimization_config,max_hv,n_seeds
 
         methods_df = get_ax_methods_hv_df(iters,init_hv_list,sobol_hv_list,ehvi_hv_list,parego_hv_list,max_hv)
         methods_df.to_csv(f"{results_folder}/{'_'.join(optimization_config.metrics.keys())}_ax_methods_seed{seed}.csv")
+
+
+def ax_glch_comparison_sohpo(
+    results_folder,data_csv_path,setup_func,
+    glch_csv_path,read_glch_data_func,label_to_params_func,
+    n_seeds,seeds_range,n_init
+    ):
+
+    search_space,optimization_config,true_min,axes,weights = setup_func(data_csv_path)
+
+    glch_data = read_glch_data_func(glch_csv_path)
+
+    glch_min_list = get_min_list_from_df(search_space,optimization_config,glch_data,label_to_params_func,axes,weights)
+
+    n_iters = len(glch_min_list)
+
+    n_batch = n_iters - n_init
+
+    ax_loop_sohpo(results_folder,search_space,optimization_config,true_min,n_seeds,seeds_range,n_init,n_batch)
+
+    avg_df = avg_ax_dfs(results_folder)
+
+    glch_df = pd.DataFrame({"glch_min_list":glch_min_list})
+
+    comb_df = pd.concat([avg_df,glch_df],axis=1)
+
+    plot_min_graph(comb_df,f"{results_folder}/{'_'.join(optimization_config.metrics.keys())}_ax_methods_avgs.png")
 
 
 def ax_glch_comparison_mohpo(
