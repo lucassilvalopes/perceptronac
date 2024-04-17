@@ -13,17 +13,18 @@ from ax.core.parameter import ParameterType, ChoiceParameter, FixedParameter
 from ax.core.search_space import SearchSpace
 from ax.metrics.noisy_function import NoisyFunctionMetric
 
-from ax_utils import build_ax_config_objects_mohpo, read_sorted_glch_data
+from ax_utils import build_ax_config_objects_mohpo, read_sorted_glch_data, build_ax_config_objects_sohpo
 
 
 
 
-def rdc_load_data(data_csv_path,lambdas=[]):
+def rdc_load_data(data_csv_path,lambdas=[],complexity_axis="params"):
     data = pd.read_csv(data_csv_path)
     if len(lambdas) == 0:
         data = data.set_index("labels")
     else:
         data = data[data["labels"].apply(lambda x: any([(lmbd in x) for lmbd in lambdas]) )].set_index("labels")
+    data = data[["bpp_loss","mse_loss",complexity_axis]]
     return data
 
 def rdc_params_to_label(D,L,N,M):
@@ -84,11 +85,11 @@ def rdc_read_glch_data(glch_csv_path):
 
 
 
-from ax import OptimizationConfig
+
 
 def rdc_loss_setup(data_csv_path,weights,lambdas,complexity_axis):
 
-    data = rdc_load_data(data_csv_path,lambdas)
+    data = rdc_load_data(data_csv_path,lambdas,complexity_axis)
 
     if weights is None:
         weights = [1 for _ in range(3)]
@@ -106,19 +107,15 @@ def rdc_loss_setup(data_csv_path,weights,lambdas,complexity_axis):
 
     parameters=[x1, x2, x3, x4]
 
-    search_space = SearchSpace(parameters=parameters)
-
     class MetricA(NoisyFunctionMetric):
         def f(self, x: np.ndarray) -> float:
-            return float(sum(np.array(weights) * data.loc[rdc_params_to_label(*x),["bpp_loss","mse_loss",complexity_axis]].values))
+            return float(sum(np.array(weights) * data.loc[rdc_params_to_label(*x),:].values))
 
     metric_a = MetricA("rdc_loss", ["D", "L", "N", "M"], noise_sd=0.0, lower_is_better=True)
 
-    so = Objective(metric=metric_a,minimize=True)
+    metrics = [metric_a]
 
-    optimization_config = OptimizationConfig(objective=so)
-
-    return search_space, optimization_config
+    return build_ax_config_objects_sohpo(parameters,metrics,data,weights)
 
 
 

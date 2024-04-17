@@ -14,6 +14,7 @@ from ax.core.optimization_config import (
     MultiObjectiveOptimizationConfig,
     ObjectiveThreshold,
 )
+from ax import OptimizationConfig
 
 from ax.core.parameter import ParameterType, RangeParameter, ChoiceParameter
 from ax.core.search_space import SearchSpace
@@ -61,6 +62,27 @@ def build_ax_config_objects_mohpo(parameters,metrics,data,label_to_params_func):
     max_hv = get_hv_from_df(search_space,optimization_config,data,label_to_params_func)
 
     return search_space, optimization_config, max_hv
+
+
+def build_ax_config_objects_sohpo(parameters,metrics,data,weights):
+
+    search_space = SearchSpace(parameters=parameters)
+
+    metric_a = metrics[0]
+
+    so = Objective(metric=metric_a,minimize=True)
+
+    optimization_config = OptimizationConfig(objective=so)
+
+    # true_min = min(get_min_list_from_df(
+    #     search_space,optimization_config,data,label_to_params_func,weights
+    # ))
+
+    # true_min = (data[axes[0]]*weights[0] + data[axes[1]]*weights[1] + data[axes[2]]*weights[2]).min()
+
+    true_min = np.min(np.sum(np.array(weights).reshape(1,-1) * data.values,axis=1))
+
+    return search_space, optimization_config, true_min
 
 
 def build_experiment(search_space,optimization_config):
