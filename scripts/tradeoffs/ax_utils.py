@@ -74,12 +74,6 @@ def build_ax_config_objects_sohpo(parameters,metrics,data,weights):
 
     optimization_config = OptimizationConfig(objective=so)
 
-    # true_min = min(get_min_list_from_df(
-    #     search_space,optimization_config,data,label_to_params_func,weights
-    # ))
-
-    # true_min = (data[axes[0]]*weights[0] + data[axes[1]]*weights[1] + data[axes[2]]*weights[2]).min()
-
     true_min = np.min(np.sum(np.array(weights).reshape(1,-1) * data.values,axis=1))
 
     return search_space, optimization_config, true_min
@@ -423,7 +417,7 @@ def get_glch_hv_list(search_space,optimization_config,glch_data,label_to_params_
     return glch_hv_list
 
 
-def ax_loop_mohpo(results_folder,search_space,optimization_config,max_hv,n_seeds,seeds_range,n_init,n_batch):
+def setup_ax_loop(results_folder,n_seeds,seeds_range,n_init,n_batch):
 
     if not os.path.isdir(results_folder):
         os.mkdir(results_folder)
@@ -432,6 +426,27 @@ def ax_loop_mohpo(results_folder,search_space,optimization_config,max_hv,n_seeds
     random.seed(42)
     random_seeds = random.sample(range(*seeds_range), n_seeds)
     random.setstate(original_random_state)
+
+    iters = np.arange(1, n_init + n_batch + 1)
+
+    return random_seeds, iters
+
+
+def ax_loop_sohpo(results_folder,search_space,optimization_config,true_min,n_seeds,seeds_range,n_init,n_batch):
+
+    random_seeds, iters = setup_ax_loop(results_folder,n_seeds,seeds_range,n_init,n_batch)
+
+    for seed in random_seeds:
+
+        gpei_min_list = gpei_method(search_space,optimization_config,seed,n_init,n_batch)
+
+        methods_df = pd.DataFrame({"iters":iters,"gpei_min_list": gpei_min_list,"true_min":len(iters)*[true_min]})
+        methods_df.to_csv(f"{results_folder}/{'_'.join(optimization_config.metrics.keys())}_ax_methods_seed{seed}.csv")
+
+
+def ax_loop_mohpo(results_folder,search_space,optimization_config,max_hv,n_seeds,seeds_range,n_init,n_batch):
+
+    random_seeds, iters = setup_ax_loop(results_folder,n_seeds,seeds_range,n_init,n_batch)
 
     for seed in random_seeds:
 
@@ -443,7 +458,6 @@ def ax_loop_mohpo(results_folder,search_space,optimization_config,max_hv,n_seeds
 
         init_hv_list = get_init_hv_list(search_space,optimization_config,seed,n_init)
 
-        iters = np.arange(1, n_init + n_batch + 1)
         methods_df = get_ax_methods_hv_df(iters,init_hv_list,sobol_hv_list,ehvi_hv_list,parego_hv_list,max_hv)
         methods_df.to_csv(f"{results_folder}/{'_'.join(optimization_config.metrics.keys())}_ax_methods_seed{seed}.csv")
 
