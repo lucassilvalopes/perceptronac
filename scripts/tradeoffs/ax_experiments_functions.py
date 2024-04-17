@@ -2,6 +2,7 @@
 import random
 import pandas as pd
 import numpy as np
+from typing import List
 
 from ax.core.objective import MultiObjective, Objective
 from ax.core.optimization_config import (
@@ -75,7 +76,7 @@ def rdc_read_glch_data(glch_csv_path):
 
 
 
-def rdc_load_data(data_csv_path,lambdas=[],complexity_axis="params"):
+def rdc_loss_load_data(data_csv_path,lambdas=[],complexity_axis="params"):
     data = pd.read_csv(data_csv_path)
     if len(lambdas) == 0:
         data = data.set_index("labels")
@@ -84,9 +85,19 @@ def rdc_load_data(data_csv_path,lambdas=[],complexity_axis="params"):
     data = data[["bpp_loss","mse_loss",complexity_axis]]
     return data
 
-def rdc_loss_setup(data_csv_path,weights,lambdas,complexity_axis):
 
-    data = rdc_load_data(data_csv_path,lambdas,complexity_axis)
+def rdc_loss_prefix(data,weights,lambdas):
+    formatted_axes = '_'.join(list(data.columns))
+    formatted_lambdas = \
+        "" if len(lambdas)==0 else "lambdas_" + "-".join([lambdas[i] for i in np.argsort(list(map(float,lambdas)))])+"_"
+    formatted_weights = 'weights_'.join([custom_e_notation(w) for w in weights])
+    prefix = f"{formatted_axes}_{formatted_weights}_{formatted_lambdas}_ax_methods"
+    return prefix
+
+
+def rdc_loss_setup(data_csv_path:str,weights:List[float],lambdas:List[str],complexity_axis:str):
+
+    data = rdc_loss_load_data(data_csv_path,lambdas,complexity_axis)
 
     if weights is None:
         weights = [1 for _ in range(3)]
@@ -114,7 +125,7 @@ def rdc_loss_setup(data_csv_path,weights,lambdas,complexity_axis):
 
     true_min = get_true_min(data,weights)
 
-    prefix = f"{'_'.join(list(data.columns))}_{'_'.join([custom_e_notation(w) for w in weights])}_ax_methods"
+    prefix = rdc_prefix(data,weights,lambdas)
 
     return *build_ax_config_objects_sohpo(parameters,metrics),true_min,weights,prefix
 
