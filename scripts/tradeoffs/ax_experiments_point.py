@@ -14,7 +14,7 @@ if __name__ == "__main__":
     for lmbda,mult in [("5e-3",1),("5e-3",100),("1e-2",1),("1e-2",100),("2e-2",1),("2e-2",100)]:
 
         lambdas=[lmbda]
-        formatted_lambdas = "-".join([lambdas[i] for i in np.argsort(list(map(float,lambdas)))])+"_"
+        formatted_lambdas = "-".join([lambdas[i] for i in np.argsort(list(map(float,lambdas)))])
 
         weights=[1,float(lmbda)*(255**2),1/(1e6 * mult)]
         formatted_weights = f"{'_'.join(['{:.0e}'.format(w) for w in weights])}"
