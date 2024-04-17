@@ -240,12 +240,23 @@ def parego_method(search_space,optimization_config,seed,n_init,n_batch):
     return parego_hv_list
 
 
-def df_to_trials(df,label_to_params_func,axes):
+def df_to_trials_mohpo(df,label_to_params_func,axes):
     trials = []
     for r,c in df.iterrows():
         trials.append({
             "input":label_to_params_func(r),
             "output": { k:{"mean":c[k], "sem": 0} for k in axes }
+        })
+    return trials
+
+
+def df_to_trials_sohpo(df,label_to_params_func,axes,weights,metric_name):
+    
+    trials = []
+    for r,c in df.iterrows():
+        trials.append({
+            "input":label_to_params_func(r),
+            "output": { metric_name:{"mean":sum(weights * c[axes].values), "sem": 0} }
         })
     return trials
 
@@ -286,15 +297,40 @@ def get_trials_hv(search_space,optimization_config,trials):
     return hv
 
 
+def get_trials_min_list(search_space,optimization_config,trials):
+
+    min_exp = build_experiment(search_space,optimization_config)
+
+    initialize_experiment_with_trials(min_exp,trials)
+    
+    min_exp.fetch_data()
+    
+    objective_means = np.array([[trial.objective_mean for trial in min_exp.trials.values()]])
+    min_list = np.minimum.accumulate(objective_means, axis=1).reshape(-1).tolist()
+
+    return min_list
+
+
 def get_hv_from_df(search_space,optimization_config,data,label_to_params_func):
 
     axes = list(optimization_config.metrics.keys())
 
-    trials = df_to_trials(data,label_to_params_func,axes)
+    trials = df_to_trials_mohpo(data,label_to_params_func,axes)
 
     hv = get_trials_hv(search_space,optimization_config,trials)
 
     return hv
+
+
+def get_min_list_from_df(search_space,optimization_config,data,label_to_params_func,axes,weights):
+
+    metric_name = list(optimization_config.metrics.keys())[0]
+
+    trials = df_to_trials_sohpo(data,label_to_params_func,axes,weights,metric_name)
+
+    min_list = get_trials_min_list(search_space,optimization_config,trials)
+
+    return min_list
 
 
 def get_ax_methods_hv_df(iters,init_hv_list,sobol_hv_list,ehvi_hv_list,parego_hv_list,max_hv):
