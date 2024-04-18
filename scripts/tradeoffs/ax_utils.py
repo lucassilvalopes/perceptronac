@@ -394,7 +394,7 @@ def plot_hv_graph(methods_df,fig_path=None):
         fig.savefig(fig_path)
 
 
-def avg_ax_dfs(ax_results_folder,prefix):
+def avg_ax_dfs(ax_results_folder,prefix,n_iters):
 
     dfs = []
     for f in os.listdir(ax_results_folder):
@@ -408,6 +408,18 @@ def avg_ax_dfs(ax_results_folder,prefix):
     avg_df /= len(dfs)
 
     avg_df = avg_df.drop("glch_hv_list",axis=1,errors="ignore")
+
+    if avg_df.shape[0] < n_iters:
+        avg_df = avg_df.drop("iters",axis=1,errors="ignore")
+        avg_df = pd.DataFrame({ 
+            "iters":list(range(1,n_iters+1)),
+            **{k:v+((n_iters-len(v))*[None]) for k,v in avg_df.to_dict(orient="list").items()}
+        })
+    elif avg_df.shape[0] > n_iters:
+        avg_df = avg_df.iloc[:n_iters,:]
+
+    else:
+        pass
 
     return avg_df
 
@@ -512,7 +524,7 @@ def ax_glch_comparison_sohpo(
 
     ax_loop_sohpo(results_folder,prefix,search_space,optimization_config,true_min,n_seeds,seeds_range,n_init,n_batch)
 
-    avg_df = avg_ax_dfs(results_folder,prefix)
+    avg_df = avg_ax_dfs(results_folder,prefix,n_iters)
 
     glch_df = pd.DataFrame({"glch_min_list":glch_min_list})
 
@@ -546,7 +558,7 @@ def ax_glch_comparison_mohpo(
 
     ax_loop_mohpo(results_folder,prefix,search_space,optimization_config,max_hv,n_seeds,seeds_range,n_init,n_batch)
 
-    avg_df = avg_ax_dfs(results_folder,prefix)
+    avg_df = avg_ax_dfs(results_folder,prefix,n_iters)
 
     glch_df = pd.DataFrame(glch_hv_lists)
 
