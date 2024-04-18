@@ -5,7 +5,7 @@ from perceptronac.power_consumption import estimate_joules, get_n_pixels
 from perceptronac.power_consumption import group_energy_measurements
 from glch import GLCHGiftWrapping,GLCHGiftWrappingTieBreak,GLCHAngleRule,GHO2D,GHO
 from decimal import Decimal
-from glch_utils import save_tree_data, save_hull_data, save_threed_history, save_threed_hull_data, save_optimal_point
+from glch_utils import save_tree_data, save_hull_data, save_threed_history, save_threed_hull_data
 from glch_utils import save_history
 
 
@@ -88,12 +88,12 @@ def save_glch_data(
                 debug=debug,title=title,debug_folder=debug_folder,version="2D")
             save_tree_data(data,r,axes[0],axes[1],axes_ranges[0],axes_ranges[1],title,
                 x_in_log_scale=x_in_log_scale,x_alias=axes_aliases[0],y_alias=axes_aliases[1],fldr=fldr,tree_str=tree_str)
-            # save_optimal_point(data,r,axes,weights,tree_str,title,fldr=fldr)
+            
             save_history(data,tree_str,title,fldr=fldr)
         else:
             r,tree_str = build_gho_tree(data,possible_values,axes,initial_values,to_str_method,constrained,weights,
                 debug=debug,title=title,debug_folder=debug_folder,version="multidimensional")
-            # save_optimal_point(data,r,axes,weights,tree_str,title,fldr=fldr)
+            
             save_history(data,tree_str,title,fldr=fldr)
     else:
         ValueError(algo)

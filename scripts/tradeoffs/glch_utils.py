@@ -414,31 +414,21 @@ def save_hull_data(data,r,x_axis,y_axis,x_range,y_range,data_id,x_in_log_scale=F
     save_hull_points(data,[r],x_axis,y_axis,f"{fldr}/{data_id}_hulls")
 
 
-def get_optimal_point_info(data,axes,weights):
-    ix = np.argmin([sum([c*w for c,w in zip(xyzetc,weights)]) for xyzetc in data.loc[:,axes].values.tolist()])
-    info = data.iloc[[ix],:].reset_index().loc[:,["labels"]+axes]
-    return info
-
-
-def get_trained_networks_up_to_node(tree_str,node_lbl):
+def get_trained_networks_up_to_tree_str_line(tree_str,row_idx):
+    tree_str = tree_str.strip()
     tree_data = [[wd for wd in ln.split()] for ln in re.sub("[!]+","",tree_str).split("\n")] 
-    row_idx = [(node_lbl in ln) for ln in tree_data].index(True)
-    col_idx = [(wd == node_lbl) for wd in tree_data[row_idx]].index(True)
-    if col_idx == 0:
-        row_idx = row_idx - 1
-    trained_networks = {wd for ln in tree_data[:row_idx+1] for wd in ln}.union({tree_data[0][0]})
+    trained_networks = {wd for ln in tree_data[:row_idx] for wd in ln}.union({tree_data[0][0]})
     return trained_networks
 
 
-
 def get_trained_networks_history(data,tree_str):
-
-    parent_nodes = [ln.split()[0] for ln in tree_str.split("\n") if ln.strip()] 
+    tree_str = tree_str.strip()
+    n_lines = len(tree_str.split("\n"))
     pieces = []
     past = set()
     iter_vect = []
-    for i,parent_node in enumerate(parent_nodes):
-        trained_networks = get_trained_networks_up_to_node(tree_str,parent_node)
+    for i in range(n_lines):
+        trained_networks = get_trained_networks_up_to_tree_str_line(tree_str,i)
         pieces.append(data.loc[trained_networks-past,:].copy(deep=True))
         for _ in range(len(trained_networks-past)):
             iter_vect.append(i)
@@ -453,76 +443,6 @@ def get_trained_networks_history(data,tree_str):
     hist = hist.assign(iteration=np.array(iter_vect))
 
     return hist
-
-
-def loss_per_trials(data,axes,weights,tree_str):
-
-    parent_nodes = [ln.split()[0] for ln in tree_str.split("\n") if ln.strip()] 
-
-    n_trained_networks_history = []
-    loss_history = []
-    for parent_node in parent_nodes:
-        trained_networks = get_trained_networks_up_to_node(tree_str,parent_node)
-        best_so_far = get_optimal_point_info(data.loc[trained_networks,:],axes,weights)
-        coord = best_so_far[axes].iloc[0,:].values.tolist()
-        loss = get_loss(coord,weights)
-        n_trained_networks_history.append(len(trained_networks))
-        loss_history.append(loss)
-    
-    return n_trained_networks_history, loss_history
-
-
-def get_loss(coord,weights):
-    return sum([c*w for c,w in zip(coord,weights)])
-
-
-def save_optimal_point(data,r,axes,weights,tree_str,exp_id,fldr="gho_results"):
-    new_points = []
-    new_points += [str(r)]
-    new_points += tree_nodes(r,[],"all")
-    probe = data.loc[new_points,:]
-
-    final_n_trained_networks = len(set(new_points))
-
-    estimated_best = get_optimal_point_info(probe,axes,weights)
-    true_best = get_optimal_point_info(data,axes,weights)
-
-    estimated_best_lbl = estimated_best["labels"].iloc[0]
-    true_best_lbl = true_best["labels"].iloc[0]
-
-    estimated_best_coord = estimated_best[axes].iloc[0,:].values.tolist()
-    true_best_coord = true_best[axes].iloc[0,:].values.tolist()
-
-    estimated_best_loss = get_loss(estimated_best_coord,weights)
-    true_best_loss = get_loss(true_best_coord,weights)
-
-    percent_higher = 100 * (estimated_best_loss - true_best_loss) / true_best_loss
-
-    n_trained_networks = len(get_trained_networks_up_to_node(tree_str,estimated_best_lbl))
-
-    n_trained_networks_history, loss_history = loss_per_trials(data,axes,weights,tree_str)
-    n_trained_networks_history.append(final_n_trained_networks)
-    loss_history.append(estimated_best_loss)
-
-    # loss_history = [(el - true_best_loss) for el in loss_history]
-
-    with open(f'{fldr}/{exp_id}_optimal_point.txt', 'w') as f:
-
-        print("\nestimated best:\n",file=f)
-        print(estimated_best,file=f)
-        print("\ntrue best:\n",file=f)
-        print(true_best,file=f)
-        print("",file=f)
-        print(f"number of trained networks: {n_trained_networks}",file=f)
-        print(f"estimated best loss: {estimated_best_loss}",file=f)
-        print(f"true best loss: {true_best_loss}",file=f)
-        print(f"loss higher by (%): {percent_higher}",file=f)
-        
-
-    df = pd.DataFrame({"n_trials":n_trained_networks_history,"loss":loss_history})
-
-    df.to_csv(f'{fldr}/{exp_id}_optimal_point.csv')
-
 
 
 def save_history(data,tree_str,exp_id,fldr="glch_results"):

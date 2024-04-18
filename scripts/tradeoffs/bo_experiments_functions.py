@@ -8,7 +8,13 @@ import random
 import numpy as np
 import pandas as pd
 from collections.abc import Iterable
-from glch_utils import get_optimal_point_info
+
+
+def get_optimal_point_info(data,axes,weights):
+    ix = np.argmin([sum([c*w for c,w in zip(xyzetc,weights)]) for xyzetc in data.loc[:,axes].values.tolist()])
+    info = data.iloc[[ix],:].reset_index().loc[:,["labels"]+axes]
+    return info
+
 
 class BayesOptRateDist:
 
