@@ -182,7 +182,7 @@ def rb_label_to_params(label):
     h1 = int(split_label[1])
     h2 = int(split_label[2])
     qb = int(split_label[4].rstrip('b'))
-    return {"h1":h1,"h2":h2, qb:"qb"}
+    return {"h1":h1,"h2":h2, "qb":qb}
 
 def rb_setup(csv_path):
 
