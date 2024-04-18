@@ -401,9 +401,11 @@ def avg_ax_dfs(ax_results_folder,prefix,n_iters):
         if f.endswith(".csv") and (prefix in f):
             dfs.append( pd.read_csv(os.path.join(ax_results_folder,f)) )
 
-    avg_df = dfs[0]
+    common_len = min([df.shape[0] for df in dfs])
+
+    avg_df = dfs[0].iloc[:common_len,:]
     for df in dfs[1:]:
-        avg_df += df
+        avg_df += df.iloc[:common_len,:]
 
     avg_df /= len(dfs)
 
