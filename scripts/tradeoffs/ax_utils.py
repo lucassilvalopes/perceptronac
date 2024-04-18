@@ -536,9 +536,9 @@ def ax_glch_comparison_mohpo(
         glch_data = read_glch_data_func(glch_csv_path)
         glch_hv_lists[lbl] = get_glch_hv_list(search_space,optimization_config,glch_data,label_to_params_func)
 
-    n_iters = min([len(glch_hv_list) for glch_hv_list in glch_hv_lists.values()])
+    n_iters = max([len(glch_hv_list) for glch_hv_list in glch_hv_lists.values()])
 
-    glch_hv_lists = {k:v[:n_iters] for k,v in glch_hv_lists.items()}
+    glch_hv_lists = {k:v+((n_iters-len(v))*[None]) for k,v in glch_hv_lists.items()}
 
     n_batch = n_iters - n_init
 
