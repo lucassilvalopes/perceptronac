@@ -88,7 +88,7 @@ def rdc_loss_load_data(data_csv_path,lambdas=[],complexity_axis="params"):
 
 
 def rdc_loss_prefix(data,weights,lambdas):
-    formatted_axes = '_'.join(list(data.columns))
+    formatted_axes = '_'.join(list(data.columns)).replace('/','_over_')
     formatted_lambdas = \
         "" if len(lambdas)==0 else "lambdas_" + "-".join([lambdas[i] for i in np.argsort(list(map(float,lambdas)))])+"_"
     formatted_weights = 'weights_'.join([custom_e_notation(w) for w in weights])

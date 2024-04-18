@@ -542,7 +542,7 @@ def ax_glch_comparison_mohpo(
 
     n_batch = n_iters - n_init
 
-    prefix = f"{'_'.join(optimization_config.metrics.keys())}_ax_methods_seed"
+    prefix = f"{'_'.join(optimization_config.metrics.keys()).replace('/','_over_')}_ax_methods_seed"
 
     ax_loop_mohpo(results_folder,prefix,search_space,optimization_config,max_hv,n_seeds,seeds_range,n_init,n_batch)
 
