@@ -3,40 +3,40 @@ import numpy as np
 import os
 
 
-def simple_lambda_grid_3d():
-    m45 = -45
-    m90 = -90+1e-10
-    m00 = -1e-10
-    grid = -1/np.tan((np.pi/180) * np.array([
-        [m45,m90,m90],
-        [m45,m90,m45],
-        [m45,m90,m00],
-        [m45,m45,m90],
-        [m45,m45,m45],
-        [m45,m00,m90],
-        [m45,m00,m00]
-    ]))
-    return grid
+# def simple_lambda_grid_3d():
+#     m45 = -45
+#     m90 = -90+1e-10
+#     m00 = -1e-10
+#     grid = -1/np.tan((np.pi/180) * np.array([
+#         [m45,m90,m90],
+#         [m45,m90,m45],
+#         [m45,m90,m00],
+#         [m45,m45,m90],
+#         [m45,m45,m45],
+#         [m45,m00,m90],
+#         [m45,m00,m00]
+#     ]))
+#     return grid
 
 
-def lambda_seq(ticks,angle_start=None,angle_end=None):
-    m90 = -90+1e-10
-    m00 = -1e-10
-    if angle_start is None:
-        angle_start = m00
-    if angle_end is None:
-        angle_end = m90
-    ls = -1/np.tan((np.pi/180) * np.linspace(angle_start,angle_end,ticks))
-    return ls
+# def lambda_seq(ticks,angle_start=None,angle_end=None):
+#     m90 = -90+1e-10
+#     m00 = -1e-10
+#     if angle_start is None:
+#         angle_start = m00
+#     if angle_end is None:
+#         angle_end = m90
+#     ls = -1/np.tan((np.pi/180) * np.linspace(angle_start,angle_end,ticks))
+#     return ls
 
 
-def lambda_grid_3d(y_lmbd,z_lmbd):
-    zv,yv = np.meshgrid(z_lmbd, y_lmbd)
-    zv_flat = zv.reshape(-1,1)
-    yv_flat = yv.reshape(-1,1)
-    xv_flat = np.ones((len(y_lmbd)*len(z_lmbd),1))
-    grid = np.hstack([xv_flat,yv_flat,zv_flat])
-    return grid
+# def lambda_grid_3d(y_lmbd,z_lmbd):
+#     zv,yv = np.meshgrid(z_lmbd, y_lmbd)
+#     zv_flat = zv.reshape(-1,1)
+#     yv_flat = yv.reshape(-1,1)
+#     xv_flat = np.ones((len(y_lmbd)*len(z_lmbd),1))
+#     grid = np.hstack([xv_flat,yv_flat,zv_flat])
+#     return grid
 
 
 def plot_3d_lch(arrays_of_points,colors,markers,alphas,ax_ranges=None,ax_labels=None,title=None,planes=[]):
@@ -248,18 +248,18 @@ def get_points(x_range,y_range,z_range,point,normal):
     return all_lpts
 
 
-def get_rotation_matrix(a,b):
-    """
-    https://math.stackexchange.com/questions/180418/calculate-rotation-matrix-to-align-vector-a-to-vector-b-in-3d
-    """
-    # a = np.array([1, 0, 0], dtype=np.float64)
-    # b = np.array([0, 0, 1], dtype=np.float64)
-    v = np.cross(a, b)
-    s = np.linalg.norm(v)
-    c = np.dot(a, b)
-    vx = np.array([[0, -v[2], v[1]], [v[2], 0, -v[0]], [-v[1], v[0], 0]])
-    r = np.eye(3) + vx + np.dot(vx, vx) * (1-c)/(s**2)
-    return r
+# def get_rotation_matrix(a,b):
+#     """
+#     https://math.stackexchange.com/questions/180418/calculate-rotation-matrix-to-align-vector-a-to-vector-b-in-3d
+#     """
+#     # a = np.array([1, 0, 0], dtype=np.float64)
+#     # b = np.array([0, 0, 1], dtype=np.float64)
+#     v = np.cross(a, b)
+#     s = np.linalg.norm(v)
+#     c = np.dot(a, b)
+#     vx = np.array([[0, -v[2], v[1]], [v[2], 0, -v[0]], [-v[1], v[0], 0]])
+#     r = np.eye(3) + vx + np.dot(vx, vx) * (1-c)/(s**2)
+#     return r
 
 
 def plane_intersect(a, b):
