@@ -35,6 +35,11 @@ def label_map(orig_lbl,lr_symbol):
         return label_map_dict[orig_lbl]
 
 
+
+def find_lr(orig_lbl):
+    return float(re.search(r'[\d\.]{1,}e-[\d]{1,}',orig_lbl).group())
+
+
 def linestyle_map(orig_lbl):
     linestyle_map_dict = {
         "LUTmean": "solid",
@@ -45,11 +50,19 @@ def linestyle_map(orig_lbl):
         "Ours" : "dashed", 
         "Xavier": linestyle_tuple["densely dashed"],
     }
+    linestyle_map_dict_rnn = {
+        0.05 : "solid",
+        0.01 : linestyle_tuple['densely dotted'], 
+        0.005 : linestyle_tuple['loosely dashed'], 
+        0.001 : "dashdot", 
+    }
+
     if "MLP" in orig_lbl:
-        ky = float(re.search(r'[\d\.]{1,}e-[\d]{1,}',orig_lbl).group())
+        ky = find_lr(orig_lbl)
         return linestyle_map_dict[ky]
     elif "RNN" in orig_lbl:
-        return linestyle_tuple['densely dotted']
+        ky = find_lr(orig_lbl)
+        return linestyle_map_dict_rnn[ky]
     else:
         return linestyle_map_dict[orig_lbl]
 
@@ -64,11 +77,20 @@ def color_map(orig_lbl):
         "Ours" : "b",
         "Xavier": "k",
     }
+    color_map_dict_rnn = {
+        0.05 : "tab:red",
+        0.01 : "m",
+        0.005 : "k",
+        0.001 : "tab:cyan",
+    }
+
+
     if "MLP" in orig_lbl:
-        ky = float(re.search(r'[\d\.]{1,}e-[\d]{1,}',orig_lbl).group())
+        ky = find_lr(orig_lbl)
         return color_map_dict[ky]
     elif "RNN" in orig_lbl:
-        return "m"
+        ky = find_lr(orig_lbl)
+        return color_map_dict_rnn[ky]
     else:
         return color_map_dict[orig_lbl]
 
