@@ -6,7 +6,7 @@ if __name__ == "__main__":
 
     lr_list = [0.001,0.005,0.01,0.05]
 
-    samples_per_time_list = [1, 64]
+    samples_per_time_list = [1, 64, 96]
 
     for lr in lr_list:
 
@@ -22,11 +22,7 @@ if __name__ == "__main__":
 
             docs = [ # docs[i,j] = the path to the j'th page from the i'th document
                 [
-                    "/home/lucas/Documents/data/SPL2021/all_pages/Adaptive_Detection_of_Dim_Maneuvering_Targets_in_Adjacent_Range_Cells_1.png",
-                    # "/home/lucas/Documents/data/SPL2021/all_pages/Adaptive_Detection_of_Dim_Maneuvering_Targets_in_Adjacent_Range_Cells_2.png",
-                    # "/home/lucas/Documents/data/SPL2021/all_pages/Adaptive_Detection_of_Dim_Maneuvering_Targets_in_Adjacent_Range_Cells_3.png",
-                    # "/home/lucas/Documents/data/SPL2021/all_pages/Adaptive_Detection_of_Dim_Maneuvering_Targets_in_Adjacent_Range_Cells_4.png",
-                    # "/home/lucas/Documents/data/SPL2021/all_pages/Adaptive_Detection_of_Dim_Maneuvering_Targets_in_Adjacent_Range_Cells_5.png",
+                    "/home/lucas/Documents/data/SPL2020V/pages/A_PDE_Model_for_Smooth_Surface_Reconstruction_from_2D_Parallel_Slices_2.png"
                 ]
             ]
 
