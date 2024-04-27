@@ -72,7 +72,7 @@ def plot_single_curve(ax,rates,xvalues,linestyle,color,label,marker):
 
 
 def plot_comparison(xvalues,data,xlabel,ylabel='bits/sample',xscale="linear",linestyles=None,colors=None,markers=None,
-    labels=None,legend_ncol=None,figsize=(4.8,4.8)):
+    labels=None,legend_ncol=None,figsize=(4.8,4.8),new_order_sorted_keys=None,legend_loc="upper right"):
 
     if linestyles is None:
         linestyles = {"JBIG1":"dashdot","LUT":"dotted","MLP":"solid","STATIC":"dashed"}
@@ -88,7 +88,12 @@ def plot_comparison(xvalues,data,xlabel,ylabel='bits/sample',xscale="linear",lin
     fig, ax = plt.subplots(nrows=1, ncols=1,figsize=figsize)    
 
     handles = []
-    for k in sorted(data.keys()):
+
+    ks = sorted(data.keys())
+    if new_order_sorted_keys:
+        ks = np.array(ks)[new_order_sorted_keys].tolist()
+
+    for k in ks:
         if isinstance(xvalues,dict):
             handle = plot_single_curve(ax,data[k],xvalues[k],linestyles[k],colors[k],labels[k],markers[k])
         else:
@@ -99,7 +104,7 @@ def plot_comparison(xvalues,data,xlabel,ylabel='bits/sample',xscale="linear",lin
     ax.set_xlabel(xlabel)
     ax.set_ylabel(ylabel)
     ax.set_xscale(xscale)
-    ax.legend(handles=handles,loc="upper right", ncol=legend_ncol)
+    ax.legend(handles=handles,loc=legend_loc, ncol=legend_ncol)
 
     fig.tight_layout()
     # plt.show()    

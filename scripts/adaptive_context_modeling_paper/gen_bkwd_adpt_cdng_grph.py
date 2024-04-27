@@ -117,7 +117,7 @@ def read_csvs(csvs):
     return data, identifiers
 
 
-def plot_bkwd_adpt_cdng_grph(data,legend_ncol,columns,figsize=(4.8,4.8),lr_symbol="\lambda"):
+def plot_bkwd_adpt_cdng_grph(data,legend_ncol,columns,figsize=(4.8,4.8),lr_symbol="\lambda",new_order_sorted_keys=None,legend_loc="upper right"):
 
     xvalues = data.index
 
@@ -136,7 +136,9 @@ def plot_bkwd_adpt_cdng_grph(data,legend_ncol,columns,figsize=(4.8,4.8),lr_symbo
         colors={k:c for k,c in zip(sorted(data.keys()),colors)},
         markers={k:"" for k in sorted(data.keys())},
         labels={k:lb for k,lb in zip(sorted(data.keys()),labels)},
-        legend_ncol=legend_ncol,figsize=figsize)
+        legend_ncol=legend_ncol,figsize=figsize,
+        new_order_sorted_keys=new_order_sorted_keys,
+        legend_loc=legend_loc)
 
     return fig
 
