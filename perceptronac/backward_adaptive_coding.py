@@ -326,7 +326,8 @@ def backward_adaptive_coding(pths,N,lr,central_tendencies,with_lut=False,with_ml
 
 
 def backward_adaptive_coding_experiment(exp_name,docs,Ns,learning_rates,central_tendencies,colors,linestyles,
-    labels,legend_ncol,ylim,parallel=False,samples_per_time=1,n_pieces=1):
+    labels,legend_ncol,ylim,parallel=False,samples_per_time=1,n_pieces=1,
+    manual_th=None,full_page=True,page_len = (1024*768)):
 
     max_N = 26
 
@@ -334,9 +335,9 @@ def backward_adaptive_coding_experiment(exp_name,docs,Ns,learning_rates,central_
         if parallel:
             if samples_per_time != 1:
                 raise ValueError("parallel processing with more than one sample per page at a time is not supported yet")
-            len_data = 1024*768
+            len_data = page_len
         else:
-            len_data = (len(docs[0]) * 1024*768) // samples_per_time
+            len_data = (len(docs[0]) * page_len) // samples_per_time
 
         data = dict()
         if N > 0:
@@ -353,13 +354,15 @@ def backward_adaptive_coding_experiment(exp_name,docs,Ns,learning_rates,central_
                 for i_lr,lr in enumerate(learning_rates):
                     with_lut = ((i_lr == len(learning_rates)-1) and (N<=max_N))
                     partial_data = backward_adaptive_coding(doc,N,lr,central_tendencies,with_lut=with_lut,
-                        parallel=parallel,samples_per_time=samples_per_time,n_pieces=n_pieces)
+                        parallel=parallel,samples_per_time=samples_per_time,n_pieces=n_pieces,
+                        manual_th=manual_th,full_page=full_page,page_len = page_len)
                     k = "MLPlr={:.0e}".format(lr)
                     data[k] = data[k] + np.array(partial_data[k])
             if (N<=max_N):
                 if not all([f"LUT{central_tendency}" in partial_data.keys() for central_tendency in central_tendencies]):
                     partial_data = backward_adaptive_coding(doc,N,0,central_tendencies,with_lut=True,with_mlp=False,
-                        parallel=parallel,samples_per_time=samples_per_time,n_pieces=n_pieces)
+                        parallel=parallel,samples_per_time=samples_per_time,n_pieces=n_pieces,
+                        manual_th=manual_th,full_page=full_page,page_len = page_len)
                 for central_tendency in central_tendencies:
                     k = f"LUT{central_tendency}"
                     data[k] = data[k] + np.array(partial_data[k])
