@@ -327,11 +327,20 @@ def backward_adaptive_coding(pths,N,lr,central_tendencies,with_lut=False,with_ml
 
 def backward_adaptive_coding_experiment(exp_name,docs,Ns,learning_rates,central_tendencies,colors,linestyles,
     labels,legend_ncol,ylim,parallel=False,samples_per_time=1,n_pieces=1,
-    manual_th=None,full_page=True,page_len = (1024*768)):
+    manual_th=None,full_page=True,page_shape = (1024,768)):
 
     max_N = 26
 
     for N in Ns:
+
+        nr,nc = page_shape
+        if full_page is False:
+            ns = int(np.ceil(np.sqrt(N)))
+            page_len = (nr-ns) * (nc-2*ns)
+        else:
+            page_len = nr * nc
+
+
         if parallel:
             if samples_per_time != 1:
                 raise ValueError("parallel processing with more than one sample per page at a time is not supported yet")
