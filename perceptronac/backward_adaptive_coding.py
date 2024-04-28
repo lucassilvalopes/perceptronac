@@ -151,7 +151,26 @@ class RealTimeLUT:
         return pp
 
 
-def backward_adaptive_coding(pths,N,lr,central_tendencies,with_lut=False,with_mlp=True,parallel=False,samples_per_time=1,n_pieces=1):
+def backward_adaptive_coding(pths,N,lr,central_tendencies,with_lut=False,with_mlp=True,parallel=False,samples_per_time=1,n_pieces=1,
+                             manual_th=None,full_page=True,page_len = (1024*768)):
+    """
+    
+    Assumptions:
+    --> page_len must be divisible by n_pieces
+    --> page_len * len(pths) must be divisible by n_pieces
+    --> (page_len * len(pths)) // n_pieces must be divisible by samples_per_time
+    --> Or equivalently, page_len * len(pths) must be divisible by n_pieces*samples_per_time
+
+    Observations:
+    - start_page and end_page may have the same value, for example, when there is only one page
+    - the actual "piece length", when parallel = False, is upper_lim - lower_lim
+    - "piece" is so that arbitrarily large sequences can be coded
+    - samples_per_time is the batch_size when parallel = False
+    - currently only samples_per_time=1 is supported for parallel = True, in which case the batch_size is len(pths)
+    
+    """
+    
+    
     
     if N == 0:
         with_mlp = False
@@ -196,12 +215,6 @@ def backward_adaptive_coding(pths,N,lr,central_tendencies,with_lut=False,with_ml
             lut_avg_code_length_histories[central_tendency] = []
             lut_running_losses[central_tendency] = 0.0 
 
-
-    # (1024*768) * len(pths) must be divisible by n_pieces*batch_size
-    # (1024*768) must be divisible by n_pieces
-    # ((1024*768) * len(pths)) // n_pieces must be divisible by batch_size
-    piece_len = (1024*768) // n_pieces
-
     iteration = 0
     for piece in range(n_pieces):
 
@@ -213,12 +226,13 @@ def backward_adaptive_coding(pths,N,lr,central_tendencies,with_lut=False,with_ml
             y = []
             X = []
             for pth in pths:
-                partial_y,partial_X = causal_context_many_imgs([pth], N)
-                y.append(partial_y[(piece*piece_len):((piece+1)*piece_len),:].copy())
-                X.append(partial_X[(piece*piece_len):((piece+1)*piece_len),:].copy())
+                partial_y,partial_X = causal_context_many_imgs([pth], N,
+                                                               manual_th=manual_th,full_page=full_page)
+                y.append(partial_y[(piece*(page_len//n_pieces)):((piece+1)*(page_len//n_pieces)),:].copy())
+                X.append(partial_X[(piece*(page_len//n_pieces)):((piece+1)*(page_len//n_pieces)),:].copy())
                 del partial_y,partial_X
 
-            y = np.concatenate(y,axis=1).reshape(-1,1)
+            y = np.concatenate(y,axis=1).reshape(-1,1) # interleaves the samples from different pages
             if N > 0:
                 X = np.concatenate(X,axis=1).reshape(-1,N)
             else:
@@ -226,10 +240,8 @@ def backward_adaptive_coding(pths,N,lr,central_tendencies,with_lut=False,with_ml
         else:
             batch_size=samples_per_time
 
-            lower_lim = (piece*piece_len*len(pths))
-            upper_lim = ((piece+1)*piece_len*len(pths))
-
-            page_len = (piece_len * n_pieces)
+            lower_lim = (piece*((page_len*len(pths))//n_pieces))
+            upper_lim = ((piece+1)*((page_len*len(pths))//n_pieces))
 
             start_page_upper_lim = page_len
             start_page_lower_lim = 0
@@ -247,7 +259,8 @@ def backward_adaptive_coding(pths,N,lr,central_tendencies,with_lut=False,with_ml
                 end_page_lower_lim = end_page*page_len
                 end_page_upper_lim = (end_page+1)*page_len
 
-            y,X = causal_context_many_imgs(np.array(pths)[start_page:end_page+1].tolist(), N)
+            y,X = causal_context_many_imgs(np.array(pths)[start_page:end_page+1].tolist(), N,
+                                           manual_th=manual_th,full_page=full_page)
             y = y[lower_lim-start_page_lower_lim:upper_lim-start_page_lower_lim,:]
             X = X[lower_lim-start_page_lower_lim:upper_lim-start_page_lower_lim,:]
 
@@ -267,8 +280,8 @@ def backward_adaptive_coding(pths,N,lr,central_tendencies,with_lut=False,with_ml
         for data in dataloader:
             X_b,y_b=data
 
-            start = iteration * batch_size - (piece*piece_len*len(pths))
-            stop = (iteration+1)* batch_size - (piece*piece_len*len(pths))
+            start = iteration * batch_size - (piece*((page_len*len(pths))//n_pieces))
+            stop = (iteration+1)* batch_size - (piece*((page_len*len(pths))//n_pieces))
 
             if with_mlp:
 
