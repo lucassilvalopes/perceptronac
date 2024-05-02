@@ -206,6 +206,8 @@ def backward_adaptive_coding(exp_id,
             par_batch_size = par_docs_len
         else:
             par_batch_size = int(par_conf.set_index("key").loc["samples_per_time","value"])
+    else:
+        inherited_iterations = 0
     
     if N == 0:
         with_mlp = False
@@ -315,7 +317,8 @@ def backward_adaptive_coding(exp_id,
             X = X[lower_lim-start_page_lower_lim:upper_lim-start_page_lower_lim,:]
 
 
-        assert par_batch_size == batch_size
+        if parent_id:
+            assert par_batch_size == batch_size
 
         trainset = torch.utils.data.TensorDataset(torch.tensor(X),torch.tensor(y))
         dataloader = torch.utils.data.DataLoader(trainset,batch_size=batch_size,shuffle=False)
