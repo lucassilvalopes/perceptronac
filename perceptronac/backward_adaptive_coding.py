@@ -22,6 +22,7 @@ import time
 import math
 import torch
 import numpy as np
+import pandas as pd
 from perceptronac.models import MLP_N_64N_32N_1
 from perceptronac.utils import causal_context_many_imgs
 from perceptronac.losses import perfect_AC
@@ -205,9 +206,13 @@ def backward_adaptive_coding(exp_id,
         device=torch.device("cuda:0")
 
         model = MLP_N_64N_32N_1(N)
+        mlp_avg_code_length_history = []
+        mlp_running_loss = 0.0
 
         if parent_id:
             load_nn_model(model,"results/exp_{}/exp_{}_mlp_lr{:.0e}.pt".format(parent_id,parent_id,lr))
+            mlp_running_loss = \
+                pd.read_csv(f"results/exp_{parent_id}/exp_{parent_id}_values.csv")["MLPlr={:.0e}".format(lr)].iloc[-1]
         else:
             initialize_MLP_N_64N_32N_1(model)
 
@@ -230,10 +235,6 @@ def backward_adaptive_coding(exp_id,
 
         criterion = Log2BCELoss(reduction='sum')
         optimizer = torch.optim.SGD(model.parameters(), lr=lr)
-
-        mlp_avg_code_length_history = []
-        
-        mlp_running_loss = 0.0
     
     if with_lut:
         lut_avg_code_length_histories = dict()
@@ -241,12 +242,19 @@ def backward_adaptive_coding(exp_id,
         luts = dict()
         for central_tendency in central_tendencies:
             luts[central_tendency] = RealTimeLUT(N,central_tendency=central_tendency)
-            if parent_id:
-                load_lut_model(luts[central_tendency],f"results/exp_{parent_id}/exp_{parent_id}_lut_{central_tendency}.npz")
             lut_avg_code_length_histories[central_tendency] = []
             lut_running_losses[central_tendency] = 0.0 
+            if parent_id:
+                load_lut_model(luts[central_tendency],f"results/exp_{parent_id}/exp_{parent_id}_lut_{central_tendency}.npz")
+                lut_running_losses[central_tendency] = \
+                    pd.read_csv(f"results/exp_{parent_id}/exp_{parent_id}_values.csv")[f"LUT{central_tendency}"].iloc[-1]
+
 
     iteration = 0
+    if parent_id:
+        iteration = pd.read_csv(f"results/exp_{parent_id}/exp_{parent_id}_values.csv")["iteration"].iloc[-1] + 1
+
+
     for piece in range(n_pieces):
 
         if parallel:
