@@ -252,8 +252,10 @@ def backward_adaptive_coding(exp_id,
 
     iteration = 0
     if parent_id:
-        iteration = pd.read_csv(f"results/exp_{parent_id}/exp_{parent_id}_values.csv")["iteration"].iloc[-1] + 1
+        inherited_iterations = pd.read_csv(f"results/exp_{parent_id}/exp_{parent_id}_values.csv")["iteration"].iloc[-1] + 1
 
+    # import pdb
+    # pdb.set_trace()
 
     for piece in range(n_pieces):
 
@@ -334,7 +336,7 @@ def backward_adaptive_coding(exp_id,
                 optimizer.step()
 
                 mlp_running_loss += loss.item()
-                mlp_avg_code_length_history.append( mlp_running_loss / ((iteration + 1) * batch_size) )
+                mlp_avg_code_length_history.append( mlp_running_loss / ((inherited_iterations + iteration + 1) * batch_size) )
 
             assert np.allclose(y_b.detach().cpu().numpy().astype(int) , y[start:stop,:].astype(int))
             assert np.allclose(X_b.detach().cpu().numpy().astype(int) , X[start:stop,:].astype(int))
@@ -348,7 +350,8 @@ def backward_adaptive_coding(exp_id,
                     lut_loss = batch_size * perfect_AC(y[start:stop,:],lut_pred_t)
 
                     lut_running_losses[central_tendency] += lut_loss
-                    lut_avg_code_length_histories[central_tendency].append(lut_running_losses[central_tendency]/((iteration+1)*batch_size))
+                    lut_avg_code_length_histories[central_tendency].append(
+                        lut_running_losses[central_tendency]/((inherited_iterations + iteration+1)*batch_size))
 
             iteration+=1
             pbar.update(1)
@@ -447,7 +450,13 @@ def backward_adaptive_coding_experiment(exp_name,docs,Ns,learning_rates,central_
         for k in data.keys():
             data[k] = data[k]/len(docs)
             
-        xvalues = np.arange( len_data )
+
+        if parent_id:
+            shift = pd.read_csv(f"results/exp_{parent_id}/exp_{parent_id}_values.csv")["iteration"].iloc[-1] + 1
+        else:
+            shift = 0
+
+        xvalues = np.arange( len_data ) + shift
             
 
         ## Figure/Values
