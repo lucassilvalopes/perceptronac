@@ -151,12 +151,36 @@ class RealTimeLUT:
         return pp
 
 
+
+
+from perceptronac.loading_and_saving import save_model
+
+
+def save_nn_model(file_name,model):
+    save_model(file_name,model)
+
+def load_nn_model(model,file_name):
+    # model = MLP_N_64N_32N_1(N)
+    model.load_state_dict(torch.load(file_name))
+
+def save_lut_model(file_name,model):
+    file_name = os.path.splitext(file_name)[0]
+    np.savez(f"{file_name}.npz", c0=model.c0, c1=model.c1)
+
+def load_lut_model(model,file_name):
+    # model = RealTimeLUT(N,central_tendency=central_tendency)
+    npz_kw = np.load(file_name)
+    model.c0 = npz_kw["c0"]
+    model.c1 = npz_kw["c1"]
+
+
+
 def backward_adaptive_coding(pths,N,lr,central_tendencies,with_lut=False,with_mlp=True,parallel=False,samples_per_time=1,n_pieces=1,
                              manual_th=None,full_page=True,page_len = (1024*768)):
     """
     
     Assumptions:
-    --> page_len must be divisible by n_pieces
+    --> page_len must be divisible by n_pieces (parallel=True)
     --> page_len * len(pths) must be divisible by n_pieces
     --> (page_len * len(pths)) // n_pieces must be divisible by samples_per_time
     --> Or equivalently, page_len * len(pths) must be divisible by n_pieces*samples_per_time
