@@ -31,6 +31,7 @@ from perceptronac.loading_and_saving import plot_comparison
 from perceptronac.loading_and_saving import save_values
 from perceptronac.loading_and_saving import linestyle_tuple
 from perceptronac.loading_and_saving import change_aspect
+from ast import literal_eval
 from tqdm import tqdm
 
 
@@ -195,8 +196,16 @@ def backward_adaptive_coding(exp_id,
     - currently only samples_per_time=1 is supported for parallel = True, in which case the batch_size is len(pths)
     
     """
-    
-    
+
+    if parent_id:
+        inherited_iterations = pd.read_csv(f"results/exp_{parent_id}/exp_{parent_id}_values.csv")["iteration"].iloc[-1] + 1
+        par_conf = pd.read_csv(f"results/exp_{parent_id}/exp_{parent_id}_conf.csv")
+        par_parallel = bool(par_conf.set_index("key").loc["parallel","value"])
+        par_docs_len = len(literal_eval(par_conf.set_index("key").loc["docs","value"]))
+        if par_parallel:
+            par_batch_size = par_docs_len
+        else:
+            par_batch_size = int(par_conf.set_index("key").loc["samples_per_time","value"])
     
     if N == 0:
         with_mlp = False
@@ -212,7 +221,8 @@ def backward_adaptive_coding(exp_id,
         if parent_id:
             load_nn_model(model,"results/exp_{}/exp_{}_mlp_lr{:.0e}.pt".format(parent_id,parent_id,lr))
             mlp_running_loss = \
-                pd.read_csv(f"results/exp_{parent_id}/exp_{parent_id}_values.csv")["MLPlr={:.0e}".format(lr)].iloc[-1]
+                pd.read_csv(f"results/exp_{parent_id}/exp_{parent_id}_values.csv")["MLPlr={:.0e}".format(lr)].iloc[-1] \
+                    * inherited_iterations * par_batch_size
         else:
             initialize_MLP_N_64N_32N_1(model)
 
@@ -247,12 +257,11 @@ def backward_adaptive_coding(exp_id,
             if parent_id:
                 load_lut_model(luts[central_tendency],f"results/exp_{parent_id}/exp_{parent_id}_lut_{central_tendency}.npz")
                 lut_running_losses[central_tendency] = \
-                    pd.read_csv(f"results/exp_{parent_id}/exp_{parent_id}_values.csv")[f"LUT{central_tendency}"].iloc[-1]
+                    pd.read_csv(f"results/exp_{parent_id}/exp_{parent_id}_values.csv")[f"LUT{central_tendency}"].iloc[-1] \
+                        * inherited_iterations * par_batch_size
 
 
     iteration = 0
-    if parent_id:
-        inherited_iterations = pd.read_csv(f"results/exp_{parent_id}/exp_{parent_id}_values.csv")["iteration"].iloc[-1] + 1
 
     # import pdb
     # pdb.set_trace()
@@ -305,6 +314,8 @@ def backward_adaptive_coding(exp_id,
             y = y[lower_lim-start_page_lower_lim:upper_lim-start_page_lower_lim,:]
             X = X[lower_lim-start_page_lower_lim:upper_lim-start_page_lower_lim,:]
 
+
+        assert par_batch_size == batch_size
 
         trainset = torch.utils.data.TensorDataset(torch.tensor(X),torch.tensor(y))
         dataloader = torch.utils.data.DataLoader(trainset,batch_size=batch_size,shuffle=False)
@@ -468,7 +479,7 @@ def backward_adaptive_coding_experiment(exp_name,docs,Ns,learning_rates,central_
             labels={k:lb for k,lb in zip(sorted(data.keys()),labels)},
             legend_ncol=legend_ncol)
 
-        xticks = np.round(np.linspace(0,len_data-1,5)).astype(int)
+        xticks = np.round(np.linspace(0+shift,len_data+shift-1,5)).astype(int)
 
         fig.axes[0].set_xticks( xticks)
         fig.axes[0].set_xticklabels( xticks)
