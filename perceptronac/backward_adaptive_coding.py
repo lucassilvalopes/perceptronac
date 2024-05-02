@@ -152,7 +152,7 @@ class RealTimeLUT:
 
 
 
-
+from perceptronac.loading_and_saving import save_configs
 from perceptronac.loading_and_saving import save_model
 
 
@@ -175,8 +175,9 @@ def load_lut_model(model,file_name):
 
 
 
-def backward_adaptive_coding(pths,N,lr,central_tendencies,with_lut=False,with_mlp=True,parallel=False,samples_per_time=1,n_pieces=1,
-                             manual_th=None,full_page=True,page_len = (1024*768)):
+def backward_adaptive_coding(exp_id,
+                             pths,N,lr,central_tendencies,with_lut=False,with_mlp=True,parallel=False,samples_per_time=1,n_pieces=1,
+                             manual_th=None,full_page=True,page_len = (1024*768),parent_id=None):
     """
     
     Assumptions:
@@ -204,7 +205,11 @@ def backward_adaptive_coding(pths,N,lr,central_tendencies,with_lut=False,with_ml
         device=torch.device("cuda:0")
 
         model = MLP_N_64N_32N_1(N)
-        initialize_MLP_N_64N_32N_1(model)
+
+        if parent_id:
+            load_nn_model(model,"results/exp_{}/exp_{}_mlp_lr{:.0e}.pt".format(parent_id,parent_id,lr))
+        else:
+            initialize_MLP_N_64N_32N_1(model)
 
         for i in range(len(model.layers)):
             if isinstance(model.layers[i], torch.nn.Linear):
@@ -236,6 +241,8 @@ def backward_adaptive_coding(pths,N,lr,central_tendencies,with_lut=False,with_ml
         luts = dict()
         for central_tendency in central_tendencies:
             luts[central_tendency] = RealTimeLUT(N,central_tendency=central_tendency)
+            if parent_id:
+                load_lut_model(luts[central_tendency],f"results/exp_{parent_id}/exp_{parent_id}_lut_{central_tendency}.npz")
             lut_avg_code_length_histories[central_tendency] = []
             lut_running_losses[central_tendency] = 0.0 
 
@@ -346,16 +353,45 @@ def backward_adaptive_coding(pths,N,lr,central_tendencies,with_lut=False,with_ml
         for central_tendency in central_tendencies:
             data[f"LUT{central_tendency}"] = lut_avg_code_length_histories[central_tendency]
 
+
+    save_nn_model("results/exp_{}/exp_{}_mlp_lr{:.0e}.pt".format(exp_id,exp_id,lr),model)
+
+    for central_tendency in central_tendencies:
+        save_lut_model(f"results/exp_{exp_id}/exp_{exp_id}_lut_{central_tendency}.npz",luts[central_tendency])
+
+
     return data
 
 
 def backward_adaptive_coding_experiment(exp_name,docs,Ns,learning_rates,central_tendencies,colors,linestyles,
     labels,legend_ncol,ylim,parallel=False,samples_per_time=1,n_pieces=1,
-    manual_th=None,full_page=True,page_shape = (1024,768)):
+    manual_th=None,full_page=True,page_shape = (1024,768), parent_id=None):
 
     max_N = 26
 
     for N in Ns:
+
+        exp_id = str(int(time.time()))
+
+        os.makedirs(f"results/exp_{exp_id}")
+
+        configs = {
+            "id": exp_id,
+            "docs": docs,
+            "N": N,
+            "learning_rates": learning_rates,
+            "central_tendencies": central_tendencies,
+            "parallel": parallel,
+            "samples_per_time": samples_per_time,
+            "n_pieces": n_pieces,
+            "manual_th": manual_th,
+            "full_page": full_page,
+            "page_shape": page_shape,
+            "parent_id": parent_id
+        }
+
+        save_configs(f"results/exp_{exp_id}/exp_{exp_id}_conf",configs)
+
 
         nr,nc = page_shape
         if full_page is False:
@@ -386,16 +422,16 @@ def backward_adaptive_coding_experiment(exp_name,docs,Ns,learning_rates,central_
             if N > 0:
                 for i_lr,lr in enumerate(learning_rates):
                     with_lut = ((i_lr == len(learning_rates)-1) and (N<=max_N))
-                    partial_data = backward_adaptive_coding(doc,N,lr,central_tendencies,with_lut=with_lut,
+                    partial_data = backward_adaptive_coding(exp_id,doc,N,lr,central_tendencies,with_lut=with_lut,
                         parallel=parallel,samples_per_time=samples_per_time,n_pieces=n_pieces,
-                        manual_th=manual_th,full_page=full_page,page_len = page_len)
+                        manual_th=manual_th,full_page=full_page,page_len = page_len,parent_id=parent_id)
                     k = "MLPlr={:.0e}".format(lr)
                     data[k] = data[k] + np.array(partial_data[k])
             if (N<=max_N):
                 if not all([f"LUT{central_tendency}" in partial_data.keys() for central_tendency in central_tendencies]):
-                    partial_data = backward_adaptive_coding(doc,N,0,central_tendencies,with_lut=True,with_mlp=False,
+                    partial_data = backward_adaptive_coding(exp_id,doc,N,0,central_tendencies,with_lut=True,with_mlp=False,
                         parallel=parallel,samples_per_time=samples_per_time,n_pieces=n_pieces,
-                        manual_th=manual_th,full_page=full_page,page_len = page_len)
+                        manual_th=manual_th,full_page=full_page,page_len = page_len,parent_id=parent_id)
                 for central_tendency in central_tendencies:
                     k = f"LUT{central_tendency}"
                     data[k] = data[k] + np.array(partial_data[k])
@@ -405,6 +441,9 @@ def backward_adaptive_coding_experiment(exp_name,docs,Ns,learning_rates,central_
             
         xvalues = np.arange( len_data )
             
+
+        ## Figure/Values
+
         fig = plot_comparison(xvalues,data,"iteration",
             linestyles={k:ls for k,ls in zip(sorted(data.keys()),linestyles)},
             colors={k:c for k,c in zip(sorted(data.keys()),colors)},
@@ -422,17 +461,8 @@ def backward_adaptive_coding_experiment(exp_name,docs,Ns,learning_rates,central_
 
         change_aspect(ax)
 
-        exp_id = str(int(time.time()))
-        save_dir = f"results/exp_{exp_id}"
+        fig.savefig(f"results/exp_{exp_id}/exp_{exp_id}_graph.png", dpi=300)
 
-        os.makedirs(save_dir)
-
-        fname = f"{save_dir.rstrip('/')}/backward_adaptive_coding_{exp_name}_N{N}"
-
-        fig.savefig(fname+".png", dpi=300)
-
-        # save_values(fname,[xvalues[-1]],{k:[v[-1]] for k,v in data.items()},"iteration")
-
-        save_values(fname,xvalues,data,"iteration")
+        save_values(f"results/exp_{exp_id}/exp_{exp_id}_values",xvalues,data,"iteration")
 
 
