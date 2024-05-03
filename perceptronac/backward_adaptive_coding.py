@@ -374,15 +374,13 @@ def backward_adaptive_coding(exp_id,
     data = dict()
     if with_mlp:
         data["MLPlr={:.0e}".format(lr)] = mlp_avg_code_length_history
+
+        save_nn_model("results/exp_{}/exp_{}_mlp_lr{:.0e}.pt".format(exp_id,exp_id,lr),model)
     if with_lut:
         for central_tendency in central_tendencies:
             data[f"LUT{central_tendency}"] = lut_avg_code_length_histories[central_tendency]
 
-
-    save_nn_model("results/exp_{}/exp_{}_mlp_lr{:.0e}.pt".format(exp_id,exp_id,lr),model)
-
-    for central_tendency in central_tendencies:
-        save_lut_model(f"results/exp_{exp_id}/exp_{exp_id}_lut_{central_tendency}.npz",luts[central_tendency])
+            save_lut_model(f"results/exp_{exp_id}/exp_{exp_id}_lut_{central_tendency}.npz",luts[central_tendency])
 
 
     return data
