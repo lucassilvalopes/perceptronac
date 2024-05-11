@@ -469,15 +469,28 @@ def backward_adaptive_coding_experiment(exp_name,docs,Ns,learning_rates,central_
             shift = 0
 
         xvalues = np.arange( len_data ) + shift
-            
 
-        ## Figure/Values
+
+        ## Save Values 
+
+        save_values(f"results/exp_{exp_id}/exp_{exp_id}_values",xvalues,data,"iteration")
+
+
+        ## Save Figure
+
+        all_k = sorted(["MLPlr={:.0e}".format(lr) for lr in learning_rates] + [
+            f"LUT{central_tendency}" for central_tendency in central_tendencies])
+
+        observed_k = sorted(data.keys())
+
+        observed_k_idx = [i for i,k in enumerate(all_k) if k in observed_k]
+
 
         fig = plot_comparison(xvalues,data,"iteration",
-            linestyles={k:ls for k,ls in zip(sorted(data.keys()),linestyles)},
-            colors={k:c for k,c in zip(sorted(data.keys()),colors)},
+            linestyles={k:ls for k,ls in zip(sorted(data.keys()),np.array(linestyles)[observed_k_idx].tolist() )},
+            colors={k:c for k,c in zip(sorted(data.keys()),np.array(colors)[observed_k_idx].tolist() )},
             markers={k:"" for k in sorted(data.keys())},
-            labels={k:lb for k,lb in zip(sorted(data.keys()),labels)},
+            labels={k:lb for k,lb in zip(sorted(data.keys()),np.array(labels)[observed_k_idx].tolist() )},
             legend_ncol=legend_ncol)
 
         xticks = np.round(np.linspace(0+shift,len_data+shift-1,5)).astype(int)
@@ -492,6 +505,6 @@ def backward_adaptive_coding_experiment(exp_name,docs,Ns,learning_rates,central_
 
         fig.savefig(f"results/exp_{exp_id}/exp_{exp_id}_graph.png", dpi=300)
 
-        save_values(f"results/exp_{exp_id}/exp_{exp_id}_values",xvalues,data,"iteration")
+        
 
 
