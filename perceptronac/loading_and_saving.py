@@ -6,14 +6,29 @@ import pandas as pd
 import os
 import math
 import matplotlib.pyplot as plt
+from collections import OrderedDict
+
 from sklearn.preprocessing import MinMaxScaler
 from matplotlib.ticker import FormatStrFormatter
 from math import log10, floor
 from perceptronac.convex_hull import convex_hull
 
 
+# https://matplotlib.org/stable/gallery/color/named_colors.html
+base_colors = OrderedDict({
+    'b': (0, 0, 1),
+    'g': (0, 0.5, 0),
+    'r': (1, 0, 0),
+    'c': (0, 0.75, 0.75),
+    'm': (0.75, 0, 0.75),
+    'y': (0.75, 0.75, 0),
+    'k': (0, 0, 0),
+    'w': (1, 1, 1)
+})
+
+
 # https://matplotlib.org/3.5.0/gallery/lines_bars_and_markers/linestyles.html
-linestyle_tuple = {
+linestyle_tuple = OrderedDict({
      'solid':                 'solid', # Same as (0, ()) or '-'
      'dotted':                'dotted', # Same as (0, (1, 1)) or ':'
      'dashed':                'dashed', # Same as '--'
@@ -30,7 +45,7 @@ linestyle_tuple = {
      'dashdotdotted':         (0, (3, 5, 1, 5, 1, 5)),
      'loosely dashdotdotted': (0, (3, 10, 1, 10, 1, 10)),
      'densely dashdotdotted': (0, (3, 1, 1, 1, 1, 1))
-}
+})
 
 
 def find_n_decimal_places(number) -> int:
