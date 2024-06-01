@@ -405,7 +405,7 @@ def plot_hv_graph(methods_df,fig_path=None):
 
 def read_csv_only_wanted_columns(fpath):
     cols = list(pd.read_csv(fpath, nrows=1))
-    read_csv = pd.read_csv("sample_data.csv", usecols =[c for c in cols if ("_param_" not in c)])
+    read_csv = pd.read_csv(fpath, usecols =[c for c in cols if ("_param_" not in c)])
     return read_csv
 
 
