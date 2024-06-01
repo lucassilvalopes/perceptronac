@@ -123,7 +123,7 @@ def get_init_hv_list(search_space,optimization_config,seed,n_init):
 
 def get_param_lists(experiment, experiment_id):
     param_df = pd.DataFrame([trial.arm.parameters for trial in experiment.trials.values()])
-    param_df.columns = [f"{experiment_id}_{c}" for c in param_df.columns]
+    param_df.columns = [f"{experiment_id}_param_{c}" for c in param_df.columns]
     param_lists = param_df.to_dict(orient="list")
     return param_lists
 
@@ -402,12 +402,20 @@ def plot_hv_graph(methods_df,fig_path=None):
         fig.savefig(fig_path)
 
 
+
+def read_csv_only_wanted_columns(fpath):
+    cols = list(pd.read_csv(fpath, nrows=1))
+    read_csv = pd.read_csv("sample_data.csv", usecols =[c for c in cols if ("_param_" not in c)])
+    return read_csv
+
+
+
 def avg_ax_dfs(ax_results_folder,prefix,n_iters):
 
     dfs = []
     for f in os.listdir(ax_results_folder):
         if f.endswith(".csv") and (prefix in f):
-            dfs.append( pd.read_csv(os.path.join(ax_results_folder,f)) )
+            dfs.append( read_csv_only_wanted_columns(os.path.join(ax_results_folder,f)) )
 
     common_len = min([df.shape[0] for df in dfs])
 
