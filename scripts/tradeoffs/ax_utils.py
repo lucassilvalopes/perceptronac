@@ -121,6 +121,14 @@ def get_init_hv_list(search_space,optimization_config,seed,n_init):
 
 
 
+def get_param_lists(experiment, experiment_id):
+    param_df = pd.DataFrame([trial.arm.parameters for trial in experiment.trials.values()])
+    param_df.columns = [f"{experiment_id}_{c}" for c in param_df.columns]
+    param_lists = param_df.to_dict(orient="list")
+    return param_lists
+
+
+
 def gpei_method(search_space,optimization_config,seed,n_init,n_batch):
 
     gpei_experiment = build_experiment(search_space,optimization_config)
@@ -140,7 +148,10 @@ def gpei_method(search_space,optimization_config,seed,n_init,n_batch):
     gpei_experiment.fetch_data()
 
     objective_means = np.array([[trial.objective_mean for trial in gpei_experiment.trials.values()]])
-    return np.minimum.accumulate(objective_means, axis=1).reshape(-1).tolist()
+
+    gpei_param_lists = get_param_lists(gpei_experiment,"gpei")
+
+    return np.minimum.accumulate(objective_means, axis=1).reshape(-1).tolist(), gpei_param_lists
 
 
 def sobol_method(search_space,optimization_config,seed,n_init,n_batch):
@@ -180,7 +191,9 @@ def sobol_method(search_space,optimization_config,seed,n_init,n_batch):
 
     sobol_outcomes = np.array(exp_to_df(sobol_experiment)[metric_names], dtype=np.double)
 
-    return sobol_hv_list
+    sobol_param_lists = get_param_lists(sobol_experiment,"sobol")
+
+    return sobol_hv_list, sobol_param_lists
 
 
 
@@ -217,7 +230,9 @@ def ehvi_method(search_space,optimization_config,seed,n_init,n_batch):
 
     ehvi_outcomes = np.array(exp_to_df(ehvi_experiment)[metric_names], dtype=np.double)
 
-    return ehvi_hv_list 
+    ehvi_param_lists = get_param_lists(ehvi_experiment,"ehvi")
+
+    return ehvi_hv_list, ehvi_param_lists
 
 
 
@@ -258,7 +273,9 @@ def parego_method(search_space,optimization_config,seed,n_init,n_batch):
 
     parego_outcomes = np.array(exp_to_df(parego_experiment)[metric_names], dtype=np.double)
 
-    return parego_hv_list
+    parego_param_lists = get_param_lists(parego_experiment,"parego")
+
+    return parego_hv_list, parego_param_lists
 
 
 def df_to_trials_mohpo(df,label_to_params_func,axes):
@@ -354,15 +371,6 @@ def get_min_list_from_df(search_space,optimization_config,data,label_to_params_f
     min_list = get_trials_min_list(search_space,optimization_config,trials)
 
     return min_list
-
-
-def get_ax_methods_hv_df(iters,init_hv_list,sobol_hv_list,ehvi_hv_list,parego_hv_list,max_hv):
-    methods_df = pd.DataFrame({"iters":iters,
-    "sobol_hv_list":np.hstack([init_hv_list,sobol_hv_list]),
-    "ehvi_hv_list":np.hstack([init_hv_list,ehvi_hv_list]),
-    "parego_hv_list":np.hstack([init_hv_list,parego_hv_list])}).set_index("iters")
-    methods_df["max_hv"] = max_hv
-    return methods_df
 
 
 def plot_min_graph(methods_df,fig_path=None):
@@ -472,9 +480,14 @@ def ax_loop_sohpo(results_folder,prefix,search_space,optimization_config,true_mi
 
     for seed in random_seeds:
 
-        gpei_min_list = gpei_method(search_space,optimization_config,seed,n_init,n_batch)
+        gpei_min_list, gpei_param_lists = gpei_method(search_space,optimization_config,seed,n_init,n_batch)
 
-        methods_df = pd.DataFrame({"iters":iters,"gpei_min_list": gpei_min_list,"true_min":len(iters)*[true_min]}).set_index("iters")
+        methods_df = pd.DataFrame({
+            "iters":iters,
+            "gpei_min_list": gpei_min_list,
+            "true_min":len(iters)*[true_min],
+            **gpei_param_lists
+        }).set_index("iters")
         methods_df.to_csv(f"{results_folder}/{prefix}{seed}.csv")
 
 
@@ -484,15 +497,27 @@ def ax_loop_mohpo(results_folder,prefix,search_space,optimization_config,max_hv,
 
     for seed in random_seeds:
 
-        sobol_hv_list = sobol_method(search_space,optimization_config,seed,n_init,n_batch)
+        sobol_hv_list, sobol_param_lists = sobol_method(search_space,optimization_config,seed,n_init,n_batch)
 
-        ehvi_hv_list = ehvi_method(search_space,optimization_config,seed,n_init,n_batch)
+        ehvi_hv_list, ehvi_param_lists = ehvi_method(search_space,optimization_config,seed,n_init,n_batch)
 
-        parego_hv_list = parego_method(search_space,optimization_config,seed,n_init,n_batch)
+        parego_hv_list, parego_param_lists = parego_method(search_space,optimization_config,seed,n_init,n_batch)
 
         init_hv_list = get_init_hv_list(search_space,optimization_config,seed,n_init)
 
-        methods_df = get_ax_methods_hv_df(iters,init_hv_list,sobol_hv_list,ehvi_hv_list,parego_hv_list,max_hv)
+
+        methods_df = pd.DataFrame({
+            "iters":iters,
+            "sobol_hv_list":np.hstack([init_hv_list,sobol_hv_list]),
+            "ehvi_hv_list":np.hstack([init_hv_list,ehvi_hv_list]),
+            "parego_hv_list":np.hstack([init_hv_list,parego_hv_list]),
+            **sobol_param_lists,
+            **ehvi_param_lists,
+            **parego_param_lists
+        }).set_index("iters")
+        methods_df["max_hv"] = max_hv
+
+
         methods_df.to_csv(f"{results_folder}/{prefix}{seed}.csv")
 
 
