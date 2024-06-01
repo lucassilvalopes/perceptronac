@@ -87,8 +87,10 @@ def plot_single_curve(ax,rates,xvalues,linestyle,color,label,marker):
     return handle
 
 
-def plot_comparison(xvalues,data,xlabel,ylabel='bits/sample',xscale="linear",linestyles=None,colors=None,markers=None,
-    labels=None,legend_ncol=None,figsize=(4.8,4.8),new_order_sorted_keys=None,legend_loc="upper right"):
+def plot_comparison(
+    xvalues,data,xlabel,ylabel='bits/sample',xscale="linear",linestyles=None,colors=None,markers=None,
+    labels=None,legend_ncol=None,figsize=(4.8,4.8),new_order_sorted_keys=None,legend_loc="upper right",
+    axes_labelsize=10):
 
     if linestyles is None:
         linestyles = {"JBIG1":"dashdot","LUT":"dotted","MLP":"solid","STATIC":"dashed"}
@@ -117,8 +119,8 @@ def plot_comparison(xvalues,data,xlabel,ylabel='bits/sample',xscale="linear",lin
         if handle:
             handles.append(handle)
 
-    ax.set_xlabel(xlabel)
-    ax.set_ylabel(ylabel)
+    ax.set_xlabel(xlabel, fontsize=axes_labelsize)
+    ax.set_ylabel(ylabel, fontsize=axes_labelsize)
     ax.set_xscale(xscale)
     ax.legend(handles=handles,loc=legend_loc, ncol=legend_ncol)
 
