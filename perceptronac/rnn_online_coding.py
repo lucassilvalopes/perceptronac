@@ -38,16 +38,15 @@ def train(rnn,hidden,criterion,learning_rate,category_tensor, line_tensor):
 
     losses = []
 
-    output, hidden = rnn(line_tensor[0], hidden)
+    # output, hidden = rnn(line_tensor[0], hidden)
 
     for i in range(category_tensor.size()[0]):
 
-        output, hidden = rnn(line_tensor[i+1], hidden)
+        # output, hidden = rnn(line_tensor[i+1], hidden)
+        output, hidden = rnn(line_tensor[i], hidden)
 
         losses.append( criterion(output, category_tensor[i]) )
 
-    # losses = torch.sum(torch.stack(losses))
-    # losses.backward()
     torch.sum(torch.stack(losses)).backward()
 
     for p in rnn.parameters():
@@ -96,7 +95,8 @@ def rnn_online_coding(pths,lr,which_model,hidden_units,n_layers,samples_per_time
     iteration = 0
 
     hidden = model.initHidden(device)
-    previous_targets = torch.ones(2,1,device=device)
+    # previous_targets = torch.ones(2,1,device=device)
+    previous_targets = torch.ones(1,1,device=device)
 
     for piece in range(n_pieces):
 
@@ -139,16 +139,13 @@ def rnn_online_coding(pths,lr,which_model,hidden_units,n_layers,samples_per_time
             inpt = onehot(torch.cat([previous_targets,y_b[:-1,:]],axis=0) )
 
             hidden,losses = train(model,hidden,criterion,lr,y_b, inpt)
-            # hidden,loss = train(model,hidden,criterion,lr,y_b, inpt)
 
-            previous_targets = torch.cat([previous_targets,y_b],axis=0)[-2:,:]
+            # previous_targets = torch.cat([previous_targets,y_b],axis=0)[-2:,:]
+            previous_targets = torch.cat([previous_targets,y_b],axis=0)[-1:,:]
 
             for i,loss in enumerate(losses):
                 running_loss += loss
                 avg_code_length_history.append( running_loss / ((iteration * samples_per_time) + (i+1)) )
-
-            # running_loss += loss
-            # avg_code_length_history.append( running_loss / ((iteration + 1) * samples_per_time) )
 
 
             iteration+=1
