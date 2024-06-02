@@ -91,7 +91,7 @@ def rnn_online_coding(pths,lr,which_model,hidden_units,n_layers,samples_per_time
     running_loss = 0.0
     
 
-    piece_len = (1024*768) // n_pieces
+    piece_len = (1024*768) // n_pieces # actually piece len per page. The true piece len is actually piece_len*len(pths) 
 
     iteration = 0
 
@@ -129,7 +129,7 @@ def rnn_online_coding(pths,lr,which_model,hidden_units,n_layers,samples_per_time
         pbar = tqdm(total=n_iterations)
 
         
-        for iteration in range(n_iterations):
+        for _ in range(n_iterations):
 
             start = iteration * samples_per_time - (piece*piece_len*len(pths))
             stop = (iteration+1)* samples_per_time - (piece*piece_len*len(pths))
