@@ -68,7 +68,7 @@ def rdc_setup(data_csv_path,complexity_axis="params"):
 
     metrics = [metric_a,metric_b,metric_c]
 
-    return build_ax_config_objects_mohpo(parameters,metrics,data,rdc_label_to_params)
+    return parameters,metrics,data
 
 def rdc_read_glch_data(glch_csv_path,complexity_axis="params"):
     return read_sorted_glch_data(
@@ -165,7 +165,7 @@ def rc_setup(csv_path,complexity_axis="micro_joules_per_pixel"):
 
     metrics = [metric_a,metric_b]
 
-    return build_ax_config_objects_mohpo(parameters,metrics,data,rc_label_to_params)
+    return parameters,metrics,data
 
 def rc_read_glch_data(glch_csv_path):
     return read_sorted_glch_data(glch_csv_path,"topology",rc_label_to_params,['iteration', 'h1','h2'])
@@ -207,7 +207,7 @@ def rb_setup(csv_path):
 
     metrics = [metric_a,metric_b]
 
-    return build_ax_config_objects_mohpo(parameters,metrics,data,rb_label_to_params)
+    return parameters,metrics,data
 
 def rb_read_glch_data(glch_csv_path):
     return read_sorted_glch_data(glch_csv_path,"idx",rb_label_to_params,['iteration', 'qb', 'h1','h2'])

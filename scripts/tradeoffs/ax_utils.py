@@ -576,7 +576,9 @@ def ax_glch_comparison_mohpo(
     n_seeds,seeds_range,n_init
     ):
 
-    search_space,optimization_config,max_hv = setup_func(data_csv_path)
+    parameters,metrics,data = setup_func(data_csv_path)
+
+    search_space,optimization_config,max_hv = build_ax_config_objects_mohpo(parameters,metrics,data,label_to_params_func)
 
     glch_hv_lists = dict()
     for lbl,glch_csv_path in glch_csv_paths.items():
