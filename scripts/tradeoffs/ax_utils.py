@@ -135,7 +135,7 @@ def gpei_method(search_space,optimization_config,seed,n_init,n_batch):
     gpei_data = initialize_experiment(gpei_experiment,seed,n_init)
 
     for i in range(n_batch):
-        torch.manual_seed(seed)
+        torch.manual_seed(seed+i)
         gpei = Models.BOTORCH_MODULAR(
             experiment=gpei_experiment,
             data=gpei_experiment.fetch_data()
@@ -157,18 +157,18 @@ def gpei_method(search_space,optimization_config,seed,n_init,n_batch):
 def sobol_method(search_space,optimization_config,seed,n_init,n_batch):
 
     sobol_experiment = build_experiment(search_space,optimization_config)
-    sobol_data = initialize_experiment(sobol_experiment,seed,n_init)
+    # sobol_data = initialize_experiment(sobol_experiment,seed,n_init)
 
     sobol_model = Models.SOBOL(
         experiment=sobol_experiment,
-        data=sobol_data,
+        # data=sobol_data,
         seed=seed
     )
 
     metric_names = list(sobol_experiment.metrics.keys())
 
     sobol_hv_list = []
-    for i in range(n_batch):
+    for i in range(n_init+n_batch):
         
         generator_run = sobol_model.gen(1)
         trial = sobol_experiment.new_trial(generator_run=generator_run)
@@ -193,7 +193,7 @@ def sobol_method(search_space,optimization_config,seed,n_init,n_batch):
 
     sobol_param_lists = get_param_lists(sobol_experiment,"sobol")
 
-    return sobol_hv_list, sobol_param_lists
+    return sobol_hv_list[n_init:], sobol_param_lists
 
 
 
@@ -207,7 +207,7 @@ def ehvi_method(search_space,optimization_config,seed,n_init,n_batch):
     ehvi_hv_list = []
     ehvi_model = None
     for i in range(n_batch):
-        torch.manual_seed(seed)
+        torch.manual_seed(seed+i)
         ehvi_model = Models.BOTORCH_MODULAR(
             experiment=ehvi_experiment,
             data=ehvi_data,
@@ -247,9 +247,9 @@ def parego_method(search_space,optimization_config,seed,n_init,n_batch):
     parego_model = None
     for i in range(n_batch):
 
-        torch.manual_seed(seed)
-        random.seed(seed)
-        np.random.seed(seed)
+        torch.manual_seed(seed+i)
+        random.seed(seed+i)
+        np.random.seed(seed+i)
         
         parego_model = get_MOO_PAREGO(
             experiment=parego_experiment,
