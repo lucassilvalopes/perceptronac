@@ -56,7 +56,7 @@ def train(rnn,hidden,criterion,learning_rate,category_tensor, line_tensor):
 
 
 
-def rnn_online_coding(pths,lr,which_model,hidden_units,n_layers,samples_per_time=1,n_pieces=1):
+def rnn_online_coding(pths,lr,which_model,hidden_units,n_layers,samples_per_time=1,n_pieces=1,page_len=(1024*768)):
     """
     To help me understand this code later:
     - batch_size is 1
@@ -69,11 +69,8 @@ def rnn_online_coding(pths,lr,which_model,hidden_units,n_layers,samples_per_time
     - the samples in line_tensor are one-hot encoded
     - then line_tensor is (samples_per_time+1,1,2)
     - each time backpropagation is run, is only on samples_per_time samples,
-    then this code runs truncated backpropagation through time truncated to samples_per_time samples
+    - then this code runs truncated backpropagation through time truncated to samples_per_time samples
     - the whole "pieces" thing is to restrict the amount of samples that are loaded into memory at a time.
-    - piece_len is actually the piece length per page
-    - the actual piece length is piece_len*len(pths)
-    - piece*piece_len*len(pths)=piece*(page_len/n_pieces)*len(pths)=(piece/n_pieces)*page_len*len(pths)
     """
 
     device=torch.device("cuda:0")
@@ -89,9 +86,6 @@ def rnn_online_coding(pths,lr,which_model,hidden_units,n_layers,samples_per_time
     
     running_loss = 0.0
     
-
-    piece_len = (1024*768) // n_pieces # actually piece len per page. The true piece len is actually piece_len*len(pths) 
-
     iteration = 0
 
     hidden = model.initHidden(device)
@@ -100,10 +94,8 @@ def rnn_online_coding(pths,lr,which_model,hidden_units,n_layers,samples_per_time
 
     for piece in range(n_pieces):
 
-        lower_lim = (piece*piece_len*len(pths))
-        upper_lim = ((piece+1)*piece_len*len(pths))
-
-        page_len = (piece_len * n_pieces)
+        lower_lim = (piece*((page_len*len(pths))//n_pieces))
+        upper_lim = ((piece+1)*((page_len*len(pths))//n_pieces))
 
         start_page_upper_lim = page_len
         start_page_lower_lim = 0
@@ -131,8 +123,8 @@ def rnn_online_coding(pths,lr,which_model,hidden_units,n_layers,samples_per_time
         
         for _ in range(n_iterations):
 
-            start = iteration * samples_per_time - (piece*piece_len*len(pths))
-            stop = (iteration+1)* samples_per_time - (piece*piece_len*len(pths))
+            start = iteration * samples_per_time - (piece*((page_len*len(pths))//n_pieces))
+            stop = (iteration+1)* samples_per_time - (piece*((page_len*len(pths))//n_pieces))
 
             y_b= torch.tensor(y[start:stop,:],dtype=torch.float32,device=device)
 
