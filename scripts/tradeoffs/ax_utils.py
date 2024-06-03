@@ -173,6 +173,8 @@ def sobol_method(search_space,optimization_config,seed,n_init,n_batch):
         generator_run = sobol_model.gen(1)
         trial = sobol_experiment.new_trial(generator_run=generator_run)
         trial.run()
+        sobol_experiment.fetch_data()
+
         exp_df = exp_to_df(sobol_experiment)
         outcomes = np.array(exp_df[metric_names], dtype=np.double)
         # Fit a GP-based model in order to calculate hypervolume.
