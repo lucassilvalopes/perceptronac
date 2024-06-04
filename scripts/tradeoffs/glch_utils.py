@@ -445,6 +445,34 @@ def get_trained_networks_history(data,tree_str):
     return hist
 
 
+def get_trained_networks_history_2(data,tree_str):
+    tree_str = tree_str.strip()
+    tree_data = [[wd for wd in ln.split()] for ln in re.sub("[!]+","",tree_str).split("\n")] 
+    
+    pieces = []
+    iter_vect = []
+
+    pieces.append(data.loc[[tree_data[0][0]],:].copy(deep=True).reset_index())
+    iter_vect.append(0)
+
+    for i in range(len(tree_data)):
+
+        lbls = [wd for wd in tree_data[i][1:] if wd != tree_data[i][0]]
+
+        if len(lbls) > 0:
+            pieces.append(data.loc[lbls,:].copy(deep=True).reset_index())
+
+            for _ in range(len(lbls)):
+                iter_vect.append(i+1)
+        else:
+            break
+
+    hist = pd.concat(pieces,axis=0)
+    hist = hist.assign(iteration=np.array(iter_vect))
+
+    return hist
+
+
 def save_history(data,tree_str,exp_id,fldr="glch_results"):
 
     df = get_trained_networks_history(data,tree_str)
