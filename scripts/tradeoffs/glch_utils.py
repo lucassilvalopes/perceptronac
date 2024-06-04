@@ -467,7 +467,7 @@ def get_trained_networks_history_2(data,tree_str):
         else:
             break
 
-    hist = pd.concat(pieces,axis=0)
+    hist = pd.concat(pieces,axis=0).reset_index(drop=True)
     hist = hist.assign(iteration=np.array(iter_vect))
 
     return hist
@@ -475,7 +475,9 @@ def get_trained_networks_history_2(data,tree_str):
 
 def save_history(data,tree_str,exp_id,fldr="glch_results"):
 
-    df = get_trained_networks_history(data,tree_str)
+    # df = get_trained_networks_history(data,tree_str)
+
+    df = get_trained_networks_history_2(data,tree_str)
 
     df.to_csv(f'{fldr}/{exp_id}_history.csv')
 
