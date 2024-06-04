@@ -355,6 +355,8 @@ def get_hv_from_df(search_space,optimization_config,data,label_to_params_func):
 
     axes = list(optimization_config.metrics.keys())
 
+    data = data[~data.index.duplicated(keep='first')]
+
     trials = df_to_trials_mohpo(data,label_to_params_func,axes)
 
     hv = get_trials_hv(search_space,optimization_config,trials)
