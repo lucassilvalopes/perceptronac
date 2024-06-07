@@ -249,7 +249,7 @@ all_hvs_df = adjust_ax_glch_comparison_mohpo(
     read_glch_data_func=partial(rdc_read_glch_data,complexity_axis=complexity_axis),
     label_to_params_func=rdc_label_to_params,
     params_to_label_func = rdc_params_to_label,
-    up_to_complexity=False
+    up_to_complexity=True
 )
 
 
