@@ -231,8 +231,8 @@ def adjust_ax_glch_comparison_mohpo(
 
 from ax_experiments_functions import rdc_setup,rdc_read_glch_data,rdc_label_to_params, rdc_params_to_label
 
-complexity_axis = "params"
-# complexity_axis = "flops"
+# complexity_axis = "params"
+complexity_axis = "flops"
 
 
 all_hvs_df = adjust_ax_glch_comparison_mohpo(
@@ -249,7 +249,7 @@ all_hvs_df = adjust_ax_glch_comparison_mohpo(
     read_glch_data_func=partial(rdc_read_glch_data,complexity_axis=complexity_axis),
     label_to_params_func=rdc_label_to_params,
     params_to_label_func = rdc_params_to_label,
-    up_to_complexity=True
+    up_to_complexity=False
 )
 
 
