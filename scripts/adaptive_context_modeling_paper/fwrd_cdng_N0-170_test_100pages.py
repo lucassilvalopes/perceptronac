@@ -38,7 +38,7 @@ if __name__ == "__main__":
         "save_dir": "results",
         "max_context": 27, # cabac
         "dset_pieces": 100, # if not enough memory to hold all data at once, specify into how many pieces the data should be divided
-        "methods": ["MLP","LUT"],
+        "methods": ["MLP","LUT","JBIG1"],
         "manual_th": None,
         "full_page": True
     }

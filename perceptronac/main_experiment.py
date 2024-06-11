@@ -1,6 +1,7 @@
 
 import torch
 import warnings
+from collections import namedtuple
 from perceptronac.losses import perfect_AC
 from perceptronac.utils import jbig1_rate
 from perceptronac.loading_and_saving import save_model
@@ -32,6 +33,8 @@ from scipy.sparse import load_npz
 import time
 import subprocess
 import pandas as pd
+
+JBIG1Dataset = namedtuple('JBIG1Dataset', ['pths'])
 
 
 def get_prefix(configs, id_key = 'id', parent_id_index = None ):
@@ -275,11 +278,13 @@ class RatesJBIG1:
         train_loss, valid_loss = [], []
         for phase in sorted(phases): # train first then valid
             if phase == 'train':
-                dataset = CausalContextDataset(datatraining, self.configs["data_type"], self.N, self.configs["percentage_of_uncles"],
-                                               manual_th=self.configs["manual_th"],full_page=self.configs["full_page"])
+                dataset = JBIG1Dataset(datatraining)
+                # dataset = CausalContextDataset(datatraining, self.configs["data_type"], self.N, self.configs["percentage_of_uncles"],
+                #                                manual_th=self.configs["manual_th"],full_page=self.configs["full_page"])
             else:
-                dataset = CausalContextDataset(datacoding, self.configs["data_type"], self.N, self.configs["percentage_of_uncles"],
-                                               manual_th=self.configs["manual_th"],full_page=self.configs["full_page"])
+                dataset = JBIG1Dataset(datacoding)
+                # dataset = CausalContextDataset(datacoding, self.configs["data_type"], self.N, self.configs["percentage_of_uncles"],
+                #                                manual_th=self.configs["manual_th"],full_page=self.configs["full_page"])
             final_loss = self.avg_rate(dataset.pths)
             if phase=='train':
                 train_loss.append(final_loss)
