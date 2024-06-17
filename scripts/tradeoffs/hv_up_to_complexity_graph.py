@@ -75,6 +75,7 @@ def hv_vs_n_trained_networks(
     all_hvs = {k:[] for k in all_glch_data.keys()}
     all_hvs["max_hv"] = []
     all_hvs = {**all_hvs, "sobol":[],"ehvi":[],"parego":[]}
+    all_hvs["complexity"] = []
 
     if not up_to_complexity:
         ref_point = data[[metric.name for metric in metrics]].max().values * 1.1
@@ -83,6 +84,8 @@ def hv_vs_n_trained_networks(
         ith_max_hv = get_hv_from_df(search_space,optimization_config,data,label_to_params_func)
     
     for i,th in enumerate(thresholds,1):
+
+        all_hvs["complexity"].append(th)
 
         if up_to_complexity:
             filt_data = data[data[metrics[0].name] <= th]
