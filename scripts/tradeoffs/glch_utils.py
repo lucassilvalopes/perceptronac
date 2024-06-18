@@ -285,6 +285,8 @@ def adjust_axes(x_axis,y_axis,x_range,y_range,ax,x_in_log_scale=False,x_alias=No
     if y_range:
         ax.set_ylim(y_range[0],y_range[1])
 
+    ax.ticklabel_format(useMathText=True)
+
 
 def compute_hulls(data,rs,x_axis,y_axis):
 

@@ -294,7 +294,8 @@ def glch3d_rdc(
     fldr="glch_results",
     debug_folder="debug",
     debug=True,
-    select_function="angle_rule"
+    select_function="angle_rule",
+    axes_aliases=None
 ):
 
     rs = []
@@ -309,7 +310,7 @@ def glch3d_rdc(
             start=start,
             lambdas= [lmbda],
             axes_ranges=None,
-            axes_aliases=None,
+            axes_aliases=axes_aliases,
             fldr=fldr,
             debug_folder=debug_folder,
             debug=debug,

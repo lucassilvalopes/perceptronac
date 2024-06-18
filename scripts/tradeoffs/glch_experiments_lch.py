@@ -116,7 +116,8 @@ if __name__ == "__main__":
             fldr=results_folder,
             debug_folder=debug_folder,
             debug=False,
-            select_function=select_function
+            select_function=select_function,
+            axes_aliases=["Complexity (FLOPs)","$L=R+\lambda D$"]
         )
 
         glch3d_rdc(
@@ -128,7 +129,8 @@ if __name__ == "__main__":
             fldr=results_folder,
             debug_folder=debug_folder,
             debug=False,
-            select_function=select_function
+            select_function=select_function,
+            axes_aliases=["Complexity (number of parameters)","$L=R+\lambda D$"]
         )
 
         glch_model_bits_vs_data_bits(

@@ -39,7 +39,8 @@ import os
 #     return grid
 
 
-def plot_3d_lch(arrays_of_points,colors,markers,alphas,ax_ranges=None,ax_labels=None,title=None,planes=[]):
+def plot_3d_lch(arrays_of_points,colors,markers,alphas,ax_ranges=None,ax_labels=None,title=None,planes=[],
+                normalizations=None,figsize=None,fontsize=None):
     """
     https://stackoverflow.com/questions/4739360/any-easy-way-to-plot-a-3d-scatter-in-python-that-i-can-rotate-around
     https://stackoverflow.com/questions/56656777/userwarning-matplotlib-is-currently-using-agg-which-is-a-non-gui-backend-so
@@ -53,7 +54,10 @@ def plot_3d_lch(arrays_of_points,colors,markers,alphas,ax_ranges=None,ax_labels=
     else:
         matplotlib.use('Agg')
 
-    fig = matplotlib.pyplot.figure()
+    if figsize is not None:
+        fig = matplotlib.pyplot.figure(figsize=figsize)
+    else:
+        fig = matplotlib.pyplot.figure()
     ax = fig.add_subplot(111, projection='3d')
 
     for data,c,m,a in zip(arrays_of_points,colors,markers,alphas):
@@ -61,16 +65,33 @@ def plot_3d_lch(arrays_of_points,colors,markers,alphas,ax_ranges=None,ax_labels=
         ys = [row[1] for row in data]
         zs = [row[2] for row in data]
 
-        ax.scatter(xs, ys, zs, c=c, marker=m, alpha=a)
+        if normalizations is not None:
+
+            ax.scatter(
+                np.array(xs)/normalizations[0], 
+                np.array(ys)/normalizations[1], 
+                np.array(zs)/normalizations[2], c=c, marker=m, alpha=a)
+
+        else:
+            ax.scatter(xs, ys, zs, c=c, marker=m, alpha=a)
 
     if ax_labels is not None:
-        ax.set_xlabel(ax_labels[0])
-        ax.set_ylabel(ax_labels[1])
-        ax.set_zlabel(ax_labels[2])
+        xlabel = ax_labels[0]
+        ylabel = ax_labels[1]
+        zlabel = ax_labels[2]
     else:
-        ax.set_xlabel('X Label')
-        ax.set_ylabel('Y Label')
-        ax.set_zlabel('Z Label')
+        xlabel = 'X Label'
+        ylabel = 'Y Label'
+        zlabel = 'Z Label'
+
+    if fontsize is not None:
+        ax.set_xlabel(xlabel,fontsize=fontsize)
+        ax.set_ylabel(ylabel,fontsize=fontsize)
+        ax.set_zlabel(zlabel,fontsize=fontsize)
+    else:
+        ax.set_xlabel(xlabel)
+        ax.set_ylabel(ylabel)
+        ax.set_zlabel(zlabel)
 
     if ax_ranges is not None:
         ax.set_xlim(ax_ranges[0][0],ax_ranges[0][1])
@@ -90,6 +111,8 @@ def plot_3d_lch(arrays_of_points,colors,markers,alphas,ax_ranges=None,ax_labels=
 
     if title is None:
         matplotlib.use('Agg')
+    
+    return fig
 
 
 def plane_coeff_from_pt_and_normal(point,normal):
