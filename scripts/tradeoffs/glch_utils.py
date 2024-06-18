@@ -499,7 +499,8 @@ def save_threed_hull_data(data,rs,axes,complexity_axis,exp_id,fldr="glch_results
 
     estimated_hulls = []
     for r in rs:
-        _,estimated_hull_points = compute_hulls(data,[r],complexity_axis,"loss")
+        estimated_hull_points = data.loc[([str(r)] + tree_nodes(r,[], "lch")),:]
+        # _,estimated_hull_points = compute_hulls(data,[r],complexity_axis,"loss")
         estimated_hulls.append(estimated_hull_points)
     
     combined_estimated_hull = pd.concat(estimated_hulls,axis=0)
