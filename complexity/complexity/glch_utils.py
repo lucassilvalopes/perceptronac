@@ -4,7 +4,7 @@ import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-from perceptronac.convex_hull import convex_hull
+from convex_hull import convex_hull
 from sklearn.preprocessing import MinMaxScaler
 from line_clipping import cohenSutherlandClip
 from glch_threed_utils import plot_3d_lch
