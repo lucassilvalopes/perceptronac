@@ -17,6 +17,7 @@ from perceptronac.loading_and_saving import plot_comparison
 from perceptronac.loading_and_saving import save_values
 from perceptronac.loading_and_saving import change_aspect
 from perceptronac.rnn_models import create_rnn
+from perceptronac.loading_and_saving import save_configs
 
 
 def onehot(y):
@@ -152,15 +153,24 @@ def rnn_online_coding(pths,lr,which_model,hidden_units,n_layers,samples_per_time
     return data
 
 
-def rnn_online_coding_experiment(exp_name,docs,learning_rates,colors,linestyles,
-    labels,legend_ncol,ylim,which_model,hidden_units,n_layers=1,samples_per_time=1,n_pieces=1):
+def rnn_online_coding_experiment(docs,learning_rates,
+    which_model,hidden_units,n_layers=1,samples_per_time=1,n_pieces=1):
 
     exp_id = str(int(time.time()))
-    save_dir = f"results/exp_{exp_id}"
+    os.makedirs(f"results/exp_{exp_id}")
 
-    os.makedirs(save_dir)
+    configs = {
+        "id": exp_id,
+        "docs": docs,
+        "learning_rates": learning_rates,
+        "which_model": which_model,
+        "hidden_units": hidden_units,
+        "n_layers":n_layers,
+        "samples_per_time": samples_per_time,
+        "n_pieces": n_pieces
+    }
 
-    fname = f"{save_dir.rstrip('/')}/rnn_online_coding_{exp_name}"
+    save_configs(f"results/exp_{exp_id}/exp_{exp_id}_conf",configs)
 
     len_data = (len(docs[0]) * 1024*768) # // samples_per_time
 
@@ -184,23 +194,23 @@ def rnn_online_coding_experiment(exp_name,docs,learning_rates,colors,linestyles,
         
     xvalues = np.arange( len_data )
 
-    save_values(fname,xvalues,data,"iteration")
+    save_values(f"results/exp_{exp_id}/exp_{exp_id}_values",xvalues,data,"iteration")
         
-    fig = plot_comparison(xvalues,data,"iteration",
-        linestyles={k:ls for k,ls in zip(sorted(data.keys()),linestyles)},
-        colors={k:c for k,c in zip(sorted(data.keys()),colors)},
-        markers={k:"" for k in sorted(data.keys())},
-        labels={k:lb for k,lb in zip(sorted(data.keys()),labels)},
-        legend_ncol=legend_ncol)
+    # fig = plot_comparison(xvalues,data,"iteration",
+    #     linestyles={k:ls for k,ls in zip(sorted(data.keys()),linestyles)},
+    #     colors={k:c for k,c in zip(sorted(data.keys()),colors)},
+    #     markers={k:"" for k in sorted(data.keys())},
+    #     labels={k:lb for k,lb in zip(sorted(data.keys()),labels)},
+    #     legend_ncol=legend_ncol)
 
-    xticks = np.round(np.linspace(0,len_data-1,5)).astype(int)
+    # xticks = np.round(np.linspace(0,len_data-1,5)).astype(int)
 
-    fig.axes[0].set_xticks( xticks)
-    fig.axes[0].set_xticklabels( xticks)
+    # fig.axes[0].set_xticks( xticks)
+    # fig.axes[0].set_xticklabels( xticks)
 
-    ax, = fig.axes
-    ax.set_ylim(ylim)
+    # ax, = fig.axes
+    # ax.set_ylim(ylim)
 
-    change_aspect(ax)
+    # change_aspect(ax)
 
-    fig.savefig(fname+".png", dpi=300)
+    # fig.savefig(fname+".png", dpi=300)

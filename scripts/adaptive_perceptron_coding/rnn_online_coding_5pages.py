@@ -6,15 +6,13 @@ if __name__ == "__main__":
 
     lr = 0.01
 
-    which_model = "GRURNN" # "ElmanRNN"
+    which_model = "GRURNN"
 
     hidden_units = 650
 
-    samples_per_time = 64 # 1
+    samples_per_time = 64
 
     n_layers = 2
-
-    exp_name = f"Adaptive_Detection_of_Dim_5pages_{which_model}{hidden_units}_lr{lr:.0e}_batchsize{samples_per_time}"
 
     docs = [ # docs[i,j] = the path to the j'th page from the i'th document
         [
@@ -28,23 +26,6 @@ if __name__ == "__main__":
 
     learning_rates = [lr]
 
-    labels = [
-        'ARNN $\lambda='+str(re.search(r'(?<=^).*(?=e-)',f"{lr:.0e}").group())+\
-            '\cdot10^{-'+ str(int(re.search(r'(?<=e-).*(?=$)',f"{lr:.0e}").group())) + '}$',
-    ]
-
-    linestyles = [
-        "solid",
-    ]
-
-    colors = [
-        "r", 
-    ]
-
-    legend_ncol = 1
-
-    ylim = [0.0, 1.0]
-
-    rnn_online_coding_experiment(exp_name,docs,learning_rates,colors,linestyles,labels,legend_ncol,ylim,
+    rnn_online_coding_experiment(docs,learning_rates,
         which_model,hidden_units,n_layers=n_layers,samples_per_time=samples_per_time,n_pieces=1)
 
