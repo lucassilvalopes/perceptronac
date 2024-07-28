@@ -874,7 +874,7 @@ class RatesQuantizedArbitraryMLP(RatesArbitraryMLP):
         return bits,samples
 
 # next step : create an experiment similar to the rate_vs_complexity_experiment , but instead of plotting rate vs complexity,
-# it plots number of bits to encode the data and the model, or (data_bits + model_bits)/data_samples, AND maybe distortion,
+# it plots number of bits to encode the data and the model, or (data_bits + model_bits)/data_samples, AND maybe "distortion",
 # measured as the decrease in the rate to encode the data, or data_bits / data_samples. Then it is rate-including-the-model
 # vs rate-for-just-the-data. Or rate-data-model vs rate-data. And I can include the points for the original networks to compare.
 
@@ -892,7 +892,7 @@ from perceptronac.power_consumption import estimate_joules
 from perceptronac.loading_and_saving import points_in_convex_hull
 
 
-def rate_vs_power_experiment(configs):
+def quantization_and_power_experiment(configs):
 
     p = subprocess.Popen([
         os.path.join(os.path.dirname(os.path.abspath(__file__)),"power_consumption.sh"),
