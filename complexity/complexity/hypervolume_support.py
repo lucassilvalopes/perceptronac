@@ -148,25 +148,7 @@ def lim_ax_methods_dfs_with_counts_and_save_rdc(min_support,up_to_complexity):
         save_new_df(df,prefix,min_support,up_to_complexity)
 
 
-# In[11]:
 
-
-for up_to_complexity in [False,True]:
-    for min_support in [10]:
-
-        lim_ax_methods_dfs_with_counts_and_save(min_support,up_to_complexity)
-
-
-# In[10]:
-
-
-for up_to_complexity in [False,True]:
-    for min_support in [10]:
-
-        lim_ax_methods_dfs_with_counts_and_save_rdc(min_support,up_to_complexity)
-
-
-# In[ ]:
 
 
 
