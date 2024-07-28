@@ -1,10 +1,10 @@
 
 import os
-from ax_utils import ax_glch_comparison_mohpo
+from complexity.ax_utils import ax_glch_comparison_mohpo
 from functools import partial
-from ax_experiments_functions import rdc_setup,rdc_read_glch_data,rdc_label_to_params
-from ax_experiments_functions import rc_setup,rc_read_glch_data,rc_label_to_params
-from ax_experiments_functions import rb_setup,rb_read_glch_data,rb_label_to_params
+from complexity.ax_experiments_functions import rdc_setup,rdc_read_glch_data,rdc_label_to_params
+from complexity.ax_experiments_functions import rc_setup,rc_read_glch_data,rc_label_to_params
+from complexity.ax_experiments_functions import rb_setup,rb_read_glch_data,rb_label_to_params
 
 
 N_SEEDS = 25

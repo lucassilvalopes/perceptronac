@@ -1,8 +1,8 @@
 
 import numpy as np
 from functools import partial
-from ax_experiments_functions import rdc_loss_setup, rdc_read_glch_data, rdc_label_to_params
-from ax_utils import ax_glch_comparison_sohpo
+from complexity.ax_experiments_functions import rdc_loss_setup, rdc_read_glch_data, rdc_label_to_params
+from complexity.ax_utils import ax_glch_comparison_sohpo
 
 
 N_SEEDS = 25

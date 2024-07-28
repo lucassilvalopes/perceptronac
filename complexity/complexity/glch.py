@@ -3,8 +3,8 @@
 import os
 import numpy as np
 from abc import ABC, abstractmethod
-from glch_utils import plot_choice, plot_choice_2, open_debug_txt_file, close_debug_txt_file
-from glch_utils import Node, min_max_convex_hull, one_line_of_tree_str
+from complexity.glch_utils import plot_choice, plot_choice_2, open_debug_txt_file, close_debug_txt_file
+from complexity.glch_utils import Node, min_max_convex_hull, one_line_of_tree_str
 import unittest
 
 

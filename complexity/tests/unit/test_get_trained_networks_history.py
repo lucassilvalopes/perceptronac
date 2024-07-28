@@ -1,7 +1,7 @@
 
 import pandas as pd
 
-from glch_utils import get_trained_networks_history
+from complexity.glch_utils import get_trained_networks_history
 
 tree_str = \
 """

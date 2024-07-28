@@ -4,10 +4,10 @@ import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-from convex_hull import convex_hull
+from complexity.convex_hull import convex_hull
 from sklearn.preprocessing import MinMaxScaler
-from line_clipping import cohenSutherlandClip
-from glch_threed_utils import plot_3d_lch
+from complexity.line_clipping import cohenSutherlandClip
+from complexity.glch_threed_utils import plot_3d_lch
 
 
 matplotlib.use("pgf")

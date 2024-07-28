@@ -1,10 +1,10 @@
 import os
 import pandas as pd
 import numpy as np
-from glch import GLCHGiftWrapping,GLCHGiftWrappingTieBreak,GLCHAngleRule,GHO2D,GHO
+from complexity.glch import GLCHGiftWrapping,GLCHGiftWrappingTieBreak,GLCHAngleRule,GHO2D,GHO
 from decimal import Decimal
-from glch_utils import save_tree_data, save_hull_data, save_threed_history, save_threed_hull_data
-from glch_utils import save_history
+from complexity.glch_utils import save_tree_data, save_hull_data, save_threed_history, save_threed_hull_data
+from complexity.glch_utils import save_history
 
 
 

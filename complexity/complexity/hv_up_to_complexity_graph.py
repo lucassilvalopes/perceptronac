@@ -8,8 +8,8 @@ import os
 import pandas as pd
 import numpy as np
 from functools import partial
-from ax_experiments_functions import rc_setup, rc_read_glch_data, rc_label_to_params, rc_params_to_label
-from ax_utils import build_optimization_config_mohpo, get_hv_from_df
+from complexity.ax_experiments_functions import rc_setup, rc_read_glch_data, rc_label_to_params, rc_params_to_label
+from complexity.ax_utils import build_optimization_config_mohpo, get_hv_from_df
 from ax.core.search_space import SearchSpace
 
 

@@ -1,5 +1,5 @@
 import os
-from glch_experiments_functions import (
+from complexity.glch_experiments_functions import (
     glch_rate_vs_energy,glch_rate_vs_params,glch_rate_vs_time,
     glch_rate_vs_dist,glch_model_bits_vs_data_bits,
     glch3d_rdc

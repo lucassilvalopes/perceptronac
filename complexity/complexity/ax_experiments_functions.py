@@ -14,7 +14,7 @@ from ax.core.parameter import ParameterType, ChoiceParameter, FixedParameter
 from ax.core.search_space import SearchSpace
 from ax.metrics.noisy_function import NoisyFunctionMetric
 
-from ax_utils import build_ax_config_objects_mohpo, read_sorted_glch_data, build_ax_config_objects_sohpo, custom_e_notation, get_true_min
+from complexity.ax_utils import build_ax_config_objects_mohpo, read_sorted_glch_data, build_ax_config_objects_sohpo, custom_e_notation, get_true_min
 
 
 
