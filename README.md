@@ -29,11 +29,11 @@ pip install -e .[unit]
 ```
 To run all unit tests, execute the following in the root directory :
 ```
-pytest
+python -m pytest tests
 ```
 Running specifically:
 ```
-pytest tests/unit/test_coding3d.py
+python -m pytest tests/unit/test_coding3d.py
 ```
 Will verify that the point cloud data is converted properly to the X (matrix of samples) and y (vector of targets) format.
 

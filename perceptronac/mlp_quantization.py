@@ -1,6 +1,7 @@
 
 import torch
 import numpy as np
+import pandas as pd
 
 
 def get_model_parameters_values(model):
@@ -74,18 +75,26 @@ def encode_network_integer_symbols(quantized):
     return rate * n_samples, n_samples
 
 
+
+def get_quantization_data(csv_path):
+
+    data = pd.read_csv(csv_path)
+
+    data["model_bits"] = data["model_bits/data_samples"] * data["data_samples"]
+
+    data['idx'] = data.apply(lambda x: f"{x.topology}_{x.quantization_bits:02d}b", axis=1)
+
+    data = data.set_index("idx")
+
+    return data
+
+
+
 if __name__ == "__main__":
 
-    from perceptronac.models import ArbitraryMLP
-
-    model = ArbitraryMLP([10, 10, 10, 1])
-
-    n_bits = 8
-
-    Delta,shift = estimate_midtread_uniform_quantization_delta(model,n_bits)
-
-    model2,quantized_values = midtread_uniform_quantization(model,Delta,shift)
-
-    assert np.min(quantized_values) == 0
-    assert np.max(quantized_values) == (2**n_bits) - 1
+    get_quantization_data(
+        "/home/lucas/Documents/perceptronac/results/exp_1676160183/exp_1676160183_model_bits_x_data_bits_values.csv"
+    ).to_csv(
+        "/home/lucas/Documents/perceptronac/scripts/tradeoffs/rate-model-bits_hx-10-20-40-80-160-320-640_b-8-16-32.csv"
+    )
 
