@@ -5,10 +5,10 @@ import random
 import sys
 import os
 import scipy.io
-from perceptronac.coding3d import read_PC, write_PC
-from perceptronac.losses import LaplacianRate
-from perceptronac.losses import ac_lapl_rate
-from perceptronac.models import NNLaplacianVarianceModel
+from attributes.utils import read_PC, write_PC
+from attributes.losses import LaplacianRate
+from attributes.losses import ac_lapl_rate
+from attributes.models import NNLaplacianVarianceModel
 import matplotlib.pyplot as plt
 from pprint import pprint
 

@@ -2,7 +2,7 @@
 import pandas as pd
 import numpy as np
 from collections import Counter
-from perceptronac.losses import ac_lapl_rate
+from attributes.losses import ac_lapl_rate
 
 
 @np.vectorize
