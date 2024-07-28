@@ -819,14 +819,8 @@ def rate_vs_complexity_experiment(configs):
             "bits/sample": mlp_data[phase]
         })
 
-        # selected_points_mask0,fig0 = points_in_convex_hull(data0,"complexity","bits/sample",log_x=False)
-
-        # save_fig(f"{get_prefix(configs)}_{phase}_graph",fig0)
-
         save_dataframe(f"{get_prefix(configs)}_{phase}_values",data0,"complexity","bits/sample")
 
-        # save_dataframe(f"{get_prefix(configs)}_{phase}_hull_values",
-        #     data0.iloc[selected_points_mask0,:],"complexity","bits/sample")
 
 
 # take pre-calculated weights, load, quantize with different numbers of bits, recalculate the train and validation rates
@@ -889,7 +883,6 @@ class RatesQuantizedArbitraryMLP(RatesArbitraryMLP):
 
 from perceptronac.loading_and_saving import save_dataframe
 from perceptronac.power_consumption import estimate_joules
-# from perceptronac.loading_and_saving import points_in_convex_hull
 
 
 def quantization_and_power_experiment(configs):
@@ -968,36 +961,16 @@ def quantization_and_power_experiment(configs):
         model_bits_x_data_bits_data = data.loc[data["energy_measurement_iteration"]==0,:].drop(
             ["start_time", "end_time", "energy_measurement_iteration"], axis=1)
 
-        # model_bits_x_data_bits_selected_points,fig = points_in_convex_hull(model_bits_x_data_bits_data,
-        #     "model_bits/data_samples","data_bits/data_samples",log_x=False)
-
-        # save_fig(f"{get_prefix(configs)}_model_bits_x_data_bits_graph",fig)
-
         save_dataframe(f"{get_prefix(configs)}_model_bits_x_data_bits_values",model_bits_x_data_bits_data,
             "model_bits/data_samples","data_bits/data_samples",sort_by_x_col=True)
-
-        # save_dataframe(f"{get_prefix(configs)}_model_bits_x_data_bits_hull_values",
-        #     model_bits_x_data_bits_data.iloc[model_bits_x_data_bits_selected_points,:],
-        #     "model_bits/data_samples","data_bits/data_samples")
-
 
         params_x_rate_data = data.loc[
             np.logical_and(data["energy_measurement_iteration"]==0,data["quantization_bits"]==32)].drop(
             ["start_time", "end_time", "energy_measurement_iteration","model_bits/data_samples",
             "(data_bits+model_bits)/data_samples", "quantization_bits"], axis=1)
 
-        # params_x_rate_selected_points,fig = points_in_convex_hull(params_x_rate_data,
-        #     "params","data_bits/data_samples",log_x=False)
-
-        # save_fig(f"{get_prefix(configs)}_params_x_rate_graph",fig)
-
         save_dataframe(f"{get_prefix(configs)}_params_x_rate_values",params_x_rate_data,
             "params","data_bits/data_samples",sort_by_x_col=True)
-
-        # save_dataframe(f"{get_prefix(configs)}_params_x_rate_hull_values",
-        #     params_x_rate_data.iloc[params_x_rate_selected_points,:],
-        #     "params","data_bits/data_samples")
-
 
         p.kill()
 
@@ -1030,36 +1003,15 @@ def quantization_and_power_experiment(configs):
                 "joules_std"
             ]))
 
-
-
         static_data = data.loc[data["quantization_bits"]==32,:].drop(
             ["model_bits/data_samples","(data_bits+model_bits)/data_samples", "quantization_bits"], axis=1)
-
-        # static_selected_points,fig = points_in_convex_hull(static_data,"data_bits/data_samples",
-        #     "joules",log_x=False)
-        
-        # save_fig(f"{get_prefix(configs)}_static_rate_x_power_graph",fig)
 
         save_dataframe(f"{get_prefix(configs)}_static_rate_x_power_values",static_data,
             "data_bits/data_samples","joules",sort_by_x_col=True)
 
-        # save_dataframe(f"{get_prefix(configs)}_static_rate_x_power_hull_values",
-        #     static_data.iloc[static_selected_points,:],
-        #     "data_bits/data_samples","joules")
-
-
-        # semi_adaptive_selected_points,fig = points_in_convex_hull(data,"(data_bits+model_bits)/data_samples",
-        #     "joules",log_x=False)
-        
-        # save_fig(f"{get_prefix(configs)}_semi_adaptive_rate_x_power_graph",fig)
-
         save_dataframe(f"{get_prefix(configs)}_semi_adaptive_rate_x_power_values",data,
             "(data_bits+model_bits)/data_samples","joules",sort_by_x_col=True)
 
-        # save_dataframe(f"{get_prefix(configs)}_semi_adaptive_rate_x_power_hull_values",
-        #     data.iloc[semi_adaptive_selected_points,:],
-        #     "(data_bits+model_bits)/data_samples","joules")
-    
     finally:
         # https://stackoverflow.com/questions/43274476/
         # https://github.com/python/cpython/blob/main/Lib/subprocess.py
