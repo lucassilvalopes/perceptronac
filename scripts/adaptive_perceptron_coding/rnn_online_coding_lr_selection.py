@@ -12,7 +12,7 @@ if __name__ == "__main__":
 
         for samples_per_time in samples_per_time_list:
 
-            which_model = "GRURNN" # "ElmanRNN"
+            which_model = "GRURNN"
 
             hidden_units = 650
 
