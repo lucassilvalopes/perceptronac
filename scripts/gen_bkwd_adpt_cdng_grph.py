@@ -1,7 +1,7 @@
 """
 Example:
 
-python3 scripts/adaptive_context_modeling_paper/gen_bkwd_adpt_cdng_grph.py 0.5 2 \
+python3 scripts/gen_bkwd_adpt_cdng_grph.py 0.5 2 \
     "MLPlr=1e-01,MLPlr=1e-02,MLPlr=1e-04,LUTmean,RNNlr=1e-02" \
     results/exp_1672230131/rnn_online_coding_Adaptive_Detection_of_Dim_5pages_GRURNN650_lr1e-02_batchsize64.csv \
     results/exp_1672234599/backward_adaptive_coding_Adaptive_Detection_of_Dim_5pages_lut_mean_lr1e-2_N26.csv
