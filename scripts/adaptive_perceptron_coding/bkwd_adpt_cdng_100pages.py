@@ -122,11 +122,6 @@ if __name__ == "__main__":
     Ns = [0]
     learning_rates = [0.01] 
     central_tendencies = ["mean"] 
-    labels = ['ALUT', r'APC $\eta=10^{-2}$']
-    linestyles = ["solid", "dashed"]
-    colors = ["g", "b"]
-    legend_ncol = 1
-    ylim = [0.0, 1.0]
 
-    backward_adaptive_coding_experiment("",docs,Ns,learning_rates,central_tendencies,colors,linestyles,labels,legend_ncol,ylim,
+    backward_adaptive_coding_experiment(docs,Ns,learning_rates,central_tendencies,
                                         parallel=False,samples_per_time=1,n_pieces=50, parent_id="1717242357")
