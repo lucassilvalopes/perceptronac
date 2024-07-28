@@ -1,8 +1,6 @@
 import os
 import pandas as pd
 import numpy as np
-from perceptronac.power_consumption import estimate_joules, get_n_pixels
-from perceptronac.power_consumption import group_energy_measurements
 from glch import GLCHGiftWrapping,GLCHGiftWrappingTieBreak,GLCHAngleRule,GHO2D,GHO
 from decimal import Decimal
 from glch_utils import save_tree_data, save_hull_data, save_threed_history, save_threed_hull_data
