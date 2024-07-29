@@ -1,6 +1,4 @@
-import numpy as np
-import os
-from perceptronac.loading_and_saving import linestyle_tuple
+
 from perceptronac.backward_adaptive_coding import backward_adaptive_coding_experiment
 
 if __name__ == "__main__":
