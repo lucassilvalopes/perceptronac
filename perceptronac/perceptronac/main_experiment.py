@@ -4,13 +4,13 @@ import warnings
 from collections import namedtuple
 from perceptronac.losses import perfect_AC
 from perceptronac.utils import jbig1_rate
-from perceptronac.loading_and_saving import save_model
-from perceptronac.loading_and_saving import save_fig
-from perceptronac.loading_and_saving import save_values
-from perceptronac.loading_and_saving import load_values
-from perceptronac.loading_and_saving import plot_comparison
-from perceptronac.loading_and_saving import save_configs
-from perceptronac.loading_and_saving import save_data
+from perceptronac.data_exportation import save_model
+from perceptronac.data_exportation import save_fig
+from perceptronac.data_exportation import save_values
+from perceptronac.data_exportation import load_values
+from perceptronac.data_exportation import plot_comparison
+from perceptronac.data_exportation import save_configs
+from perceptronac.data_exportation import save_data
 from perceptronac.losses import Log2BCELoss
 from perceptronac.losses import Log2CrossEntropyLoss
 from perceptronac.models import CABAC,CA256AC
@@ -881,7 +881,7 @@ class RatesQuantizedArbitraryMLP(RatesArbitraryMLP):
 # https://stackoverflow.com/questions/45429831/valueerror-a-value-in-x-new-is-above-the-interpolation-range-what-other-re
 
 
-from perceptronac.loading_and_saving import save_dataframe
+from perceptronac.data_exportation import save_dataframe
 from perceptronac.power_consumption import estimate_joules
 
 

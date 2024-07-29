@@ -6,9 +6,9 @@ import time
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
-from perceptronac.loading_and_saving import plot_comparison
-from perceptronac.loading_and_saving import change_aspect
-from perceptronac.loading_and_saving import linestyle_tuple
+from perceptronac.data_exportation import plot_comparison
+from perceptronac.data_exportation import change_aspect
+from perceptronac.data_exportation import linestyle_tuple
 
 
 def label_map(orig_lbl,lr_symbol):

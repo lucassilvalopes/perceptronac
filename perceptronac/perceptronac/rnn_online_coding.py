@@ -13,11 +13,11 @@ import time
 import os
 from perceptronac.losses import Log2NLLLoss
 from perceptronac.utils import causal_context_many_imgs
-from perceptronac.loading_and_saving import plot_comparison
-from perceptronac.loading_and_saving import save_values
-from perceptronac.loading_and_saving import change_aspect
+from perceptronac.data_exportation import plot_comparison
+from perceptronac.data_exportation import save_values
+from perceptronac.data_exportation import change_aspect
 from perceptronac.rnn_models import create_rnn
-from perceptronac.loading_and_saving import save_configs
+from perceptronac.data_exportation import save_configs
 
 
 def onehot(y):

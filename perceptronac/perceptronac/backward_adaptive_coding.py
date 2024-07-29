@@ -27,10 +27,10 @@ from perceptronac.models import MLP_N_64N_32N_1
 from perceptronac.utils import causal_context_many_imgs
 from perceptronac.losses import perfect_AC
 from perceptronac.losses import Log2BCELoss
-from perceptronac.loading_and_saving import plot_comparison
-from perceptronac.loading_and_saving import save_values
-from perceptronac.loading_and_saving import linestyle_tuple
-from perceptronac.loading_and_saving import change_aspect
+from perceptronac.data_exportation import plot_comparison
+from perceptronac.data_exportation import save_values
+from perceptronac.data_exportation import linestyle_tuple
+from perceptronac.data_exportation import change_aspect
 from ast import literal_eval
 from tqdm import tqdm
 
@@ -154,8 +154,8 @@ class RealTimeLUT:
 
 
 
-from perceptronac.loading_and_saving import save_configs
-from perceptronac.loading_and_saving import save_model
+from perceptronac.data_exportation import save_configs
+from perceptronac.data_exportation import save_model
 
 
 def save_nn_model(file_name,model):
