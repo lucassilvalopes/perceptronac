@@ -17,7 +17,9 @@ def label_map(orig_lbl,lr_symbol):
         "MLP": "APC",
         "RNN": "ARNN",
         "Xavier": "Xavier",
-        "Ours": "Ours"
+        "Ours": "Ours",
+        "Random": "Random",
+        "Pre-training": "Pre-training"
     }
     if "MLP" in orig_lbl or "RNN" in orig_lbl:
         ky = "MLP" if "MLP" in orig_lbl else "RNN"
@@ -41,7 +43,9 @@ def linestyle_map(orig_lbl):
         0.001 : "solid", 
         0.0001 : "dotted", 
         "Ours" : "dashed", 
+        "Random" : "dashed", 
         "Xavier": linestyle_tuple["densely dashed"],
+        "Pre-training": linestyle_tuple['densely dashdotdotted'],
     }
     linestyle_map_dict_rnn = {
         0.05 : "solid",
@@ -68,7 +72,9 @@ def color_map(orig_lbl):
         0.001 : "tab:gray",
         0.0001 : "c",
         "Ours" : "b",
+        "Random" : "b",
         "Xavier": "k",
+        "Pre-training": "tab:orange",
     }
     color_map_dict_rnn = {
         0.05 : "tab:red",
