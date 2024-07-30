@@ -427,7 +427,8 @@ def backward_adaptive_coding_experiment(docs,Ns,learning_rates,central_tendencie
             "manual_th": manual_th,
             "full_page": full_page,
             "page_shape": page_shape,
-            "parent_id": parent_id
+            "parent_id": parent_id,
+            "init_method": init_method
         }
 
         save_configs(f"results/exp_{exp_id}/exp_{exp_id}_conf",configs)

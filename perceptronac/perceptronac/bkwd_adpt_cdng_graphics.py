@@ -88,11 +88,18 @@ def color_map(orig_lbl):
         return color_map_dict[orig_lbl]
 
 
-def read_csvs(csvs):
+def read_csvs(csvs,rename=None):
+    """
+    Example:
+    csvs = ["csv1.csv","csv2.csv","csv3.csv"]
+    rename = [("MLPlr=1e-02","Xavier"),("MLPlr=1e-02","Ours"),("MLPlr=1e-02","Pre-training")]
+    """
 
     csv_name = csvs[0]
 
     data = pd.read_csv(csv_name)
+    if rename is not None:
+        data = data.rename(columns={rename[0][0]: rename[0][1]})
 
     identifiers = re.findall(r'[\d]{10}',csv_name)
 
@@ -100,6 +107,8 @@ def read_csvs(csvs):
         csv_name = csvs[i]
         identifiers += re.findall(r'[\d]{10}',csv_name)
         partial_data = pd.read_csv(csv_name)
+        if rename is not None:
+            partial_data = partial_data.rename(columns={rename[i][0]: rename[i][1]})
         partial_data = partial_data.drop([c for c in data.columns if c !="iteration"],axis=1, errors='ignore')
         data = pd.merge(data,partial_data,on="iteration")
     
