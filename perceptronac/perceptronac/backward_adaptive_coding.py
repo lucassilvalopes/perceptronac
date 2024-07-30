@@ -194,7 +194,7 @@ def load_lut_model(model,file_name):
 
 def backward_adaptive_coding(exp_id,
                              pths,N,lr,central_tendencies,with_lut=False,with_mlp=True,parallel=False,samples_per_time=1,n_pieces=1,
-                             manual_th=None,full_page=True,page_len = (1024*768),parent_id=None):
+                             manual_th=None,full_page=True,page_len = (1024*768),parent_id=None,init_method="custom"):
     """
     
     Assumptions:
@@ -240,8 +240,10 @@ def backward_adaptive_coding(exp_id,
             mlp_running_loss = \
                 pd.read_csv(f"results/exp_{parent_id}/exp_{parent_id}_values.csv")["MLPlr={:.0e}".format(lr)].iloc[-1] \
                     * inherited_iterations * par_batch_size
+        elif os.path.isfile(init_method):
+            load_nn_model(model,init_method)
         else:
-            initialize_MLP_N_64N_32N_1(model)
+            initialize_MLP_N_64N_32N_1(model,init_method)
 
         for i in range(len(model.layers)):
             if isinstance(model.layers[i], torch.nn.Linear):
