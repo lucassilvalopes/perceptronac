@@ -81,7 +81,20 @@ def randperm(rng,n):
     return items
 
 
-def initialize_MLP_N_64N_32N_1(model):
+def permuted_weights(rng,stdv,fan_in,fan_out):
+    return torch.linspace(-stdv,stdv,fan_in*fan_out)[randperm(rng,fan_in*fan_out)].reshape(fan_out,fan_in)
+
+def permuted_biases(rng,stdv,fan_out):
+    return torch.linspace(-stdv,stdv,fan_out)[randperm(rng,fan_out)]
+
+def uniform_weights(rng,stdv,fan_in,fan_out):
+    return torch.tensor(rand_vec(rng,-stdv,stdv,fan_in*fan_out)).reshape(fan_out,fan_in)
+
+def uniform_biases(rng,stdv,fan_out):
+    return torch.tensor(rand_vec(rng,-stdv,stdv,fan_out))
+
+
+def initialize_MLP_N_64N_32N_1(model,method):
     """
     https://discuss.pytorch.org/t/how-to-fix-define-the-initialization-weights-seed/20156/2
     https://discuss.pytorch.org/t/access-weights-of-a-specific-module-in-nn-sequential/3627
@@ -97,11 +110,13 @@ def initialize_MLP_N_64N_32N_1(model):
             stdv = 1. / math.sqrt(fan_in)
             with torch.no_grad():
                 model.layers[i].weight.data = \
-                    torch.linspace(-stdv,stdv,fan_in*fan_out)[randperm(rng,fan_in*fan_out)].reshape(fan_out,fan_in)
+                    uniform_weights(rng,stdv,fan_in,fan_out) if method == "xavier" else permuted_weights(rng,stdv,fan_in,fan_out) 
+                    # torch.linspace(-stdv,stdv,fan_in*fan_out)[randperm(rng,fan_in*fan_out)].reshape(fan_out,fan_in)
                     # torch.tensor(rand_vec(rng,-stdv,stdv,fan_in*fan_out)).reshape(fan_out,fan_in)
 
                 model.layers[i].bias.data = \
-                    torch.linspace(-stdv,stdv,fan_out)[randperm(rng,fan_out)]
+                    uniform_biases(rng,stdv,fan_out) if method == "xavier" else permuted_biases(rng,stdv,fan_out)
+                    # torch.linspace(-stdv,stdv,fan_out)[randperm(rng,fan_out)]
                     # torch.tensor(rand_vec(rng,-stdv,stdv,fan_out))
 
 
