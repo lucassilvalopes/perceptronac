@@ -405,7 +405,7 @@ def backward_adaptive_coding(exp_id,
 
 def backward_adaptive_coding_experiment(docs,Ns,learning_rates,central_tendencies,
     parallel=False,samples_per_time=1,n_pieces=1,
-    manual_th=None,full_page=True,page_shape = (1024,768), parent_id=None):
+    manual_th=None,full_page=True,page_shape = (1024,768), parent_id=None,init_method="custom"):
 
     max_N = 26
 
@@ -464,14 +464,16 @@ def backward_adaptive_coding_experiment(docs,Ns,learning_rates,central_tendencie
                     with_lut = ((i_lr == len(learning_rates)-1) and (N<=max_N))
                     partial_data = backward_adaptive_coding(exp_id,doc,N,lr,central_tendencies,with_lut=with_lut,
                         parallel=parallel,samples_per_time=samples_per_time,n_pieces=n_pieces,
-                        manual_th=manual_th,full_page=full_page,page_len = page_len,parent_id=parent_id)
+                        manual_th=manual_th,full_page=full_page,page_len = page_len,parent_id=parent_id,
+                        init_method=init_method)
                     k = "MLPlr={:.0e}".format(lr)
                     data[k] = data[k] + np.array(partial_data[k])
             if (N<=max_N):
                 if not all([f"LUT{central_tendency}" in partial_data.keys() for central_tendency in central_tendencies]):
                     partial_data = backward_adaptive_coding(exp_id,doc,N,0,central_tendencies,with_lut=True,with_mlp=False,
                         parallel=parallel,samples_per_time=samples_per_time,n_pieces=n_pieces,
-                        manual_th=manual_th,full_page=full_page,page_len = page_len,parent_id=parent_id)
+                        manual_th=manual_th,full_page=full_page,page_len = page_len,parent_id=parent_id,
+                        init_method=init_method)
                 for central_tendency in central_tendencies:
                     k = f"LUT{central_tendency}"
                     data[k] = data[k] + np.array(partial_data[k])
