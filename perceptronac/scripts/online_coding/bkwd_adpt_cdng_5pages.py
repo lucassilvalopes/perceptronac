@@ -19,6 +19,4 @@ if __name__ == "__main__":
 
     central_tendencies = ["mean"] 
 
-    init_method = "/home/lucas/Documents/perceptronac/results/exp_1714238871/exp_1714238871_026_min_valid_loss_model.pt"
-
-    backward_adaptive_coding_experiment(docs,Ns,learning_rates,central_tendencies,init_method=init_method)
+    backward_adaptive_coding_experiment(docs,Ns,learning_rates,central_tendencies)
