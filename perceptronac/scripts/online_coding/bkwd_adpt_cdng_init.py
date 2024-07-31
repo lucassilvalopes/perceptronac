@@ -44,8 +44,8 @@ if __name__ == "__main__":
     #         docs,Ns,learning_rates,central_tendencies,init_method=init_method,page_shape = (895,670))
         
     for parent_id in [
-        "/home/lucas/Documents/perceptronac/results/exp_1722367905",
-        "/home/lucas/Documents/perceptronac/results/exp_1722370587"
+        "1722367905",
+        "1722370587"
     ]:
         
 
