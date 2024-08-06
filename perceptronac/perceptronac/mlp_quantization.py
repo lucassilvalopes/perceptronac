@@ -95,6 +95,6 @@ if __name__ == "__main__":
     get_quantization_data(
         "/home/lucas/Documents/perceptronac/results/exp_1676160183/exp_1676160183_model_bits_x_data_bits_values.csv"
     ).to_csv(
-        "/home/lucas/Documents/perceptronac/scripts/tradeoffs/rate-model-bits_hx-10-20-40-80-160-320-640_b-8-16-32.csv"
+        "/home/lucas/Documents/perceptronac/complexity/data/rate-model-bits_hx-10-20-40-80-160-320-640_b-8-16-32.csv"
     )
 

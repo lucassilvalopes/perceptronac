@@ -171,5 +171,5 @@ if __name__ == "__main__":
     get_energy_data(
         "/home/lucas/Documents/perceptronac/results/exp_1676160746/exp_1676160746_raw_values.csv",False
     ).to_csv(
-        "/home/lucas/Documents/perceptronac/scripts/tradeoffs/rate-noisy-joules-time-params_hx-10-20-40-80-160-320-640.csv"
+        "/home/lucas/Documents/perceptronac/complexity/data/rate-noisy-joules-time-params_hx-10-20-40-80-160-320-640.csv"
     )

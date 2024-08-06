@@ -16,7 +16,7 @@ matplotlib.rcParams.update({
     "legend.fontsize": 14,
     "xtick.labelsize": 14,
     "ytick.labelsize": 14,
-    "pgf.preamble": [r"\usepackage{siunitx}"]})
+    "pgf.preamble": r"\usepackage{siunitx}"})
 
 
 def min_max_convex_hull(data,start="left"):
@@ -431,13 +431,13 @@ def get_trained_networks_history(data,tree_str):
     iter_vect = []
     for i in range(n_lines):
         trained_networks = get_trained_networks_up_to_tree_str_line(tree_str,i)
-        pieces.append(data.loc[trained_networks-past,:].copy(deep=True))
+        pieces.append(data.loc[list(trained_networks-past),:].copy(deep=True))
         for _ in range(len(trained_networks-past)):
             iter_vect.append(i)
         past = trained_networks
     
     trained_networks = {w for w in tree_str.replace("!","").split()}.intersection(set(data.index.values))
-    pieces.append(data.loc[trained_networks-past,:].copy(deep=True))
+    pieces.append(data.loc[list(trained_networks-past),:].copy(deep=True))
     for _ in range(len(trained_networks-past)):
         iter_vect.append(i+1)
 

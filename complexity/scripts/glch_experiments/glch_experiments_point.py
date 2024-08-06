@@ -19,7 +19,7 @@ if __name__ == "__main__":
 
 
     glch_rate_vs_dist(
-        "/home/lucas/Documents/perceptronac/scripts/tradeoffs/bpp-mse-psnr-loss-flops-params_bmshj2018-factorized_10000-epochs_D-3-4_L-2e-2-1e-2-5e-3_N-32-64-96-128-160-192-224_M-32-64-96-128-160-192-224-256-288-320.csv",
+        "/home/lucas/Documents/perceptronac/complexity/data/bpp-mse-psnr-loss-flops-params_bmshj2018-factorized_10000-epochs_D-3-4_L-2e-2-1e-2-5e-3_N-32-64-96-128-160-192-224_M-32-64-96-128-160-192-224-256-288-320.csv",
         ["bpp_loss","mse_loss"],
         lambdas=["2e-2"],
         algo="gho",
@@ -33,7 +33,7 @@ if __name__ == "__main__":
     for lmbda,mult in [("5e-3",1),("5e-3",100),("1e-2",1),("1e-2",100),("2e-2",1),("2e-2",100)]:
 
         glch_rate_vs_dist(
-            "/home/lucas/Documents/perceptronac/scripts/tradeoffs/bpp-mse-psnr-loss-flops-params_bmshj2018-factorized_10000-epochs_D-3-4_L-2e-2-1e-2-5e-3_N-32-64-96-128-160-192-224_M-32-64-96-128-160-192-224-256-288-320.csv",
+            "/home/lucas/Documents/perceptronac/complexity/data/bpp-mse-psnr-loss-flops-params_bmshj2018-factorized_10000-epochs_D-3-4_L-2e-2-1e-2-5e-3_N-32-64-96-128-160-192-224_M-32-64-96-128-160-192-224-256-288-320.csv",
             ["bpp_loss","mse_loss","params"],
             weights=[1,float(lmbda)*(255**2),1/(1e6 * mult)],
             lambdas=[lmbda],
@@ -45,7 +45,7 @@ if __name__ == "__main__":
         )
 
         glch_rate_vs_dist(
-            "/home/lucas/Documents/perceptronac/scripts/tradeoffs/bpp-mse-psnr-loss-flops-params_bmshj2018-factorized_10000-epochs_D-3-4_L-2e-2-1e-2-5e-3_N-32-64-96-128-160-192-224_M-32-64-96-128-160-192-224-256-288-320.csv",
+            "/home/lucas/Documents/perceptronac/complexity/data/bpp-mse-psnr-loss-flops-params_bmshj2018-factorized_10000-epochs_D-3-4_L-2e-2-1e-2-5e-3_N-32-64-96-128-160-192-224_M-32-64-96-128-160-192-224-256-288-320.csv",
             ["bpp_loss","mse_loss","flops"],
             weights=[1,float(lmbda)*(255**2),1/(1e10 * mult)],
             lambdas=[lmbda],

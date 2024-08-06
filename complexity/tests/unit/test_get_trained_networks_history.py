@@ -26,7 +26,7 @@ tree_str = \
 
 
 data = pd.read_csv(
-    "/home/lucas/Documents/perceptronac/scripts/tradeoffs/rate-noisy-joules-time-params_hx-10-20-40-80-160-320-640.csv"
+    "/home/lucas/Documents/perceptronac/complexity/data/rate-noisy-joules-time-params_hx-10-20-40-80-160-320-640.csv"
 ).set_index("topology")
 
 hist = get_trained_networks_history(data,tree_str)

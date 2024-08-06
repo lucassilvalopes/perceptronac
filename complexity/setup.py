@@ -9,7 +9,7 @@ install_requires = [
     'numpy',
     'pandas',
     'matplotlib',
-    'PyQt5'
+    # 'PyQt5'
 ]
 
 unit_tests_require = [
