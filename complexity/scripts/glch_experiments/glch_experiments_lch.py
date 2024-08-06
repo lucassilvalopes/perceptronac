@@ -44,35 +44,35 @@ if __name__ == "__main__":
         #     select_function=select_function
         # )
 
-        # glch_rate_vs_energy(
-        #     "/home/lucas/Documents/perceptronac/complexity/data/rate-noisy-joules-time-params_hx-10-20-40-80-160-320-640.csv",
-        #     "micro_joules_per_pixel",
-        #     "data_bits/data_samples",
-        #     "rate_vs_energy_noisy",
-        #     x_alias="Complexity ($\SI{}{\mu\joule}$ per pixel)",
-        #     y_alias="Rate (bits per pixel)",
-        #     algo="glch",
-        #     constrained=constrained,
-        #     fldr=results_folder,
-        #     debug_folder=debug_folder,
-        #     debug=False,
-        #     select_function=select_function
-        # )
+        glch_rate_vs_energy(
+            "/home/lucas/Documents/perceptronac/complexity/data/rate-noisy-joules-time-params_hx-10-20-40-80-160-320-640.csv",
+            "micro_joules_per_pixel",
+            "data_bits/data_samples",
+            "rate_vs_energy_noisy",
+            x_alias="Complexity ($\SI{}{\mu\joule}$ per pixel)",
+            y_alias="Rate (bits per pixel)",
+            algo="glch",
+            constrained=constrained,
+            fldr=results_folder,
+            debug_folder=debug_folder,
+            debug=False,
+            select_function=select_function
+        )
 
-        # glch_rate_vs_params(
-        #     "/home/lucas/Documents/perceptronac/complexity/data/rate-noisy-joules-time-params_hx-10-20-40-80-160-320-640.csv",
-        #     "params","data_bits/data_samples",
-        #     "rate_vs_params",
-        #     x_in_log_scale=True,
-        #     x_alias="Complexity (multiply/adds per pixel)",
-        #     y_alias="Rate (bits per pixel)",
-        #     algo="glch",
-        #     constrained=constrained,
-        #     fldr=results_folder,
-        #     debug_folder=debug_folder,
-        #     debug=False,
-        #     select_function=select_function
-        # )
+        glch_rate_vs_params(
+            "/home/lucas/Documents/perceptronac/complexity/data/rate-noisy-joules-time-params_hx-10-20-40-80-160-320-640.csv",
+            "params","data_bits/data_samples",
+            "rate_vs_params",
+            x_in_log_scale=True,
+            x_alias="Complexity (multiply/adds per pixel)",
+            y_alias="Rate (bits per pixel)",
+            algo="glch",
+            constrained=constrained,
+            fldr=results_folder,
+            debug_folder=debug_folder,
+            debug=False,
+            select_function=select_function
+        )
 
         # # TODO: the time measurements right now are too comprehensive.
         # # They are measuring more than just the network computations.
@@ -133,16 +133,16 @@ if __name__ == "__main__":
             axes_aliases=["Complexity (number of parameters)","$L=R+\lambda D$"]
         )
 
-        # glch_model_bits_vs_data_bits(
-        #     "/home/lucas/Documents/perceptronac/complexity/data/rate-model-bits_hx-10-20-40-80-160-320-640_b-8-16-32.csv",
-        #     "model_bits","data_bits/data_samples",
-        #     x_in_log_scale=True,
-        #     x_alias="Complexity (encoded model bits)",
-        #     y_alias="Rate (bits per pixel)",
-        #     algo="glch",
-        #     constrained=constrained,
-        #     fldr=results_folder,
-        #     debug_folder=debug_folder,
-        #     debug=False,
-        #     select_function=select_function
-        # )
+        glch_model_bits_vs_data_bits(
+            "/home/lucas/Documents/perceptronac/complexity/data/rate-model-bits_hx-10-20-40-80-160-320-640_b-8-16-32.csv",
+            "model_bits","data_bits/data_samples",
+            x_in_log_scale=True,
+            x_alias="Complexity (encoded model bits)",
+            y_alias="Rate (bits per pixel)",
+            algo="glch",
+            constrained=constrained,
+            fldr=results_folder,
+            debug_folder=debug_folder,
+            debug=False,
+            select_function=select_function
+        )
