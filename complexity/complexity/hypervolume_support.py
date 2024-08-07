@@ -102,50 +102,38 @@ def save_new_df(df,prefix,min_support,up_to_complexity):
 # In[7]:
 
 
-def lim_ax_methods_dfs_with_counts_and_save(min_support,up_to_complexity):
+def lim_ax_methods_dfs_with_counts_and_save(x_axis,ax_results_folder,adjusted_data_folder,min_support,up_to_complexity):
 
-    ax_results_folder = "/home/lucas/Documents/perceptronac/complexity/scripts/ax_experiments/ax_results_energy_params_bits/"
+    print(x_axis)
 
-    adjusted_data_folder = "/home/lucas/Documents/perceptronac/complexity/scripts/glch_experiments/"
+    prefix = f"{x_axis}_data_bits_over_data_samples_ax_methods_seed"
     
-    for x_axis in ["micro_joules_per_pixel","model_bits","params"]:
-        
-        print(x_axis)
+    stats_dict = ax_methods_trained_networks(ax_results_folder,prefix)
 
-        prefix = f"{x_axis}_data_bits_over_data_samples_ax_methods_seed"
-        
-        stats_dict = ax_methods_trained_networks(ax_results_folder,prefix)
+    df = ax_methods_df_with_counts(adjusted_data_folder,prefix,stats_dict,up_to_complexity)
 
-        df = ax_methods_df_with_counts(adjusted_data_folder,prefix,stats_dict,up_to_complexity)
-
-        lim_df_based_on_support(df,min_support)
-        
-        save_new_df(df,prefix,min_support,up_to_complexity)
+    lim_df_based_on_support(df,min_support)
+    
+    save_new_df(df,prefix,min_support,up_to_complexity)
 
 
 
 # In[8]:
 
 
-def lim_ax_methods_dfs_with_counts_and_save_rdc(min_support,up_to_complexity):
+def lim_ax_methods_dfs_with_counts_and_save_rdc(x_axis,ax_results_folder,adjusted_data_folder,min_support,up_to_complexity):
 
-    adjusted_data_folder = "/home/lucas/Documents/perceptronac/complexity/scripts/glch_experiments/"
+    print(x_axis)
+
+    prefix = f"bpp_loss_mse_loss_{x_axis}_ax_methods_seed"
     
-    for x_axis in ["params","flops"]:
-        
-        print(x_axis)
-        
-        ax_results_folder = f"/home/lucas/Documents/perceptronac/complexity/scripts/ax_experiments/ax_results_rdc_{x_axis}"
+    stats_dict = ax_methods_trained_networks(ax_results_folder,prefix)
 
-        prefix = f"bpp_loss_mse_loss_{x_axis}_ax_methods_seed"
-        
-        stats_dict = ax_methods_trained_networks(ax_results_folder,prefix)
+    df = ax_methods_df_with_counts(adjusted_data_folder,prefix,stats_dict,up_to_complexity)
 
-        df = ax_methods_df_with_counts(adjusted_data_folder,prefix,stats_dict,up_to_complexity)
-
-        lim_df_based_on_support(df,min_support)
-        
-        save_new_df(df,prefix,min_support,up_to_complexity)
+    lim_df_based_on_support(df,min_support)
+    
+    save_new_df(df,prefix,min_support,up_to_complexity)
 
 
 

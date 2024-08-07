@@ -93,8 +93,11 @@ for up_to_complexity in [False,True]:
 
 for up_to_complexity in [False,True]:
     for min_support in [10]:
-
-        lim_ax_methods_dfs_with_counts_and_save(min_support,up_to_complexity)
+        for x_axis in ["micro_joules_per_pixel","model_bits","params"]:
+            lim_ax_methods_dfs_with_counts_and_save(x_axis,
+                "/home/lucas/Documents/perceptronac/complexity/scripts/ax_experiments/ax_results_energy_params_bits/",
+                "/home/lucas/Documents/perceptronac/complexity/scripts/illustrations/",
+                min_support,up_to_complexity)
 
 
 
@@ -102,7 +105,10 @@ for up_to_complexity in [False,True]:
 
 for up_to_complexity in [False,True]:
     for min_support in [10]:
-
-        lim_ax_methods_dfs_with_counts_and_save_rdc(min_support,up_to_complexity)
+        for x_axis in ["params","flops"]:
+            lim_ax_methods_dfs_with_counts_and_save_rdc(x_axis,
+                f"/home/lucas/Documents/perceptronac/complexity/scripts/ax_experiments/ax_results_rdc_{x_axis}",
+                "/home/lucas/Documents/perceptronac/complexity/scripts/illustrations/",
+                min_support,up_to_complexity)
 
 
