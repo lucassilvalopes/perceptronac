@@ -21,7 +21,7 @@ if __name__ == "__main__":
         
         ax_glch_comparison_sohpo(
             results_folder="ax_results",
-            data_csv_path = "/home/lucas/Documents/perceptronac/complexity/scripts/glch_experiments/bpp-mse-psnr-loss-flops-params_bmshj2018"+\
+            data_csv_path = "/home/lucas/Documents/perceptronac/complexity/data/bpp-mse-psnr-loss-flops-params_bmshj2018"+\
                 "-factorized_10000-epochs_D-3-4_L-2e-2-1e-2-5e-3_N-32-64-96-128-160-192-224_M-32-64-96-128-160-192-224-256-288-320.csv",
             setup_func=partial(rdc_loss_setup,weights=weights,lambdas=lambdas,complexity_axis="params"),
             glch_csv_path = "/home/lucas/Documents/perceptronac/complexity/scripts/glch_experiments/gho_results/"+\
@@ -38,7 +38,7 @@ if __name__ == "__main__":
 
         ax_glch_comparison_sohpo(
             results_folder="ax_results",
-            data_csv_path = "/home/lucas/Documents/perceptronac/complexity/scripts/glch_experiments/bpp-mse-psnr-loss-flops-params_bmshj2018"+\
+            data_csv_path = "/home/lucas/Documents/perceptronac/complexity/data/bpp-mse-psnr-loss-flops-params_bmshj2018"+\
                 "-factorized_10000-epochs_D-3-4_L-2e-2-1e-2-5e-3_N-32-64-96-128-160-192-224_M-32-64-96-128-160-192-224-256-288-320.csv",
             setup_func=partial(rdc_loss_setup,weights=weights,lambdas=lambdas,complexity_axis="flops"),
             glch_csv_path = "/home/lucas/Documents/perceptronac/complexity/scripts/glch_experiments/gho_results/"+\

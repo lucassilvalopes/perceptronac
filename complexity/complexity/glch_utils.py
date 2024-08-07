@@ -489,7 +489,9 @@ def save_threed_history(data,tree_strs,exp_id,fldr="glch_results"):
 
     histories = []
     for tree_str in tree_strs:
-        histories.append(get_trained_networks_history(data,tree_str))
+        # histories.append(get_trained_networks_history(data,tree_str))
+
+        histories.append(get_trained_networks_history_2(data,tree_str))
     
     df = pd.concat(histories,axis=0).sort_values(by=['iteration'])
 

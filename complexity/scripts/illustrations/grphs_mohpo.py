@@ -5,12 +5,12 @@
 
 
 from functools import partial
-from complexity.hypervolume import adjust_ax_glch_comparison_mohpo
+from complexity.hypervolume_no_duplicates import adjust_ax_glch_comparison_mohpo
 from complexity.ax_experiments_functions import rc_setup, rc_read_glch_data, rc_label_to_params, rc_params_to_label
 from complexity.ax_experiments_functions import rb_setup,rb_read_glch_data,rb_label_to_params, rb_params_to_label
 from complexity.ax_experiments_functions import rdc_setup,rdc_read_glch_data,rdc_label_to_params, rdc_params_to_label
-from complexity.hypervolume_support import lim_ax_methods_dfs_with_counts_and_save
-from complexity.hypervolume_support import lim_ax_methods_dfs_with_counts_and_save_rdc
+from complexity.hypervolume_limitted_support import lim_ax_methods_dfs_with_counts_and_save
+from complexity.hypervolume_limitted_support import lim_ax_methods_dfs_with_counts_and_save_rdc
 from complexity.hypervolume_graphics import gen_all_graphs, gen_all_graphs_rdc
 
 
