@@ -103,7 +103,7 @@ for up_to_complexity in [False,True]:
 
 
 
-for up_to_complexity in [False,True]:
+for up_to_complexity in [False]:
     for min_support in [10]:
         for x_axis in ["params","flops"]:
             lim_ax_methods_dfs_with_counts_and_save_rdc(x_axis,

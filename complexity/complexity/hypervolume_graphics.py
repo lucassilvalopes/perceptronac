@@ -97,14 +97,9 @@ matplotlib.rcParams.update({
     "legend.fontsize": 14,
     "xtick.labelsize": 14,
     "ytick.labelsize": 14,
-    "pgf.preamble": [
-        r"\usepackage{siunitx}",
-        r"\usepackage{inputenc}",
-        r"\DeclareUnicodeCharacter{2212}{\ensuremath{-}}",
-        r"\DeclareUnicodeCharacter{03BC}{\ensuremath{\mu}}",
-#         r"\newcommand{muJ}{\ensuremath{\mu J}}"
-        
-    ]})
+    "pgf.preamble": 
+        r"\usepackage{siunitx}\n\usepackage{inputenc}\n\DeclareUnicodeCharacter{2212}{\ensuremath{-}}\n\DeclareUnicodeCharacter{03BC}{\ensuremath{\mu}}"        
+    })
 
 
 # In[3]:
