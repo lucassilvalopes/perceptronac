@@ -104,7 +104,7 @@ def save_new_df(df,prefix,min_support,up_to_complexity):
 
 def lim_ax_methods_dfs_with_counts_and_save(min_support,up_to_complexity):
 
-    ax_results_folder = "/home/lucas/Documents/perceptronac/complexity/scripts/glch_experiments/ax_results_energy_params_bits/"
+    ax_results_folder = "/home/lucas/Documents/perceptronac/complexity/scripts/ax_experiments/ax_results_energy_params_bits/"
 
     adjusted_data_folder = "/home/lucas/Documents/perceptronac/complexity/scripts/glch_experiments/"
     
@@ -135,7 +135,7 @@ def lim_ax_methods_dfs_with_counts_and_save_rdc(min_support,up_to_complexity):
         
         print(x_axis)
         
-        ax_results_folder = f"/home/lucas/Documents/perceptronac/complexity/scripts/glch_experiments/ax_results_rdc_{x_axis}"
+        ax_results_folder = f"/home/lucas/Documents/perceptronac/complexity/scripts/ax_experiments/ax_results_rdc_{x_axis}"
 
         prefix = f"bpp_loss_mse_loss_{x_axis}_ax_methods_seed"
         
