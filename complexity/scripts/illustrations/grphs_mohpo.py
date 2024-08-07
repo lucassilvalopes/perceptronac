@@ -65,7 +65,7 @@ for up_to_complexity in [False,True]:
 
 
 
-for up_to_complexity in [False,True]:
+for up_to_complexity in [False]:
     for complexity_axis in ["params","flops"]:
 
         all_hvs_df = adjust_ax_glch_comparison_mohpo(

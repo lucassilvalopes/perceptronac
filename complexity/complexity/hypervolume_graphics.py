@@ -98,7 +98,10 @@ matplotlib.rcParams.update({
     "xtick.labelsize": 14,
     "ytick.labelsize": 14,
     "pgf.preamble": 
-        r"\usepackage{siunitx}\n\usepackage{inputenc}\n\DeclareUnicodeCharacter{2212}{\ensuremath{-}}\n\DeclareUnicodeCharacter{03BC}{\ensuremath{\mu}}"        
+        r"""\usepackage{siunitx}
+        \usepackage{inputenc}
+        \DeclareUnicodeCharacter{2212}{\ensuremath{-}}
+        \DeclareUnicodeCharacter{03BC}{\ensuremath{\mu}}"""        
     })
 
 
