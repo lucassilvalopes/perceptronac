@@ -11,7 +11,7 @@ from complexity.ax_experiments_functions import rb_setup,rb_read_glch_data,rb_la
 from complexity.ax_experiments_functions import rdc_setup,rdc_read_glch_data,rdc_label_to_params, rdc_params_to_label
 from complexity.hypervolume_support import lim_ax_methods_dfs_with_counts_and_save
 from complexity.hypervolume_support import lim_ax_methods_dfs_with_counts_and_save_rdc
-
+from complexity.hypervolume_graphics import gen_all_graphs, gen_all_graphs_rdc
 
 
 
@@ -110,5 +110,12 @@ for up_to_complexity in [False]:
                 f"/home/lucas/Documents/perceptronac/complexity/scripts/ax_experiments/ax_results_rdc_{x_axis}",
                 "/home/lucas/Documents/perceptronac/complexity/scripts/illustrations/",
                 min_support,up_to_complexity)
+
+
+
+gen_all_graphs("/home/lucas/Documents/perceptronac/complexity/scripts/illustrations/")
+
+
+gen_all_graphs_rdc("/home/lucas/Documents/perceptronac/complexity/scripts/illustrations/")
 
 

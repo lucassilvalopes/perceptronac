@@ -393,3 +393,84 @@ def gen_graphs_rdc(
         fig.savefig(fil3.replace(".csv",f"_{y_axis_units.replace(' ','_').lower()}.png"), dpi=300)
 
 
+
+# In[8]:
+
+
+def gen_all_graphs(adjusted_data_folder):
+
+    for up_to_complexity in [False,True]:
+        if up_to_complexity:
+            all_y_axis_units = [
+    #             "Hypervolume",
+    #             "Log Hypervolume",
+    #             "Hypervolume Difference",
+                "Log Hypervolume Difference"
+            ]
+        else:
+            all_y_axis_units = [
+    #             "Hypervolume",
+    #             "Log Hypervolume",
+    #             "Hypervolume Difference",
+                "Log Hypervolume Difference"
+            ]
+        for y_axis_units in all_y_axis_units:
+            for min_support in [10]:
+
+                if up_to_complexity:
+                    upper_clips = {"micro_joules_per_pixel":None,"model_bits":None,"params":None}
+                    lower_clips = {"micro_joules_per_pixel":None,"model_bits":None,"params":None}
+                else:
+                    upper_clips = {"micro_joules_per_pixel":None,"model_bits":None,"params":None}
+                    lower_clips = {"micro_joules_per_pixel":None,"model_bits":None,"params":None}
+
+                gen_graphs(
+                    adjusted_data_folder,min_support,up_to_complexity,upper_clips,lower_clips,y_axis_units)
+
+
+
+# In[9]:
+
+
+def gen_all_graphs_rdc(adjusted_data_folder):
+
+    for up_to_complexity in [False]: # ,True
+        if up_to_complexity:
+            all_y_axis_units = [
+    #             "Hypervolume",
+    #             "Log Hypervolume",
+    #             "Hypervolume Difference",
+                "Log Hypervolume Difference"
+            ]
+        else:
+            all_y_axis_units = [
+    #             "Hypervolume",
+    #             "Log Hypervolume",
+    #             "Hypervolume Difference",
+                "Log Hypervolume Difference"
+            ]
+        for y_axis_units in all_y_axis_units:
+            for min_support in [10]:
+
+                if up_to_complexity:
+                    if y_axis_units=="Hypervolume":
+                        upper_clips = {"flops":None,"params":None}
+                        lower_clips = {"flops":1.75*1e10,"params":2.25*1e6}
+                    elif y_axis_units=="Log Hypervolume":
+                        upper_clips = {"flops":None,"params":None}
+                        lower_clips = {"flops":10.1,"params":6.2}
+                    elif y_axis_units=="Hypervolume Difference":
+                        upper_clips = {"flops":0.25*1e10,"params":0.325*1e6}
+                        lower_clips = {"flops":0,"params":0}
+                    elif y_axis_units=="Log Hypervolume Difference":
+                        upper_clips = {"flops":None,"params":None}
+                        lower_clips = {"flops":None,"params":None}
+                    else:
+                        raise ValueError(y_axis_units)
+                else:
+                    upper_clips = {"flops":None,"params":None}
+                    lower_clips = {"flops":None,"params":None}
+
+                gen_graphs_rdc(
+                    adjusted_data_folder,min_support,up_to_complexity,upper_clips,lower_clips,y_axis_units)
+                
