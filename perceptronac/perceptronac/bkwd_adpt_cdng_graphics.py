@@ -18,7 +18,7 @@ def label_map(orig_lbl,lr_symbol):
         "RNN": "ARNN",
         "Xavier": "Xavier",
         "Ours": "Ours",
-        "Random": "Random",
+        "Random": "Random Initialization",
         "Pre-training": "Pre-training"
     }
     if "MLP" in orig_lbl or "RNN" in orig_lbl:
