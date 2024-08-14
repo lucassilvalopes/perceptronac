@@ -50,4 +50,7 @@ This package makes available several functions useful for (multi-layer) perceptr
 
 ## Acknowledgments
 
+- The initial code for the coding3d submodule was provided by Tomás Malheiros Borges
+- The python arithmetic coding implementation was based on the C implementation from the book "The Data Compression Book", by Mark Nelson and Jean-loup Gailly
+- The plotvoxcloud script was based on code from https://www.kaggle.com/datasets/daavoo/3d-mnist/data?select=voxelgrid.py
 - This README was based on https://gist.github.com/PurpleBooth/109311bb0361f32d87a2
