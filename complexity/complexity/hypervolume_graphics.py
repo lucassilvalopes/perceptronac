@@ -161,6 +161,10 @@ def line_func(k):
         lin3 = lines[3]
     elif "Max HV" in k:
         lin3 = lines[8]
+    elif "GLCH-US" in k:
+        lin3 = lines[2]
+    elif "GLCH-CS" in k:
+        lin3 = lines[1]
 #     print(k,"line",lin3)
     return lin3
 
@@ -214,6 +218,10 @@ def color_func(k):
         color = colors[8]
     elif "Max HV" in k:
         color = colors[4]
+    elif "GLCH-US" in k:
+        color = colors[1]
+    elif "GLCH-CS" in k:
+        color = colors[0]
 #     print(k,"color",color)
     return color
 
@@ -222,7 +230,7 @@ def color_func(k):
 
 
 def mohpo_grph(pth,title,up_to_complexity,upper_clip=None,lower_clip=None,
-               y_axis_units="Hypervolume"):
+               y_axis_units="Hypervolume",col_lbls_map=None):
 
     if up_to_complexity:
         df = pd.read_csv(pth,index_col="complexity").drop([
@@ -256,24 +264,24 @@ def mohpo_grph(pth,title,up_to_complexity,upper_clip=None,lower_clip=None,
         raise ValueError(y_axis_units)
     
 
+    if col_lbls_map is None:
+        col_lbls_map = {
+        "global_hv":"Max HV",
+        "max_hv": "Local Max HV", 
+        "sobol": "Sobol", 
+        "ehvi": "qNEHVI",
+        "parego": "qNParEGO",
+        "sobol_hv_list": "Sobol", 
+        "ehvi_hv_list": "qNEHVI",
+        "parego_hv_list": "qNParEGO",
+        "c_angle_rule": "Alg.6",
+        "u_angle_rule": "Alg.5",
+        "c_gift_wrapping": "Alg.3",
+        "u_gift_wrapping": "Alg.2",
+        "c_tie_break": "Alg.4"}
 
 
-
-
-    df2 = df1.rename(columns={
-    "global_hv":"Max HV",
-    "max_hv": "Local Max HV", 
-    "sobol": "Sobol", 
-    "ehvi": "qNEHVI",
-    "parego": "qNParEGO",
-    "sobol_hv_list": "Sobol", 
-    "ehvi_hv_list": "qNEHVI",
-    "parego_hv_list": "qNParEGO",
-    "c_angle_rule": "Alg.6",
-    "u_angle_rule": "Alg.5",
-    "c_gift_wrapping": "Alg.3",
-    "u_gift_wrapping": "Alg.2",
-    "c_tie_break": "Alg.4"})
+    df2 = df1.rename(columns=col_lbls_map)
 
     df3 = df2[sorted(df2.columns)]
 
