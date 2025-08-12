@@ -18,12 +18,10 @@ import matplotlib.pyplot as plt
 
 
 def plot_comparison(
-    xvalues,data,xlabel,ylabel,xscale,linestyles,colors,markers,
-    labels,legend_ncol,figsize,legend_loc,
+    ax,xvalues,data,xlabel,ylabel,xscale,linestyles,colors,markers,
+    labels,legend_ncol,legend_loc,
     axes_labelsize,title):
-
-    fig, ax = plt.subplots(nrows=1, ncols=1,figsize=figsize)    
-
+  
     handles = []
 
     ks = sorted(data.keys())
@@ -41,9 +39,6 @@ def plot_comparison(
     ax.set_xscale(xscale)
     ax.legend(handles=handles,loc=legend_loc, ncol=legend_ncol)
 
-    fig.tight_layout()
-    # plt.show()    
-    return fig
 
 
 # In[ ]:
@@ -228,8 +223,35 @@ def color_func(k):
 
 # In[5]:
 
-
 def mohpo_grph(pth,title,up_to_complexity,upper_clip=None,lower_clip=None,
+               y_axis_units="Hypervolume",col_lbls_map=None):
+    
+    figsize=(6.0,5.1) # without title : (6.0,4.8)
+
+    fig, ax = plt.subplots(nrows=1, ncols=1,figsize=figsize) 
+    mohpo_grph_impl(ax,pth,title,up_to_complexity,
+               y_axis_units,col_lbls_map)
+
+    fig.tight_layout()
+
+    if (upper_clip is not None) or (lower_clip is not None):
+        ymin, ymax = fig.axes[0].get_ylim()
+        if (upper_clip is not None):
+            ymax = upper_clip
+        if (lower_clip is not None):
+            ymin = lower_clip
+        fig.axes[0].set_ylim(ymin,ymax)
+        
+#     yfmt = ScalarFormatter(useMathText=True)
+#     yfmt.set_powerlimits((-5, 5))
+#     fig.axes[0].yaxis.set_major_formatter(yfmt) 
+#     xfmt = ScalarFormatter(useMathText=True)
+#     xfmt.set_powerlimits((-5, 5))
+#     fig.axes[0].xaxis.set_major_formatter(xfmt) 
+    
+    return fig
+
+def mohpo_grph_impl(ax,pth,title,up_to_complexity,
                y_axis_units="Hypervolume",col_lbls_map=None):
 
     if up_to_complexity:
@@ -302,12 +324,13 @@ def mohpo_grph(pth,title,up_to_complexity,upper_clip=None,lower_clip=None,
     markers = {k:"" for k in sorted(data.keys())}
     labels = {k:k for k in data.keys()}
     legend_ncol=1
-    figsize=(6.0,5.1) # without title : (6.0,4.8)
     
     legend_loc="best"
     axes_labelsize=16
 
-    fig = plot_comparison(
+      
+    plot_comparison(
+        ax,
         xvalues,
         data,
         xlabel,
@@ -318,28 +341,11 @@ def mohpo_grph(pth,title,up_to_complexity,upper_clip=None,lower_clip=None,
         markers,
         labels,
         legend_ncol,
-        figsize,
         legend_loc,
         axes_labelsize,
         title if not up_to_complexity else None
     )
-    
-    if (upper_clip is not None) or (lower_clip is not None):
-        ymin, ymax = fig.axes[0].get_ylim()
-        if (upper_clip is not None):
-            ymax = upper_clip
-        if (lower_clip is not None):
-            ymin = lower_clip
-        fig.axes[0].set_ylim(ymin,ymax)
-        
-#     yfmt = ScalarFormatter(useMathText=True)
-#     yfmt.set_powerlimits((-5, 5))
-#     fig.axes[0].yaxis.set_major_formatter(yfmt) 
-#     xfmt = ScalarFormatter(useMathText=True)
-#     xfmt.set_powerlimits((-5, 5))
-#     fig.axes[0].xaxis.set_major_formatter(xfmt) 
-    
-    return fig
+
 
 
 # In[6]:
