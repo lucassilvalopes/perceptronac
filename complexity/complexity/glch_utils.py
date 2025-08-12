@@ -393,13 +393,17 @@ def save_tree_data(
         print(f"number of trained networks : {n_trained_networks}",file=f)
 
     tree_fig, ax = plt.subplots(nrows=1, ncols=1)
+    paint_tree_data(ax,data,r,x_axis,y_axis,x_range,y_range,x_in_log_scale,x_alias,y_alias)
+    tree_fig.savefig(f"{fldr}/{data_id}_tree_fig.png", dpi=300, facecolor='w', bbox_inches = "tight")
+
+
+def paint_tree_data(ax,data,r,x_axis,y_axis,x_range,y_range,x_in_log_scale=False,x_alias=None,y_alias=None):
     paint_cloud(data,x_axis,y_axis,ax,".")
     paint_root(data,r,x_axis,y_axis,ax)
     paint_tree(ax,data,r,x_axis,y_axis,x_range,y_range)
     # paint_hull_points(true_hull_points,x_axis,y_axis,ax)
     paint_tree_nodes(data,r,x_axis,y_axis,ax)
     adjust_axes(x_axis,y_axis,x_range,y_range,ax,x_in_log_scale,x_alias,y_alias)
-    tree_fig.savefig(f"{fldr}/{data_id}_tree_fig.png", dpi=300, facecolor='w', bbox_inches = "tight")
 
 
 def save_hull_data(data,r,x_axis,y_axis,x_range,y_range,data_id,x_in_log_scale=False,x_alias=None,y_alias=None,fldr="glch_results"):
