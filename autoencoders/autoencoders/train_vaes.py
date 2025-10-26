@@ -45,6 +45,8 @@ from compressai.optimizers import net_aux_optimizer
 from compressai.models import FactorizedPrior
 from vae_model import CustomFactorizedPrior
 import pandas as pd
+from pytorch_msssim import ms_ssim
+import numpy as np
 
 
 class AverageMeter:
@@ -133,6 +135,7 @@ def test_epoch(epoch, test_dataloader, model, criterion):
     bpp_loss = AverageMeter()
     mse_loss = AverageMeter()
     aux_loss = AverageMeter()
+    ms_ssim_lst = []
 
     with torch.no_grad():
         for d in test_dataloader:
@@ -140,24 +143,42 @@ def test_epoch(epoch, test_dataloader, model, criterion):
             out_net = model(d)
             out_criterion = criterion(out_net, d)
 
+            for i in range(d.shape[0]):
+                org = (d[i:i+1,:,:,:] * 255).clamp(0, 255).round()
+                rec = (out_net["x_hat"][i:i+1,:,:,:] * 255).clamp(0, 255).round()
+
+                ms_ssim_value = ms_ssim(rec, org, data_range=255).item()
+                
+
+                ms_ssim_lst.append(ms_ssim_value)
+
             aux_loss.update(model.aux_loss())
             bpp_loss.update(out_criterion["bpp_loss"])
             loss.update(out_criterion["loss"])
             mse_loss.update(out_criterion["mse_loss"])
+
+    ms_ssim_avg_value =  sum(ms_ssim_lst)/len(ms_ssim_lst)
+    ms_ssim_avg_value_db = -10 * np.log10(1 - ms_ssim_avg_value)
+
+    psnr_value_db = 10 * np.log10( (1**2)/ mse_loss.avg.item() )
 
     print(
         f"Test epoch {epoch}: Average losses:"
         f"\tLoss: {loss.avg:.3f} |"
         f"\tMSE loss: {mse_loss.avg:.3f} |"
         f"\tBpp loss: {bpp_loss.avg:.2f} |"
-        f"\tAux loss: {aux_loss.avg:.2f}\n"
+        f"\tAux loss: {aux_loss.avg:.2f} |"
+        f"\tMS-SSIM: {ms_ssim_avg_value_db:.2f} |"
+        f"\tPSNR: {psnr_value_db:.2f}\n"
     )
 
     return (
         loss.avg.item(),
         mse_loss.avg.item(),
         bpp_loss.avg.item(),
-        aux_loss.avg.item()
+        aux_loss.avg.item(),
+        ms_ssim_avg_value_db,
+        psnr_value_db
     )
 
 
@@ -244,6 +265,9 @@ def parse_args(argv):
         "--save", action="store_true", default=True, help="Save model to disk"
     )
     parser.add_argument(
+        "--validation", action="store_true", default=False, help="Only validation"
+    )
+    parser.add_argument(
         "--seed", type=float, help="Set random seed for reproducibility"
     )
     parser.add_argument(
@@ -314,8 +338,19 @@ def main(argv):
         lr_scheduler.load_state_dict(checkpoint["lr_scheduler"])
 
     best_loss = float("inf")
-    train_history = {"loss":[],"mse_loss":[],"bpp_loss":[],"aux_loss":[]}
-    test_history = {"loss":[],"mse_loss":[],"bpp_loss":[],"aux_loss":[]}
+    train_history = {"loss":[],"mse_loss":[],"bpp_loss":[],"aux_loss":[], "lr":[]}
+    test_history = {"loss":[],"mse_loss":[],"bpp_loss":[],"aux_loss":[],"ms_ssim":[],"psnr":[]}
+
+    if args.validation:
+        loss,mse_loss,bpp_loss,aux_loss,ms_ssim_value_db,psnr_value_db = test_epoch(0, test_dataloader, net, criterion)
+        test_history["loss"].append(loss)
+        test_history["mse_loss"].append(mse_loss)
+        test_history["bpp_loss"].append(bpp_loss)
+        test_history["aux_loss"].append(aux_loss)
+        test_history["ms_ssim"].append(ms_ssim_value_db)
+        test_history["psnr"].append(psnr_value_db)
+        return train_history, test_history
+
     for epoch in range(last_epoch, args.epochs):
         print(f"Learning rate: {optimizer.param_groups[0]['lr']}")
         train_loss,train_mse_loss,train_bpp_loss,train_aux_loss= train_one_epoch(
@@ -331,11 +366,15 @@ def main(argv):
         train_history["mse_loss"].append(train_mse_loss)
         train_history["bpp_loss"].append(train_bpp_loss)
         train_history["aux_loss"].append(train_aux_loss)
-        loss,mse_loss,bpp_loss,aux_loss = test_epoch(epoch, test_dataloader, net, criterion)
+        train_history["lr"].append(optimizer.param_groups[0]['lr'])
+        loss,mse_loss,bpp_loss,aux_loss,ms_ssim_value_db,psnr_value_db = test_epoch(epoch, test_dataloader, net, criterion)
         test_history["loss"].append(loss)
         test_history["mse_loss"].append(mse_loss)
         test_history["bpp_loss"].append(bpp_loss)
         test_history["aux_loss"].append(aux_loss)
+        test_history["ms_ssim"].append(ms_ssim_value_db)
+        test_history["psnr"].append(psnr_value_db)
+
         lr_scheduler.step(loss)
 
         is_best = loss < best_loss
@@ -369,10 +408,10 @@ if __name__ == "__main__":
 
     dataset_path = sys.argv[1]
 
-    for lmbda in ["5e-3","1e-2","2e-2"]:
-        for D in [2,3,4]:
-            for N in [32, 64, 96, 128, 160, 192, 224]:
-                for M in [32, 64, 96, 128, 160, 192, 224, 256, 288, 320]:
+    for lmbda in ["0.0130"]: # ["5e-3","1e-2","2e-2"]:
+        for D in [4]: # [2,3,4]:
+            for N in [128]: # [32, 64, 96, 128, 160, 192, 224]:
+                for M in [192]: # [32, 64, 96, 128, 160, 192, 224, 256, 288, 320]:
                     argv = [
                         "-d", dataset_path,
                         "--lambda",lmbda,
@@ -383,7 +422,10 @@ if __name__ == "__main__":
                         "--N",str(N),
                         "--M",str(M),
                         "--D",str(D),
-                        "--epochs","10000",
+                        "--epochs","150",
+                        # for validation:
+                        "--checkpoint","bkp/D4_L0.0130_N128_M192/up_to_100_epochs/D4_L0.0130_N128_M192_checkpoint_best_loss.pth.tar", 
+                        "--validation"
                     ]
                     train_history, test_history = main(argv)
                     save_history_data(pd.DataFrame(train_history),f"D{D}_L{lmbda}_N{N}_M{M}_train_history")
