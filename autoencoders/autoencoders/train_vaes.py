@@ -325,12 +325,12 @@ def main(argv):
         net = CustomDataParallel(net)
 
     optimizer, aux_optimizer = configure_optimizers(net, args)
-    lr_scheduler = optim.lr_scheduler.ReduceLROnPlateau(
-        optimizer, 
-        mode='min', 
-        factor=0.5, 
-        patience=20
-    )
+    # lr_scheduler = optim.lr_scheduler.ReduceLROnPlateau(
+    #     optimizer, 
+    #     mode='min', 
+    #     factor=0.5, 
+    #     patience=20
+    # )
     criterion = RateDistortionLoss(lmbda=float(args.lmbda))
 
     last_epoch = 0
@@ -341,7 +341,7 @@ def main(argv):
         net.load_state_dict(checkpoint["state_dict"])
         optimizer.load_state_dict(checkpoint["optimizer"])
         aux_optimizer.load_state_dict(checkpoint["aux_optimizer"])
-        lr_scheduler.load_state_dict(checkpoint["lr_scheduler"])
+        # lr_scheduler.load_state_dict(checkpoint["lr_scheduler"])
 
     best_loss = float("inf")
     train_history = {"loss":[],"mse_loss":[],"bpp_loss":[],"aux_loss":[], "lr":[]}
@@ -381,7 +381,7 @@ def main(argv):
         test_history["ms_ssim"].append(ms_ssim_value_db)
         test_history["psnr"].append(psnr_value_db)
 
-        lr_scheduler.step(loss)
+        # lr_scheduler.step(loss)
 
         is_best = loss < best_loss
         best_loss = min(loss, best_loss)
@@ -395,7 +395,7 @@ def main(argv):
                     "loss": loss,
                     "optimizer": optimizer.state_dict(),
                     "aux_optimizer": aux_optimizer.state_dict(),
-                    "lr_scheduler": lr_scheduler.state_dict(),
+                    # "lr_scheduler": lr_scheduler.state_dict(),
                 },
                 is_best,
                 filename=f"{dset_nickname}_D{args.D}_L{args.lmbda}_N{args.N}_M{args.M}_checkpoint"
@@ -434,9 +434,9 @@ if __name__ == "__main__":
                         "--N",str(N),
                         "--M",str(M),
                         "--D",str(D),
-                        "--epochs","500",
+                        "--epochs","1000",
                         # to continue training:
-                        # "--checkpoint","bkp/div2k_D4_L0.0130_N128_M192/epoch1000/div2k_D4_L0.0130_N128_M192_checkpoint_best_loss.pth.tar",
+                        # "--checkpoint","bkp/div2kclicpm_D4_L0.0130_N128_M192/epoch500/div2kclicpm_D4_L0.0130_N128_M192_checkpoint_best_loss.pth.tar",
                         # for validation:
                         # "--validation"
                     ]
