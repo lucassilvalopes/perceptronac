@@ -47,6 +47,7 @@ from vae_model import CustomFactorizedPrior
 import pandas as pd
 from pytorch_msssim import ms_ssim
 import numpy as np
+import os
 
 
 class AverageMeter:
@@ -324,7 +325,12 @@ def main(argv):
         net = CustomDataParallel(net)
 
     optimizer, aux_optimizer = configure_optimizers(net, args)
-    lr_scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, "min")
+    lr_scheduler = optim.lr_scheduler.ReduceLROnPlateau(
+        optimizer, 
+        mode='min', 
+        factor=0.5, 
+        patience=20
+    )
     criterion = RateDistortionLoss(lmbda=float(args.lmbda))
 
     last_epoch = 0
@@ -381,6 +387,7 @@ def main(argv):
         best_loss = min(loss, best_loss)
 
         if args.save:
+            dset_nickname = os.path.basename(os.path.dirname(args.dataset))
             save_checkpoint(
                 {
                     "epoch": epoch,
@@ -391,7 +398,7 @@ def main(argv):
                     "lr_scheduler": lr_scheduler.state_dict(),
                 },
                 is_best,
-                filename=f"D{args.D}_L{args.lmbda}_N{args.N}_M{args.M}_checkpoint"
+                filename=f"{dset_nickname}_D{args.D}_L{args.lmbda}_N{args.N}_M{args.M}_checkpoint"
             )
     return train_history, test_history
 
@@ -408,6 +415,11 @@ if __name__ == "__main__":
 
     dataset_path = sys.argv[1]
 
+    if not dataset_path.endswith('/'):
+        dataset_path = f'{dataset_path}/'
+
+    dset_nickname = os.path.basename(os.path.dirname(dataset_path))
+
     for lmbda in ["0.0130"]: # ["5e-3","1e-2","2e-2"]:
         for D in [4]: # [2,3,4]:
             for N in [128]: # [32, 64, 96, 128, 160, 192, 224]:
@@ -422,12 +434,13 @@ if __name__ == "__main__":
                         "--N",str(N),
                         "--M",str(M),
                         "--D",str(D),
-                        "--epochs","150",
+                        "--epochs","500",
+                        # to continue training:
+                        # "--checkpoint","bkp/div2k_D4_L0.0130_N128_M192/epoch1000/div2k_D4_L0.0130_N128_M192_checkpoint_best_loss.pth.tar",
                         # for validation:
-                        "--checkpoint","bkp/D4_L0.0130_N128_M192/up_to_100_epochs/D4_L0.0130_N128_M192_checkpoint_best_loss.pth.tar", 
-                        "--validation"
+                        # "--validation"
                     ]
                     train_history, test_history = main(argv)
-                    save_history_data(pd.DataFrame(train_history),f"D{D}_L{lmbda}_N{N}_M{M}_train_history")
-                    save_history_data(pd.DataFrame(test_history),f"D{D}_L{lmbda}_N{N}_M{M}_test_history")
+                    save_history_data(pd.DataFrame(train_history),f"{dset_nickname}_D{D}_L{lmbda}_N{N}_M{M}_train_history")
+                    save_history_data(pd.DataFrame(test_history),f"{dset_nickname}_D{D}_L{lmbda}_N{N}_M{M}_test_history")
 
