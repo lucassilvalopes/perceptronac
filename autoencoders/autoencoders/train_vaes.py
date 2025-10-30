@@ -434,7 +434,7 @@ if __name__ == "__main__":
                         "--N",str(N),
                         "--M",str(M),
                         "--D",str(D),
-                        "--epochs","1000",
+                        "--epochs","500",
                         # to continue training:
                         # "--checkpoint","bkp/div2kclicpm_D4_L0.0130_N128_M192/epoch500/div2kclicpm_D4_L0.0130_N128_M192_checkpoint_best_loss.pth.tar",
                         # for validation:
