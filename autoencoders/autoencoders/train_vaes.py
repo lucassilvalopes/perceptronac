@@ -49,6 +49,29 @@ from pytorch_msssim import ms_ssim
 import numpy as np
 import os
 
+from PIL import Image
+
+class RandomDownsample:
+    """Randomly downsample an image by a factor in {1, 2, 3, 4}."""
+    def __init__(self, factors=(1, 2, 3, 4), interpolation=Image.BICUBIC, patch_size = (256,256)):
+        self.factors = factors
+        self.interpolation = interpolation
+        self.patch_size = patch_size
+
+    def __call__(self, img):
+        factor = random.choice(self.factors)
+        if factor == 1:
+            # print(img.size,factor)
+            return img
+        w, h = img.size
+        new_w, new_h = w // factor, h // factor
+        if new_w < self.patch_size[1] or new_h < self.patch_size[0]:
+            # print(img.size,factor)
+            return img
+        img = img.resize((new_w, new_h), self.interpolation)
+        # print(img.size,factor)
+        return img
+
 
 class AverageMeter:
     """Compute running average."""
@@ -289,9 +312,11 @@ def main(argv):
         torch.manual_seed(args.seed)
         random.seed(args.seed)
 
-    train_transforms = transforms.Compose(
-        [transforms.RandomCrop(args.patch_size), transforms.ToTensor()]
-    )
+    train_transforms = transforms.Compose([
+        RandomDownsample(factors=(1, 2, 3, 4),patch_size=args.patch_size), 
+        transforms.RandomCrop(args.patch_size), 
+        transforms.ToTensor()
+    ])
 
     test_transforms = transforms.Compose(
         [transforms.CenterCrop(args.patch_size), transforms.ToTensor()]
