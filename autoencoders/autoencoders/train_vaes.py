@@ -313,7 +313,7 @@ def main(argv):
         random.seed(args.seed)
 
     train_transforms = transforms.Compose([
-        RandomDownsample(factors=(1, 2, 3, 4),patch_size=args.patch_size), 
+        # RandomDownsample(factors=(1, 2, 3, 4),patch_size=args.patch_size), 
         transforms.RandomCrop(args.patch_size), 
         transforms.ToTensor()
     ])
@@ -459,9 +459,9 @@ if __name__ == "__main__":
                         "--N",str(N),
                         "--M",str(M),
                         "--D",str(D),
-                        "--epochs","500",
+                        "--epochs","1000",
                         # to continue training:
-                        # "--checkpoint","bkp/div2kclicpm_D4_L0.0130_N128_M192/epoch500/div2kclicpm_D4_L0.0130_N128_M192_checkpoint_best_loss.pth.tar",
+                        "--checkpoint","bkp/div2k_D4_L0.0130_N128_M192/epoch300/div2k_D4_L0.0130_N128_M192_checkpoint.pth.tar",
                         # for validation:
                         # "--validation"
                     ]
