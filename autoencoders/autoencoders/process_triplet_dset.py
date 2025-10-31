@@ -17,6 +17,12 @@ if __name__ == "__main__":
 
     lst = get_folder_leaves_os_walk(src)
     for pth in lst:
-        new_pth = pth.replace("vimeo_triplet","vimeo_singlet")
-        os.makedirs(new_pth, exist_ok=True)
-        os.rename(os.path.join(pth,"im1.png"), os.path.join(new_pth,"im1.png"))
+
+        fl = os.path.join(pth,"im1.png")
+
+        new_fl = fl.replace("vimeo_triplet_old","vimeo_singlet")
+
+        break_pt = new_fl.index("vimeo_singlet/")+len("vimeo_singlet/")
+        new_fl = new_fl[:break_pt] + new_fl[break_pt:].replace("/","_") 
+        
+        os.rename(fl, new_fl)
