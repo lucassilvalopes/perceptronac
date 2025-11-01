@@ -459,9 +459,9 @@ if __name__ == "__main__":
                         "--N",str(N),
                         "--M",str(M),
                         "--D",str(D),
-                        "--epochs","1000",
+                        "--epochs","50",
                         # to continue training:
-                        "--checkpoint","bkp/div2k_D4_L0.0130_N128_M192/epoch300/div2k_D4_L0.0130_N128_M192_checkpoint.pth.tar",
+                        # "--checkpoint","bkp/div2k_D4_L0.0130_N128_M192/epoch300/div2k_D4_L0.0130_N128_M192_checkpoint.pth.tar",
                         # for validation:
                         # "--validation"
                     ]
