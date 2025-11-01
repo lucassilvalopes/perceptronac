@@ -6,14 +6,11 @@ import numpy as np
 if __name__ == "__main__":
 
     src = sys.argv[1]
+    directory = sys.argv[2]
+    dset_nickname = sys.argv[3]
 
-    if src.endswith('/'):
-        src = src[:-1]
-
-    dset_nickname = os.path.basename(os.path.dirname(src))
-
-    os.mkdir("symlinks")
+    if not os.path.exists(directory):
+        os.makedirs(directory)
 
     for f in os.listdir(src):
-        if not (f.endswith("x2.png") or f.endswith("x3.png") or f.endswith("x4.png")):
-            os.symlink(os.path.join(src,f),f"symlinks/symlink_{dset_nickname}_{f}")
+        os.symlink(os.path.join(src,f),f"{directory}/symlink_{dset_nickname}_{f}")
